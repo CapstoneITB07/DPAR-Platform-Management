@@ -1,1 +1,0 @@
-# DPAR-Platform-Management

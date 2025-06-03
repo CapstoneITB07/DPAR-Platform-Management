@@ -1,0 +1,315 @@
+.admin-dashboard-container {
+  display: flex;
+  flex-direction: column; /* Stack header and content vertically */
+  min-height: 100vh; /* Ensure container takes at least full viewport height */
+}
+
+.header {
+  background-color: #A11C22; /* Dark red color from the screenshot */
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.burger-icon {
+  font-size: 24px;
+  margin-right: 15px;
+  cursor: pointer;
+}
+
+.dpar-text {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.notification-icon {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.content-wrapper {
+  display: flex; /* Arrange sidebar and main content horizontally */
+  flex-grow: 1; /* Allow content wrapper to take remaining space */
+}
+
+.sidebar {
+  width: 250px; /* Adjust width as needed when open */
+  background-color: white; /* White background for sidebar */
+  color: #333; /* Dark text color */
+  transition: width 0.3s ease, min-width 0.3s ease; /* Smooth transition for width */
+  overflow-x: hidden; /* Hide horizontal overflow */
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.closed {
+  width: 60px; /* Collapsed width */
+  min-width: 60px; /* Ensure it doesn't shrink further */
+}
+
+.sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+}
+
+.user-profile .profile-icon {
+  font-size: 30px;
+  margin-right: 10px;
+}
+
+.user-info p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.user-info .user-name {
+  font-weight: bold;
+}
+
+.user-info .edit-profile {
+  color: #007bff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.sidebar-nav {
+  flex-grow: 1;
+  padding: 20px;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-nav li {
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-nav li:hover {
+  background-color: #f0f0f0;
+}
+
+.sidebar-nav li svg {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar-nav li.active {
+  background-color: #A11C22;
+  color: white;
+  border-radius: 4px;
+  padding-left: 10px;
+}
+
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
+.logout-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+.logout-button svg {
+  margin-right: 10px;
+}
+
+.logout-button-icon-only {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px; /* Adjust padding for icon only button */
+  border-radius: 4px;
+  cursor: pointer;
+  width: fit-content; /* Adjust width to fit content */
+  display: flex;
+  justify-content: center; /* Center the icon */
+  align-items: center;
+  margin: 0 auto; /* Center the button in the footer */
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #f0f0f0;
+  transition: margin-left 0.3s ease; /* Smooth transition for content shift */
+}
+
+/* Adjust main content margin based on sidebar state is handled by the content-wrapper flexbox */
+
+/* Pop-up styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's on top of other content */
+}
+
+.popup-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 90%; /* Adjust width as needed */
+    max-width: 600px; /* Max width for larger screens */
+    position: relative;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.popup-header h3 {
+    margin: 0;
+}
+
+.close-icon {
+    cursor: pointer;
+    font-size: 20px;
+    color: #888;
+}
+
+.popup-content .org-info-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.popup-content .org-logo {
+    width: 80px;
+    height: 80px;
+    background-color: #eee; /* Placeholder background */
+    margin-right: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    color: #555;
+    border-radius: 4px; /* If the logo has rounded corners */
+}
+
+.popup-content .org-details p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.popup-content .description-section {
+    margin-bottom: 15px;
+    position: relative; /* For positioning the edit button */
+}
+
+.popup-content .description-section p {
+    margin: 5px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.popup-content .edit-info-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.popup-content .stats-contact-message {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive columns */
+    gap: 15px;
+}
+
+.popup-content .stats, 
+.popup-content .contact-info, 
+.popup-content .message-box {
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.popup-content .stats p, 
+.popup-content .contact-info p,
+.popup-content .message-box p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.popup-content .stats button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.popup-content .contact-info svg {
+    margin-right: 5px;
+    color: #A11C22; /* Or a relevant icon color */
+}
+
+.popup-content .message-box textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-sizing: border-box; /* Include padding in width */
+}
+
+.popup-content .send-button {
+    background-color: #A11C22;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    float: right; /* Align to the right */
+} 

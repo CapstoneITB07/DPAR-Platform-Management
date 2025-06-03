@@ -1,0 +1,241 @@
+.container {
+  display: grid; /* Use CSS Grid */
+  grid-template-columns: 1fr 1fr; /* Create two equal columns */
+  min-height: 400px; /* Set a minimum height for the container */
+  height: auto; /* Let height be determined by content, but min-height ensures a certain size */
+  /* justify-content: center; Center the grid horizontally - removed as margin: auto handles this */
+  align-items: stretch; /* Ensure grid items stretch to fill the container height */
+  font-family: 'Arial', sans-serif;
+  width: 100%; /* Allow container to take full width */
+  max-width: 800px; /* Limit the overall width of the container */
+  margin: 50px auto; /* Center the container horizontally and add top/bottom margin */
+  box-sizing: border-box; /* Include padding and border in width/height */
+  border: 1px solid #ccc; /* Outer border as in the screenshot */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow */
+  overflow: hidden; /* Hide any potential overflow from inner elements */
+  /* To center vertically in the viewport if not taking full height, you might need to add styles to the body or a parent container */
+}
+
+.loginSection {
+  /* grid-column: 1; No explicit column needed with grid-template-columns */
+  padding: 40px; /* Adjust padding to match screenshot visual spacing */
+  display: flex; /* Keep flexbox for column content layout */
+  flex-direction: column;
+  justify-content: flex-start; /* Align content to the top */
+  /* max-width: 400px; Max width handled by container and grid */
+  /* border: 1px solid #ccc; Outer border is on the container */
+  border-right: 1px solid #ccc; /* Border between sections */
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Shadow is on the container */
+  background-color: white;
+  box-sizing: border-box; /* Include padding and border in width/height */
+  height: 100%; /* Ensure it stretches to container height */
+  /* padding-top is included in overall padding */
+}
+
+.welcomeSection {
+  /* grid-column: 2; No explicit column needed with grid-template-columns */
+  background-color: #c0392b; /* Red background color */
+  display: flex; /* Keep flexbox for column content layout */
+  flex-direction: column; /* Stack content vertically */
+  justify-content: center; /* Center content vertically within welcomeSection as in screenshot */
+  align-items: center; /* Center content horizontally */
+  color: white;
+  text-align: center;
+  padding: 40px; /* Adjust padding to match screenshot visual spacing */
+  /* max-width: 400px; Max width handled by container and grid */
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Shadow is on the container */
+  box-sizing: border-box; /* Include padding and border in width/height */
+  height: 100%; /* Ensure it stretches to container height */
+  /* padding-top is included in overall padding */
+}
+
+.welcomeContent {
+  /* Flex container to align content vertically */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center content within welcomeContent */
+  align-items: center; /* Center items horizontally within welcomeContent */
+  width: 100%; /* Ensure it takes full width of welcomeSection */
+  /* Remove default top/bottom margins from children here if needed */
+}
+
+.coalitionText {
+  font-size: 12px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  margin-top: 0; /* Remove default top margin */
+}
+
+.welcomeTitle {
+  font-size: 32px;
+  margin-bottom: 10px;
+  margin-top: 0; /* Ensure no top margin */
+}
+
+.welcomeSubtitle {
+  font-size: 16px;
+  margin-top: 0; /* Ensure no top margin */
+}
+
+.signInTitle {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: #c0392b; /* Red color */
+  margin-top: 0; /* Remove default top margin */
+}
+
+.inputGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.passwordInputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.passwordInput {
+  width: 100%;
+  padding: 10px;
+  padding-right: 40px; /* Space for icon */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.passwordToggleIcon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.rememberMe {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px; /* Bottom margin */
+}
+
+.rememberMeCheckbox {
+  margin-right: 5px;
+}
+
+.rememberMeLabel {
+  font-size: 14px;
+}
+
+.signInButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #e74c3c; /* Red button color */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px; /* Top margin */
+}
+
+.errorMessage {
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.raButton {
+  position: absolute;
+  bottom: 20px; /* Position from bottom */
+  left: 20px; /* Position from left */
+  font-size: 24px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0; /* Remove padding */
+  z-index: 10; /* Ensure it's above other content */
+}
+
+.raButtonIconBox {
+  border: 1px solid #ccc; /* Border around icon */
+  padding: 5px; /* Padding around icon */
+  display: inline-block; /* Allow padding/border */
+  background-color: white; /* White background */
+}
+
+.raPopup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 30px; /* Padding */
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Shadow */
+  z-index: 1000;
+  max-width: 450px; /* Max width */
+  max-height: 70vh; /* Max height */
+  overflow-y: auto;
+  border-radius: 8px; /* Border radius */
+}
+
+.raPopup h3 {
+    margin-top: 0; /* Remove default top margin */
+}
+
+.raCloseButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 20px; /* Font size */
+  color: #555; /* Color */
+}
+
+/* Basic responsiveness */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr; /* Stack columns */
+    padding: 10px; /* Adjust padding for smaller screens */
+    margin: 20px auto; /* Adjust margin for smaller screens */
+    /* align-items: center; Align items to center when stacked if needed */
+  }
+
+  .loginSection {
+    max-width: 100%;
+    border-right: 1px solid #ccc; /* Add border right on small screens */
+    border-bottom: 1px solid #ccc; /* Add border bottom on small screens */
+    height: auto; /* Allow height to be auto on smaller screens */
+    padding-top: 30px; /* Consistent top padding */
+  }
+
+  .welcomeSection {
+    max-width: 100%;
+    padding: 30px; /* Adjusted padding to match loginSection */
+    height: auto; /* Allow height to be auto on smaller screens */
+    justify-content: center; /* Center content when stacked */
+    padding-top: 30px; /* Adjusted top padding to match loginSection */
+  }
+
+  .raButton {
+      bottom: 10px;
+      left: 10px;
+  }
+} 

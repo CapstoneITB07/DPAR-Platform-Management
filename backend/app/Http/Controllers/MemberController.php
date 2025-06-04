@@ -4,23 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class MemberController extends Controller
 {
-    // Placeholder methods for resource controller
+    // Return id and name of all associate group leaders
     public function index()
-    { /* TODO */
-    }
-    public function store(Request $request)
-    { /* TODO */
-    }
-    public function show(string $id)
-    { /* TODO */
-    }
-    public function update(Request $request, string $id)
-    { /* TODO */
-    }
-    public function destroy(string $id)
-    { /* TODO */
+    {
+        return User::where('role', 'associate_group_leader')->get(['id', 'name']);
     }
 }

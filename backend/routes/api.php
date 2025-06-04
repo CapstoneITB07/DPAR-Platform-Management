@@ -33,9 +33,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Resource Controllers
     Route::apiResource('/announcements', AnnouncementController::class);
     Route::apiResource('/notifications', NotificationController::class);
+    Route::post('/notifications/{id}/respond', [NotificationController::class, 'respond']);
     Route::apiResource('/reports', ReportController::class);
     Route::apiResource('/certificates', CertificateController::class);
-    Route::apiResource('/groups', GroupController::class);
     Route::apiResource('/members', MemberController::class);
     Route::apiResource('/evaluations', EvaluationController::class);
 });

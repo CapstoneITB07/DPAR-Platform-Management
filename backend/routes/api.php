@@ -7,9 +7,9 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\CertificateController;
-use App\Http\Controllers\GroupController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\EvaluationController;
+use App\Http\Controllers\TrainingProgramController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/members', MemberController::class);
     Route::apiResource('/evaluations', EvaluationController::class);
 });
+
+// Public Training Programs API
+Route::apiResource('/training-programs', TrainingProgramController::class);
 
 // Note: Laravel automatically prefixes routes in api.php with '/api'.
 // So, Route::post('/register', ...) will be accessible at /api/register.

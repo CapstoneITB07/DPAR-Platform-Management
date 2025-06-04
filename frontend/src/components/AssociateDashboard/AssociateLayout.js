@@ -58,7 +58,7 @@ function AssociateLayout({ children }) {
   }, [location.pathname, NOTIF_READ_KEY]);
 
   return (
-    <div className="associate-dashboard-container">
+    <div className="associate-dashboard-fixed-layout">
       {/* Header Bar */}
       <header className="header">
         <div className="header-left">
@@ -76,8 +76,24 @@ function AssociateLayout({ children }) {
           </div>
         </div>
       </header>
-      <div className="content-wrapper">
-        <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}> 
+      <div style={{ display: 'flex' }}>
+        <div
+          className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+          style={{
+            position: 'fixed',
+            top: 48,
+            left: 0,
+            height: 'calc(100vh - 48px)',
+            width: isSidebarOpen ? 240 : 60,
+            zIndex: 100,
+            background: '#fff',
+            boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            transition: 'width 0.2s',
+          }}
+        >
           <div className="sidebar-header">
             {isSidebarOpen && (
               <div className="user-profile">
@@ -119,7 +135,7 @@ function AssociateLayout({ children }) {
               )}
             </ul>
           </nav>
-          <div className="sidebar-footer">
+          <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
             {isSidebarOpen && (
               <button className="logout-button" onClick={handleLogout}>
                 <FontAwesomeIcon icon={faSignOutAlt} /> Logout
@@ -132,7 +148,7 @@ function AssociateLayout({ children }) {
             )}
           </div>
         </div>
-        <main className="main-content">
+        <main className="main-content" style={{ marginLeft: isSidebarOpen ? 240 : 60, width: isSidebarOpen ? 'calc(100% - 240px)' : 'calc(100% - 60px)', transition: 'margin-left 0.2s, width 0.2s' }}>
           {children}
         </main>
       </div>

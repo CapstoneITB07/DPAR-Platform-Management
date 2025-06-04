@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../logo.svg';
+import axios from 'axios';
 
 function CitizenPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [fade, setFade] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalImg, setModalImg] = useState(null);
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -22,8 +28,33 @@ function CitizenPage() {
   // Determine if ABOUT US is active
   const isAboutActive = location.pathname === '/citizen/about';
 
+  useEffect(() => {
+    fetchPrograms();
+  }, []);
+
+  const fetchPrograms = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://localhost:8000/api/training-programs');
+      setPrograms(res.data);
+    } catch (err) {
+      setError('Failed to load training programs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openImageModal = (imgUrl) => {
+    setModalImg(imgUrl);
+    setModalOpen(true);
+  };
+  const closeImageModal = () => {
+    setModalOpen(false);
+    setModalImg(null);
+  };
+
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Navigation Bar */}
       <nav style={{ background: '#8B1409', color: '#fff', padding: '0 0 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', height: 60, position: 'relative' }}>
         <div style={{ fontWeight: 'bold', fontSize: 24, marginRight: 'auto', marginLeft: 30 }}>
@@ -104,166 +135,60 @@ function CitizenPage() {
           ))}
         </div>
       </div>
-      {/* Contact Us Section */}
-      <div style={{
-        width: '100%',
-        maxWidth: 1200,
-        margin: '60px auto 0 auto',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 40,
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        position: 'relative',
-        zIndex: 1,
-      }}>
-        {/* About Us Card */}
-        <div style={{
-          flex: '1 1 340px',
-          background: '#8B1409',
-          borderRadius: 20,
-          padding: '32px 24px 48px 24px',
-          minWidth: 320,
-          maxWidth: 420,
-          color: '#fff',
-          boxShadow: '0 4px 24px rgba(139,20,9,0.10)',
-          position: 'relative',
-        }}>
-          <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 24, letterSpacing: 1, textAlign: 'center' }}>ABOUT US</div>
-          <div style={{
-            background: '#fff',
-            color: '#222',
-            borderRadius: 14,
-            padding: '28px 18px',
-            fontWeight: 700,
-            fontSize: 20,
-            textAlign: 'center',
-            lineHeight: 1.4,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          }}>
-            Republic Act (RA) 10121 is also known as the Philippine Disaster Risk Reduction and Management Act of 2010. It's a law that aims to improve the country's disaster risk reduction and management system.
-          </div>
+      {/* Training Programs as Posts */}
+      <div style={{ background: '#f7f8fa', flex: 1, padding: '40px 0 60px 0', minHeight: 400, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <h2 style={{ textAlign: 'center', fontWeight: 700, letterSpacing: 1, marginBottom: 36, fontSize: 28, color: '#222' }}>Training Programs</h2>
+        <div style={{ width: '100%', maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 36 }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', color: '#888', fontSize: 18 }}>Loading...</div>
+          ) : error ? (
+            <div style={{ textAlign: 'center', color: 'red', fontSize: 18 }}>{error}</div>
+          ) : programs.length === 0 ? (
+            <p style={{ color: '#888', fontSize: 18, textAlign: 'center' }}>No training programs available.</p>
+          ) : (
+            programs.map((program) => (
+              <div key={program.id} style={{ background: '#fff', borderRadius: 18, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: 0, margin: '0 auto', width: '100%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'stretch', overflow: 'hidden' }}>
+                {/* Post image (like Facebook post) */}
+                {program.image_url && (
+                  <img
+                    src={program.image_url}
+                    alt="Program"
+                    style={{ width: '100%', height: 220, objectFit: 'cover', cursor: 'pointer', display: 'block' }}
+                    onClick={() => openImageModal(program.image_url)}
+                    title="Click to view larger"
+                  />
+                )}
+                {/* Post content */}
+                <div style={{ padding: '24px 28px 18px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: 20, color: '#1a1a1a', marginBottom: 2, textAlign: 'center' }}>{program.name}</div>
+                  <div style={{ color: '#4a4a4a', fontSize: 15, marginBottom: 12, textAlign: 'center' }}>{program.date}{program.location && <span> &bull; {program.location}</span>}</div>
+                  <div style={{ color: '#333', background: '#f3f4f6', borderRadius: 12, padding: '18px 16px', width: '100%', minHeight: 60, fontSize: 16, textAlign: 'left', marginBottom: 0 }}>{program.description}</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-        {/* Contact Us Form Card */}
-        <div style={{
-          flex: '1 1 340px',
-          background: '#8B1409',
-          borderRadius: 20,
-          padding: '32px 24px 48px 24px',
-          minWidth: 320,
-          maxWidth: 480,
-          color: '#fff',
-          boxShadow: '0 4px 24px rgba(139,20,9,0.10)',
-          position: 'relative',
-        }}>
-          <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 24, letterSpacing: 1, textAlign: 'center' }}>CONTACT US FORM</div>
-          <form style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            <label style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>FULL NAME
-              <input type="text" placeholder="Enter your full name" style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: 8,
-                border: 'none',
-                marginTop: 6,
-                fontSize: 16,
-                background: '#fff',
-                color: '#222',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                outline: 'none',
-              }} />
-            </label>
-            <label style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>EMAIL ADDRESS
-              <input type="email" placeholder="Enter your email address" style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: 8,
-                border: 'none',
-                marginTop: 6,
-                fontSize: 16,
-                background: '#fff',
-                color: '#222',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                outline: 'none',
-              }} />
-            </label>
-            <label style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>COMMENT OR ADDRESS
-              <textarea placeholder="Type your message or address here" rows={3} style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: 8,
-                border: 'none',
-                marginTop: 6,
-                fontSize: 16,
-                background: '#fff',
-                color: '#222',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                outline: 'none',
-                resize: 'vertical',
-              }} />
-            </label>
-            <button type="submit" style={{
-              marginTop: 8,
-              background: 'linear-gradient(90deg, #ff6b6b, #8B1409)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 16,
-              border: 'none',
-              borderRadius: 8,
-              padding: '12px 0',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(139,20,9,0.10)',
-              transition: 'background 0.2s',
-            }}>Send Message</button>
-          </form>
-        </div>
-        {/* Contact Info Card (overlapping) */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: '#b32d1a',
-          color: '#fff',
-          borderRadius: 14,
-          boxShadow: '0 4px 16px rgba(139,20,9,0.13)',
-          padding: '28px 32px',
-          minWidth: 260,
-          maxWidth: 320,
-          zIndex: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          gap: 18,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16 }}>
-            <span role="img" aria-label="location" style={{ fontSize: 22 }}>📍</span>
-            Brgy. Banay banay, Cabuyao City, Laguna
+        {/* Image Modal */}
+        {modalOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={closeImageModal}>
+            <div style={{ background: '#fff', padding: 24, borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.18)', position: 'relative', maxWidth: 480, maxHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+              <button onClick={closeImageModal} style={{ position: 'absolute', top: 10, right: 14, background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: '#888' }}>&times;</button>
+              <img src={modalImg} alt="Large Program" style={{ maxWidth: 400, maxHeight: '65vh', borderRadius: 12, marginBottom: 10 }} />
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16 }}>
-            <span role="img" aria-label="phone" style={{ fontSize: 22 }}>📞</span>
-            +63 912 3456 789
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16 }}>
-            <span role="img" aria-label="mobile" style={{ fontSize: 22 }}>📱</span>
-            +63 912 3456 789
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16 }}>
-            <span role="img" aria-label="clock" style={{ fontSize: 22 }}>⏰</span>
-            MONDAY - SUNDAY<br />8:00 - 17:00
-          </div>
-        </div>
+        )}
       </div>
-      {/* Footer */}
+      {/* Footer always at the bottom */}
       <footer style={{
         background: '#8B1409',
         color: '#fff',
         textAlign: 'center',
         padding: '3px 0 10px 0',
-        marginTop: 48,
         fontSize: 15,
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
         letterSpacing: 0.2,
+        marginTop: 'auto',
       }}>
         <div style={{ fontSize: 14, color: '#ffd6d6', marginTop: 8 }}>
           &copy; {new Date().getFullYear()} DPAR Volunteer Coalition. All rights reserved.

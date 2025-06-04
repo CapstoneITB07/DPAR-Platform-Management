@@ -73,7 +73,7 @@ function AdminLayout({ children }) {
   }, [location.pathname]);
 
   return (
-    <div className="admin-dashboard-container">
+    <div className="admin-dashboard-fixed-layout" style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
       {/* Header Bar */}
       <header className="header">
         <div className="header-left">
@@ -91,8 +91,24 @@ function AdminLayout({ children }) {
           </div>
         </div>
       </header>
-      <div className="content-wrapper">
-        <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}> 
+      <div style={{ display: 'flex' }}>
+        <div
+          className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            height: '100vh',
+            width: isSidebarOpen ? 240 : 60,
+            zIndex: 100,
+            background: '#fff',
+            boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            transition: 'width 0.2s',
+          }}
+        >
           <div className="sidebar-header">
             {isSidebarOpen && (
               <div className="user-profile">
@@ -140,7 +156,7 @@ function AdminLayout({ children }) {
               )}
             </ul>
           </nav>
-          <div className="sidebar-footer">
+          <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
             {isSidebarOpen && (
               <button className="logout-button" onClick={handleLogout}>
                 <FontAwesomeIcon icon={faSignOutAlt} /> Logout
@@ -153,7 +169,7 @@ function AdminLayout({ children }) {
             )}
           </div>
         </div>
-        <main className="main-content">
+        <main className="main-content" style={{ marginLeft: isSidebarOpen ? 240 : 60, width: isSidebarOpen ? 'calc(100% - 240px)' : 'calc(100% - 60px)', transition: 'margin-left 0.2s, width 0.2s', minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
           {children}
         </main>
       </div>

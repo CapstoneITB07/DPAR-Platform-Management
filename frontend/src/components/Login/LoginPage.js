@@ -46,11 +46,13 @@ function LoginPage() {
         // TODO: Assuming your backend returns a token and user data with role
         const token = data.token; // Adjust based on actual backend response structure
         const userRole = data.user ? data.user.role : null; // Adjust based on actual backend response structure
+        const userId = data.user ? data.user.id : null;
 
         // Save the token (e.g., in localStorage)
         localStorage.setItem('authToken', token); // Use a secure storage method in production
         // You might also want to save user details like role
         localStorage.setItem('userRole', userRole);
+        if (userId) localStorage.setItem('userId', userId);
 
         // Redirect based on role or to a default dashboard
         // This requires react-router-dom setup

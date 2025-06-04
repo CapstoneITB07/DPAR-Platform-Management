@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AdminDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars } from '@fortawesome/free-solid-svg-icons';
@@ -8,6 +8,8 @@ function AdminLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const ADMIN_NOTIF_RESPONSE_KEY = 'adminNotifResponseViewed';
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -21,6 +23,55 @@ function AdminLayout({ children }) {
 
   const isActive = (route) => location.pathname === route;
 
+  const fetchNotifications = async () => {
+    const res = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } });
+    const data = await res.json();
+    const viewed = JSON.parse(localStorage.getItem(ADMIN_NOTIF_RESPONSE_KEY) || '{}');
+    let unread = 0;
+    if (Array.isArray(data)) {
+      data.forEach(n => {
+        if (!n.recipients) return;
+        n.recipients.forEach(r => {
+          if (r.response && r.responded_at) {
+            if (!viewed[n.id] || viewed[n.id][r.user_id] !== r.responded_at) {
+              unread++;
+            }
+          }
+        });
+      });
+    }
+    setUnreadCount(unread);
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname === '/admin/notifications') {
+      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const viewed = JSON.parse(localStorage.getItem(ADMIN_NOTIF_RESPONSE_KEY) || '{}');
+            data.forEach(n => {
+              if (!n.recipients) return;
+              n.recipients.forEach(r => {
+                if (r.response && r.responded_at) {
+                  if (!viewed[n.id]) viewed[n.id] = {};
+                  viewed[n.id][r.user_id] = r.responded_at;
+                }
+              });
+            });
+            localStorage.setItem(ADMIN_NOTIF_RESPONSE_KEY, JSON.stringify(viewed));
+            setUnreadCount(0);
+          }
+        });
+    }
+  }, [location.pathname]);
+
   return (
     <div className="admin-dashboard-container">
       {/* Header Bar */}
@@ -32,7 +83,12 @@ function AdminLayout({ children }) {
           <span className="dpar-text">DPAR</span>
         </div>
         <div className="header-right">
-          <div className="notification-icon"><FontAwesomeIcon icon={faBell} /></div>
+          <div className="notification-icon" onClick={() => navigate('/admin/notifications')} style={{ cursor: 'pointer', position: 'relative' }}>
+            <FontAwesomeIcon icon={faBell} />
+            {unreadCount > 0 && (
+              <span style={{ position: 'absolute', top: -6, right: -6, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+            )}
+          </div>
         </div>
       </header>
       <div className="content-wrapper">
@@ -54,7 +110,12 @@ function AdminLayout({ children }) {
                 <>
                   <li className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => navigate('/admin/dashboard')}><FontAwesomeIcon icon={faTachometerAlt} /> DASHBOARD</li>
                   <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => navigate('/admin/associate-groups')}><FontAwesomeIcon icon={faUsers} /> ASSOCIATE GROUPS</li>
-                  <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => navigate('/admin/notifications')}><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</li>
+                  <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => navigate('/admin/notifications')} style={{ position: 'relative' }}>
+                    <span onClick={() => navigate('/admin/notifications')}><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</span>
+                    {unreadCount > 0 && (
+                      <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+                    )}
+                  </li>
                   <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => navigate('/admin/approval-aor')}><FontAwesomeIcon icon={faCheckCircle} /> APPROVAL/AOR</li>
                   <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => navigate('/admin/announcement')}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT</li>
                   <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => navigate('/admin/training-program')}><FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM</li>
@@ -65,7 +126,12 @@ function AdminLayout({ children }) {
                 <>
                   <li className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => navigate('/admin/dashboard')}><FontAwesomeIcon icon={faTachometerAlt} /></li>
                   <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => navigate('/admin/associate-groups')}><FontAwesomeIcon icon={faUsers} /></li>
-                  <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => navigate('/admin/notifications')}><FontAwesomeIcon icon={faBell} /></li>
+                  <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => navigate('/admin/notifications')} style={{ position: 'relative' }}>
+                    <span onClick={() => navigate('/admin/notifications')}><FontAwesomeIcon icon={faBell} /></span>
+                    {unreadCount > 0 && (
+                      <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+                    )}
+                  </li>
                   <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => navigate('/admin/approval-aor')}><FontAwesomeIcon icon={faCheckCircle} /></li>
                   <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => navigate('/admin/announcement')}><FontAwesomeIcon icon={faBullhorn} /></li>
                   <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => navigate('/admin/training-program')}><FontAwesomeIcon icon={faGraduationCap} /></li>

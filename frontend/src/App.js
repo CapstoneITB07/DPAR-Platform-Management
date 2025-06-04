@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import LoginPage from './components/Login/LoginPage';
 import CitizenPage from './components/CitizenPage/CitizenPage';
+import AboutUs from './components/CitizenPage/AboutUs';
 import AdminDashboard from './components/AdminDashboard/AdminDashboard';
 import AssociateGroups from './components/AdminDashboard/AssociateGroups';
 import Notifications from './components/AdminDashboard/Notifications';
@@ -26,6 +27,7 @@ function App() {
 
           {/* Route for the Citizen Page */}
           <Route path="/citizen" element={<CitizenPage />} />
+          <Route path="/citizen/about" element={<AboutUs />} />
 
           {/* Admin routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

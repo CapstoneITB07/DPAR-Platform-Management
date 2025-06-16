@@ -12,6 +12,7 @@ function TrainingProgram() {
   const [menuOpenIndex, setMenuOpenIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
     fetchPrograms();
@@ -113,11 +114,17 @@ function TrainingProgram() {
     setMenuOpenIndex(menuOpenIndex === idx ? null : idx);
   };
 
+  const toggleExpand = (id) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const DESCRIPTION_LIMIT = 120;
+
   return (
     <AdminLayout>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>TRAINING PROGRAMS</h2>
-        <button onClick={() => openModal()} style={{ background: '#001aff', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer' }}>
+        <h2 style={{ fontWeight: 700, fontSize: 28, letterSpacing: 0.5, color: 'black' }}>TRAINING PROGRAMS</h2>
+        <button onClick={() => openModal()} style={{ background: '#001aff', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 22px', fontWeight: 'bold', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,26,255,0.08)' }}>
           ADD PROGRAM
         </button>
       </div>
@@ -131,70 +138,95 @@ function TrainingProgram() {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 12 }}>
                 <label>Program Name</label><br />
-                <input name="name" value={form.name} onChange={handleChange} required style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }} />
+                <input name="name" value={form.name} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }} />
               </div>
-              <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+              <div style={{ marginBottom: 12, display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label>Date</label><br />
-                  <input type="date" name="date" value={form.date} onChange={handleChange} required style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }} />
+                  <input type="date" name="date" value={form.date} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label>Location</label><br />
-                  <input name="location" value={form.location} onChange={handleChange} required style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }} />
+                  <input name="location" value={form.location} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }} />
                 </div>
               </div>
               <div style={{ marginBottom: 12 }}>
                 <label>Program Description</label><br />
-                <textarea name="description" value={form.description} onChange={handleChange} required style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }} />
+                <textarea name="description" value={form.description} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, minHeight: 80 }} />
               </div>
               <div style={{ marginBottom: 12 }}>
                 <label>Upload Image</label><br />
                 <input type="file" accept="image/*" onChange={handleImageChange} style={{ marginTop: 4 }} />
                 {form.imagePreview && (
                   <div style={{ marginTop: 8 }}>
-                    <img src={form.imagePreview} alt="Preview" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, display: 'block' }} />
+                    <img src={form.imagePreview} alt="Preview" style={{ maxWidth: 220, maxHeight: 160, borderRadius: 10, display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
                     <button type="button" onClick={handleRemoveImage} style={{ marginTop: 6, background: '#eee', color: '#333', border: 'none', padding: '4px 12px', borderRadius: 4, cursor: 'pointer' }}>Remove Image</button>
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                <button type="button" onClick={closeModal} style={{ background: '#ccc', border: 'none', borderRadius: 4, padding: '6px 16px', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={loading} style={{ background: '#001aff', color: 'white', border: 'none', borderRadius: 4, padding: '6px 16px', cursor: 'pointer' }}>{loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button type="button" onClick={closeModal} style={{ background: '#ccc', border: 'none', borderRadius: 6, padding: '8px 20px', cursor: 'pointer', fontSize: 15 }}>Cancel</button>
+                <button type="submit" disabled={loading} style={{ background: '#001aff', color: 'white', border: 'none', borderRadius: 6, padding: '8px 20px', cursor: 'pointer', fontSize: 15 }}>{loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}</button>
               </div>
             </form>
           </div>
         </div>
       )}
       {/* Card Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginTop: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 36, marginTop: 36, maxWidth: 1200, marginLeft: 'auto', marginRight: 'auto' }}>
         {programs.length === 0 ? (
           <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888' }}>No training programs yet.</p>
         ) : (
-          programs.map((program, idx) => (
-            <div key={program.id} style={{ border: '1px solid #bbb', borderRadius: 16, padding: 0, background: 'white', boxShadow: '0 1px 6px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', minHeight: 320 }}>
-              {/* Three-dot menu */}
-              <button onClick={() => handleMenuToggle(idx)} style={{ position: 'absolute', top: 14, right: 16, background: 'none', border: 'none', cursor: 'pointer', zIndex: 10 }}>
-                <FaEllipsisH size={20} />
-              </button>
-              {menuOpenIndex === idx && (
-                <div style={{ position: 'absolute', top: 38, right: 16, background: '#fff', border: '1px solid #eee', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 20, minWidth: 120 }}>
-                  <div style={{ padding: '10px 16px', cursor: 'pointer', color: '#333', borderBottom: '1px solid #f0f2f5' }} onClick={() => openModal(idx)}>Edit</div>
-                  <div style={{ padding: '10px 16px', cursor: 'pointer', color: '#e74c3c' }} onClick={() => handleDelete(idx)}>Delete</div>
+          programs.map((program, idx) => {
+            const isLong = program.description && program.description.length > DESCRIPTION_LIMIT;
+            const isExpanded = !!expanded[program.id];
+            const displayDesc = isLong && !isExpanded ? program.description.slice(0, DESCRIPTION_LIMIT) + '...' : program.description;
+            return (
+              <div key={program.id} style={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 18,
+                background: '#fff',
+                boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                minHeight: 420,
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'box-shadow 0.2s',
+              }}>
+                {/* Three-dot menu */}
+                <button onClick={() => handleMenuToggle(idx)} style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', zIndex: 10 }}>
+                  <FaEllipsisH size={22} />
+                </button>
+                {menuOpenIndex === idx && (
+                  <div style={{ position: 'absolute', top: 44, right: 18, background: '#fff', border: '1px solid #eee', borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 20, minWidth: 120 }}>
+                    <div style={{ padding: '12px 18px', cursor: 'pointer', color: '#333', borderBottom: '1px solid #f0f2f5' }} onClick={() => openModal(idx)}>Edit</div>
+                    <div style={{ padding: '12px 18px', cursor: 'pointer', color: '#e74c3c' }} onClick={() => handleDelete(idx)}>Delete</div>
+                  </div>
+                )}
+                {/* Image */}
+                {program.image_url && (
+                  <img src={program.image_url} alt="Program" style={{ width: '100%', height: 220, objectFit: 'cover', borderTopLeftRadius: 18, borderTopRightRadius: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+                )}
+                {/* Content */}
+                <div style={{ padding: 28, width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
+                  <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 8, color: '#A11C22', letterSpacing: 0.2, wordBreak: 'break-word' }}>{program.name}</div>
+                  <div style={{ color: '#555', marginBottom: 10, fontSize: 15, fontWeight: 500 }}>
+                    {program.date} {program.location && <span style={{ color: '#1976d2' }}>| {program.location}</span>}
+                  </div>
+                  <div style={{ fontSize: 16, color: '#333', marginBottom: 16, lineHeight: 1.6, minHeight: 40, width: '100%', wordBreak: 'break-word', whiteSpace: 'pre-line', overflowWrap: 'break-word' }}>
+                    {displayDesc}
+                    {isLong && (
+                      <button onClick={() => toggleExpand(program.id)} style={{ background: 'none', color: '#1976d2', border: 'none', fontWeight: 600, cursor: 'pointer', marginLeft: 6, fontSize: 15, padding: 0 }}>
+                        {isExpanded ? 'See less' : 'See more'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
-              {/* Image */}
-              {program.image_url && (
-                <img src={program.image_url} alt="Program" style={{ width: '100%', maxHeight: 140, objectFit: 'cover', borderTopLeftRadius: 16, borderTopRightRadius: 16 }} />
-              )}
-              {/* Content */}
-              <div style={{ padding: 20, width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 6 }}>{program.name}</div>
-                <div style={{ color: '#555', marginBottom: 8 }}>{program.date} {program.location && `| ${program.location}`}</div>
-                <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, width: '100%', minHeight: 60, marginBottom: 16, textAlign: 'center', color: '#333', background: '#f8f8f8' }}>{program.description}</div>
-                <button style={{ background: '#fff', border: '1px solid #001aff', borderRadius: 6, padding: '4px 16px', color: '#001aff', cursor: 'pointer', fontWeight: 'bold' }}>SEE MORE</button>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </AdminLayout>

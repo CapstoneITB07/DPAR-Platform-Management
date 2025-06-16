@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
+import dayjs from 'dayjs';
 
 const NOTIF_READ_KEY = 'associateNotifRead';
 
@@ -51,39 +52,115 @@ function Notification() {
 
   return (
     <AssociateLayout>
-      <h2>NOTIFICATION/INBOX</h2>
+      <h2 style={{
+        fontWeight: '600',
+        marginBottom: 16,
+        fontSize: '24px',
+        color: '#1a1a1a',
+        letterSpacing: '0.5px'
+      }}>NOTIFICATION/INBOX</h2>
+      {notifications.length === 0 && (
+        <div style={{
+          textAlign: 'center',
+          color: '#6c757d',
+          marginTop: 32,
+          fontSize: '15px',
+          fontStyle: 'italic'
+        }}>No notifications yet.</div>
+      )}
       {notifications.map(n => {
         const userId = Number(localStorage.getItem('userId'));
         const myRecipient = n.recipients && n.recipients.find(r => r.user_id === userId);
         return (
-          <div key={n.id} style={{ border: '1px solid #ccc', marginBottom: 8, borderRadius: 4, padding: 12 }}>
-            <div style={{ fontWeight: 'bold' }}>{n.title}</div>
-            <div>{n.description}</div>
-            <div style={{ margin: '8px 0' }}>
+          <div key={n.id} style={{
+            border: '1px solid #e0e0e0',
+            marginBottom: 16,
+            borderRadius: 8,
+            background: '#fff',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+            transition: 'all 0.2s ease',
+            padding: 0
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid #e0e0e0'
+            }}>
+              <div>
+                <div style={{
+                  fontWeight: '600',
+                  fontSize: '16px',
+                  color: '#2c3e50',
+                  marginBottom: 4
+                }}>{n.title}</div>
+                <div style={{
+                  fontSize: '13px',
+                  color: '#6c757d'
+                }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+              </div>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{
+                color: '#495057',
+                marginBottom: 16,
+                fontSize: '14px',
+                lineHeight: '1.5'
+              }}>{n.description}</div>
               <ProgressBar recipients={n.recipients} />
-              <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: '#555', marginTop: 2, marginBottom: 12 }}>
                 {n.recipients && n.recipients.length > 1 && (
                   <>
                     Recipients: {n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}
                   </>
                 )}
               </div>
+              {myRecipient && !myRecipient.response && (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button style={{
+                    background: '#1976d2',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '10px 20px',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)'
+                  }} onClick={() => handleRespond(n.id, 'accept')} disabled={loading}>ACCEPT</button>
+                  <button style={{
+                    background: '#e74c3c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '10px 20px',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1,
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)'
+                  }} onClick={() => handleRespond(n.id, 'decline')} disabled={loading}>DECLINE</button>
+                </div>
+              )}
+              {myRecipient && myRecipient.response && (
+                <div style={{
+                  color: myRecipient.response === 'accept' ? '#2ecc71' : '#e74c3c',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  marginTop: 12
+                }}>
+                  You responded: {myRecipient.response.toUpperCase()}
+                </div>
+              )}
             </div>
-            {myRecipient && !myRecipient.response && (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button style={{ background: 'blue', color: 'white', border: 'none', borderRadius: 4, padding: '8px 16px' }} onClick={() => handleRespond(n.id, 'accept')} disabled={loading}>ACCEPT</button>
-                <button style={{ background: 'red', color: 'white', border: 'none', borderRadius: 4, padding: '8px 16px' }} onClick={() => handleRespond(n.id, 'decline')} disabled={loading}>DECLINE</button>
-              </div>
-            )}
-            {myRecipient && myRecipient.response && (
-              <div style={{ color: myRecipient.response === 'accept' ? 'green' : 'red', fontWeight: 'bold' }}>
-                You responded: {myRecipient.response.toUpperCase()}
-              </div>
-            )}
           </div>
         );
       })}
-      {error && <div style={{ color: 'red' }}>{error}</div>}
+      {error && <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: 16 }}>{error}</div>}
     </AssociateLayout>
   );
 }
@@ -97,13 +174,42 @@ function ProgressBar({ recipients }) {
   const declined = recipients.filter(r => r.response === 'decline').length;
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 2 }}>
-        <span style={{ color: '#222' }}>CONFIRMED {accepted} ASSOCIATES</span>
-        <span style={{ color: '#888' }}>DECLINED {declined} ASSOCIATES</span>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '13px',
+        marginBottom: 4,
+        color: '#495057'
+      }}>
+        <span style={{ fontWeight: '500' }}>CONFIRMED {accepted} ASSOCIATES</span>
+        <span style={{ color: '#6c757d' }}>DECLINED {declined} ASSOCIATES</span>
       </div>
-      <div style={{ width: '100%', background: '#eee', borderRadius: 8, height: 18, position: 'relative' }}>
-        <div style={{ width: percent + '%', background: 'green', height: '100%', borderRadius: 8 }} />
-        <span style={{ position: 'absolute', left: 8, top: 0, fontSize: 12, color: 'black' }}>{percent}% RESPONDED</span>
+      <div style={{
+        width: '100%',
+        background: '#e9ecef',
+        borderRadius: 8,
+        height: 20,
+        position: 'relative',
+        marginBottom: 8,
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          width: percent + '%',
+          background: '#2ecc71',
+          height: '100%',
+          borderRadius: 8,
+          transition: 'width 0.3s ease'
+        }} />
+        <span style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: '12px',
+          color: '#fff',
+          fontWeight: '600',
+          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+        }}>{percent}% RESPONDED</span>
       </div>
     </>
   );

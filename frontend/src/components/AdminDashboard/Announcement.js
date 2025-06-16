@@ -146,19 +146,29 @@ function Announcement() {
         </div>
       )}
       {/* Announcements List */}
-      <div style={{ marginTop: 32, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+      <div style={{
+        marginTop: 32,
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: 28,
+        maxWidth: 900,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+      }}>
         {announcements.length === 0 ? (
-          <div>No announcements yet.</div>
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888', fontStyle: 'italic' }}>No announcements yet.</div>
         ) : (
           announcements.map(a => (
             <div key={a.id} style={{
               background: '#fff',
               borderRadius: 12,
-              marginBottom: 28,
               boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
               position: 'relative',
               overflow: 'hidden',
-              border: '1px solid #e4e6eb'
+              border: '1px solid #e4e6eb',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 220,
             }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', padding: '18px 20px 10px 20px', borderBottom: '1px solid #f0f2f5', background: '#f7f8fa' }}>
@@ -178,11 +188,11 @@ function Announcement() {
                 </div>
               </div>
               {/* Content */}
-              <div style={{ padding: '18px 20px 10px 20px' }}>
+              <div style={{ padding: '18px 20px 10px 20px', flex: 1 }}>
                 {a.title && <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, color: '#222' }}>{a.title}</div>}
                 {a.description && <div style={{ fontSize: 16, color: '#444', marginBottom: a.photo_url ? 12 : 0 }}>{a.description}</div>}
                 {a.photo_url && (
-                  <img src={a.photo_url} alt="Announcement" style={{ width: '100%', maxHeight: 350, objectFit: 'cover', borderRadius: 10, marginTop: 10, marginBottom: 10 }} />
+                  <img src={a.photo_url} alt="Announcement" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, marginTop: 10, marginBottom: 10 }} />
                 )}
               </div>
             </div>

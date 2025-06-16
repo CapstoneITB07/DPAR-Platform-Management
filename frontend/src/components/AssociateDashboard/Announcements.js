@@ -33,20 +33,30 @@ function Announcements() {
           <img src={modalImg} alt="Announcement Large" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 12, boxShadow: '0 4px 32px rgba(0,0,0,0.25)' }} />
         </div>
       )}
-      <div style={{ marginTop: 32, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+      <div style={{
+        marginTop: 32,
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: 28,
+        maxWidth: 900,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+      }}>
         {announcements.length === 0 ? (
-          <div>No announcements yet.</div>
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888', fontStyle: 'italic' }}>No announcements yet.</div>
         ) : (
           announcements.map(a => (
             <div key={a.id} style={{
               background: '#f8fafc',
               borderRadius: 14,
-              marginBottom: 28,
               boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
               border: '1px solid #e3e7ed',
               position: 'relative',
               overflow: 'hidden',
               transition: 'box-shadow 0.2s',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 220,
             }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 8px 20px', borderBottom: '1px solid #f0f2f5', background: '#f3f6fa' }}>
@@ -55,14 +65,14 @@ function Announcements() {
                 </div>
               </div>
               {/* Content */}
-              <div style={{ padding: '18px 20px 10px 20px' }}>
+              <div style={{ padding: '18px 20px 10px 20px', flex: 1 }}>
                 {a.title && <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, color: '#1a202c' }}>{a.title}</div>}
                 {a.description && <div style={{ fontSize: 16, color: '#444', marginBottom: a.photo_url ? 12 : 0 }}>{a.description}</div>}
                 {a.photo_url && (
                   <img
                     src={a.photo_url}
                     alt="Announcement"
-                    style={{ width: '100%', maxHeight: 350, objectFit: 'cover', borderRadius: 10, marginTop: 10, marginBottom: 10, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                    style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, marginTop: 10, marginBottom: 10, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                     onClick={() => setModalImg(a.photo_url)}
                   />
                 )}

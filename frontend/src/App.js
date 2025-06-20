@@ -3,17 +3,17 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import LoginPage from './components/Login/LoginPage';
 import CitizenPage from './components/CitizenPage/CitizenPage';
 import AboutUs from './components/CitizenPage/AboutUs';
-import AdminDashboard from './components/AdminDashboard/AdminDashboard';
-import AssociateGroups from './components/AdminDashboard/AssociateGroups';
-import Notifications from './components/AdminDashboard/Notifications';
-import ApprovalAOR from './components/AdminDashboard/ApprovalAOR';
-import Announcement from './components/AdminDashboard/Announcement';
-import TrainingProgram from './components/AdminDashboard/TrainingProgram';
-import Evaluation from './components/AdminDashboard/Evaluation';
-import Announcements from './components/AssociateDashboard/Announcements';
-import VolunteerList from './components/AssociateDashboard/VolunteerList';
-import Notification from './components/AssociateDashboard/Notification';
-import Reports from './components/AssociateDashboard/Reports';
+import AdminDashboard from './components/AdminDashboard/js/AdminDashboard';
+import AssociateGroups from './components/AdminDashboard/js/AssociateGroups';
+import Notifications from './components/AdminDashboard/js/Notifications';
+import ApprovalAOR from './components/AdminDashboard/js/ApprovalAOR';
+import Announcement from './components/AdminDashboard/js/Announcement';
+import TrainingProgram from './components/AdminDashboard/js/TrainingProgram';
+import Evaluation from './components/AdminDashboard/js/Evaluation';
+import Announcements from './components/AssociateDashboard/js/Announcements';
+import VolunteerList from './components/AssociateDashboard/js/VolunteerList';
+import Notification from './components/AssociateDashboard/js/Notification';
+import Reports from './components/AssociateDashboard/js/Reports';
 
 import './App.css'; // Assuming you have an App.css for general styling
 

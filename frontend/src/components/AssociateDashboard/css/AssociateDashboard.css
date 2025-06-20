@@ -1,4 +1,4 @@
-.admin-dashboard-container {
+.associate-dashboard-container {
   display: flex;
   flex-direction: column; /* Stack header and content vertically */
   min-height: 100vh; /* Ensure container takes at least full viewport height */
@@ -64,6 +64,14 @@
   flex-grow: 1; /* Allow content wrapper to take remaining space */
 }
 
+.associate-dashboard-fixed-layout {
+  min-height: 100vh;
+  background: #f4f4f4;
+  height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+}
+
 .sidebar {
   position: fixed !important;
   top: 48px !important;
@@ -85,17 +93,28 @@
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #eee; /* Separator line */
 }
 
 .user-profile {
   display: flex;
   align-items: center;
+  min-height: 40px; /* Add minimum height to prevent container collapse */
 }
 
-.user-profile .profile-icon {
-  font-size: 30px;
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px; /* Add minimum width to prevent container shrinking */
+  border-radius: 50%;
+  object-fit: cover;
   margin-right: 10px;
+  background-color: #f0f0f0; /* Add background color while loading */
+  transition: opacity 0.2s ease; /* Smooth transition for loading */
+}
+
+.profile-icon:not([src]) {
+  opacity: 0;
 }
 
 .user-info p {
@@ -199,39 +218,156 @@
 
 /* Adjust main content margin based on sidebar state is handled by the content-wrapper flexbox */
 
-.dashboard-row {
-  display: flex;
-  gap: 20px;
+/* Specific styles for Associate Dashboard */
+.ra-card {
+  max-width: 600px;
+  margin: 20px auto;
+  text-align: center;
+  padding: 30px;
+  background-color: white; /* Ensure card has white background */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ra-card h2 {
+  color: #A11C22;
+  margin-top: 0;
   margin-bottom: 20px;
 }
 
-.dashboard-card {
-  background-color: white;
-  border-radius: 8px;
+.ra-card p {
+  line-height: 1.6;
+  color: #555;
+}
+
+/* Profile Modal Styles */
+.profile-modal {
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex: 1;
 }
 
-.members-card,
-.calendar-card,
-.performance-card {
-  /* Specific styles for each card type can go here */
+.profile-modal h2 {
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 1.5rem;
 }
 
-.members-card,
-.performance-card {
-    flex: 2;
+.profile-modal h3 {
+  margin: 20px 0 15px;
+  color: #444;
+  font-size: 1.2rem;
 }
 
-.calendar-card {
-    flex: 1;
+.profile-image-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
 }
 
-.admin-dashboard-fixed-layout {
-  min-height: 100vh;
-  background: #f4f4f4;
-  height: 100vh;
-  width: 100vw;
-  overflow-x: hidden;
+.profile-modal-image {
+  object-fit: cover;
+  border: 2px solid #eee;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.profile-image-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.save-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.save-button:hover {
+  background: #0056b3;
+}
+
+.cancel-button {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+  background: #5a6268;
+}
+
+.error-message {
+  color: #dc3545;
+  background: #f8d7da;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.success-message {
+  color: #28a745;
+  background: #d4edda;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+/* Make sure the modal is responsive */
+@media (max-width: 576px) {
+  .profile-modal {
+    padding: 15px;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+  }
+
+  .modal-buttons button {
+    width: 100%;
+  }
 } 

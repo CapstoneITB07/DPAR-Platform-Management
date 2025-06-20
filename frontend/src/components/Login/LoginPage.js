@@ -53,6 +53,9 @@ function LoginPage() {
         // You might also want to save user details like role
         localStorage.setItem('userRole', userRole);
         if (userId) localStorage.setItem('userId', userId);
+        if (data.user && data.user.organization) {
+          localStorage.setItem('userOrganization', data.user.organization);
+        }
 
         // Redirect based on role or to a default dashboard
         // This requires react-router-dom setup

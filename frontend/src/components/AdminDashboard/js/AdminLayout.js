@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import './AdminDashboard.css';
+import '../css/AdminDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Modal from 'react-modal';
+import axios from 'axios';
+
+const API_BASE = 'http://localhost:8000';
 
 function AdminLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileImage, setProfileImage] = useState('/Assets/disaster_logo.png');
+  const [imagePreview, setImagePreview] = useState(null);
+  const [newProfileImage, setNewProfileImage] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    new_password: '',
+    new_password_confirmation: ''
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -22,6 +37,120 @@ function AdminLayout({ children }) {
   };
 
   const isActive = (route) => location.pathname === route;
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      await axios.post(`${API_BASE}/api/change-password`, passwordForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Password changed successfully');
+      setPasswordForm({
+        current_password: '',
+        new_password: '',
+        new_password_confirmation: ''
+      });
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to change password');
+    }
+  };
+
+  const handlePasswordFormChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setError('Please upload a valid image file (JPEG, PNG, JPG, or GIF)');
+        return;
+      }
+      // Validate file size (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('File size should not exceed 2MB');
+        return;
+      }
+      setNewProfileImage(file);
+      setError('');
+      
+      // Show preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProfileUpdate = async () => {
+    if (newProfileImage) {
+      try {
+        const formData = new FormData();
+        formData.append('profile_picture', newProfileImage);
+        
+        const token = localStorage.getItem('authToken');
+        await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        setSuccess('Profile picture updated successfully');
+        setNewProfileImage(null);
+        // Fetch the new profile image to update the UI
+        const response = await axios.get(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
+        if (response.data.profile_picture_url) {
+          setProfileImage(`${API_BASE}/storage/${response.data.profile_picture_url}`);
+        }
+        setImagePreview(null); // Clear preview
+      } catch (error) {
+        setError(error.response?.data?.message || 'Failed to update profile picture');
+      }
+    }
+  };
+
+  const customModalStyles = {
+    content: {
+      top: '50%',
+      left: '50%',
+      right: 'auto',
+      bottom: 'auto',
+      transform: 'translate(-50%, -50%)',
+      width: '500px',
+      maxHeight: '80vh',
+      padding: '20px',
+      borderRadius: '8px',
+      zIndex: 1001 // Ensure modal is on top
+    },
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      zIndex: 1000
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.data.profile_picture_url) {
+        setProfileImage(`${API_BASE}/storage/${response.data.profile_picture_url}`);
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile", error);
+    }
+  };
 
   const fetchNotifications = async () => {
     const res = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } });
@@ -44,6 +173,7 @@ function AdminLayout({ children }) {
   };
 
   useEffect(() => {
+    fetchProfile(); // Fetch profile on initial load
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
@@ -112,10 +242,25 @@ function AdminLayout({ children }) {
           <div className="sidebar-header">
             {isSidebarOpen && (
               <div className="user-profile">
-                <FontAwesomeIcon icon={faUserCircle} className="profile-icon" />
+                <img 
+                  src={profileImage}
+                  alt="Profile"
+                  className="profile-icon"
+                  loading="eager"
+                  onError={(e) => {
+                    e.target.src = '/Assets/disaster_logo.png';
+                  }}
+                />
                 <div className="user-info">
                   <p className="user-name">Admin</p>
-                  <p className="edit-profile"><FontAwesomeIcon icon={faEdit} /> Edit Profile</p>
+                  <p className="edit-profile" onClick={() => {
+                    setShowProfileModal(true);
+                    setImagePreview(null); // Reset preview when opening modal
+                    setError('');
+                    setSuccess('');
+                  }} style={{ cursor: 'pointer' }}>
+                    <FontAwesomeIcon icon={faEdit} /> Edit Profile
+                  </p>
                 </div>
               </div>
             )}
@@ -173,6 +318,81 @@ function AdminLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Profile Modal */}
+      <Modal
+        isOpen={showProfileModal}
+        onRequestClose={() => setShowProfileModal(false)}
+        style={customModalStyles}
+        contentLabel="Edit Profile"
+      >
+        <h2>Edit Profile</h2>
+        <div className="profile-image-section">
+          <img 
+            src={imagePreview || profileImage}
+            alt="Profile Preview" 
+            className="profile-modal-image"
+          />
+          <div className="profile-image-upload">
+            <input 
+              type="file" 
+              accept="image/jpeg,image/png,image/jpg,image/gif"
+              onChange={handleProfileImageChange}
+              style={{ marginBottom: '10px' }}
+            />
+            <small>Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
+            {newProfileImage && (
+              <button onClick={handleProfileUpdate} className="save-button" style={{ marginTop: '10px' }}>
+                Update Profile Picture
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="password-change-section">
+          <h3>Change Password</h3>
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+          <form onSubmit={handlePasswordChange}>
+            <div className="form-group">
+              <label>Current Password</label>
+              <input
+                type="password"
+                name="current_password"
+                value={passwordForm.current_password}
+                onChange={handlePasswordFormChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>New Password</label>
+              <input
+                type="password"
+                name="new_password"
+                value={passwordForm.new_password}
+                onChange={handlePasswordFormChange}
+                required
+                minLength="8"
+              />
+            </div>
+            <div className="form-group">
+              <label>Confirm New Password</label>
+              <input
+                type="password"
+                name="new_password_confirmation"
+                value={passwordForm.new_password_confirmation}
+                onChange={handlePasswordFormChange}
+                required
+                minLength="8"
+              />
+            </div>
+            <div className="modal-buttons">
+              <button type="submit" className="save-button">Change Password</button>
+              <button type="button" className="cancel-button" onClick={() => setShowProfileModal(false)}>Close</button>
+            </div>
+          </form>
+        </div>
+      </Modal>
     </div>
   );
 }

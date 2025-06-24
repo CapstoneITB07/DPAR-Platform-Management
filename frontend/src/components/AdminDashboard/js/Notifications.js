@@ -272,230 +272,91 @@ function Notifications() {
         <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} />
       ))}
       {showModal && (
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100vw', 
-          height: '100vh', 
-          background: 'rgba(0,0,0,0.5)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 1000,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <form 
-            style={{ 
-              background: 'white', 
-              padding: '32px', 
-              borderRadius: '12px', 
-              minWidth: '400px', 
-              maxWidth: '500px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-              animation: 'modalFadeIn 0.3s ease'
-            }} 
-            onSubmit={handleSubmit}
-          >
-            <h3 style={{ 
-              textAlign: 'center', 
-              fontWeight: '600',
-              fontSize: '20px',
-              color: '#1a1a1a',
-              marginBottom: '24px'
-            }}>Create Notification</h3>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Title</label>
-              <input 
-                name="title" 
-                value={form.title} 
-                onChange={handleChange} 
-                required 
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '14px',
-                  color: '#2c3e50',
-                  transition: 'border-color 0.2s ease',
-                  outline: 'none'
-                }}
-                placeholder="Enter notification title"
-              />
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-card enhanced-modal">
+            <div className="profile-modal-header" style={{ background: '#A11C22', borderRadius: '14px 14px 0 0', padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '-32px -28px 0 -28px' }}>
+              <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '1.3rem', margin: 0 }}>Add Notification</h3>
+              <span className="close-icon" style={{ color: '#fff' }} onClick={closeModal}>&times;</span>
             </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Description</label>
-              <textarea 
-                name="description" 
-                value={form.description} 
-                onChange={handleChange} 
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '14px',
-                  color: '#2c3e50',
-                  minHeight: '100px',
-                  resize: 'vertical',
-                  transition: 'border-color 0.2s ease',
-                  outline: 'none'
-                }}
-                placeholder="Enter notification description"
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Select Associate/s to Notify</label>
-              <div style={{ 
-                border: '1px solid #e0e0e0',
-                borderRadius: '6px',
-                padding: '12px',
-                maxHeight: '150px',
-                overflowY: 'auto',
-                background: '#f8f9fa'
-              }}>
-                <div style={{ marginBottom: '8px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectAll} 
-                    onChange={handleSelectAll} 
-                    id="selectAll"
-                    style={{ marginRight: '8px' }}
-                  />
-                  <label 
-                    htmlFor="selectAll" 
-                    style={{ 
-                      fontWeight: '600',
-                      color: '#2c3e50',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >Select All</label>
+            <form className="add-edit-form enhanced-form" onSubmit={handleSubmit}>
+              <div className="step-content">
+                <div className="step-header">
+                  <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
+                    <svg width="48" height="48" fill="#A11C22" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7v3.586l.707.707A1 1 0 0 1 19.293 16H4.707a1 1 0 0 1-.707-1.707L4.707 12.586V9a7 7 0 0 1 7-7zm0 20a3 3 0 0 1-3-3h6a3 3 0 0 1-3 3z"/></svg>
+                  </span>
+                  <h4>Notification Details</h4>
+                  <p>Fill out the details to notify associates and request volunteers.</p>
                 </div>
-                {associates.map(a => (
-                  <div key={a.id} style={{ marginBottom: '6px' }}>
-                    <input
-                      type="checkbox"
-                      checked={form.associate_ids.includes(a.id)}
-                      onChange={() => handleAssociateChange(a.id)}
-                      id={`associate_${a.id}`}
-                      style={{ marginRight: '8px' }}
+                <div className="form-grid">
+                  <div className="form-group full-width">
+                    <label>Title *</label>
+                    <input 
+                      name="title" 
+                      value={form.title} 
+                      onChange={handleChange} 
+                      required 
+                      placeholder="Enter notification title"
                     />
-                    <label 
-                      htmlFor={`associate_${a.id}`} 
-                      style={{ 
-                        color: '#495057',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >{a.name}</label>
                   </div>
-                ))}
+                  <div className="form-group full-width">
+                    <label>Description *</label>
+                    <textarea 
+                      name="description" 
+                      value={form.description} 
+                      onChange={handleChange} 
+                      required
+                      placeholder="Enter notification description"
+                      rows="3"
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Select Associate/s to Notify</label>
+                    <div style={{ border: '1px solid #e0e0e0', borderRadius: '6px', padding: '12px', maxHeight: '150px', overflowY: 'auto', background: '#f8f9fa' }}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectAll} 
+                          onChange={handleSelectAll} 
+                          id="selectAll"
+                          style={{ marginRight: '8px' }}
+                        />
+                        <label htmlFor="selectAll" style={{ fontWeight: 600, color: '#2c3e50', fontSize: '14px', cursor: 'pointer' }}>Select All</label>
+                      </div>
+                      {associates.map(a => (
+                        <div key={a.id} style={{ marginBottom: '6px' }}>
+                          <input
+                            type="checkbox"
+                            checked={form.associate_ids.includes(a.id)}
+                            onChange={() => handleAssociateChange(a.id)}
+                            id={`associate_${a.id}`}
+                            style={{ marginRight: '8px' }}
+                          />
+                          <label htmlFor={`associate_${a.id}`} style={{ color: '#495057', fontSize: '14px', cursor: 'pointer' }}>{a.name}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Number of Volunteers Needed</label>
+                    <input 
+                      name="volunteers_needed" 
+                      type="number" 
+                      value={form.volunteers_needed} 
+                      onChange={handleChange} 
+                      placeholder="Enter number of volunteers needed"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Number of Volunteers Needed</label>
-              <input 
-                name="volunteers_needed" 
-                type="number" 
-                value={form.volunteers_needed} 
-                onChange={handleChange} 
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '14px',
-                  color: '#2c3e50',
-                  transition: 'border-color 0.2s ease',
-                  outline: 'none'
-                }}
-                placeholder="Enter number of volunteers needed"
-              />
-            </div>
-
-            {error && (
-              <div style={{ 
-                color: '#e74c3c',
-                fontSize: '14px',
-                marginBottom: '16px',
-                padding: '8px 12px',
-                background: '#fdf3f2',
-                borderRadius: '4px',
-                border: '1px solid #fadbd8'
-              }}>{error}</div>
-            )}
-
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              gap: '12px'
-            }}>
-              <button 
-                type="button" 
-                onClick={closeModal} 
-                style={{ 
-                  background: '#f1f3f5',
-                  color: '#495057',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >Cancel</button>
-              <button 
-                type="submit" 
-                disabled={loading}
-                style={{ 
-                  background: '#1976d2',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)'
-                }}
-              >
-                {loading ? 'Creating...' : 'Create Notification'}
-              </button>
-            </div>
-          </form>
+              {error && <div className="error-message">{error}</div>}
+              <div className="form-actions">
+                <button type="button" className="btn-prev" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="btn-submit" style={{ background: '#A11C22' }} disabled={loading}>
+                  {loading ? 'Creating...' : 'Create Notification'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </AdminLayout>

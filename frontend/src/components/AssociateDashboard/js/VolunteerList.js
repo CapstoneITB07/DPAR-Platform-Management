@@ -450,9 +450,9 @@ function VolunteerList() {
                       <div className="no-data-content">
                         <FontAwesomeIcon icon={faUserPlus} />
                         <p>No volunteers found</p>
-                        <button onClick={() => setShowModal(true)} className="add-first-btn">
+                        {/* <button onClick={() => setShowModal(true)} className="add-first-btn">
                           Add your first volunteer
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
@@ -643,13 +643,13 @@ function VolunteerList() {
                 </div>
 
                 <div className="modal-actions">
-                  <button type="button" className="cancel-btn" onClick={() => {
+                  {/* <button type="button" className="cancel-btn" onClick={() => {
                     setShowModal(false);
                     setSelectedVolunteer(null);
                     resetForm();
                   }}>
                     Cancel
-                  </button>
+                  </button> */}
                   <button type="submit" className="save-btn">
                     <FontAwesomeIcon icon={selectedVolunteer ? faEdit : faPlus} />
                     {selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer'}

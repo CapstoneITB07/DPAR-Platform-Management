@@ -52,115 +52,135 @@ function Notification() {
 
   return (
     <AssociateLayout>
-      <h2 style={{
-        fontWeight: '600',
-        marginBottom: 16,
-        fontSize: '24px',
-        color: '#1a1a1a',
-        letterSpacing: '0.5px'
-      }}>NOTIFICATION/INBOX</h2>
-      {notifications.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          color: '#6c757d',
-          marginTop: 32,
-          fontSize: '15px',
-          fontStyle: 'italic'
-        }}>No notifications yet.</div>
-      )}
-      {notifications.map(n => {
-        const userId = Number(localStorage.getItem('userId'));
-        const myRecipient = n.recipients && n.recipients.find(r => r.user_id === userId);
-        return (
-          <div key={n.id} style={{
-            border: '1px solid #e0e0e0',
-            marginBottom: 16,
-            borderRadius: 8,
-            background: '#fff',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-            transition: 'all 0.2s ease',
-            padding: 0
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 20px',
-              borderBottom: '1px solid #e0e0e0'
-            }}>
-              <div>
+      <div className="volunteer-list-container">
+        <div className="header-section">
+          <div className="header-left">
+            <h2>NOTIFICATION/INBOX</h2>
+          </div>
+        </div>
+        {notifications.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            color: '#6c757d',
+            marginTop: 32,
+            fontSize: '15px',
+            fontStyle: 'italic'
+          }}>No notifications yet.</div>
+        )}
+        <div style={{ width: '100%' }}>
+          {notifications.map((n, idx) => {
+            const userId = Number(localStorage.getItem('userId'));
+            const myRecipient = n.recipients && n.recipients.find(r => r.user_id === userId);
+            return (
+              <div key={n.id} style={{
+                border: '1px solid #e0e0e0',
+                marginBottom: 32,
+                borderRadius: 14,
+                background: '#fff',
+                boxShadow: '0 4px 16px rgba(25, 118, 210, 0.07)',
+                transition: 'box-shadow 0.2s',
+                padding: 0,
+                position: 'relative',
+                overflow: 'hidden',
+                width: '100%',
+                marginLeft: 0,
+                marginRight: 0,
+              }}
+                onMouseOver={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(25, 118, 210, 0.13)'}
+                onMouseOut={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(25, 118, 210, 0.07)'}
+              >
                 <div style={{
-                  fontWeight: '600',
-                  fontSize: '16px',
-                  color: '#2c3e50',
-                  marginBottom: 4
-                }}>{n.title}</div>
-                <div style={{
-                  fontSize: '13px',
-                  color: '#6c757d'
-                }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
-              </div>
-            </div>
-            <div style={{ padding: '20px' }}>
-              <div style={{
-                color: '#495057',
-                marginBottom: 16,
-                fontSize: '14px',
-                lineHeight: '1.5'
-              }}>{n.description}</div>
-              <ProgressBar recipients={n.recipients} />
-              <div style={{ fontSize: 12, color: '#555', marginTop: 2, marginBottom: 12 }}>
-                {n.recipients && n.recipients.length > 1 && (
-                  <>
-                    Recipients: {n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}
-                  </>
+                  padding: '18px 28px',
+                  borderBottom: '1px solid #e0e0e0',
+                  background: '#f8fafc',
+                  borderTopLeftRadius: 14,
+                  borderTopRightRadius: 14
+                }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{
+                      fontWeight: '700',
+                      fontSize: '18px',
+                      color: '#2c3e50',
+                      marginBottom: 4
+                    }}>{n.title}</div>
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#6c757d'
+                    }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+                  </div>
+                </div>
+                <div style={{ padding: '28px 28px 18px 28px' }}>
+                  <div style={{
+                    color: '#495057',
+                    marginBottom: 18,
+                    fontSize: '15px',
+                    lineHeight: '1.7',
+                    letterSpacing: '0.01em'
+                  }}>{n.description}</div>
+                  <ProgressBar recipients={n.recipients} />
+                  <div style={{ fontSize: 13, color: '#555', marginTop: 4, marginBottom: 16, wordBreak: 'break-word' }}>
+                    {n.recipients && n.recipients.length > 1 && (
+                      <>
+                        <span style={{ fontWeight: 500, color: '#1976d2' }}>Recipients:</span> <span style={{ color: '#333' }}>{n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}</span>
+                      </>
+                    )}
+                  </div>
+                  {myRecipient && !myRecipient.response && (
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      <button style={{
+                        background: 'linear-gradient(90deg, #1976d2 60%, #42a5f5 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '12px 28px',
+                        fontWeight: '700',
+                        fontSize: '15px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.7 : 1,
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 6px rgba(25, 118, 210, 0.13)'
+                      }} onClick={() => handleRespond(n.id, 'accept')} disabled={loading}>ACCEPT</button>
+                      <button style={{
+                        background: 'linear-gradient(90deg, #e74c3c 60%, #ff7675 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        padding: '12px 28px',
+                        fontWeight: '700',
+                        fontSize: '15px',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.7 : 1,
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 6px rgba(231, 76, 60, 0.13)'
+                      }} onClick={() => handleRespond(n.id, 'decline')} disabled={loading}>DECLINE</button>
+                    </div>
+                  )}
+                  {myRecipient && myRecipient.response && (
+                    <div style={{
+                      color: myRecipient.response === 'accept' ? '#2ecc71' : '#e74c3c',
+                      fontWeight: 'bold',
+                      fontSize: '15px',
+                      marginTop: 16
+                    }}>
+                      You responded: {myRecipient.response.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                {/* Divider between notifications */}
+                {idx !== notifications.length - 1 && (
+                  <div style={{
+                    height: 2,
+                    background: 'linear-gradient(90deg, #e0e0e0 60%, #f8fafc 100%)',
+                    width: '100%',
+                    margin: 0
+                  }} />
                 )}
               </div>
-              {myRecipient && !myRecipient.response && (
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button style={{
-                    background: '#1976d2',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '10px 20px',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1,
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)'
-                  }} onClick={() => handleRespond(n.id, 'accept')} disabled={loading}>ACCEPT</button>
-                  <button style={{
-                    background: '#e74c3c',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '10px 20px',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1,
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)'
-                  }} onClick={() => handleRespond(n.id, 'decline')} disabled={loading}>DECLINE</button>
-                </div>
-              )}
-              {myRecipient && myRecipient.response && (
-                <div style={{
-                  color: myRecipient.response === 'accept' ? '#2ecc71' : '#e74c3c',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  marginTop: 12
-                }}>
-                  You responded: {myRecipient.response.toUpperCase()}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-      {error && <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: 16 }}>{error}</div>}
+            );
+          })}
+        </div>
+        {error && <div style={{ color: '#e74c3c', fontSize: '15px', marginTop: 20, textAlign: 'center' }}>{error}</div>}
+      </div>
     </AssociateLayout>
   );
 }
@@ -177,38 +197,41 @@ function ProgressBar({ recipients }) {
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
-        fontSize: '13px',
-        marginBottom: 4,
-        color: '#495057'
+        fontSize: '14px',
+        marginBottom: 6,
+        color: '#495057',
+        fontWeight: 500
       }}>
-        <span style={{ fontWeight: '500' }}>CONFIRMED {accepted} ASSOCIATES</span>
-        <span style={{ color: '#6c757d' }}>DECLINED {declined} ASSOCIATES</span>
+        <span style={{ color: '#2ecc71' }}>CONFIRMED {accepted} ASSOCIATES</span>
+        <span style={{ color: '#e74c3c' }}>DECLINED {declined} ASSOCIATES</span>
       </div>
       <div style={{
         width: '100%',
         background: '#e9ecef',
-        borderRadius: 8,
-        height: 20,
+        borderRadius: 10,
+        height: 22,
         position: 'relative',
-        marginBottom: 8,
-        overflow: 'hidden'
+        marginBottom: 10,
+        overflow: 'hidden',
+        boxShadow: '0 1px 3px rgba(44,62,80,0.04)'
       }}>
         <div style={{
           width: percent + '%',
-          background: '#2ecc71',
+          background: 'linear-gradient(90deg, #2ecc71 60%, #b2f7cc 100%)',
           height: '100%',
-          borderRadius: 8,
-          transition: 'width 0.3s ease'
+          borderRadius: 10,
+          transition: 'width 0.5s cubic-bezier(.4,2,.6,1)',
+          boxShadow: '0 1px 4px rgba(46,204,113,0.08)'
         }} />
         <span style={{
           position: 'absolute',
           left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
-          fontSize: '12px',
+          fontSize: '13px',
           color: '#fff',
-          fontWeight: '600',
-          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          fontWeight: '700',
+          textShadow: '0 1px 2px rgba(0,0,0,0.13)'
         }}>{percent}% RESPONDED</span>
       </div>
     </>

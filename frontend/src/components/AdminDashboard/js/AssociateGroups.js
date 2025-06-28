@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
@@ -496,34 +496,32 @@ function AssociateGroups() {
       <Modal
         isOpen={showModal}
         onRequestClose={() => setShowModal(false)}
-        className="profile-modal-card"
+        className="profile-modal-card enhanced-profile-modal"
         overlayClassName="profile-modal-overlay"
       >
         {selectedGroup && (
-          <div className="profile-modal-content">
-            <div className="profile-modal-header">
+          <div className="profile-modal-content enhanced-profile-content">
+            <div className="enhanced-profile-header">
               <img
                 src={getLogoUrl(selectedGroup.logo)}
                 alt={selectedGroup.name}
-                className="profile-modal-logo"
+                className="enhanced-profile-logo"
                 onError={(e) => {
                   e.target.src = '/Assets/disaster_logo.png';
                 }}
               />
-              <button onClick={() => setShowModal(false)} className="close-icon">&times;</button>
+              <button onClick={() => setShowModal(false)} className="enhanced-close-icon">&times;</button>
             </div>
-            <h3>{selectedGroup.name}</h3>
-            <p>Director: {selectedGroup.director}</p>
-            <p>Email: {selectedGroup.email}</p>
-            <p>Phone: {selectedGroup.phone}</p>
-            <div className="profile-description-section">
-              <p>{selectedGroup.description}</p>
+            <h3 className="enhanced-profile-title">{selectedGroup.name}</h3>
+            <div className="enhanced-profile-info">
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faUser} className="enhanced-profile-icon" /> <span><b>Director:</b> {selectedGroup.director}</span></div>
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faEnvelope} className="enhanced-profile-icon" /> <span><b>Email:</b> {selectedGroup.email}</span></div>
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faPhone} className="enhanced-profile-icon" /> <span><b>Phone:</b> {selectedGroup.phone || 'N/A'}</span></div>
             </div>
-            <div className="profile-stats-contact-message">
-              <div className="profile-stats">
-                <p><strong>Members:</strong> {selectedGroup.members_count || 0}</p>
-                <p><strong>Type:</strong> {selectedGroup.type}</p>
-              </div>
+            <div className="enhanced-profile-description">{selectedGroup.description}</div>
+            <div className="enhanced-profile-stats-grid">
+              <div className="enhanced-profile-stat"><span className="enhanced-profile-stat-label">Members</span><span className="enhanced-profile-stat-pill">{selectedGroup.members_count || 0}</span></div>
+              <div className="enhanced-profile-stat"><span className="enhanced-profile-stat-label">Type</span><span className="enhanced-profile-stat-pill">{selectedGroup.type}</span></div>
             </div>
           </div>
         )}

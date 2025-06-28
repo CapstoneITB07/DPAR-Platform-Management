@@ -1,0 +1,545 @@
+.notification-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.notification-modal-card {
+  background: #fff;
+  border-radius: 16px;
+  width: 95%;
+  max-width: 650px;
+  max-height: 95vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  position: relative;
+  padding: 0 0 32px 0;
+  animation: modalFadeIn 0.2s;
+  scrollbar-width: none; /* Firefox */
+}
+
+.notification-modal-card::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-modal-header {
+  background: #A11C22;
+  border-radius: 16px 16px 0 0;
+  padding: 24px 32px 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.notification-modal-header h3 {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.notification-close-icon {
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+.notification-close-icon:hover {
+  color: #e0e0e0;
+}
+
+.notification-modal-padding {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.cancel-btn {
+  background: #fff;
+  color: #A11C22;
+  border: 1.5px solid #A11C22;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+.cancel-btn:hover {
+  background: #A11C22;
+  color: #fff;
+  border: 1.5px solid #A11C22;
+}
+
+/* Remove stepper styles if not needed */
+.notification-stepper, .notification-step, .notification-step-circle, .notification-step-label, .notification-step-inactive {
+  display: none !important;
+}
+
+.notification-modal-content {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-top: 24px;
+}
+
+.notification-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.notification-modal-content h4 {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  margin-top: 0;
+  color: #222;
+}
+
+.notification-modal-content p {
+  text-align: center;
+  color: #6c757d;
+  margin-bottom: 18px;
+  margin-top: 0;
+  font-size: 1.08rem;
+}
+
+.notification-form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  margin-bottom: 12px;
+}
+
+.notification-form-group {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.notification-form-group.half-width {
+  flex: 1 1 45%;
+  min-width: 180px;
+}
+
+.notification-form-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+.notification-form-group input,
+.notification-form-group textarea {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 1rem;
+  color: #2c3e50;
+  background: #f8f9fa;
+  resize: none;
+}
+
+.notification-form-group textarea {
+  min-height: 60px;
+}
+
+.notification-associate-list {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 18px 18px 10px 18px;
+  max-height: 180px;
+  overflow-y: auto;
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-top: 6px;
+  margin-bottom: 8px;
+  transition: box-shadow 0.2s;
+}
+.notification-associate-list:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.notification-associate-list .select-all {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ececec;
+  font-weight: 700;
+  color: #A11C22;
+  background: #f3f3f3;
+  border-radius: 6px 6px 0 0;
+}
+
+.notification-associate-list .associate-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0 6px 2px;
+  border-radius: 5px;
+  transition: background 0.15s;
+}
+.notification-associate-list .associate-checkbox-row:hover {
+  background: #f1f3f6;
+}
+
+.notification-associate-list input[type="checkbox"] {
+  accent-color: #A11C22;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1.5px solid #bbb;
+  transition: border 0.2s;
+}
+
+.notification-associate-list label.associate-checkbox-label {
+  color: #333;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.notification-associate-list input[type="checkbox"]:hover + label.associate-checkbox-label {
+  color: #A11C22;
+}
+
+.notification-associate-list .select-all label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #A11C22;
+  cursor: pointer;
+}
+
+.notification-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.notification-btn-cancel {
+  background: #f1f3f5;
+  color: #A11C22;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.notification-btn-cancel:hover {
+  background: #e0e0e0;
+}
+
+.notification-btn-submit {
+  background: #A11C22;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.notification-btn-submit:disabled {
+  background: #b0b0b0;
+  cursor: not-allowed;
+}
+
+.notification-error-message {
+  color: #e74c3c;
+  font-size: 1rem;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+.notification-title {
+  font-weight: 600;
+  margin-bottom: 16px;
+  font-size: 24px;
+  color: #1a1a1a;
+  letter-spacing: 0.5px;
+}
+
+.notification-filter-bar {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.notification-filter-label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.notification-filter-select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+  color: #2c3e50;
+  background-color: white;
+  cursor: pointer;
+}
+
+.notification-filter-input {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.notification-filter-clear {
+  background: #f1f3f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.notification-add-btn {
+  margin-left: auto;
+  background: #A11C22;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(161, 28, 34, 0.10);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.notification-add-btn:hover, .notification-add-btn:focus {
+  background: #b72828;
+  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.18);
+}
+
+.notification-empty {
+  text-align: center;
+  color: #6c757d;
+  margin-top: 32px;
+  font-size: 15px;
+  font-style: italic;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+  border: 1.5px solid #e0e0e0;
+  margin-bottom: 28px;
+  border-radius: 14px;
+  background: #fcfcfd;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s, border 0.2s;
+  padding: 0 0 18px 0;
+}
+.notification-dropdown:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  border-color: #b72828;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 32px 12px 32px;
+  cursor: pointer;
+  border-bottom: 1.5px solid #f0f0f0;
+  background: #fff;
+  border-radius: 14px 14px 0 0;
+}
+
+.notification-dropdown-title {
+  font-weight: 700;
+  font-size: 1.18rem;
+  color: #b72828;
+  margin-bottom: 2px;
+  letter-spacing: 0.2px;
+}
+
+.notification-dropdown-date {
+  font-size: 0.98rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.notification-dropdown-arrow {
+  font-size: 22px;
+  color: #b72828;
+  transition: transform 0.2s ease;
+}
+
+.notification-dropdown-body {
+  padding: 18px 32px 0 32px;
+}
+
+.notification-dropdown-description {
+  color: #495057;
+  margin-bottom: 18px;
+  font-size: 1.08rem;
+  line-height: 1.5;
+}
+
+.notification-dropdown-lists {
+  display: flex;
+  gap: 24px;
+  margin: 16px 0 0 0;
+}
+
+.notification-dropdown-list {
+  min-width: 200px;
+}
+
+.notification-dropdown-list-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 1.05rem;
+  letter-spacing: 0.1px;
+}
+.notification-dropdown-list-title.accepted {
+  color: #2ecc71;
+}
+.notification-dropdown-list-title.declined {
+  color: #e74c3c;
+}
+
+.notification-dropdown-list ul {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  border: none;
+  list-style: none;
+  font-size: 1rem;
+  color: #495057;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notification-dropdown-list-empty {
+  color: #bbb;
+  font-style: italic;
+  background: #f5f5f5;
+  border-radius: 18px;
+  padding: 7px 18px;
+  display: inline-block;
+  font-size: 0.98rem;
+}
+
+.notification-dropdown-list ul li {
+  display: inline-block;
+  padding: 7px 18px;
+  border-radius: 18px;
+  background: #f3f9f3;
+  color: #2ecc71;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+.notification-dropdown-list.declined ul li {
+  background: #fbeaea;
+  color: #e74c3c;
+}
+
+.notification-dropdown-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-right: 8px;
+}
+
+.notification-dropdown-remove {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.10);
+  letter-spacing: 0.5px;
+}
+.notification-dropdown-remove:hover {
+  background: #c0392b;
+  box-shadow: 0 4px 16px rgba(231, 76, 60, 0.18);
+}
+
+/* Progress Bar */
+.notification-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #495057;
+}
+.notification-progress-accepted {
+  font-weight: 500;
+}
+.notification-progress-declined {
+  color: #6c757d;
+}
+
+.notification-progress-bar-bg {
+  width: 100%;
+  background: #e9ecef;
+  border-radius: 8px;
+  height: 20px;
+  position: relative;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.notification-progress-bar-fill {
+  background: #2ecc71;
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.3s ease;
+}
+
+.notification-progress-bar-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+} 

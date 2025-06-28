@@ -229,26 +229,26 @@ function AdminLayout({ children }) {
           </button>
           {/* Sidebar content here */}
           <div className="sidebar-header">
-            <div className="user-profile">
-              <img 
-                src={profileImage}
-                alt="Profile"
-                className="profile-icon"
-                loading="eager"
+              <div className="user-profile">
+                <img 
+                  src={profileImage}
+                  alt="Profile"
+                  className="profile-icon"
+                  loading="eager"
                 onError={e => { e.target.src = '/Assets/disaster_logo.png'; }}
-              />
-              <div className="user-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <p className="user-name" style={{ marginBottom: 0 }}>Admin</p>
-                <p className="edit-profile" onClick={() => {
-                  setShowProfileModal(true);
+                />
+                <div className="user-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <p className="user-name" style={{ marginBottom: 0 }}>Admin</p>
+                  <p className="edit-profile" onClick={() => {
+                    setShowProfileModal(true);
                   setImagePreview(null);
-                  setError('');
-                  setSuccess('');
-                }} style={{ cursor: 'pointer', marginTop: 2 }}>
-                  <FontAwesomeIcon icon={faEdit} /> Edit Profile
-                </p>
+                    setError('');
+                    setSuccess('');
+                  }} style={{ cursor: 'pointer', marginTop: 2 }}>
+                    <FontAwesomeIcon icon={faEdit} /> Edit Profile
+                  </p>
+                </div>
               </div>
-            </div>
           </div>
           <nav className="sidebar-nav">
             <ul>
@@ -256,10 +256,10 @@ function AdminLayout({ children }) {
               <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => { navigate('/admin/associate-groups'); closeSidebar(); }}><FontAwesomeIcon icon={faUsers} /> ASSOCIATE GROUPS</li>
               <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => { navigate('/admin/notifications'); closeSidebar(); }} style={{ position: 'relative' }}>
                 <span><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</span>
-                {unreadCount > 0 && (
-                  <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
-                )}
-              </li>
+                    {unreadCount > 0 && (
+                      <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+                    )}
+                  </li>
               <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => { navigate('/admin/approval-aor'); closeSidebar(); }}><FontAwesomeIcon icon={faCheckCircle} /> APPROVAL/AOR</li>
               <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => { navigate('/admin/announcement'); closeSidebar(); }}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT</li>
               <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => { navigate('/admin/training-program'); closeSidebar(); }}><FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM</li>
@@ -267,9 +267,9 @@ function AdminLayout({ children }) {
             </ul>
           </nav>
           <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
-            <button className="logout-button" onClick={handleLogout}>
-              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-            </button>
+              <button className="logout-button" onClick={handleLogout}>
+                <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+              </button>
           </div>
         </nav>
       </div>
@@ -278,7 +278,7 @@ function AdminLayout({ children }) {
         <div className="header-left">
           <button className="burger-icon" onClick={toggleSidebar} aria-label="Open Sidebar">
             <FontAwesomeIcon icon={faBars} />
-          </button>
+              </button>
           <span className="dpar-text">DPAR</span>
         </div>
         <div className="header-right">
@@ -292,7 +292,7 @@ function AdminLayout({ children }) {
       </div>
       {/* Main content (dimmed when sidebar is open) */}
       <div className={`main-content${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
-        {children}
+          {children}
       </div>
       {/* Profile Modal */}
       <Modal

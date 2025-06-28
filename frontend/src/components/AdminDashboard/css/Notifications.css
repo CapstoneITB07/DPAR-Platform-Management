@@ -542,4 +542,185 @@
   color: #fff;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 700px) {
+  .notification-modal-card {
+    max-width: 98vw;
+    padding: 0 2px 18px 2px;
+    border-radius: 10px;
+  }
+  .notification-modal-header {
+    padding: 16px 10px 10px 10px;
+    border-radius: 10px 10px 0 0;
+  }
+  .notification-modal-header h3 {
+    font-size: 1.1rem;
+  }
+  .notification-modal-content {
+    margin-top: 12px;
+    padding: 0 4px;
+  }
+  .notification-form-grid {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .notification-form-group, .notification-form-group.half-width {
+    min-width: 0;
+    width: 100%;
+    font-size: 15px;
+  }
+  .notification-form-group label {
+    font-size: 0.98rem;
+  }
+  .notification-form-group input, .notification-form-group textarea {
+    font-size: 0.98rem;
+    padding: 8px 6px;
+  }
+  .notification-associate-list {
+    padding: 10px 6px 6px 6px;
+    max-height: 120px;
+    font-size: 14px;
+  }
+  .notification-filter-bar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 4px;
+    font-size: 15px;
+  }
+  .notification-filter-label, .notification-filter-select, .notification-filter-input, .notification-filter-clear {
+    width: 100%;
+    font-size: 15px;
+  }
+  .notification-add-btn {
+    width: 100%;
+    font-size: 15px;
+    padding: 10px 0;
+    margin-left: 0;
+  }
+  .notification-dropdown {
+    padding: 0 0 10px 0;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .notification-dropdown-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
+    padding: 10px 6px 6px 6px;
+  }
+  .notification-dropdown-arrow {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    float: right;
+  }
+  .notification-dropdown-title {
+    font-size: 1.05rem;
+  }
+  .notification-dropdown-date {
+    font-size: 0.95rem;
+  }
+  .notification-dropdown-body {
+    padding: 8px 4px;
+  }
+  .notification-dropdown-list {
+    padding: 6px 2px;
+    font-size: 14px;
+  }
+  .notification-btn-cancel, .notification-btn-submit {
+    width: 100%;
+    font-size: 15px;
+    padding: 10px 0;
+    margin: 8px 0 0 0;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1024px) {
+  .notification-modal-card {
+    max-width: 90vw;
+    padding: 0 8px 24px 8px;
+    border-radius: 14px;
+  }
+  .notification-modal-header {
+    padding: 20px 18px 12px 18px;
+    border-radius: 14px 14px 0 0;
+  }
+  .notification-modal-header h3 {
+    font-size: 1.25rem;
+  }
+  .notification-modal-content {
+    margin-top: 18px;
+    padding: 0 8px;
+  }
+  .notification-form-grid {
+    flex-direction: row;
+    gap: 14px 10px;
+    flex-wrap: wrap;
+  }
+  .notification-form-group, .notification-form-group.half-width {
+    min-width: 0;
+    width: 48%;
+    font-size: 16px;
+  }
+  .notification-form-group label {
+    font-size: 1rem;
+  }
+  .notification-form-group input, .notification-form-group textarea {
+    font-size: 1rem;
+    padding: 10px 8px;
+  }
+  .notification-associate-list {
+    padding: 14px 10px 8px 10px;
+    max-height: 150px;
+    font-size: 15px;
+  }
+  .notification-filter-bar {
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px 8px;
+    font-size: 16px;
+  }
+  .notification-filter-label, .notification-filter-select, .notification-filter-input, .notification-filter-clear {
+    font-size: 16px;
+  }
+  .notification-add-btn {
+    width: auto;
+    font-size: 16px;
+    padding: 10px 18px;
+    margin-left: auto;
+  }
+  .notification-dropdown {
+    padding: 0 0 14px 0;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+  .notification-dropdown-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px 8px 8px;
+  }
+  .notification-dropdown-title {
+    font-size: 1.15rem;
+  }
+  .notification-dropdown-date {
+    font-size: 1rem;
+  }
+  .notification-dropdown-body {
+    padding: 10px 8px;
+  }
+  .notification-dropdown-list {
+    padding: 8px 4px;
+    font-size: 15px;
+  }
+  .notification-btn-cancel, .notification-btn-submit {
+    width: 48%;
+    font-size: 16px;
+    padding: 10px 0;
+    margin: 10px 0 0 0;
+  }
 } 

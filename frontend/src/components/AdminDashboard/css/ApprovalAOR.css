@@ -166,6 +166,155 @@
   }
 }
 
+@media (max-width: 700px) {
+  .approval-aor-container {
+    padding: 10px 2px;
+    max-width: 100vw;
+    background: #f7f8fa;
+  }
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .header-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 4px;
+  }
+  .show-history-btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 10px 0;
+  }
+  .reports-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 0 2px;
+    margin-top: 10px;
+  }
+  .report-card {
+    min-width: 0;
+    max-width: 100vw;
+    border-radius: 10px;
+    padding: 12px 4px 10px 4px;
+  }
+  .org-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    padding: 0.2rem;
+    margin-bottom: 8px;
+  }
+  .modal-content {
+    max-width: 98vw;
+    padding: 0 2px;
+    border-radius: 10px;
+  }
+  .modal-header, .modal-body {
+    padding: 10px 4px;
+  }
+  .preview-details {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px 4px;
+    border-radius: 10px;
+  }
+  .preview-details .section-header {
+    font-size: 1.05rem;
+    padding-bottom: 4px;
+  }
+  .preview-details .preview-field {
+    font-size: 14px;
+    padding: 8px 4px;
+    border-radius: 6px;
+  }
+  .preview-details .preview-field strong {
+    min-width: 80px;
+    font-size: 13px;
+  }
+  .preview-btn {
+    width: 100%;
+    font-size: 15px;
+    padding: 10px 0;
+    margin: 8px 0 0 0;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1024px) {
+  .approval-aor-container {
+    padding: 18px 10px;
+    max-width: 100vw;
+    background: #f7f8fa;
+  }
+  .header-section {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .header-section h2 {
+    font-size: 1.7rem;
+    margin-bottom: 0;
+  }
+  .show-history-btn {
+    font-size: 1.08rem;
+    padding: 10px 18px;
+  }
+  .reports-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    padding: 0 8px;
+    margin-top: 14px;
+  }
+  .report-card {
+    min-width: 0;
+    max-width: 100vw;
+    border-radius: 12px;
+    padding: 18px 8px 14px 8px;
+  }
+  .org-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 9px;
+    padding: 0.3rem;
+    margin-bottom: 10px;
+  }
+  .modal-content {
+    max-width: 90vw;
+    padding: 0 8px;
+    border-radius: 14px;
+  }
+  .modal-header, .modal-body {
+    padding: 14px 8px;
+  }
+  .preview-details {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 14px 8px;
+    border-radius: 12px;
+  }
+  .preview-details .section-header {
+    font-size: 1.15rem;
+    padding-bottom: 6px;
+  }
+  .preview-details .preview-field {
+    font-size: 15px;
+    padding: 10px 6px;
+    border-radius: 8px;
+  }
+  .preview-details .preview-field strong {
+    min-width: 100px;
+    font-size: 14px;
+  }
+  .preview-btn {
+    width: 48%;
+    font-size: 16px;
+    padding: 10px 0;
+    margin: 10px 0 0 0;
+  }
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
@@ -311,29 +460,6 @@
 .generate-btn:hover {
   background: #8b1a1f;
   box-shadow: 0 4px 16px rgba(161,28,34,0.14);
-}
-
-@media (max-width: 700px) {
-  .modal-content {
-    padding: 0 0 1rem 0;
-    max-width: 99vw;
-  }
-  .modal-header, .modal-body {
-    padding: 1.2rem 0.7rem 0.7rem 0.7rem;
-  }
-  .history-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: 7px;
-    padding: 0.15rem;
-  }
-  .history-title {
-    font-size: 1.1rem;
-  }
-  .generate-btn {
-    font-size: 0.95rem;
-    padding: 0.5rem 1rem;
-  }
 }
 
 /* Preview Modal Specific Styles */

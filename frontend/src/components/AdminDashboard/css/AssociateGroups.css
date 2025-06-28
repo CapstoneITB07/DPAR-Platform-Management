@@ -343,7 +343,16 @@
 }
 .edit-associate-btn {
   background: #ffc107;
-  color: #222;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 10px 22px;
+  font-weight: 700;
+  font-size: 16px;
+  margin-left: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(161,28,34,0.08);
+  transition: background 0.18s;
 }
 .add-associate-btn:hover {
   background: #218838;
@@ -352,15 +361,16 @@
   background: #e0a800;
 }
 .associate-logos-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 28px;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 36px;
+  justify-items: center;
+  align-items: start;
   margin-bottom: 32px;
 }
 .associate-logo-circle {
-  width: 110px;
-  height: 110px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
   background: #fff;
   border: 2px solid #eee;
@@ -372,12 +382,12 @@
   transition: box-shadow 0.2s, border 0.2s;
 }
 .associate-logo-circle:hover {
-  border: 2px solid #007bff;
-  box-shadow: 0 4px 16px rgba(0,123,255,0.10);
+  border: 2px solid #A11C22;
+  box-shadow: 0 4px 16px rgba(161,28,34,0.10);
 }
 .associate-logo-circle img {
-  width: 80px;
-  height: 80px;
+  width: 170px;
+  height: 170px;
   object-fit: contain;
   border-radius: 50%;
   background: #fff;
@@ -488,11 +498,11 @@
   transition: background 0.2s;
 }
 .profile-stats button:hover {
-  background: #0056b3;
+  background: #8b1a1f;
 }
 .profile-contact-info svg {
   margin-right: 6px;
-  color: #007bff;
+  color: #A11C22;
 }
 .profile-message-box textarea {
   width: 100%;
@@ -613,4 +623,124 @@
   border-color: #007bff;
   outline: none;
   box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+/* Enhanced Profile Modal Styles */
+.enhanced-profile-modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(161,28,34,0.13);
+  max-width: 480px;
+  width: 95%;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.enhanced-profile-content {
+  padding: 36px 36px 28px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.enhanced-profile-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.enhanced-profile-logo {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #A11C22;
+  box-shadow: 0 4px 16px rgba(161,28,34,0.10);
+  background: #fff;
+  margin-right: 12px;
+}
+.enhanced-close-icon {
+  background: none;
+  border: 1.5px solid #eee;
+  font-size: 28px;
+  color: #A11C22;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, border 0.18s;
+}
+.enhanced-close-icon:hover {
+  background: rgba(161,28,34,0.2);
+  transform: scale(1.1);
+}
+.enhanced-profile-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #A11C22;
+  margin-bottom: 10px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+.enhanced-profile-info {
+  width: 100%;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.enhanced-profile-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.08rem;
+  color: #333;
+}
+.enhanced-profile-icon {
+  color: #A11C22;
+  font-size: 1.1em;
+}
+.enhanced-profile-description {
+  width: 100%;
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: #444;
+  font-size: 1.08rem;
+  margin-bottom: 22px;
+  text-align: left;
+}
+.enhanced-profile-stats-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 8px;
+}
+.enhanced-profile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 12px 0 10px 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.enhanced-profile-stat-label {
+  font-size: 1rem;
+  color: #111;
+  margin-bottom: 4px;
+}
+.enhanced-profile-stat-pill {
+  background: #A11C22;
+  color: #fff;
+  border-radius: 16px;
+  padding: 4px 18px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-top: 2px;
+  letter-spacing: 0.2px;
 } 

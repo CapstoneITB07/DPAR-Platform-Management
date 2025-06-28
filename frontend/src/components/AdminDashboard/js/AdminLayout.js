@@ -9,7 +9,7 @@ import axios from 'axios';
 const API_BASE = 'http://localhost:8000';
 
 function AdminLayout({ children }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileImage, setProfileImage] = useState('/Assets/disaster_logo.png');
   const [imagePreview, setImagePreview] = useState(null);
@@ -26,17 +26,16 @@ function AdminLayout({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const ADMIN_NOTIF_RESPONSE_KEY = 'adminNotifResponseViewed';
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setSidebarOpen(open => !open);
+  const closeSidebar = () => setSidebarOpen(false);
+
+  const isActive = (route) => location.pathname === route;
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     navigate('/');
   };
-
-  const isActive = (route) => location.pathname === route;
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -202,14 +201,84 @@ function AdminLayout({ children }) {
     }
   }, [location.pathname]);
 
+  // Add event listener to close sidebar on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closeSidebar();
+    };
+    if (sidebarOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
+
   return (
     <div className="admin-dashboard-fixed-layout" style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
-      {/* Header Bar */}
-      <header className="header">
-        <div className="header-left">
-          <div className="burger-icon" onClick={toggleSidebar}>
-            <FontAwesomeIcon icon={faBars} />
+      {/* Sidebar Overlay and Drawer */}
+      <div>
+        {/* Overlay */}
+        {sidebarOpen && (
+          <div className="sidebar-overlay" onClick={closeSidebar} />
+        )}
+        {/* Sidebar Drawer */}
+        <nav className={`sidebar-drawer${sidebarOpen ? ' open' : ''}`} tabIndex="-1">
+          <button className="sidebar-close-btn" onClick={closeSidebar} aria-label="Close Sidebar">
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+          {/* Sidebar content here */}
+          <div className="sidebar-header">
+            <div className="user-profile">
+              <img 
+                src={profileImage}
+                alt="Profile"
+                className="profile-icon"
+                loading="eager"
+                onError={e => { e.target.src = '/Assets/disaster_logo.png'; }}
+              />
+              <div className="user-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <p className="user-name" style={{ marginBottom: 0 }}>Admin</p>
+                <p className="edit-profile" onClick={() => {
+                  setShowProfileModal(true);
+                  setImagePreview(null);
+                  setError('');
+                  setSuccess('');
+                }} style={{ cursor: 'pointer', marginTop: 2 }}>
+                  <FontAwesomeIcon icon={faEdit} /> Edit Profile
+                </p>
+              </div>
+            </div>
           </div>
+          <nav className="sidebar-nav">
+            <ul>
+              <li className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => { navigate('/admin/dashboard'); closeSidebar(); }}><FontAwesomeIcon icon={faTachometerAlt} /> DASHBOARD</li>
+              <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => { navigate('/admin/associate-groups'); closeSidebar(); }}><FontAwesomeIcon icon={faUsers} /> ASSOCIATE GROUPS</li>
+              <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => { navigate('/admin/notifications'); closeSidebar(); }} style={{ position: 'relative' }}>
+                <span><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</span>
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+                )}
+              </li>
+              <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => { navigate('/admin/approval-aor'); closeSidebar(); }}><FontAwesomeIcon icon={faCheckCircle} /> APPROVAL/AOR</li>
+              <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => { navigate('/admin/announcement'); closeSidebar(); }}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT</li>
+              <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => { navigate('/admin/training-program'); closeSidebar(); }}><FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM</li>
+              <li className={isActive('/admin/evaluation') ? 'active' : ''} onClick={() => { navigate('/admin/evaluation'); closeSidebar(); }}><FontAwesomeIcon icon={faChartBar} /> EVALUATION</li>
+            </ul>
+          </nav>
+          <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
+            <button className="logout-button" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            </button>
+          </div>
+        </nav>
+      </div>
+      {/* Hamburger Button (always visible in header) */}
+      <div className="header">
+        <div className="header-left">
+          <button className="burger-icon" onClick={toggleSidebar} aria-label="Open Sidebar">
+            <FontAwesomeIcon icon={faBars} />
+          </button>
           <span className="dpar-text">DPAR</span>
         </div>
         <div className="header-right">
@@ -220,105 +289,11 @@ function AdminLayout({ children }) {
             )}
           </div>
         </div>
-      </header>
-      <div style={{ display: 'flex' }}>
-        <div
-          className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            height: '100vh',
-            width: isSidebarOpen ? 240 : 60,
-            zIndex: 100,
-            background: '#fff',
-            boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            transition: 'width 0.2s',
-          }}
-        >
-          <div className="sidebar-header">
-            {isSidebarOpen && (
-              <div className="user-profile">
-                <img 
-                  src={profileImage}
-                  alt="Profile"
-                  className="profile-icon"
-                  loading="eager"
-                  onError={(e) => {
-                    e.target.src = '/Assets/disaster_logo.png';
-                  }}
-                />
-                <div className="user-info">
-                  <p className="user-name">Admin</p>
-                  <p className="edit-profile" onClick={() => {
-                    setShowProfileModal(true);
-                    setImagePreview(null); // Reset preview when opening modal
-                    setError('');
-                    setSuccess('');
-                  }} style={{ cursor: 'pointer' }}>
-                    <FontAwesomeIcon icon={faEdit} /> Edit Profile
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-          <nav className="sidebar-nav">
-            <ul>
-              {isSidebarOpen && (
-                <>
-                  <li className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => navigate('/admin/dashboard')}><FontAwesomeIcon icon={faTachometerAlt} /> DASHBOARD</li>
-                  <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => navigate('/admin/associate-groups')}><FontAwesomeIcon icon={faUsers} /> ASSOCIATE GROUPS</li>
-                  <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => navigate('/admin/notifications')} style={{ position: 'relative' }}>
-                    <span onClick={() => navigate('/admin/notifications')}><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</span>
-                    {unreadCount > 0 && (
-                      <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
-                    )}
-                  </li>
-                  <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => navigate('/admin/approval-aor')}><FontAwesomeIcon icon={faCheckCircle} /> APPROVAL/AOR</li>
-                  <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => navigate('/admin/announcement')}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT</li>
-                  <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => navigate('/admin/training-program')}><FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM</li>
-                  <li className={isActive('/admin/evaluation') ? 'active' : ''} onClick={() => navigate('/admin/evaluation')}><FontAwesomeIcon icon={faChartBar} /> EVALUATION</li>
-                </>
-              )}
-              {!isSidebarOpen && (
-                <>
-                  <li className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => navigate('/admin/dashboard')}><FontAwesomeIcon icon={faTachometerAlt} /></li>
-                  <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => navigate('/admin/associate-groups')}><FontAwesomeIcon icon={faUsers} /></li>
-                  <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => navigate('/admin/notifications')} style={{ position: 'relative' }}>
-                    <span onClick={() => navigate('/admin/notifications')}><FontAwesomeIcon icon={faBell} /></span>
-                    {unreadCount > 0 && (
-                      <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
-                    )}
-                  </li>
-                  <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => navigate('/admin/approval-aor')}><FontAwesomeIcon icon={faCheckCircle} /></li>
-                  <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => navigate('/admin/announcement')}><FontAwesomeIcon icon={faBullhorn} /></li>
-                  <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => navigate('/admin/training-program')}><FontAwesomeIcon icon={faGraduationCap} /></li>
-                  <li className={isActive('/admin/evaluation') ? 'active' : ''} onClick={() => navigate('/admin/evaluation')}><FontAwesomeIcon icon={faChartBar} /></li>
-                </>
-              )}
-            </ul>
-          </nav>
-          <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
-            {isSidebarOpen && (
-              <button className="logout-button" onClick={handleLogout}>
-                <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-              </button>
-            )}
-            {!isSidebarOpen && (
-              <button className="logout-button-icon-only" onClick={handleLogout}>
-                <FontAwesomeIcon icon={faSignOutAlt} />
-              </button>
-            )}
-          </div>
-        </div>
-        <main className="main-content" style={{ marginLeft: isSidebarOpen ? 240 : 60, width: isSidebarOpen ? 'calc(100% - 240px)' : 'calc(100% - 60px)', transition: 'margin-left 0.2s, width 0.2s', minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
-          {children}
-        </main>
       </div>
-
+      {/* Main content (dimmed when sidebar is open) */}
+      <div className={`main-content${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
+        {children}
+      </div>
       {/* Profile Modal */}
       <Modal
         isOpen={showProfileModal}

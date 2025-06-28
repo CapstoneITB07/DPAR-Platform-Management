@@ -183,30 +183,76 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 30px; /* Padding */
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Shadow */
+  background: #fff;
+  padding: 38px 36px 36px 36px;
+  border: none;
+  box-shadow: 0 8px 32px rgba(161,28,34,0.18), 0 1.5px 0 #ececec;
   z-index: 1000;
-  max-width: 450px; /* Max width */
-  max-height: 70vh; /* Max height */
+  max-width: 520px;
+  max-height: 80vh;
   overflow-y: auto;
-  border-radius: 8px; /* Border radius */
+  border-radius: 18px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #222;
+  text-align: center;
 }
 
 .raPopup h3 {
-    margin-top: 0; /* Remove default top margin */
+  margin-top: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #A11C22;
+  margin-bottom: 18px;
+}
+
+.raPopup h4 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #A11C22;
+  margin: 22px 0 10px 0;
+}
+
+.raPopup p {
+  font-size: 1.08rem;
+  margin-bottom: 16px;
+  margin-top: 0;
+  color: #333;
+}
+
+.raPopup ul {
+  text-align: left;
+  margin: 0 auto 18px auto;
+  padding-left: 22px;
+  max-width: 95%;
+}
+
+.raPopup li {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  color: #444;
+  line-height: 1.5;
 }
 
 .raCloseButton {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 16px;
+  right: 18px;
   cursor: pointer;
-  background: none;
+  background: #fbeaec;
   border: none;
-  font-size: 20px; /* Font size */
-  color: #555; /* Color */
+  font-size: 2rem;
+  color: #A11C22;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, color 0.18s;
+}
+.raCloseButton:hover {
+  background: #A11C22;
+  color: #fff;
 }
 
 /* Basic responsiveness */

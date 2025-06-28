@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faGraduationCap, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -65,6 +65,40 @@ const associateLogos = {
   'Associate Leader 14': '/Assets/SRG.png'
 };
 
+// Custom Calendar Toolbar
+function CustomCalendarToolbar({ date, onNavigate }) {
+  const monthYear = moment(date).format('MMMM YYYY');
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+      <button
+        className="calendar-nav-btn calendar-nav-btn-small"
+        onClick={() => onNavigate('TODAY')}
+        style={{ marginRight: 16 }}
+        aria-label="Go to Today"
+      >
+        Today
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 240, justifyContent: 'center' }}>
+        <button
+          className="calendar-nav-btn calendar-nav-btn-icon"
+          onClick={() => onNavigate('PREV')}
+          aria-label="Previous Month"
+        >
+          <FontAwesomeIcon icon={faChevronLeft} style={{ fontSize: '1rem' }} />
+        </button>
+        <span style={{ fontWeight: 600, fontSize: 18, minWidth: 120, textAlign: 'center' }}>{monthYear}</span>
+        <button
+          className="calendar-nav-btn calendar-nav-btn-icon"
+          onClick={() => onNavigate('NEXT')}
+          aria-label="Next Month"
+        >
+          <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: '1rem' }} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const [recentEvaluations, setRecentEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +113,7 @@ function AdminDashboard() {
   const [userHasSelected, setUserHasSelected] = useState(false);
   const [refreshNow, setRefreshNow] = useState(false);
   const [statisticsData, setStatisticsData] = useState(null);
+  const [calendarDate, setCalendarDate] = useState(new Date());
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -795,6 +830,18 @@ function AdminDashboard() {
     console.log('Bar Data:', associateBarData);
   }, [selectedAssociate, associatesPerformance, associateBarData]);
 
+  const handleCalendarNavigate = (action) => {
+    if (action === 'TODAY') {
+      setCalendarDate(new Date());
+    } else if (action === 'PREV') {
+      setCalendarDate(prev => moment(prev).subtract(1, 'month').toDate());
+    } else if (action === 'NEXT') {
+      setCalendarDate(prev => moment(prev).add(1, 'month').toDate());
+    } else if (action instanceof Date) {
+      setCalendarDate(action);
+    }
+  };
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -918,6 +965,7 @@ function AdminDashboard() {
             <div className="dashboard-section calendar-section">
               <h3><FontAwesomeIcon icon={faCalendarAlt} /> Calendar</h3>
               <div style={{ height: 400, background: 'white', borderRadius: 12, padding: 10 }}>
+                <CustomCalendarToolbar date={calendarDate} onNavigate={handleCalendarNavigate} />
                 <Calendar
                   localizer={localizer}
                   events={calendarEvents}
@@ -925,7 +973,10 @@ function AdminDashboard() {
                   endAccessor="end"
                   style={{ height: 380, borderRadius: 12 }}
                   popup
-                  views={['month', 'week', 'day']}
+                  views={['month']}
+                  toolbar={false}
+                  date={calendarDate}
+                  onNavigate={date => setCalendarDate(date)}
                 />
               </div>
             </div>

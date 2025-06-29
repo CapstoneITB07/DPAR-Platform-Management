@@ -557,7 +557,7 @@
   padding: 15px;
   background: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #dc3545;
 }
 
 .summary-statistics h4 {
@@ -1890,6 +1890,15 @@
     max-width: 100vw;
     border-radius: 0 18px 18px 0;
   }
+  .chart-container .chartjs-legend,
+  .chart-container .chartjs-render-monitor + div {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    max-width: 100vw;
+    white-space: nowrap;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 700px) {
@@ -2194,5 +2203,32 @@
     padding: 10px 8px;
     border-radius: 10px;
     margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-section > div {
+    max-width: 370px;
+    width: 100%;
+    margin: 0 auto;
+    min-width: unset;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .calendar-section .rbc-calendar {
+    min-width: unset;
+    max-width: 360px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .calendar-nav-btn.calendar-nav-btn-small {
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .bar-chart {
+    margin-left: -10px !important;
   }
 } 

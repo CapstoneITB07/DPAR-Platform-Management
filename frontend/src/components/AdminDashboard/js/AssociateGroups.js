@@ -446,8 +446,12 @@ function AssociateGroups() {
       <div className="associate-groups-header">
         <h2>ASSOCIATE GROUPS:</h2>
         <div>
-          <button className="add-associate-btn" onClick={openAddModal}>Add Associate</button>
-          <button className="edit-associate-btn" onClick={openEditListMode}>Edit</button>
+          {!editListMode && (
+            <>
+              <button className="add-associate-btn" onClick={openAddModal}>Add Associate</button>
+              <button className="edit-associate-btn" onClick={openEditListMode}>Edit</button>
+            </>
+          )}
           {editListMode && (
             <button className="edit-associate-btn" style={{ background: '#dc3545', color: '#fff' }} onClick={closeEditListMode}>Done</button>
           )}

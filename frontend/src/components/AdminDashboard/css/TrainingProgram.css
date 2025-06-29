@@ -116,18 +116,18 @@
   margin-top: 10px;
 }
 .training-cancel-btn {
-  background: #A11C22;
-  color: white;
-  border: none;
-  padding: 10px 22px;
-  border-radius: 7px;
+  background: transparent !important;
+  color: #dc3545 !important;
+  border: none !important;
   font-weight: 700;
   font-size: 15px;
-  cursor: pointer;
-  transition: background 0.18s;
+  border-radius: 10px;
+  transition: color 0.18s;
 }
 .training-cancel-btn:hover {
-  background: #c53030;
+  background: transparent !important;
+  color: #a71d2a !important;
+  border: none !important;
 }
 .training-submit-btn {
   background: #1976d2;
@@ -200,11 +200,11 @@
   background: #A11C22;
   color: #fff;
   border-radius: 7px;
-  padding: 12px 0;
-  width: 200px;
+  padding: 7px 0;
+  width: 120px;
   text-align: center;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 14px;
   cursor: pointer;
   margin-bottom: 8px;
   display: block;
@@ -392,7 +392,7 @@
   font-size: 17px;
   color: #333;
   margin-bottom: 16px;
-}
+} 
 
 @media (max-width: 700px) {
   .training-header-row {
@@ -425,20 +425,24 @@
   }
   .training-modal-card, .training-desc-modal-card {
     min-width: 0;
-    max-width: 98vw;
-    padding: 8px 2px;
+    max-width: 99vw;
+    width: 98vw;
+    padding: 0;
     border-radius: 10px;
+    max-height: 96vh;
+    overflow-y: auto;
+    box-sizing: border-box;
   }
   .training-modal-header {
-    padding: 12px 8px 8px 8px;
+    padding: 4vw 2vw 2vw 2vw;
     border-radius: 10px 10px 0 0;
   }
   .training-modal-title {
     font-size: 1.1rem;
   }
   .training-modal-form {
-    padding: 12px 8px 8px 8px;
-    gap: 10px;
+    padding: 2vw 2vw 2vw 2vw;
+    gap: 8px;
   }
   .training-form-label {
     font-size: 14px;
@@ -458,13 +462,24 @@
     font-size: 22px;
   }
   .training-modal-actions {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    justify-content: center;
   }
   .training-cancel-btn, .training-submit-btn {
-    width: 100%;
+    width: 50%;
+    min-width: 0;
+    max-width: 100%;
     font-size: 15px;
     padding: 10px 0;
+    margin: 0;
+    box-sizing: border-box;
+    display: block;
+    text-align: center;
+    border-radius: 10px;
   }
 }
 
@@ -499,20 +514,24 @@
   }
   .training-modal-card, .training-desc-modal-card {
     min-width: 0;
-    max-width: 90vw;
-    padding: 18px 8px;
+    max-width: 95vw;
+    width: 90vw;
+    padding: 0;
     border-radius: 14px;
+    max-height: 94vh;
+    overflow-y: auto;
+    box-sizing: border-box;
   }
   .training-modal-header {
-    padding: 18px 12px 10px 12px;
+    padding: 2vw 2vw 1vw 2vw;
     border-radius: 14px 14px 0 0;
   }
   .training-modal-title {
     font-size: 1.2rem;
   }
   .training-modal-form {
-    padding: 18px 12px 10px 12px;
-    gap: 14px;
+    padding: 1vw 2vw 1vw 2vw;
+    gap: 12px;
   }
   .training-form-label {
     font-size: 15px;

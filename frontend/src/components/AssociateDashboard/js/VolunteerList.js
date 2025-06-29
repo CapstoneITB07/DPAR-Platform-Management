@@ -15,7 +15,11 @@ import {
   faUserPlus,
   faSort,
   faSortUp,
-  faSortDown
+  faSortDown,
+  faVenusMars,
+  faPhone,
+  faMapMarkerAlt,
+  faMapMarkedAlt
 } from '@fortawesome/free-solid-svg-icons';
 import AssociateLayout from './AssociateLayout';
 import '../css/VolunteerList.css';
@@ -26,9 +30,7 @@ function VolunteerList() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
-  const [viewingVolunteer, setViewingVolunteer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedVolunteers, setSelectedVolunteers] = useState([]);
@@ -150,11 +152,6 @@ function VolunteerList() {
     setShowModal(true);
   };
 
-  const handleView = (volunteer) => {
-    setViewingVolunteer(volunteer);
-    setShowViewModal(true);
-  };
-
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this volunteer?')) return;
     try {
@@ -258,14 +255,14 @@ function VolunteerList() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Gender', 'Address', 'Contact Info', 'Expertise', 'Location'];
+    const headers = ['Name', 'Gender', 'Contact Info', 'Address', 'Expertise', 'Location'];
     const csvContent = [
       headers.join(','),
       ...filteredVolunteers.map(v => [
         v.name,
         v.gender,
-        v.address,
         v.contact_info,
+        v.address,
         v.expertise,
         v.location
       ].join(','))
@@ -416,16 +413,16 @@ function VolunteerList() {
                       <FontAwesomeIcon icon={getSortIcon('gender')} />
                     </div>
                   </th>
-                  <th onClick={() => handleSort('address')} className="sortable">
-                    <div className="th-content">
-                      Address
-                      <FontAwesomeIcon icon={getSortIcon('address')} />
-                    </div>
-                  </th>
                   <th onClick={() => handleSort('contact_info')} className="sortable">
                     <div className="th-content">
                       Contact Info
                       <FontAwesomeIcon icon={getSortIcon('contact_info')} />
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('address')} className="sortable">
+                    <div className="th-content">
+                      Address
+                      <FontAwesomeIcon icon={getSortIcon('address')} />
                     </div>
                   </th>
                   <th onClick={() => handleSort('expertise')} className="sortable">
@@ -450,9 +447,6 @@ function VolunteerList() {
                       <div className="no-data-content">
                         <FontAwesomeIcon icon={faUserPlus} />
                         <p>No volunteers found</p>
-                        {/* <button onClick={() => setShowModal(true)} className="add-first-btn">
-                          Add your first volunteer
-                        </button> */}
                       </div>
                     </td>
                   </tr>
@@ -476,8 +470,8 @@ function VolunteerList() {
                           {volunteer.gender}
                         </span>
                       </td>
-                      <td className="address-cell">{volunteer.address}</td>
                       <td className="contact-cell">{volunteer.contact_info}</td>
+                      <td className="address-cell">{volunteer.address}</td>
                       <td>
                         {volunteer.expertise && (
                           <span className="expertise-badge">{volunteer.expertise}</span>
@@ -486,13 +480,6 @@ function VolunteerList() {
                       <td>{volunteer.location}</td>
                       <td className="actions-cell">
                         <div className="action-buttons">
-                          <button 
-                            className="action-btn view-btn" 
-                            onClick={() => handleView(volunteer)}
-                            title="View Details"
-                          >
-                            <FontAwesomeIcon icon={faEye} />
-                          </button>
                           <button 
                             className="action-btn edit-btn" 
                             onClick={() => handleEdit(volunteer)}
@@ -656,84 +643,6 @@ function VolunteerList() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* View Modal */}
-        {showViewModal && viewingVolunteer && (
-          <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-            <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>
-                  <FontAwesomeIcon icon={faEye} />
-                  Volunteer Details
-                </h3>
-                <button className="modal-close" onClick={() => setShowViewModal(false)}>
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
-              </div>
-              
-              <div className="volunteer-details">
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <label>Full Name:</label>
-                    <span>{viewingVolunteer.name}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Gender:</label>
-                    <span className={`gender-badge ${viewingVolunteer.gender?.toLowerCase()}`}>
-                      {viewingVolunteer.gender}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <label>Contact Number:</label>
-                    <span>{viewingVolunteer.contact_info}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Location:</label>
-                    <span>{viewingVolunteer.location}</span>
-                  </div>
-                </div>
-                
-                <div className="detail-item full-width">
-                  <label>Address:</label>
-                  <span>{viewingVolunteer.address}</span>
-                </div>
-                
-                {viewingVolunteer.expertise && (
-                  <div className="detail-item full-width">
-                    <label>Expertise:</label>
-                    <span className="expertise-badge">{viewingVolunteer.expertise}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="modal-actions">
-                <button 
-                  className="edit-btn" 
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleEdit(viewingVolunteer);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEdit} />
-                  Edit Volunteer
-                </button>
-                <button 
-                  className="delete-btn" 
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleDelete(viewingVolunteer.id);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                  Delete Volunteer
-                </button>
-              </div>
             </div>
           </div>
         )}

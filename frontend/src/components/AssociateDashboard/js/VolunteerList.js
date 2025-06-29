@@ -24,6 +24,43 @@ import {
 import AssociateLayout from './AssociateLayout';
 import '../css/VolunteerList.css';
 
+// Add Toast component
+function Toast({ message, type, onClose }) {
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(onClose, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+  if (!message) return null;
+  return (
+    <div className={`custom-toast ${type}`}>{message}</div>
+  );
+}
+
+// Add ConfirmModal component
+function ConfirmModal({ open, message, onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" style={{zIndex: 10000}}>
+      <div className="confirm-modal">
+        <button className="modal-close confirm-close" onClick={onCancel}>&times;</button>
+        <div className="confirm-icon">
+          <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+            <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+          </svg>
+        </div>
+        <div className="confirm-message">{message}</div>
+        <div className="modal-actions confirm-actions">
+          <button className="delete-btn" onClick={onConfirm}>Yes, I'm sure</button>
+          <button className="cancel-btn" onClick={onCancel}>No, cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VolunteerList() {
   const [volunteers, setVolunteers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +88,9 @@ function VolunteerList() {
     location: ''
   });
   const [formErrors, setFormErrors] = useState({});
+  const [toast, setToast] = useState({ message: '', type: '' });
+  // Add state for confirmation modal
+  const [confirm, setConfirm] = useState({ open: false, onConfirm: null, message: '' });
 
   useEffect(() => {
     fetchVolunteers();
@@ -65,7 +105,8 @@ function VolunteerList() {
       });
       setVolunteers(response.data);
     } catch (err) {
-      setError('Failed to fetch volunteers');
+      // setError('Failed to fetch volunteers');
+      setToast({ message: 'Failed to fetch volunteers', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -88,9 +129,7 @@ function VolunteerList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-
     try {
       const token = localStorage.getItem('authToken');
       const dataToSubmit = {
@@ -98,29 +137,26 @@ function VolunteerList() {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         contact_info: formData.contact_info.replace(/\D/g, '').slice(0, 11)
       };
-
       if (selectedVolunteer) {
         await axios.put(`http://localhost:8000/api/volunteers/${selectedVolunteer.id}`, dataToSubmit, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setSuccess('Volunteer updated successfully!');
+        // setSuccess('Volunteer updated successfully!');
+        setToast({ message: 'Volunteer updated successfully!', type: 'success' });
       } else {
         await axios.post('http://localhost:8000/api/volunteers', dataToSubmit, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setSuccess('Volunteer added successfully!');
+        // setSuccess('Volunteer added successfully!');
+        setToast({ message: 'Volunteer added successfully!', type: 'success' });
       }
-      
       setShowModal(false);
       setSelectedVolunteer(null);
       resetForm();
       fetchVolunteers();
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to save volunteer');
-      setTimeout(() => setError(''), 5000);
+      // setError('Failed to save volunteer');
+      setToast({ message: 'Failed to save volunteer', type: 'error' });
     }
   };
 
@@ -152,42 +188,49 @@ function VolunteerList() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this volunteer?')) return;
-    try {
-      const token = localStorage.getItem('authToken');
-      await axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSuccess('Volunteer deleted successfully!');
-      fetchVolunteers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Failed to delete volunteer');
-      setTimeout(() => setError(''), 5000);
-    }
+  const handleDelete = (id) => {
+    setConfirm({
+      open: true,
+      message: 'Are you sure you want to delete this volunteer?',
+      onConfirm: async () => {
+        setConfirm({ ...confirm, open: false });
+        try {
+          const token = localStorage.getItem('authToken');
+          await axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setToast({ message: 'Volunteer deleted successfully!', type: 'success' });
+          fetchVolunteers();
+        } catch (err) {
+          setToast({ message: 'Failed to delete volunteer', type: 'error' });
+        }
+      }
+    });
   };
 
-  const handleBulkDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete ${selectedVolunteers.length} volunteer(s)?`)) return;
-    
-    try {
-      const token = localStorage.getItem('authToken');
-      await Promise.all(
-        selectedVolunteers.map(id =>
-          axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        )
-      );
-      setSuccess(`${selectedVolunteers.length} volunteer(s) deleted successfully!`);
-      setSelectedVolunteers([]);
-      fetchVolunteers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Failed to delete some volunteers');
-      setTimeout(() => setError(''), 5000);
-    }
+  const handleBulkDelete = () => {
+    setConfirm({
+      open: true,
+      message: `Are you sure you want to delete ${selectedVolunteers.length} volunteer(s)?`,
+      onConfirm: async () => {
+        setConfirm({ ...confirm, open: false });
+        try {
+          const token = localStorage.getItem('authToken');
+          await Promise.all(
+            selectedVolunteers.map(id =>
+              axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+            )
+          );
+          setToast({ message: `${selectedVolunteers.length} volunteer(s) deleted successfully!`, type: 'success' });
+          setSelectedVolunteers([]);
+          fetchVolunteers();
+        } catch (err) {
+          setToast({ message: 'Failed to delete some volunteers', type: 'error' });
+        }
+      }
+    });
   };
 
   const handleSelectAll = (e) => {
@@ -280,6 +323,13 @@ function VolunteerList() {
   return (
     <AssociateLayout>
       <div className="volunteer-list-container">
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
+        <ConfirmModal
+          open={confirm.open}
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm({ ...confirm, open: false })}
+        />
         <div className="header-section">
           <div className="header-left">
             <h2>VOLUNTEER LIST</h2>
@@ -370,23 +420,9 @@ function VolunteerList() {
           </div>
         )}
 
-        {error && (
-          <div className="alert-message error">
-            <FontAwesomeIcon icon={faXmark} />
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="alert-message success">
-            <FontAwesomeIcon icon={faCheck} />
-            {success}
-          </div>
-        )}
-
         {loading ? (
           <div className="loading-container">
-            <div className="loading-spinner"></div>
+            {/* <div className="loading-spinner"></div> */}
             <p>Loading volunteers...</p>
           </div>
         ) : (

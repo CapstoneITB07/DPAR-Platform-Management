@@ -24,7 +24,7 @@
 }
 .announcement-modal-header {
   background: #A11C22;
-  padding: 22px 32px 18px 32px;
+  padding: 8px 32px 10px 32px;
   border-radius: 18px 18px 0 0;
   display: flex;
   align-items: center;
@@ -54,7 +54,7 @@
   background: #c53030;
 }
 .announcement-modal-form {
-  padding: 28px 32px 24px 32px;
+  padding: 10px 32px 24px 32px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -434,7 +434,7 @@
   font-style: italic;
   font-size: 17px;
   margin-top: 32px;
-}
+} 
 
 @media (max-width: 700px) {
   .announcement-list {
@@ -451,9 +451,13 @@
   }
   .announcement-modal-card, .announcement-desc-modal-card {
     min-width: 0;
-    max-width: 98vw;
-    padding: 8px 2px;
+    max-width: 99vw;
+    width: 98vw;
+    padding: 0;
     border-radius: 10px;
+    max-height: 96vh;
+    overflow-y: auto;
+    box-sizing: border-box;
   }
   .announcement-modal-header {
     padding: 12px 8px 8px 8px;
@@ -484,13 +488,48 @@
     font-size: 22px;
   }
   .announcement-modal-actions {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
     gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    justify-content: center;
   }
   .announcement-cancel-btn, .announcement-submit-btn {
-    width: 100%;
+    width: 50%;
+    min-width: 0;
+    max-width: 100%;
     font-size: 15px;
     padding: 10px 0;
+    margin: 0;
+    box-sizing: border-box;
+    display: block;
+    text-align: center;
+    border-radius: 10px;
+  }
+  .announcement-cancel-btn {
+    background: transparent !important;
+    color: #dc3545 !important;
+    border: none !important;
+    font-weight: 700;
+    transition: color 0.18s;
+  }
+  .announcement-cancel-btn:hover {
+    background: transparent !important;
+    color: #a71d2a !important;
+    border: none !important;
+  }
+  .announcement-submit-btn {
+    background: #1976d2 !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 700;
+    transition: background 0.18s;
+  }
+  .announcement-submit-btn:hover {
+    background: #1251a3 !important;
+    color: #fff !important;
   }
   .announcement-header-row {
     flex-direction: column;

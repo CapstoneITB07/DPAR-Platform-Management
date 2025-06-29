@@ -73,10 +73,10 @@ function CustomCalendarToolbar({ date, onNavigate }) {
       <button
         className="calendar-nav-btn calendar-nav-btn-small"
         onClick={() => onNavigate('TODAY')}
-        style={{ marginRight: 16 }}
+        style={{ marginRight: 16, minWidth: 40, textAlign: 'center' }}
         aria-label="Go to Today"
       >
-        Today
+        TD
       </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 240, justifyContent: 'center' }}>
         <button
@@ -267,23 +267,29 @@ function AdminDashboard() {
     }
 
     const categories = [
-      'Volunteer Participation',
-      'Task Accommodation and Completion',
-      'Communication Effectiveness',
-      'Team Objective Above Self'
+      'VP', // Volunteer Participation
+      'TAC', // Task Accommodation and Completion
+      'CE', // Communication Effectiveness
+      'TOAS' // Team Objective Above Self
     ];
 
     const chartData = {
       labels: categories,
       datasets: [{
         label: `${selectedAssociateData.name}'s Performance Scores`,
-        data: categories.map(category => {
-          const score = selectedAssociateData.averageScores[category] || 0;
-          console.log(`Score for ${category}:`, score);
-          return score;
-        }),
-        backgroundColor: categories.map(category => 
-          getPerformanceColor(selectedAssociateData.averageScores[category] || 0)
+        data: [
+          selectedAssociateData.averageScores['Volunteer Participation'] || 0,
+          selectedAssociateData.averageScores['Task Accommodation and Completion'] || 0,
+          selectedAssociateData.averageScores['Communication Effectiveness'] || 0,
+          selectedAssociateData.averageScores['Team Objective Above Self'] || 0
+        ],
+        backgroundColor: categories.map((cat, idx) => 
+          getPerformanceColor([
+            selectedAssociateData.averageScores['Volunteer Participation'],
+            selectedAssociateData.averageScores['Task Accommodation and Completion'],
+            selectedAssociateData.averageScores['Communication Effectiveness'],
+            selectedAssociateData.averageScores['Team Objective Above Self']
+          ][idx] || 0)
         ),
         borderRadius: 5
       }]
@@ -440,139 +446,71 @@ function AdminDashboard() {
   }, [statisticsData, evaluations]);
 
   // Line chart data for KPI trends over time
+  const kpiCategories = [
+    'Volunteer Participation',
+    'Task Accommodation and Completion',
+    'Communication Effectiveness',
+    'Team Objective Above Self'
+  ];
+  const kpiColors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
+
   const kpiTrendData = useMemo(() => {
     if (statisticsData && statisticsData.kpi_trends) {
-      const categories = [
-        'Volunteer Participation',
-        'Task Accommodation and Completion',
-        'Communication Effectiveness',
-        'Team Objective Above Self'
-      ];
-
       // Get all unique months from all KPI data
       const allMonths = new Set();
-      categories.forEach(category => {
+      kpiCategories.forEach(category => {
         if (statisticsData.kpi_trends[category]) {
           statisticsData.kpi_trends[category].forEach(item => {
             allMonths.add(item.month);
           });
         }
       });
-
-      const sortedMonths = Array.from(allMonths).sort((a, b) => {
-        return new Date(a) - new Date(b);
-      });
-
-      const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
-      
-      const datasets = categories.map((category, index) => {
-        const data = sortedMonths.map(month => {
+      const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
+      // Always include all four datasets
+      const datasets = kpiCategories.map((category, index) => {
+        let data = sortedMonths.map(month => {
           const monthData = statisticsData.kpi_trends[category]?.find(item => item.month === month);
-          return monthData ? monthData.average_score : 0;
+          return monthData ? monthData.average_score : null;
         });
-
+        // If data is all null or empty, add a single null to force legend display
+        if (!data.length || data.every(v => v === null)) {
+          data = [null];
+        }
         return {
           label: category,
           data,
-          borderColor: colors[index],
-          backgroundColor: colors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
+          borderColor: kpiColors[index],
+          backgroundColor: kpiColors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
           borderWidth: 2,
-          pointBackgroundColor: colors[index],
+          pointBackgroundColor: kpiColors[index],
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
-          tension: 0.4
+          tension: 0.4,
+          spanGaps: true
         };
       });
-
-      return { 
-        labels: sortedMonths, 
-        datasets 
-      };
+      return { labels: sortedMonths.map(m => m ? m : ''), datasets };
     }
-
-    if (!evaluations || evaluations.length === 0) {
-      return {
-        labels: [],
-        datasets: []
-      };
-    }
-
-    // Fallback to client-side calculation if statistics data is not available
-    const monthlyKPI = {};
-    const categories = [
-      'Volunteer Participation',
-      'Task Accommodation and Completion',
-      'Communication Effectiveness',
-      'Team Objective Above Self'
-    ];
-
-    evaluations.forEach(ev => {
-      const monthKey = format(parseISO(ev.created_at), 'yyyy-MM');
-      const monthLabel = format(parseISO(ev.created_at), 'MMM yyyy');
-      
-      if (!monthlyKPI[monthKey]) {
-        monthlyKPI[monthKey] = {
-          label: monthLabel,
-          categories: {}
-        };
-        categories.forEach(cat => {
-          monthlyKPI[monthKey].categories[cat] = [];
-        });
-      }
-
-      try {
-        const evalData = typeof ev.evaluation_data === 'string'
-          ? JSON.parse(ev.evaluation_data)
-          : ev.evaluation_data;
-
-        categories.forEach(category => {
-          if (evalData[category] && evalData[category].scores) {
-            const scores = Object.values(evalData[category].scores)
-              .map(score => Number(score))
-              .filter(score => !isNaN(score) && score > 0);
-            if (scores.length > 0) {
-              const average = scores.reduce((a, b) => a + b, 0) / scores.length;
-              monthlyKPI[monthKey].categories[category].push(average);
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error processing evaluation data for KPI trends:', error);
-      }
-    });
-
-    // Calculate averages and create datasets
-    const sortedMonths = Object.keys(monthlyKPI).sort();
-    const labels = sortedMonths.map(key => monthlyKPI[key].label);
-    
-    const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
-    
-    const datasets = categories.map((category, index) => {
-      const data = sortedMonths.map(key => {
-        const scores = monthlyKPI[key].categories[category];
-        return scores.length > 0 
-          ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2))
-          : 0;
-      });
-
-      return {
+    // If no data, still show all legends
+    return {
+      labels: [''],
+      datasets: kpiCategories.map((category, index) => ({
         label: category,
-        data,
-        borderColor: colors[index],
-        backgroundColor: colors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
+        data: [null],
+        borderColor: kpiColors[index],
+        backgroundColor: kpiColors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
         borderWidth: 2,
-        pointBackgroundColor: colors[index],
+        pointBackgroundColor: kpiColors[index],
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
-        tension: 0.4
-      };
-    });
-
-    return { labels, datasets };
+        tension: 0.4,
+        spanGaps: true
+      }))
+    };
   }, [statisticsData, evaluations]);
 
   const chartOptions = {
@@ -617,6 +555,7 @@ function AdminDashboard() {
     },
     plugins: {
       legend: {
+        display: true,
         position: 'bottom',
         labels: {
           usePointStyle: true,
@@ -842,6 +781,40 @@ function AdminDashboard() {
     }
   };
 
+  // In the chartOptions for the comparisonData (Group Performance Comparison), add responsive horizontal scrolling and dynamic width.
+  const comparisonChartRef = useRef();
+
+  const dynamicComparisonOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: {
+        ...chartOptions.plugins.legend,
+        labels: {
+          ...chartOptions.plugins.legend.labels,
+          font: { size: 13 }
+        }
+      },
+    },
+    scales: {
+      ...chartOptions.scales,
+      x: {
+        ...chartOptions.scales?.x,
+        ticks: {
+          ...chartOptions.scales?.x?.ticks,
+          maxRotation: 45,
+          minRotation: 30,
+          autoSkip: false,
+          font: { size: 12 },
+          callback: function(value, index, values) {
+            // Show full label
+            return this.getLabelForValue(value);
+          }
+        }
+      }
+    }
+  };
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -929,7 +902,7 @@ function AdminDashboard() {
               {/* Individual Performance Chart */}
               <div className="chart-container">
                 <h4>Individual Performance Breakdown</h4>
-                <div className="bar-chart">
+                <div className="bar-chart" style={{ marginLeft: '-10px' }}>
                   <Bar data={associateBarData} options={chartOptions} />
                 </div>
               </div>
@@ -945,16 +918,20 @@ function AdminDashboard() {
               {/* Performance Comparison Chart */}
               <div className="chart-container chart-container-full-width">
                 <h4>Group Performance Comparison</h4>
-                <div className="bar-chart">
-                  <Bar data={comparisonData} options={chartOptions} />
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <div style={{ minWidth: Math.max(associatesPerformance.length * 70, 350), width: '100%' }}>
+                    <Bar ref={comparisonChartRef} data={comparisonData} options={dynamicComparisonOptions} />
+                  </div>
                 </div>
               </div>
 
               {/* KPI Trends Chart (Full Width) */}
               <div className="chart-container chart-container-full-width">
                 <h4>KPI Performance Trends</h4>
-                <div className="line-chart">
-                  <Line data={kpiTrendData} options={lineChartOptions} />
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <div style={{ minWidth: Math.max(kpiCategories.length * 180, 350), width: '100%' }}>
+                    <Line data={kpiTrendData} options={lineChartOptions} />
+                  </div>
                 </div>
               </div>
             </div>

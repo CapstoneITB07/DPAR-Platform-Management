@@ -246,6 +246,7 @@ function ApprovalAOR() {
           <div className="reports-grid">
             {reports.map(report => {
               const logoUrl = getOrganizationLogo(report);
+              const displayStatus = report.status === 'sent' ? 'RECEIVED' : report.status.toUpperCase();
               return (
                 <div key={report.id} className="report-card">
                   <img 
@@ -261,7 +262,7 @@ function ApprovalAOR() {
                     <span className="org-label">{report.user?.organization || 'ASSOCIATE'}</span>
                     <h3>{report.title}</h3>
                     <span className={`report-status ${report.status}`}>
-                      {report.status.toUpperCase()}
+                      {displayStatus}
                     </span>
                     <button className="see-more-btn" onClick={() => handlePreview(report)}>
                       SEE MORE

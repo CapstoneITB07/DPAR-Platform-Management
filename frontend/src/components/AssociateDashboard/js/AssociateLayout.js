@@ -6,8 +6,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
 
+const API_BASE = 'http://localhost:8000';
+
 function AssociateLayout({ children }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     name: '',
@@ -30,19 +32,18 @@ function AssociateLayout({ children }) {
   const userOrganization = localStorage.getItem('userOrganization');
   const NOTIF_READ_KEY = `associateNotifRead_${userId}`;
   const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const [editProfileHover, setEditProfileHover] = useState(false);
+
+  const toggleSidebar = () => setSidebarOpen(open => !open);
+  const closeSidebar = () => setSidebarOpen(false);
+
+  const isActive = (route) => location.pathname === route;
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     navigate('/');
   };
-
-  const isActive = (route) => location.pathname === route;
 
   const fetchNotifications = async () => {
     try {
@@ -72,8 +73,6 @@ function AssociateLayout({ children }) {
         new_password: '',
         new_password_confirmation: ''
       });
-
-      // Fetch updated profile data
       fetchProfile();
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to change password');
@@ -91,21 +90,17 @@ function AssociateLayout({ children }) {
   const handleProfileImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
       if (!validTypes.includes(file.type)) {
         setError('Please upload a valid image file (JPEG, PNG, JPG, or GIF)');
         return;
       }
-      // Validate file size (2MB)
       if (file.size > 2 * 1024 * 1024) {
         setError('File size should not exceed 2MB');
         return;
       }
       setNewProfileImage(file);
       setError('');
-      
-      // Show preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImage(reader.result);
@@ -119,7 +114,6 @@ function AssociateLayout({ children }) {
       try {
         const formData = new FormData();
         formData.append('profile_picture', newProfileImage);
-        
         const token = localStorage.getItem('authToken');
         const response = await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
           headers: {
@@ -127,16 +121,11 @@ function AssociateLayout({ children }) {
             Authorization: `Bearer ${token}`
           }
         });
-        
         setSuccess('Profile picture updated successfully');
         setNewProfileImage(null);
-
-        // Update the profile image with the new URL from the response
         if (response.data.logo) {
           setProfileImage(`${API_BASE}/storage/${response.data.logo}`);
         }
-
-        // Fetch updated profile data
         fetchProfile();
       } catch (error) {
         setError(error.response?.data?.message || 'Failed to update profile picture');
@@ -144,7 +133,6 @@ function AssociateLayout({ children }) {
     }
   };
 
-  // Move fetchProfile to a separate function so it can be reused
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('authToken');
@@ -168,6 +156,20 @@ function AssociateLayout({ children }) {
     }
   };
 
+  const getLogoUrl = (logoPath) => {
+    if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
+    if (logoPath.startsWith('logos/')) {
+      return `${API_BASE}/storage/${logoPath}`;
+    }
+    if (logoPath.startsWith('/storage/')) {
+      return `${API_BASE}${logoPath}`;
+    }
+    if (logoPath.startsWith('/Assets/')) {
+      return `${window.location.origin}${logoPath}`;
+    }
+    return logoPath;
+  };
+
   useEffect(() => {
     fetchNotifications();
   }, []);
@@ -186,29 +188,21 @@ function AssociateLayout({ children }) {
     }
   }, [location.pathname, NOTIF_READ_KEY]);
 
-  const API_BASE = 'http://localhost:8000';
-
-  const getLogoUrl = (logoPath) => {
-    if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
-    
-    if (logoPath.startsWith('logos/')) {
-      return `${API_BASE}/storage/${logoPath}`;
-    }
-    
-    if (logoPath.startsWith('/storage/')) {
-      return `${API_BASE}${logoPath}`;
-    }
-    
-    if (logoPath.startsWith('/Assets/')) {
-      return `${window.location.origin}${logoPath}`;
-    }
-    
-    return logoPath;
-  };
-
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') closeSidebar();
+    };
+    if (sidebarOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
   const customModalStyles = {
     content: {
@@ -228,13 +222,91 @@ function AssociateLayout({ children }) {
   };
 
   return (
-    <div className="associate-dashboard-fixed-layout">
-      {/* Header Bar */}
-      <header className="header">
-        <div className="header-left">
-          <div className="burger-icon" onClick={toggleSidebar}>
-            <FontAwesomeIcon icon={faBars} />
+    <div className="associate-dashboard-fixed-layout" style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
+      <div>
+        {sidebarOpen && (
+          <div className="sidebar-overlay" onClick={closeSidebar} />
+        )}
+        <nav className={`sidebar-drawer${sidebarOpen ? ' open' : ''}`} tabIndex="-1">
+          <button className="sidebar-close-btn" onClick={closeSidebar} aria-label="Close Sidebar">
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+          <div className="sidebar-header" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px 0 18px 0',
+            background: 'linear-gradient(180deg, #f7f7f7 60%, #fff 100%)',
+            position: 'relative',
+            borderBottom: '1.5px solid #f0f0f0',
+          }}>
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="profile-icon"
+              loading="eager"
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                backgroundColor: '#f0f0f0',
+                boxShadow: '0 2px 8px rgba(161,28,34,0.08)',
+                border: '2.5px solid #fff',
+                marginBottom: '10px',
+              }}
+              onError={e => { e.target.src = '/Assets/disaster_logo.png'; }}
+            />
+            <div style={{ width: '100%', textAlign: 'center' }}>
+              <p className="user-name" style={{
+                fontWeight: 800,
+                fontSize: '1.15rem',
+                color: '#A11C22',
+                margin: 0,
+                marginBottom: '2px',
+                letterSpacing: '0.5px',
+              }}>{profileData.name || 'Associate'}</p>
+              <p
+                className="edit-profile"
+                onClick={() => { setIsProfileModalOpen(true); setError(''); setSuccess(''); }}
+                style={{
+                  cursor: 'pointer',
+                  margin: 0,
+                  marginTop: '4px',
+                  color: editProfileHover ? '#A11C22' : '#007bff',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'inline-block',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={() => setEditProfileHover(true)}
+                onMouseLeave={() => setEditProfileHover(false)}
+              >
+                <FontAwesomeIcon icon={faEdit} /> Edit Profile
+              </p>
+            </div>
           </div>
+          <nav className="sidebar-nav">
+            <ul>
+              <li className={isActive('/associate/announcements') ? 'active' : ''} onClick={() => { navigate('/associate/announcements'); closeSidebar(); }}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENTS</li>
+              <li className={isActive('/associate/volunteer-list') ? 'active' : ''} onClick={() => { navigate('/associate/volunteer-list'); closeSidebar(); }}><FontAwesomeIcon icon={faUsers} /> VOLUNTEER LIST</li>
+              <li className={isActive('/associate/notification') ? 'active' : ''} onClick={() => { navigate('/associate/notification'); closeSidebar(); }}><FontAwesomeIcon icon={faEnvelope} /> NOTIFICATION</li>
+              <li className={isActive('/associate/reports') ? 'active' : ''} onClick={() => { navigate('/associate/reports'); closeSidebar(); }}><FontAwesomeIcon icon={faChartBar} /> REPORTS</li>
+            </ul>
+          </nav>
+          <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
+            <button className="logout-button" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            </button>
+          </div>
+        </nav>
+      </div>
+      <div className="header">
+        <div className="header-left">
+          <button className="burger-icon" onClick={toggleSidebar} aria-label="Open Sidebar">
+            <FontAwesomeIcon icon={faBars} />
+          </button>
           <span className="dpar-text">DPAR</span>
         </div>
         <div className="header-right">
@@ -245,85 +317,10 @@ function AssociateLayout({ children }) {
             )}
           </div>
         </div>
-      </header>
-      <div style={{ display: 'flex' }}>
-        <div
-          className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
-          style={{
-            position: 'fixed',
-            top: 48,
-            left: 0,
-            height: 'calc(100vh - 48px)',
-            width: isSidebarOpen ? 240 : 60,
-            zIndex: 100,
-            background: '#fff',
-            boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            transition: 'width 0.2s',
-          }}
-        >
-          <div className="sidebar-header">
-            {isSidebarOpen && (
-              <div className="user-profile">
-                <img 
-                  src={profileImage}
-                  alt="Profile"
-                  className="profile-icon"
-                  loading="eager"
-                  onError={(e) => {
-                    e.target.src = '/Assets/disaster_logo.png';
-                  }}
-                />
-                <div className="user-info">
-                  <p className="user-name">{profileData.name || 'Associate'}</p>
-                  <p className="edit-profile" onClick={() => setIsProfileModalOpen(true)} style={{ cursor: 'pointer' }}>
-                    <FontAwesomeIcon icon={faEdit} /> Edit Profile
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-          <nav className="sidebar-nav">
-            <ul>
-              {isSidebarOpen && (
-                <>
-                  <li className={isActive('/associate/announcements') ? 'active' : ''} onClick={() => navigate('/associate/announcements')}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENTS</li>
-                  <li className={isActive('/associate/volunteer-list') ? 'active' : ''} onClick={() => navigate('/associate/volunteer-list')}><FontAwesomeIcon icon={faUsers} /> VOLUNTEER LIST</li>
-                  <li className={isActive('/associate/notification') ? 'active' : ''} onClick={() => navigate('/associate/notification')}><FontAwesomeIcon icon={faEnvelope} /> NOTIFICATION</li>
-                  <li className={isActive('/associate/reports') ? 'active' : ''} onClick={() => navigate('/associate/reports')}><FontAwesomeIcon icon={faChartBar} /> REPORTS</li>
-                </>
-              )}
-              {!isSidebarOpen && (
-                <>
-                  <li className={isActive('/associate/announcements') ? 'active' : ''} onClick={() => navigate('/associate/announcements')}><FontAwesomeIcon icon={faBullhorn} /></li>
-                  <li className={isActive('/associate/volunteer-list') ? 'active' : ''} onClick={() => navigate('/associate/volunteer-list')}><FontAwesomeIcon icon={faUsers} /></li>
-                  <li className={isActive('/associate/notification') ? 'active' : ''} onClick={() => navigate('/associate/notification')}><FontAwesomeIcon icon={faEnvelope} /></li>
-                  <li className={isActive('/associate/reports') ? 'active' : ''} onClick={() => navigate('/associate/reports')}><FontAwesomeIcon icon={faChartBar} /></li>
-                </>
-              )}
-            </ul>
-          </nav>
-          <div className="sidebar-footer">
-            {isSidebarOpen && (
-              <button className="logout-button" onClick={handleLogout}>
-                <FontAwesomeIcon icon={faSignOutAlt} /> Logout
-              </button>
-            )}
-            {!isSidebarOpen && (
-              <button className="logout-button-icon-only" onClick={handleLogout}>
-                <FontAwesomeIcon icon={faSignOutAlt} />
-              </button>
-            )}
-          </div>
-        </div>
-        <main className="main-content" style={{ marginLeft: isSidebarOpen ? 240 : 60, width: isSidebarOpen ? 'calc(100% - 240px)' : 'calc(100% - 60px)', transition: 'margin-left 0.2s, width 0.2s', minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
-          {children}
-        </main>
       </div>
-
-      {/* Profile Modal */}
+      <div className={`main-content${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
+        {children}
+      </div>
       <Modal
         isOpen={isProfileModalOpen}
         onRequestClose={() => setIsProfileModalOpen(false)}

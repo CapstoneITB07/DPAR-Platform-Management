@@ -25,6 +25,7 @@ function AdminLayout({ children }) {
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
   const ADMIN_NOTIF_RESPONSE_KEY = 'adminNotifResponseViewed';
+  const [editProfileHover, setEditProfileHover] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen(open => !open);
   const closeSidebar = () => setSidebarOpen(false);
@@ -228,27 +229,66 @@ function AdminLayout({ children }) {
             <FontAwesomeIcon icon={faTimes} />
           </button>
           {/* Sidebar content here */}
-          <div className="sidebar-header">
-              <div className="user-profile">
-                <img 
-                  src={profileImage}
-                  alt="Profile"
-                  className="profile-icon"
-                  loading="eager"
-                onError={e => { e.target.src = '/Assets/disaster_logo.png'; }}
-                />
-                <div className="user-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <p className="user-name" style={{ marginBottom: 0 }}>Admin</p>
-                  <p className="edit-profile" onClick={() => {
-                    setShowProfileModal(true);
+          <div className="sidebar-header" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px 0 18px 0',
+            background: 'linear-gradient(180deg, #f7f7f7 60%, #fff 100%)',
+            position: 'relative',
+            borderBottom: '1.5px solid #f0f0f0',
+          }}>
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="profile-icon"
+              loading="eager"
+              style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                backgroundColor: '#f0f0f0',
+                boxShadow: '0 2px 8px rgba(161,28,34,0.08)',
+                border: '2.5px solid #fff',
+                marginBottom: '10px',
+              }}
+              onError={e => { e.target.src = '/Assets/disaster_logo.png'; }}
+            />
+            <div style={{ width: '100%', textAlign: 'center' }}>
+              <p className="user-name" style={{
+                fontWeight: 800,
+                fontSize: '1.15rem',
+                color: '#A11C22',
+                margin: 0,
+                marginBottom: '2px',
+                letterSpacing: '0.5px',
+              }}>Admin</p>
+              <p
+                className="edit-profile"
+                onClick={() => {
+                  setShowProfileModal(true);
                   setImagePreview(null);
-                    setError('');
-                    setSuccess('');
-                  }} style={{ cursor: 'pointer', marginTop: 2 }}>
-                    <FontAwesomeIcon icon={faEdit} /> Edit Profile
-                  </p>
-                </div>
-              </div>
+                  setError('');
+                  setSuccess('');
+                }}
+                style={{
+                  cursor: 'pointer',
+                  margin: 0,
+                  marginTop: '4px',
+                  color: editProfileHover ? '#A11C22' : '#007bff',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'inline-block',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={() => setEditProfileHover(true)}
+                onMouseLeave={() => setEditProfileHover(false)}
+              >
+                <FontAwesomeIcon icon={faEdit} /> Edit Profile
+              </p>
+            </div>
           </div>
           <nav className="sidebar-nav">
             <ul>

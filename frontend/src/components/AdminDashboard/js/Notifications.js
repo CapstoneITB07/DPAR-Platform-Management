@@ -126,7 +126,7 @@ function Notifications() {
 
   return (
     <AdminLayout>
-      <h2 className="notification-title">NOTIFICATIONS</h2>
+      <h2 className="main-header">NOTIFICATIONS</h2>
       {/* Filter Bar */}
       <div className="notification-filter-bar">
         <span className="notification-filter-label">Filters:</span>

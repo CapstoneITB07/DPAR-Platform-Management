@@ -110,7 +110,7 @@ function Announcement() {
   return (
     <AdminLayout>
       <div className="announcement-header-row">
-        <h2>Announcement</h2>
+        <h2 className="main-header">ANNOUNCEMENT</h2>
         <button
           className="announcement-create-btn"
           onClick={() => setShowModal(true)}

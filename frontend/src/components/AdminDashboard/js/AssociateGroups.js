@@ -444,7 +444,7 @@ function AssociateGroups() {
   return (
     <AdminLayout>
       <div className="associate-groups-header">
-        <h2>ASSOCIATE GROUPS:</h2>
+        <h2 className="main-header">ASSOCIATE GROUPS:</h2>
         <div>
           {!editListMode && (
             <>
@@ -690,9 +690,12 @@ function AssociateGroups() {
               
               <div className="form-actions">
                 {currentStep === 1 ? (
-                  <button type="button" className="btn-next" onClick={() => setCurrentStep(2)}>
-                    Next Step <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
+                  <>
+                    <div></div>
+                    <button type="button" className="btn-next" onClick={() => setCurrentStep(2)}>
+                      Next Step <FontAwesomeIcon icon={faArrowRight} />
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button type="button" className="btn-prev" onClick={() => setCurrentStep(1)}>

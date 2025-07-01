@@ -23,6 +23,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { parseISO } from 'date-fns';
 import moment from 'moment';
 import { getLogoUrl } from '../../../utils/url';
+import Modal from 'react-modal';
 
 ChartJS.register(
   CategoryScale,
@@ -114,6 +115,7 @@ function AdminDashboard() {
   const [refreshNow, setRefreshNow] = useState(false);
   const [statisticsData, setStatisticsData] = useState(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [showAllEvaluations, setShowAllEvaluations] = useState(false);
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -759,6 +761,7 @@ function AdminDashboard() {
           </div>
         );
       })}
+      <button className="see-more-btn" onClick={() => setShowAllEvaluations(true)}>See More</button>
     </div>
   );
 
@@ -815,6 +818,52 @@ function AdminDashboard() {
     }
   };
 
+  const renderAllEvaluationsModal = () => (
+    <Modal
+      isOpen={showAllEvaluations}
+      onRequestClose={() => setShowAllEvaluations(false)}
+      className="all-evaluations-modal"
+      overlayClassName="all-evaluations-modal-overlay"
+      ariaHideApp={false}
+    >
+      <div className="all-evaluations-modal-header">
+        <h3>All Evaluations</h3>
+        <button className="all-evaluations-modal-close" onClick={() => setShowAllEvaluations(false)}>&times;</button>
+      </div>
+      <div className="all-evaluations-list">
+        <div className="color-indicator-legend">
+          <span className="legend-label excellent">Excellent (&ge;3.5):</span>
+          <span className="legend-label good">Good (2.5-3.49):</span>
+          <span className="legend-label fair">Fair (1.5-2.49):</span>
+          <span className="legend-label poor">Poor (&lt;1.5):</span>
+        </div>
+        {evaluations.map(evaluation => {
+          const associate = associatesPerformance.find(a => a.user_id === evaluation.user_id);
+          const logo = associate ? getLogoUrl(associate.logo) : getLogoUrl(null);
+          return (
+            <div key={evaluation.id} className="evaluation-item">
+              <img src={logo} alt="logo" className="associate-logo-small" />
+              <div className="evaluation-details">
+                <span className="associate-name">
+                  {evaluation.user ? evaluation.user.name : 'Unknown User'}
+                </span>
+                <span className="organization-name">
+                  {evaluation.user ? evaluation.user.organization : 'No Organization'}
+                </span>
+              </div>
+              <div className="evaluation-score" style={{ color: getPerformanceColor(evaluation.total_score) }}>
+                {evaluation.total_score}
+              </div>
+              <div className="evaluation-date">
+                {format(parseISO(evaluation.created_at), 'MMM dd')}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Modal>
+  );
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -824,7 +873,7 @@ function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="admin-dashboard">
-        <h2>Dashboard Overview</h2>
+        <h2 className="main-header">Dashboard Overview</h2>
         {renderLastUpdate()}
         {error && <div className="error-message">{error}</div>}
 
@@ -959,8 +1008,12 @@ function AdminDashboard() {
             </div>
             {/* Recent Evaluations */}
             <div className="dashboard-section recent-evaluations">
-              <h3><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
+              <div className="recent-evaluations-header-row">
+                <h3 className="recent-evaluations-title"><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
+                <button className="generate-certificate-btn">Generate Certificate</button>
+              </div>
               {renderRecentEvaluations()}
+              {renderAllEvaluationsModal()}
             </div>
              {/* Members Overview */}
             <div className="dashboard-section members-overview">
@@ -974,12 +1027,6 @@ function AdminDashboard() {
                   <h4>Evaluated Associates</h4>
                   <div className="stat-value">
                     {associatesPerformance.filter(a => a.evaluations.length > 0).length}
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <h4>Organizations</h4>
-                  <div className="stat-value">
-                    {new Set(associatesPerformance.map(a => a.organization)).size}
                   </div>
                 </div>
               </div>

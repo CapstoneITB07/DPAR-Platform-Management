@@ -896,18 +896,10 @@ function AdminDashboard() {
               </div>
 
               {/* Performance Comparison Chart */}
-              <div className="chart-container">
-                <h4>Performance Comparison</h4>
+              <div className="chart-container chart-container-full-width">
+                <h4>Group Performance Comparison</h4>
                 <div className="bar-chart">
                   <Bar data={comparisonData} options={chartOptions} />
-                </div>
-              </div>
-
-              {/* Overall Performance Trend Chart */}
-              <div className="chart-container">
-                <h4>Overall Performance Trend (Monthly Average)</h4>
-                <div className="line-chart">
-                  <Line data={overallTrendData} options={lineChartOptions} />
                 </div>
               </div>
 
@@ -951,7 +943,7 @@ function AdminDashboard() {
                   <div className="stat-value">{associatesPerformance.length}</div>
                 </div>
                 <div className="stat-card">
-                  <h4>Active Associates</h4>
+                  <h4>Evaluated Associates</h4>
                   <div className="stat-value">
                     {associatesPerformance.filter(a => a.evaluations.length > 0).length}
                   </div>

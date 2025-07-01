@@ -447,7 +447,7 @@ function AssociateGroups() {
               <button onClick={() => setShowModal(false)} className="close-icon">&times;</button>
             </div>
             <h3>{selectedGroup.name}</h3>
-            <p>Director: {selectedGroup.director}</p>
+            <p>President: {selectedGroup.director}</p>
             <p>Email: {selectedGroup.email}</p>
             <p>Phone: {selectedGroup.phone}</p>
             <div className="profile-description-section">
@@ -473,7 +473,7 @@ function AssociateGroups() {
             <form className="add-edit-form" onSubmit={handleAddEditSubmit}>
               <label>Name:<input name="name" value={form.name} onChange={handleFormChange} required /></label>
               <label>Type:<input name="type" value={form.type} onChange={handleFormChange} required /></label>
-              <label>Director:<input name="director" value={form.director} onChange={handleFormChange} required /></label>
+              <label>President:<input name="director" value={form.director} onChange={handleFormChange} required /></label>
               <label>Description:<textarea name="description" value={form.description} onChange={handleFormChange} required /></label>
               <label>
                 Logo:

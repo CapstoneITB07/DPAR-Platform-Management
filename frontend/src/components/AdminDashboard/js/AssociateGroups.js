@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
@@ -15,12 +15,14 @@ Modal.setAppElement('#root');
 function AssociateGroups() {
   const [selectedAssociate, setSelectedAssociate] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showAddEditModal, setShowAddEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
   const [memberCount, setMemberCount] = useState(0);
   const [message, setMessage] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
   const [form, setForm] = useState({ 
     name: '', 
     type: '', 
@@ -84,10 +86,18 @@ function AssociateGroups() {
   };
 
   const openAddModal = () => {
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
     setLogoFile(null);
-    setEditMode(false);
-    setShowAddEditModal(true);
+    setCurrentStep(1);
+    setShowAddModal(true);
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setCurrentStep(1);
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+    setLogoFile(null);
+    setError('');
   };
 
   const openEditListMode = () => {
@@ -101,8 +111,14 @@ function AssociateGroups() {
   const handleEditAssociate = (associate) => {
     setForm(associate);
     setLogoFile(null);
-    setEditMode(true);
-    setShowAddEditModal(true);
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+    setLogoFile(null);
+    setError('');
   };
 
   const handleFormChange = (e) => {
@@ -209,93 +225,77 @@ function AssociateGroups() {
     return true;
   };
 
-  const handleAddEditSubmit = async (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
+    setError('');
+    if (currentStep === 1) {
+      if (!validateStep1()) return;
+      setCurrentStep(2);
+      return;
+    }
+    if (currentStep === 2) {
+      if (!validateStep2()) return;
+    }
     try {
       const token = localStorage.getItem('authToken');
       const formData = new FormData();
-      
-      // Add all form fields to formData
-      Object.keys(form).forEach(key => {
-        if (form[key] !== null && form[key] !== undefined && key !== 'password' && key !== 'password_confirmation') {
-          formData.append(key, form[key]);
-        }
-      });
-
-      // For new associates, append password fields
-      if (!editMode) {
+      formData.append('name', form.name);
+      formData.append('type', form.type);
+      formData.append('director', form.director);
+      formData.append('description', form.description);
+      formData.append('email', form.email);
+      formData.append('phone', form.phone);
+      if (logoFile) formData.append('logo', logoFile);
+      if (form.password) {
         formData.append('password', form.password);
         formData.append('password_confirmation', form.password_confirmation);
       }
-
-      // Add logo if selected
-      if (logoFile) {
-        formData.append('logo', logoFile);
-      }
-
-      let response;
-      if (editMode) {
-        try {
-          response = await axios.post(`${API_BASE}/api/associate-groups/${form.id}?_method=PUT`, formData, {
-            headers: { 
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${token}`
-            }
-          });
-
-          // Handle password change if provided
-          if (form.password && form.password_confirmation) {
-            await handlePasswordChange(response.data.user_id);
-          }
-
-          // Update the associates list with the new data
-          setAssociates(prev => prev.map(a => a.id === form.id ? response.data : a));
-          setSelectedAssociate(response.data);
-          setShowAddEditModal(false);
-          setError('');
-          setMessage('Associate updated successfully');
-        } catch (error) {
-          console.error('Error updating associate:', error.response?.data);
-          if (error.response?.data?.errors) {
-            // Handle validation errors
-            const errorMessages = Object.values(error.response.data.errors).flat();
-            setError(errorMessages.join('\n'));
-          } else {
-            setError(error.response?.data?.message || 'Failed to update associate. Please try again.');
-          }
-          return;
-        }
-      } else {
-        try {
-          response = await axios.post(`${API_BASE}/api/associate-groups`, formData, {
-            headers: { 
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${token}`
-            }
-          });
-          
-          // Update the associates list with the new data
-          setAssociates(prev => [...prev, response.data]);
-          setShowAddEditModal(false);
-          setError('');
-          setMessage('Associate added successfully');
-        } catch (error) {
-          console.error('Error creating associate:', error.response?.data);
-          if (error.response?.data?.errors) {
-            // Handle validation errors
-            const errorMessages = Object.values(error.response.data.errors).flat();
-            setError(errorMessages.join('\n'));
-          } else {
-            setError(error.response?.data?.message || 'Failed to create associate. Please try again.');
-          }
-          return;
-        }
+      const response = await axios.post(`${API_BASE}/api/associate-groups`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      if (response.status === 201 || response.status === 200) {
+        setMessage('Associate added successfully!');
+        setShowAddModal(false);
+        setCurrentStep(1);
+        setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+        setLogoFile(null);
+        setError('');
+        fetchAssociates();
+        setTimeout(() => setMessage(''), 3000);
       }
     } catch (error) {
-      console.error('Error:', error);
-      setError('An unexpected error occurred. Please try again.');
+      setError(error.response?.data?.message || 'Failed to add associate. Please try again.');
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!validateStep1()) return;
+    try {
+      const token = localStorage.getItem('authToken');
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('type', form.type);
+      formData.append('director', form.director);
+      formData.append('description', form.description);
+      formData.append('email', form.email);
+      formData.append('phone', form.phone);
+      if (logoFile) formData.append('logo', logoFile);
+      const response = await axios.put(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      if (response.status === 200) {
+        setMessage('Associate updated successfully!');
+        setShowEditModal(false);
+        setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+        setLogoFile(null);
+        setError('');
+        fetchAssociates();
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to update associate. Please try again.');
     }
   };
 
@@ -324,10 +324,76 @@ function AssociateGroups() {
     navigate('/');
   };
 
-  const closeAddEditModal = () => {
-    setShowAddEditModal(false);
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
-    setLogoFile(null);
+  const nextStep = () => {
+    if (validateStep1()) {
+      setCurrentStep(2);
+      setError('');
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep(1);
+    setError('');
+  };
+
+  const validateStep1 = () => {
+    if (!form.name || !form.type || !form.director || !form.description || !form.email || !form.phone) {
+      setError('Please fill in all required fields in Step 1');
+      return false;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+
+    // Validate phone number (11 digits)
+    const phoneRegex = /^[0-9]{11}$/;
+    if (!phoneRegex.test(form.phone)) {
+      setError('Phone number must be exactly 11 digits');
+      return false;
+    }
+
+    // Validate logo for new associates
+    if (!editMode && !logoFile) {
+      setError('Please upload a logo');
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateStep2 = () => {
+    if (!editMode) {
+      if (!form.password || !form.password_confirmation) {
+        setError('Please enter a password and confirmation');
+        return false;
+      }
+      if (form.password !== form.password_confirmation) {
+        setError('Passwords do not match');
+        return false;
+      }
+      if (form.password.length < 8) {
+        setError('Password must be at least 8 characters long');
+        return false;
+      }
+    } else if (form.password || form.password_confirmation) {
+      if (!form.password || !form.password_confirmation) {
+        setError('Please enter both password and confirmation');
+        return false;
+      }
+      if (form.password !== form.password_confirmation) {
+        setError('Passwords do not match');
+        return false;
+      }
+      if (form.password.length < 8) {
+        setError('Password must be at least 8 characters long');
+        return false;
+      }
+    }
+    return true;
   };
 
   const getLogoUrl = (logoPath) => {
@@ -378,10 +444,14 @@ function AssociateGroups() {
   return (
     <AdminLayout>
       <div className="associate-groups-header">
-        <h2>ASSOCIATE GROUPS:</h2>
+        <h2 className="main-header">ASSOCIATE GROUPS:</h2>
         <div>
-          <button className="add-associate-btn" onClick={openAddModal}>Add Associate</button>
-          <button className="edit-associate-btn" onClick={openEditListMode}>Edit</button>
+          {!editListMode && (
+            <>
+              <button className="add-associate-btn" onClick={openAddModal}>Add Associate</button>
+              <button className="edit-associate-btn" onClick={openEditListMode}>Edit</button>
+            </>
+          )}
           {editListMode && (
             <button className="edit-associate-btn" style={{ background: '#dc3545', color: '#fff' }} onClick={closeEditListMode}>Done</button>
           )}
@@ -430,114 +500,346 @@ function AssociateGroups() {
       <Modal
         isOpen={showModal}
         onRequestClose={() => setShowModal(false)}
-        className="profile-modal-card"
+        className="profile-modal-card enhanced-profile-modal"
         overlayClassName="profile-modal-overlay"
       >
         {selectedGroup && (
-          <div className="profile-modal-content">
-            <div className="profile-modal-header">
+          <div className="profile-modal-content enhanced-profile-content">
+            <div className="enhanced-profile-header">
               <img
                 src={getLogoUrl(selectedGroup.logo)}
                 alt={selectedGroup.name}
-                className="profile-modal-logo"
+                className="enhanced-profile-logo"
                 onError={(e) => {
                   e.target.src = '/Assets/disaster_logo.png';
                 }}
               />
-              <button onClick={() => setShowModal(false)} className="close-icon">&times;</button>
+              <button onClick={() => setShowModal(false)} className="enhanced-close-icon">&times;</button>
             </div>
-            <h3>{selectedGroup.name}</h3>
-            <p>President: {selectedGroup.director}</p>
-            <p>Email: {selectedGroup.email}</p>
-            <p>Phone: {selectedGroup.phone}</p>
-            <div className="profile-description-section">
-              <p>{selectedGroup.description}</p>
+            <h3 className="enhanced-profile-title">{selectedGroup.name}</h3>
+            <div className="enhanced-profile-info">
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faUser} className="enhanced-profile-icon" /> <span><b>Director:</b> {selectedGroup.director}</span></div>
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faEnvelope} className="enhanced-profile-icon" /> <span><b>Email:</b> {selectedGroup.email}</span></div>
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faPhone} className="enhanced-profile-icon" /> <span><b>Phone:</b> {selectedGroup.phone || 'N/A'}</span></div>
             </div>
-            <div className="profile-stats-contact-message">
-              <div className="profile-stats">
-                <p><strong>Members:</strong> {selectedGroup.members_count || 0}</p>
-                <p><strong>Type:</strong> {selectedGroup.type}</p>
-              </div>
+            <div className="enhanced-profile-description">{selectedGroup.description}</div>
+            <div className="enhanced-profile-stats-grid">
+              <div className="enhanced-profile-stat"><span className="enhanced-profile-stat-label">Members</span><span className="enhanced-profile-stat-pill">{selectedGroup.members_count || 0}</span></div>
+              <div className="enhanced-profile-stat"><span className="enhanced-profile-stat-label">Type</span><span className="enhanced-profile-stat-pill">{selectedGroup.type}</span></div>
             </div>
           </div>
         )}
       </Modal>
-      {/* Add/Edit Associate Modal */}
-      {showAddEditModal && (
+      {/* Add Associate Modal */}
+      {showAddModal && (
         <div className="profile-modal-overlay">
-          <div className="profile-modal-card">
+          <div className="profile-modal-card enhanced-modal">
             <div className="profile-modal-header">
-              <h3>{editMode ? 'Edit Associate' : 'Add Associate'}</h3>
-              <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeAddEditModal} />
+              <h3>Add Associate</h3>
+              <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeAddModal} />
             </div>
-            <form className="add-edit-form" onSubmit={handleAddEditSubmit}>
-              <label>Name:<input name="name" value={form.name} onChange={handleFormChange} required /></label>
-              <label>Type:<input name="type" value={form.type} onChange={handleFormChange} required /></label>
-              <label>President:<input name="director" value={form.director} onChange={handleFormChange} required /></label>
-              <label>Description:<textarea name="description" value={form.description} onChange={handleFormChange} required /></label>
-              <label>
-                Logo:
-                <input 
-                  type="file" 
-                  accept="image/jpeg,image/png,image/jpg,image/gif" 
-                  onChange={handleLogoChange} 
-                  required={!editMode} 
-                />
-                <small>Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
-              </label>
-              <label>
-                Email:
-                <input 
-                  name="email" 
-                  type="email" 
-                  value={form.email} 
-                  onChange={handleFormChange} 
-                  required 
-                  pattern="[^@\s]+@[^@\s]+\.[^@\s]+" 
-                />
-              </label>
-              <label>
-                Phone:
-                <input 
-                  name="phone" 
-                  value={form.phone} 
-                  onChange={handleFormChange} 
-                  required 
-                  pattern="[0-9]{11}" 
-                  title="Phone number must be exactly 11 digits"
-                  maxLength="11"
-                />
-              </label>
-              
-              {/* Password fields */}
-              <div className="password-section">
-                <h4>{editMode ? 'Change Password (optional)' : 'Set Password'}</h4>
-                <label>
-                  {editMode ? 'New Password' : 'Password'}:
-                  <input
-                    name="password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleFormChange}
-                    required={!editMode}
-                    minLength="8"
-                  />
-                </label>
-                <label>
-                  Confirm Password:
-                  <input
-                    name="password_confirmation"
-                    type="password"
-                    value={form.password_confirmation}
-                    onChange={handleFormChange}
-                    required={!editMode}
-                    minLength="8"
-                  />
-                </label>
-              </div>
+            {/* Progress Steps */}
+            <div className="step-progress">
+              <div className={`step ${currentStep >= 1 ? 'active' : ''}`}> <div className="step-number">1</div> <div className="step-label">Basic Information</div> </div>
+              <div className="step-connector"></div>
+              <div className={`step ${currentStep >= 2 ? 'active' : ''}`}> <div className="step-number">2</div> <div className="step-label">Password Setup</div> </div>
+            </div>
+            <form className="add-edit-form enhanced-form" onSubmit={handleAddSubmit}>
+              {currentStep === 1 && (
+                <div className="step-content">
+                  <div className="step-header">
+                    <FontAwesomeIcon icon={faUser} className="step-icon" />
+                    <h4>Basic Information</h4>
+                    <p>Please provide the basic details for the associate organization.</p>
+                  </div>
+                  
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Organization Name *</label>
+                      <input 
+                        name="name" 
+                        value={form.name} 
+                        onChange={handleFormChange} 
+                        placeholder="Enter organization name"
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Organization Type *</label>
+                      <input 
+                        name="type" 
+                        value={form.type} 
+                        onChange={handleFormChange} 
+                        placeholder="e.g., Emergency Response, Medical, etc."
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Director Name *</label>
+                      <input 
+                        name="director" 
+                        value={form.director} 
+                        onChange={handleFormChange} 
+                        placeholder="Enter director's full name"
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Email Address *</label>
+                      <input 
+                        name="email" 
+                        type="email" 
+                        value={form.email} 
+                        onChange={handleFormChange} 
+                        placeholder="Enter email address"
+                        required 
+                        pattern="[^@\s]+@[^@\s]+\.[^@\s]+" 
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Phone Number *</label>
+                      <input 
+                        name="phone" 
+                        value={form.phone} 
+                        onChange={handleFormChange} 
+                        placeholder="Enter 11-digit phone number"
+                        required 
+                        pattern="[0-9]{11}" 
+                        title="Phone number must be exactly 11 digits"
+                        maxLength="11"
+                      />
+                    </div>
+                    
+                    <div className="form-group full-width">
+                      <label>Description *</label>
+                      <textarea 
+                        name="description" 
+                        value={form.description} 
+                        onChange={handleFormChange} 
+                        placeholder="Describe the organization's mission and activities"
+                        required 
+                        rows="4"
+                      />
+                    </div>
+                    
+                    <div className="form-group full-width">
+                      <label>Organization Logo *</label>
+                      <div className="file-upload-container">
+                        <input 
+                          type="file" 
+                          accept="image/jpeg,image/png,image/jpg,image/gif" 
+                          onChange={handleLogoChange} 
+                          required={!editMode} 
+                          id="logo-upload"
+                        />
+                        <label htmlFor="logo-upload" className="file-upload-label">
+                          <FontAwesomeIcon icon={faUser} />
+                          <span>{logoFile ? logoFile.name : 'Choose Logo File'}</span>
+                        </label>
+                      </div>
+                      <small>Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 2 && (
+                <div className="step-content">
+                  <div className="step-header">
+                    <FontAwesomeIcon icon={faLock} className="step-icon" />
+                    <h4>Password Setup</h4>
+                    <p>{editMode ? 'Optionally update the password for this associate.' : 'Set up the initial password for the associate account.'}</p>
+                  </div>
+                  
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>{editMode ? 'New Password' : 'Password'} *</label>
+                      <input
+                        name="password"
+                        type="password"
+                        value={form.password}
+                        onChange={handleFormChange}
+                        placeholder="Enter password"
+                        required={!editMode}
+                        minLength="8"
+                      />
+                      <small>Password must be at least 8 characters long</small>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Confirm Password *</label>
+                      <input
+                        name="password_confirmation"
+                        type="password"
+                        value={form.password_confirmation}
+                        onChange={handleFormChange}
+                        placeholder="Confirm password"
+                        required={!editMode}
+                        minLength="8"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {error && <div className="error-message">{error}</div>}
-              <button type="submit" className="save-btn">{editMode ? 'Save Changes' : 'Add Associate'}</button>
+              
+              <div className="form-actions">
+                {currentStep === 1 ? (
+                  <>
+                    <div></div>
+                    <button type="button" className="btn-next" onClick={() => setCurrentStep(2)}>
+                      Next Step <FontAwesomeIcon icon={faArrowRight} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="btn-prev" onClick={() => setCurrentStep(1)}>
+                      <FontAwesomeIcon icon={faArrowLeft} /> Previous Step
+                    </button>
+                    <button type="submit" className="btn-submit">
+                      <FontAwesomeIcon icon={faCheck} /> Add Associate
+                    </button>
+                  </>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Associate Modal */}
+      {showEditModal && (
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-card enhanced-modal">
+            <div className="profile-modal-header">
+              <h3>Edit Associate</h3>
+              <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeEditModal} />
+            </div>
+            <form className="add-edit-form enhanced-form" onSubmit={handleEditSubmit}>
+              <div className="step-content">
+                <div className="step-header">
+                  <FontAwesomeIcon icon={faUser} className="step-icon" />
+                  <h4>Basic Information</h4>
+                  <p>Please provide the basic details for the associate organization.</p>
+                </div>
+                
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Organization Name *</label>
+                    <input 
+                      name="name" 
+                      value={form.name} 
+                      onChange={handleFormChange} 
+                      placeholder="Enter organization name"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Organization Type *</label>
+                    <input 
+                      name="type" 
+                      value={form.type} 
+                      onChange={handleFormChange} 
+                      placeholder="e.g., Emergency Response, Medical, etc."
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Director Name *</label>
+                    <input 
+                      name="director" 
+                      value={form.director} 
+                      onChange={handleFormChange} 
+                      placeholder="Enter director's full name"
+                      required 
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Email Address *</label>
+                    <input 
+                      name="email" 
+                      type="email" 
+                      value={form.email} 
+                      onChange={handleFormChange} 
+                      placeholder="Enter email address"
+                      required 
+                      pattern="[^@\s]+@[^@\s]+\.[^@\s]+" 
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Phone Number *</label>
+                    <input 
+                      name="phone" 
+                      value={form.phone} 
+                      onChange={handleFormChange} 
+                      placeholder="Enter 11-digit phone number"
+                      required 
+                      pattern="[0-9]{11}" 
+                      title="Phone number must be exactly 11 digits"
+                      maxLength="11"
+                    />
+                  </div>
+                  
+                  <div className="form-group full-width">
+                    <label>Description *</label>
+                    <textarea 
+                      name="description" 
+                      value={form.description} 
+                      onChange={handleFormChange} 
+                      placeholder="Describe the organization's mission and activities"
+                      required 
+                      rows="4"
+                    />
+                  </div>
+                  
+                  <div className="form-group full-width">
+                    <label>Organization Logo *</label>
+                    {/* Logo Preview */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '10px' }}>
+                      {logoFile ? (
+                        <img
+                          src={URL.createObjectURL(logoFile)}
+                          alt="New Logo Preview"
+                          style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'contain', border: '1.5px solid #eee', background: '#f8f8f8' }}
+                        />
+                      ) : (
+                        <img
+                          src={getLogoUrl(form.logo)}
+                          alt="Current Logo"
+                          style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'contain', border: '1.5px solid #eee', background: '#f8f8f8' }}
+                        />
+                      )}
+                    </div>
+                    <div className="file-upload-container">
+                      <input 
+                        type="file" 
+                        accept="image/jpeg,image/png,image/jpg,image/gif" 
+                        onChange={handleLogoChange} 
+                        id="logo-upload"
+                      />
+                      <label htmlFor="logo-upload" className="file-upload-label">
+                        <FontAwesomeIcon icon={faUser} />
+                        <span>{logoFile ? logoFile.name : 'Choose Logo File'}</span>
+                      </label>
+                    </div>
+                    <small>Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
+                  </div>
+                </div>
+              </div>
+              {error && <div className="error-message">{error}</div>}
+              <div className="form-actions">
+                <button type="submit" className="btn-submit">
+                  <FontAwesomeIcon icon={faCheck} /> Save Changes
+                </button>
+              </div>
             </form>
           </div>
         </div>

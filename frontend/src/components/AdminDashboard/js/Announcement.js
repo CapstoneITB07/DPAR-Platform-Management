@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import axios from 'axios';
 import { FaEllipsisH } from 'react-icons/fa';
+import '../css/announcement.css';
 
 function Announcement() {
   const [announcements, setAnnouncements] = useState([]);
@@ -14,6 +15,8 @@ function Announcement() {
   const [error, setError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editId, setEditId] = useState(null);
+  const [showDescModal, setShowDescModal] = useState(false);
+  const [descModalContent, setDescModalContent] = useState({ title: '', description: '', photo_url: null });
 
   useEffect(() => {
     fetchAnnouncements();
@@ -106,99 +109,151 @@ function Announcement() {
 
   return (
     <AdminLayout>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <h2>Announcement</h2>
-        <button style={{ background: 'green', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 5, cursor: 'pointer' }} onClick={() => { setShowModal(true); setEditId(null); setTitle(''); setDescription(''); setPhoto(null); setPreview(null); }}>
+      <div className="announcement-header-row">
+        <h2 className="main-header">ANNOUNCEMENT</h2>
+        <button
+          className="announcement-create-btn"
+          onClick={() => setShowModal(true)}
+        >
           Create Announcement
         </button>
       </div>
-      {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
+      {error && <div className="announcement-error">{error}</div>}
       {/* Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, minWidth: 350, position: 'relative' }}>
-            <h3>{editId ? 'Edit Announcement' : 'Create Announcement'}</h3>
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: 12 }}>
-                <label>TITLE</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} style={{ width: '100%', padding: 6, marginTop: 4 }} />
+        <div className="announcement-modal-overlay">
+          <div className="announcement-modal-card">
+            <div className="announcement-modal-header">
+              <h3 className="announcement-modal-title">{editId ? 'Edit Announcement' : 'Create Announcement'}</h3>
+              <button onClick={() => { setShowModal(false); setTitle(''); setDescription(''); setPhoto(null); setPreview(null); setEditId(null); }} className="announcement-modal-close">&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} className="announcement-modal-form">
+              <div>
+                <label className="announcement-form-label">TITLE</label>
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="announcement-form-input" />
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <label>DESCRIPTION</label>
-                <textarea value={description} onChange={e => setDescription(e.target.value)} style={{ width: '100%', padding: 6, marginTop: 4, minHeight: 60 }} />
+              <div>
+                <label className="announcement-form-label">DESCRIPTION</label>
+                <textarea value={description} onChange={e => setDescription(e.target.value)} className="announcement-form-textarea" />
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <label>Upload a Photo</label>
-                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'block', marginTop: 4 }} />
-                {preview && (
-                  <div style={{ marginTop: 8 }}>
-                    <img src={preview} alt="Preview" style={{ maxWidth: 200, maxHeight: 120, borderRadius: 4, display: 'block' }} />
-                    <button type="button" onClick={() => { setPhoto(null); setPreview(null); }} style={{ marginTop: 6, background: '#eee', color: '#333', border: 'none', padding: '4px 12px', borderRadius: 4, cursor: 'pointer' }}>Remove Photo</button>
+              <div>
+                <label className="announcement-upload-label">Upload a Photo</label>
+                <div className="announcement-upload-row">
+                  {preview ? (
+                    <div className="announcement-upload-preview">
+                      <img src={preview} alt="Preview" className="announcement-upload-img" />
+                      <button type="button" onClick={() => { setPhoto(null); setPreview(null); }} className="announcement-upload-remove">Remove</button>
+                    </div>
+                  ) : (
+                    <div className="announcement-upload-placeholder" style={{ width: 70, height: 70, borderRadius: '50%', border: '1.5px dashed #ccc', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 32 }}>
+                      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="7" width="18" height="12" rx="2" fill="#eee"/>
+                        <circle cx="12" cy="13" r="4" fill="#bbb"/>
+                        <rect x="8" y="4" width="8" height="3" rx="1.5" fill="#bbb"/>
+                        <circle cx="12" cy="13" r="2" fill="#fff"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <input id="announcement-photo-upload" type="file" accept="image/jpeg,image/png,image/jpg,image/gif" onChange={e => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+                        if (!validTypes.includes(file.type)) {
+                          alert('Please upload a valid image file (JPEG, PNG, JPG, or GIF)');
+                          e.target.value = '';
+                          return;
+                        }
+                        if (file.size > 2 * 1024 * 1024) {
+                          alert('File size should not exceed 2MB');
+                          e.target.value = '';
+                          return;
+                        }
+                        setPhoto(file);
+                        setPreview(URL.createObjectURL(file));
+                      }
+                    }} style={{ display: 'none' }} />
+                    <label htmlFor="announcement-photo-upload" className="announcement-upload-btn">
+                      {photo ? 'Change Photo' : 'Choose Photo'}
+                    </label>
+                    <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
                   </div>
-                )}
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                <button type="button" onClick={() => { setShowModal(false); setTitle(''); setDescription(''); setPhoto(null); setPreview(null); setEditId(null); }} style={{ background: 'red', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 5 }}>Cancel</button>
-                <button type="submit" disabled={loading} style={{ background: 'blue', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 5 }}>{loading ? (editId ? 'Saving...' : 'Posting...') : (editId ? 'Save' : 'Post')}</button>
+              <div className="announcement-modal-actions">
+                <button type="button" onClick={() => { setShowModal(false); setTitle(''); setDescription(''); setPhoto(null); setPreview(null); setEditId(null); }} className="announcement-cancel-btn">Cancel</button>
+                <button type="submit" disabled={loading} className="announcement-submit-btn">{loading ? (editId ? 'Saving...' : 'Posting...') : (editId ? 'Save' : 'Post')}</button>
               </div>
             </form>
           </div>
         </div>
       )}
       {/* Announcements List */}
-      <div style={{
-        marginTop: 32,
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: 28,
-        maxWidth: 900,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-      }}>
+      <div className="announcement-list">
         {announcements.length === 0 ? (
           <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888', fontStyle: 'italic' }}>No announcements yet.</div>
         ) : (
           announcements.map(a => (
-            <div key={a.id} style={{
-              background: '#fff',
-              borderRadius: 12,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-              position: 'relative',
-              overflow: 'hidden',
-              border: '1px solid #e4e6eb',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 220,
-            }}>
+            <div key={a.id} className="announcement-card"
+              onMouseOver={e => { e.currentTarget.classList.add('announcement-card-hover'); }}
+              onMouseOut={e => { e.currentTarget.classList.remove('announcement-card-hover'); }}
+            >
               {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '18px 20px 10px 20px', borderBottom: '1px solid #f0f2f5', background: '#f7f8fa' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: '#888' }}>{new Date(a.created_at).toLocaleString()}</div>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <button onClick={() => handleMenuToggle(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: '50%' }}>
+              <div className="announcement-card-header">
+                <div className="announcement-card-date">{new Date(a.created_at).toLocaleString()}</div>
+                <div className="announcement-card-menu">
+                  <button onClick={() => handleMenuToggle(a.id)} className="announcement-card-menu-btn">
                     <FaEllipsisH size={20} />
                   </button>
                   {menuOpenId === a.id && (
-                    <div style={{ position: 'absolute', right: 0, top: 30, background: '#fff', border: '1px solid #eee', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 10, minWidth: 120 }}>
-                      <div style={{ padding: '10px 16px', cursor: 'pointer', color: '#333', borderBottom: '1px solid #f0f2f5' }} onClick={() => handleEdit(a)}>Edit</div>
-                      <div style={{ padding: '10px 16px', cursor: 'pointer', color: '#e74c3c' }} onClick={() => handleDelete(a.id)}>Delete</div>
+                    <div className="announcement-card-menu-dropdown">
+                      <div className="announcement-card-menu-item" onClick={() => handleEdit(a)}>Edit</div>
+                      <div className="announcement-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={() => handleDelete(a.id)}>Delete</div>
                     </div>
                   )}
                 </div>
               </div>
               {/* Content */}
-              <div style={{ padding: '18px 20px 10px 20px', flex: 1 }}>
-                {a.title && <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, color: '#222' }}>{a.title}</div>}
-                {a.description && <div style={{ fontSize: 16, color: '#444', marginBottom: a.photo_url ? 12 : 0 }}>{a.description}</div>}
+              <div className="announcement-card-content">
+                {a.title && <div className="announcement-card-title">{a.title}</div>}
+                {a.description && (() => {
+                  const words = a.description.split(' ');
+                  const isLong = words.length > 15;
+                  const shortDesc = isLong ? words.slice(0, 15).join(' ') + '...' : a.description;
+                  return (
+                    <>
+                      <div className="announcement-card-desc">
+                        {shortDesc}
+                        {isLong && (
+                          <button
+                            className="announcement-card-see-more"
+                            onClick={() => setDescModalContent({ title: a.title, description: a.description, photo_url: a.photo_url }) || setShowDescModal(true)}
+                          >See More</button>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
                 {a.photo_url && (
-                  <img src={a.photo_url} alt="Announcement" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, marginTop: 10, marginBottom: 10 }} />
+                  <img src={a.photo_url} alt="Announcement" className="announcement-card-img" />
                 )}
               </div>
             </div>
           ))
         )}
       </div>
+      {showDescModal && (
+        <div className="announcement-desc-modal-overlay">
+          <div className="announcement-desc-modal-card">
+            <button onClick={() => setShowDescModal(false)} className="announcement-desc-modal-close">&times;</button>
+            <h3 className="announcement-desc-modal-title">{descModalContent.title}</h3>
+            <div className="announcement-desc-modal-desc">{descModalContent.description}</div>
+            {descModalContent.photo_url && (
+              <img src={descModalContent.photo_url} alt="Announcement" className="announcement-desc-modal-img" />
+            )}
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

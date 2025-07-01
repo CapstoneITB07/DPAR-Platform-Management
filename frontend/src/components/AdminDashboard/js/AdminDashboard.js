@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faGraduationCap, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -23,6 +23,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { parseISO } from 'date-fns';
 import moment from 'moment';
 import { getLogoUrl } from '../../../utils/url';
+import Modal from 'react-modal';
 
 ChartJS.register(
   CategoryScale,
@@ -65,6 +66,40 @@ const associateLogos = {
   'Associate Leader 14': '/Assets/SRG.png'
 };
 
+// Custom Calendar Toolbar
+function CustomCalendarToolbar({ date, onNavigate }) {
+  const monthYear = moment(date).format('MMMM YYYY');
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+      <button
+        className="calendar-nav-btn calendar-nav-btn-small"
+        onClick={() => onNavigate('TODAY')}
+        style={{ marginRight: 16, minWidth: 40, textAlign: 'center' }}
+        aria-label="Go to Today"
+      >
+        TD
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 240, justifyContent: 'center' }}>
+        <button
+          className="calendar-nav-btn calendar-nav-btn-icon"
+          onClick={() => onNavigate('PREV')}
+          aria-label="Previous Month"
+        >
+          <FontAwesomeIcon icon={faChevronLeft} style={{ fontSize: '1rem' }} />
+        </button>
+        <span style={{ fontWeight: 600, fontSize: 18, minWidth: 120, textAlign: 'center' }}>{monthYear}</span>
+        <button
+          className="calendar-nav-btn calendar-nav-btn-icon"
+          onClick={() => onNavigate('NEXT')}
+          aria-label="Next Month"
+        >
+          <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: '1rem' }} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const [recentEvaluations, setRecentEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +114,8 @@ function AdminDashboard() {
   const [userHasSelected, setUserHasSelected] = useState(false);
   const [refreshNow, setRefreshNow] = useState(false);
   const [statisticsData, setStatisticsData] = useState(null);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [showAllEvaluations, setShowAllEvaluations] = useState(false);
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -232,23 +269,29 @@ function AdminDashboard() {
     }
 
     const categories = [
-      'Volunteer Participation',
-      'Task Accommodation and Completion',
-      'Communication Effectiveness',
-      'Team Objective Above Self'
+      'VP', // Volunteer Participation
+      'TAC', // Task Accommodation and Completion
+      'CE', // Communication Effectiveness
+      'TOAS' // Team Objective Above Self
     ];
 
     const chartData = {
       labels: categories,
       datasets: [{
         label: `${selectedAssociateData.name}'s Performance Scores`,
-        data: categories.map(category => {
-          const score = selectedAssociateData.averageScores[category] || 0;
-          console.log(`Score for ${category}:`, score);
-          return score;
-        }),
-        backgroundColor: categories.map(category => 
-          getPerformanceColor(selectedAssociateData.averageScores[category] || 0)
+        data: [
+          selectedAssociateData.averageScores['Volunteer Participation'] || 0,
+          selectedAssociateData.averageScores['Task Accommodation and Completion'] || 0,
+          selectedAssociateData.averageScores['Communication Effectiveness'] || 0,
+          selectedAssociateData.averageScores['Team Objective Above Self'] || 0
+        ],
+        backgroundColor: categories.map((cat, idx) => 
+          getPerformanceColor([
+            selectedAssociateData.averageScores['Volunteer Participation'],
+            selectedAssociateData.averageScores['Task Accommodation and Completion'],
+            selectedAssociateData.averageScores['Communication Effectiveness'],
+            selectedAssociateData.averageScores['Team Objective Above Self']
+          ][idx] || 0)
         ),
         borderRadius: 5
       }]
@@ -405,139 +448,71 @@ function AdminDashboard() {
   }, [statisticsData, evaluations]);
 
   // Line chart data for KPI trends over time
+  const kpiCategories = [
+    'Volunteer Participation',
+    'Task Accommodation and Completion',
+    'Communication Effectiveness',
+    'Team Objective Above Self'
+  ];
+  const kpiColors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
+
   const kpiTrendData = useMemo(() => {
     if (statisticsData && statisticsData.kpi_trends) {
-      const categories = [
-        'Volunteer Participation',
-        'Task Accommodation and Completion',
-        'Communication Effectiveness',
-        'Team Objective Above Self'
-      ];
-
       // Get all unique months from all KPI data
       const allMonths = new Set();
-      categories.forEach(category => {
+      kpiCategories.forEach(category => {
         if (statisticsData.kpi_trends[category]) {
           statisticsData.kpi_trends[category].forEach(item => {
             allMonths.add(item.month);
           });
         }
       });
-
-      const sortedMonths = Array.from(allMonths).sort((a, b) => {
-        return new Date(a) - new Date(b);
-      });
-
-      const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
-      
-      const datasets = categories.map((category, index) => {
-        const data = sortedMonths.map(month => {
+      const sortedMonths = Array.from(allMonths).sort((a, b) => new Date(a) - new Date(b));
+      // Always include all four datasets
+      const datasets = kpiCategories.map((category, index) => {
+        let data = sortedMonths.map(month => {
           const monthData = statisticsData.kpi_trends[category]?.find(item => item.month === month);
-          return monthData ? monthData.average_score : 0;
+          return monthData ? monthData.average_score : null;
         });
-
+        // If data is all null or empty, add a single null to force legend display
+        if (!data.length || data.every(v => v === null)) {
+          data = [null];
+        }
         return {
           label: category,
           data,
-          borderColor: colors[index],
-          backgroundColor: colors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
+          borderColor: kpiColors[index],
+          backgroundColor: kpiColors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
           borderWidth: 2,
-          pointBackgroundColor: colors[index],
+          pointBackgroundColor: kpiColors[index],
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
-          tension: 0.4
+          tension: 0.4,
+          spanGaps: true
         };
       });
-
-      return { 
-        labels: sortedMonths, 
-        datasets 
-      };
+      return { labels: sortedMonths.map(m => m ? m : ''), datasets };
     }
-
-    if (!evaluations || evaluations.length === 0) {
-      return {
-        labels: [],
-        datasets: []
-      };
-    }
-
-    // Fallback to client-side calculation if statistics data is not available
-    const monthlyKPI = {};
-    const categories = [
-      'Volunteer Participation',
-      'Task Accommodation and Completion',
-      'Communication Effectiveness',
-      'Team Objective Above Self'
-    ];
-
-    evaluations.forEach(ev => {
-      const monthKey = format(parseISO(ev.created_at), 'yyyy-MM');
-      const monthLabel = format(parseISO(ev.created_at), 'MMM yyyy');
-      
-      if (!monthlyKPI[monthKey]) {
-        monthlyKPI[monthKey] = {
-          label: monthLabel,
-          categories: {}
-        };
-        categories.forEach(cat => {
-          monthlyKPI[monthKey].categories[cat] = [];
-        });
-      }
-
-      try {
-        const evalData = typeof ev.evaluation_data === 'string'
-          ? JSON.parse(ev.evaluation_data)
-          : ev.evaluation_data;
-
-        categories.forEach(category => {
-          if (evalData[category] && evalData[category].scores) {
-            const scores = Object.values(evalData[category].scores)
-              .map(score => Number(score))
-              .filter(score => !isNaN(score) && score > 0);
-            if (scores.length > 0) {
-              const average = scores.reduce((a, b) => a + b, 0) / scores.length;
-              monthlyKPI[monthKey].categories[category].push(average);
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error processing evaluation data for KPI trends:', error);
-      }
-    });
-
-    // Calculate averages and create datasets
-    const sortedMonths = Object.keys(monthlyKPI).sort();
-    const labels = sortedMonths.map(key => monthlyKPI[key].label);
-    
-    const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
-    
-    const datasets = categories.map((category, index) => {
-      const data = sortedMonths.map(key => {
-        const scores = monthlyKPI[key].categories[category];
-        return scores.length > 0 
-          ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2))
-          : 0;
-      });
-
-      return {
+    // If no data, still show all legends
+    return {
+      labels: [''],
+      datasets: kpiCategories.map((category, index) => ({
         label: category,
-        data,
-        borderColor: colors[index],
-        backgroundColor: colors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
+        data: [null],
+        borderColor: kpiColors[index],
+        backgroundColor: kpiColors[index].replace(')', ', 0.1)').replace('rgb', 'rgba'),
         borderWidth: 2,
-        pointBackgroundColor: colors[index],
+        pointBackgroundColor: kpiColors[index],
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 6,
-        tension: 0.4
-      };
-    });
-
-    return { labels, datasets };
+        tension: 0.4,
+        spanGaps: true
+      }))
+    };
   }, [statisticsData, evaluations]);
 
   const chartOptions = {
@@ -582,6 +557,7 @@ function AdminDashboard() {
     },
     plugins: {
       legend: {
+        display: true,
         position: 'bottom',
         labels: {
           usePointStyle: true,
@@ -785,6 +761,7 @@ function AdminDashboard() {
           </div>
         );
       })}
+      <button className="see-more-btn" onClick={() => setShowAllEvaluations(true)}>See More</button>
     </div>
   );
 
@@ -795,6 +772,98 @@ function AdminDashboard() {
     console.log('Bar Data:', associateBarData);
   }, [selectedAssociate, associatesPerformance, associateBarData]);
 
+  const handleCalendarNavigate = (action) => {
+    if (action === 'TODAY') {
+      setCalendarDate(new Date());
+    } else if (action === 'PREV') {
+      setCalendarDate(prev => moment(prev).subtract(1, 'month').toDate());
+    } else if (action === 'NEXT') {
+      setCalendarDate(prev => moment(prev).add(1, 'month').toDate());
+    } else if (action instanceof Date) {
+      setCalendarDate(action);
+    }
+  };
+
+  // In the chartOptions for the comparisonData (Group Performance Comparison), add responsive horizontal scrolling and dynamic width.
+  const comparisonChartRef = useRef();
+
+  const dynamicComparisonOptions = {
+    ...chartOptions,
+    plugins: {
+      ...chartOptions.plugins,
+      legend: {
+        ...chartOptions.plugins.legend,
+        labels: {
+          ...chartOptions.plugins.legend.labels,
+          font: { size: 13 }
+        }
+      },
+    },
+    scales: {
+      ...chartOptions.scales,
+      x: {
+        ...chartOptions.scales?.x,
+        ticks: {
+          ...chartOptions.scales?.x?.ticks,
+          maxRotation: 45,
+          minRotation: 30,
+          autoSkip: false,
+          font: { size: 12 },
+          callback: function(value, index, values) {
+            // Show full label
+            return this.getLabelForValue(value);
+          }
+        }
+      }
+    }
+  };
+
+  const renderAllEvaluationsModal = () => (
+    <Modal
+      isOpen={showAllEvaluations}
+      onRequestClose={() => setShowAllEvaluations(false)}
+      className="all-evaluations-modal"
+      overlayClassName="all-evaluations-modal-overlay"
+      ariaHideApp={false}
+    >
+      <div className="all-evaluations-modal-header">
+        <h3>All Evaluations</h3>
+        <button className="all-evaluations-modal-close" onClick={() => setShowAllEvaluations(false)}>&times;</button>
+      </div>
+      <div className="all-evaluations-list">
+        <div className="color-indicator-legend">
+          <span className="legend-label excellent">Excellent (&ge;3.5):</span>
+          <span className="legend-label good">Good (2.5-3.49):</span>
+          <span className="legend-label fair">Fair (1.5-2.49):</span>
+          <span className="legend-label poor">Poor (&lt;1.5):</span>
+        </div>
+        {evaluations.map(evaluation => {
+          const associate = associatesPerformance.find(a => a.user_id === evaluation.user_id);
+          const logo = associate ? getLogoUrl(associate.logo) : getLogoUrl(null);
+          return (
+            <div key={evaluation.id} className="evaluation-item">
+              <img src={logo} alt="logo" className="associate-logo-small" />
+              <div className="evaluation-details">
+                <span className="associate-name">
+                  {evaluation.user ? evaluation.user.name : 'Unknown User'}
+                </span>
+                <span className="organization-name">
+                  {evaluation.user ? evaluation.user.organization : 'No Organization'}
+                </span>
+              </div>
+              <div className="evaluation-score" style={{ color: getPerformanceColor(evaluation.total_score) }}>
+                {evaluation.total_score}
+              </div>
+              <div className="evaluation-date">
+                {format(parseISO(evaluation.created_at), 'MMM dd')}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Modal>
+  );
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -804,7 +873,7 @@ function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="admin-dashboard">
-        <h2>Dashboard Overview</h2>
+        <h2 className="main-header">Dashboard Overview</h2>
         {renderLastUpdate()}
         {error && <div className="error-message">{error}</div>}
 
@@ -882,7 +951,7 @@ function AdminDashboard() {
               {/* Individual Performance Chart */}
               <div className="chart-container">
                 <h4>Individual Performance Breakdown</h4>
-                <div className="bar-chart">
+                <div className="bar-chart" style={{ marginLeft: '-10px' }}>
                   <Bar data={associateBarData} options={chartOptions} />
                 </div>
               </div>
@@ -898,16 +967,20 @@ function AdminDashboard() {
               {/* Performance Comparison Chart */}
               <div className="chart-container chart-container-full-width">
                 <h4>Group Performance Comparison</h4>
-                <div className="bar-chart">
-                  <Bar data={comparisonData} options={chartOptions} />
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <div style={{ minWidth: Math.max(associatesPerformance.length * 70, 350), width: '100%' }}>
+                    <Bar ref={comparisonChartRef} data={comparisonData} options={dynamicComparisonOptions} />
+                  </div>
                 </div>
               </div>
 
               {/* KPI Trends Chart (Full Width) */}
               <div className="chart-container chart-container-full-width">
                 <h4>KPI Performance Trends</h4>
-                <div className="line-chart">
-                  <Line data={kpiTrendData} options={lineChartOptions} />
+                <div style={{ overflowX: 'auto', width: '100%' }}>
+                  <div style={{ minWidth: Math.max(kpiCategories.length * 180, 350), width: '100%' }}>
+                    <Line data={kpiTrendData} options={lineChartOptions} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -918,6 +991,7 @@ function AdminDashboard() {
             <div className="dashboard-section calendar-section">
               <h3><FontAwesomeIcon icon={faCalendarAlt} /> Calendar</h3>
               <div style={{ height: 400, background: 'white', borderRadius: 12, padding: 10 }}>
+                <CustomCalendarToolbar date={calendarDate} onNavigate={handleCalendarNavigate} />
                 <Calendar
                   localizer={localizer}
                   events={calendarEvents}
@@ -925,14 +999,21 @@ function AdminDashboard() {
                   endAccessor="end"
                   style={{ height: 380, borderRadius: 12 }}
                   popup
-                  views={['month', 'week', 'day']}
+                  views={['month']}
+                  toolbar={false}
+                  date={calendarDate}
+                  onNavigate={date => setCalendarDate(date)}
                 />
               </div>
             </div>
             {/* Recent Evaluations */}
             <div className="dashboard-section recent-evaluations">
-              <h3><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
+              <div className="recent-evaluations-header-row">
+                <h3 className="recent-evaluations-title"><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
+                <button className="generate-certificate-btn">Generate Certificate</button>
+              </div>
               {renderRecentEvaluations()}
+              {renderAllEvaluationsModal()}
             </div>
              {/* Members Overview */}
             <div className="dashboard-section members-overview">
@@ -946,12 +1027,6 @@ function AdminDashboard() {
                   <h4>Evaluated Associates</h4>
                   <div className="stat-value">
                     {associatesPerformance.filter(a => a.evaluations.length > 0).length}
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <h4>Organizations</h4>
-                  <div className="stat-value">
-                    {new Set(associatesPerformance.map(a => a.organization)).size}
                   </div>
                 </div>
               </div>

@@ -88,7 +88,7 @@ function LoginPage() {
         <h2 className="signInTitle">Sign In</h2>
         <form onSubmit={handleSubmit}>
           <div className="inputGroup">
-            <label htmlFor="email" className="label">Username</label>
+            <label htmlFor="email" className="label">Email</label>
             <input
               type="text" // Changed type to text based on screenshot
               id="email"
@@ -96,6 +96,7 @@ function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="input"
               required
+              placeholder="Enter your email"
             />
           </div>
           <div className="inputGroup"> {/* Password input group */}
@@ -108,10 +109,15 @@ function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="passwordInput"
                 required
+                placeholder="Enter your password"
+                aria-label="Password"
               />
               <span
                 onClick={togglePasswordVisibility}
                 className="passwordToggleIcon"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={0}
+                role="button"
               >
                 {showPassword ? (
                   <FontAwesomeIcon icon={faEye} />

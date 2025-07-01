@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { FaEllipsisH } from 'react-icons/fa';
 import axios from 'axios';
+import '../css/TrainingProgram.css';
 
 function TrainingProgram() {
   const [programs, setPrograms] = useState([]);
@@ -13,6 +14,8 @@ function TrainingProgram() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState({});
+  const [showDescModal, setShowDescModal] = useState(false);
+  const [descModalContent, setDescModalContent] = useState({ title: '', description: '' });
 
   useEffect(() => {
     fetchPrograms();
@@ -122,113 +125,147 @@ function TrainingProgram() {
 
   return (
     <AdminLayout>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontWeight: 700, fontSize: 28, letterSpacing: 0.5, color: 'black' }}>TRAINING PROGRAMS</h2>
-        <button onClick={() => openModal()} style={{ background: '#001aff', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 22px', fontWeight: 'bold', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,26,255,0.08)' }}>
+      <div className="training-header-row">
+        <h2 className="main-header">TRAINING PROGRAMS</h2>
+        <button className="training-add-btn" onClick={() => openModal()}>
           ADD PROGRAM
         </button>
       </div>
-      {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
+      {error && <div className="training-error">{error}</div>}
       {/* Add/Edit Modal Popup */}
       {modalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', padding: 32, borderRadius: 16, minWidth: 340, maxWidth: 400, boxShadow: '0 2px 16px rgba(0,0,0,0.2)', position: 'relative' }}>
-            <button onClick={closeModal} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>&times;</button>
-            <h3 style={{ marginBottom: 18 }}>{editId ? 'Edit' : 'Add'} Training Program</h3>
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: 12 }}>
-                <label>Program Name</label><br />
-                <input name="name" value={form.name} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }} />
+        <div className="training-modal-overlay">
+          <div className="training-modal-card">
+            <div className="training-modal-header">
+              <h3 className="training-modal-title">{editId ? 'Edit Training Program' : 'Add Training Program'}</h3>
+              <button className="training-modal-close" onClick={closeModal}>&times;</button>
+            </div>
+            <form className="training-modal-form" onSubmit={handleSubmit}>
+              <div>
+                <label className="training-form-label">Program Name</label>
+                <input name="name" value={form.name} onChange={handleChange} required className="training-form-input" />
               </div>
-              <div style={{ marginBottom: 12, display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label>Date</label><br />
-                  <input type="date" name="date" value={form.date} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }} />
+              <div style={{ display: 'flex', gap: 40, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                  <label className="training-form-label" style={{ marginBottom: 4 }}>Date</label>
+                  <input type="date" name="date" value={form.date} onChange={handleChange} required className="training-form-input" />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label>Location</label><br />
-                  <input name="location" value={form.location} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15 }} />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                  <label className="training-form-label" style={{ marginBottom: 4 }}>Location</label>
+                  <input name="location" value={form.location} onChange={handleChange} required className="training-form-input" />
                 </div>
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <label>Program Description</label><br />
-                <textarea name="description" value={form.description} onChange={handleChange} required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', fontSize: 15, minHeight: 80 }} />
+              <div>
+                <label className="training-form-label">Program Description</label>
+                <textarea name="description" value={form.description} onChange={handleChange} required className="training-form-textarea" />
               </div>
-              <div style={{ marginBottom: 12 }}>
-                <label>Upload Image</label><br />
-                <input type="file" accept="image/*" onChange={handleImageChange} style={{ marginTop: 4 }} />
-                {form.imagePreview && (
-                  <div style={{ marginTop: 8 }}>
-                    <img src={form.imagePreview} alt="Preview" style={{ maxWidth: 220, maxHeight: 160, borderRadius: 10, display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
-                    <button type="button" onClick={handleRemoveImage} style={{ marginTop: 6, background: '#eee', color: '#333', border: 'none', padding: '4px 12px', borderRadius: 4, cursor: 'pointer' }}>Remove Image</button>
+              <div className="training-upload-section">
+                <label className="training-form-label" style={{ marginBottom: 10, textAlign: 'center' }}>Upload a Photo</label>
+                <div className="training-upload-row">
+                  {/* Left: Image or Placeholder + Remove */}
+                  <div className="training-upload-preview">
+                    {form.imagePreview ? (
+                      <>
+                        <img src={form.imagePreview} alt="Preview" className="training-upload-img" />
+                        <button type="button" onClick={handleRemoveImage} className="training-upload-remove">Remove</button>
+                      </>
+                    ) : (
+                      <div className="training-upload-placeholder">
+                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="3" y="7" width="18" height="12" rx="2" fill="#eee"/>
+                          <circle cx="12" cy="13" r="4" fill="#bbb"/>
+                          <rect x="8" y="4" width="8" height="3" rx="1.5" fill="#bbb"/>
+                          <circle cx="12" cy="13" r="2" fill="#fff"/>
+                        </svg>
+                      </div>
+                    )}
                   </div>
-                )}
+                  {/* Right: Choose Photo + Note */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 220 }}>
+                    <input id="training-photo-upload" type="file" accept="image/jpeg,image/png,image/jpg,image/gif" onChange={handleImageChange} style={{ display: 'none' }} />
+                    <label htmlFor="training-photo-upload" className="training-upload-btn">Choose Photo</label>
+                    <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
+                  </div>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button type="button" onClick={closeModal} style={{ background: '#ccc', border: 'none', borderRadius: 6, padding: '8px 20px', cursor: 'pointer', fontSize: 15 }}>Cancel</button>
-                <button type="submit" disabled={loading} style={{ background: '#001aff', color: 'white', border: 'none', borderRadius: 6, padding: '8px 20px', cursor: 'pointer', fontSize: 15 }}>{loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}</button>
+              <div className="training-modal-actions">
+                <button type="button" onClick={closeModal} className="training-cancel-btn">Cancel</button>
+                <button type="submit" disabled={loading} className="training-submit-btn">{loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}</button>
               </div>
             </form>
           </div>
         </div>
       )}
       {/* Card Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 36, marginTop: 36, maxWidth: 1200, marginLeft: 'auto', marginRight: 'auto' }}>
+      <div className="training-card-grid">
         {programs.length === 0 ? (
           <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888' }}>No training programs yet.</p>
         ) : (
           programs.map((program, idx) => {
-            const isLong = program.description && program.description.length > DESCRIPTION_LIMIT;
-            const isExpanded = !!expanded[program.id];
-            const displayDesc = isLong && !isExpanded ? program.description.slice(0, DESCRIPTION_LIMIT) + '...' : program.description;
+            const title = program.name || '';
+            const description = program.description || '';
+            const words = description.split(' ');
+            const isLong = words.length >= 9;
+            const shortDesc = isLong ? words.slice(0, 9).join(' ') + '...' : description;
             return (
-              <div key={program.id} style={{
-                border: '1px solid #e0e0e0',
-                borderRadius: 18,
-                background: '#fff',
-                boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'stretch',
-                minHeight: 420,
-                position: 'relative',
-                overflow: 'hidden',
-                transition: 'box-shadow 0.2s',
-              }}>
-                {/* Three-dot menu */}
-                <button onClick={() => handleMenuToggle(idx)} style={{ position: 'absolute', top: 18, right: 18, background: 'none', border: 'none', cursor: 'pointer', zIndex: 10 }}>
-                  <FaEllipsisH size={22} />
-                </button>
-                {menuOpenIndex === idx && (
-                  <div style={{ position: 'absolute', top: 44, right: 18, background: '#fff', border: '1px solid #eee', borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 20, minWidth: 120 }}>
-                    <div style={{ padding: '12px 18px', cursor: 'pointer', color: '#333', borderBottom: '1px solid #f0f2f5' }} onClick={() => openModal(idx)}>Edit</div>
-                    <div style={{ padding: '12px 18px', cursor: 'pointer', color: '#e74c3c' }} onClick={() => handleDelete(idx)}>Delete</div>
-                  </div>
-                )}
-                {/* Image */}
-                {program.image_url && (
-                  <img src={program.image_url} alt="Program" style={{ width: '100%', height: 220, objectFit: 'cover', borderTopLeftRadius: 18, borderTopRightRadius: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
-                )}
-                {/* Content */}
-                <div style={{ padding: 28, width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start' }}>
-                  <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 8, color: '#A11C22', letterSpacing: 0.2, wordBreak: 'break-word' }}>{program.name}</div>
-                  <div style={{ color: '#555', marginBottom: 10, fontSize: 15, fontWeight: 500 }}>
-                    {program.date} {program.location && <span style={{ color: '#1976d2' }}>| {program.location}</span>}
-                  </div>
-                  <div style={{ fontSize: 16, color: '#333', marginBottom: 16, lineHeight: 1.6, minHeight: 40, width: '100%', wordBreak: 'break-word', whiteSpace: 'pre-line', overflowWrap: 'break-word' }}>
-                    {displayDesc}
-                    {isLong && (
-                      <button onClick={() => toggleExpand(program.id)} style={{ background: 'none', color: '#1976d2', border: 'none', fontWeight: 600, cursor: 'pointer', marginLeft: 6, fontSize: 15, padding: 0 }}>
-                        {isExpanded ? 'See less' : 'See more'}
-                      </button>
+              <div key={program.id} className="training-card"
+                onMouseOver={e => { e.currentTarget.classList.add('training-card-hover'); }}
+                onMouseOut={e => { e.currentTarget.classList.remove('training-card-hover'); }}
+              >
+                {/* Header */}
+                <div className="training-card-header">
+                  <div className="training-card-date">{program.date} {program.location && <span className="training-card-location">| {program.location}</span>}</div>
+                  <div className="training-card-menu">
+                    <button onClick={() => handleMenuToggle(idx)} className="training-card-menu-btn">
+                      <FaEllipsisH size={20} />
+                    </button>
+                    {menuOpenIndex === idx && (
+                      <div className="training-card-menu-dropdown">
+                        <div className="training-card-menu-item" onClick={() => openModal(idx)}>Edit</div>
+                        <div className="training-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={() => handleDelete(idx)}>Delete</div>
+                      </div>
                     )}
                   </div>
+                </div>
+                {/* Content */}
+                <div className="training-card-content">
+                  {title && <div className="training-card-title">{title}</div>}
+                  {description && (() => {
+                    const words = description.split(' ');
+                    const isLong = words.length > 15;
+                    const shortDesc = isLong ? words.slice(0, 15).join(' ') + '...' : description;
+                    return (
+                      <>
+                        <div className="training-card-desc">
+                          {shortDesc}
+                          {isLong && (
+                            <button
+                              className="training-card-see-more"
+                              onClick={() => setDescModalContent({ title, description }) || setShowDescModal(true)}
+                            >See More</button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                  {program.image_url && (
+                    <img src={program.image_url} alt={title} className="training-card-img" />
+                  )}
                 </div>
               </div>
             );
           })
         )}
       </div>
+      {showDescModal && (
+        <div className="training-desc-modal-overlay">
+          <div className="training-desc-modal-card">
+            <button className="training-desc-modal-close" onClick={() => setShowDescModal(false)}>&times;</button>
+            <h3 className="training-desc-modal-title">{descModalContent.title}</h3>
+            <div className="training-desc-modal-desc">{descModalContent.description}</div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

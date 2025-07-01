@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import dayjs from 'dayjs';
+import '../css/Notifications.css';
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -125,41 +126,14 @@ function Notifications() {
 
   return (
     <AdminLayout>
-      <h2 style={{ 
-        fontWeight: '600', 
-        marginBottom: 16,
-        fontSize: '24px',
-        color: '#1a1a1a',
-        letterSpacing: '0.5px'
-      }}>NOTIFICATIONS</h2>
+      <h2 className="main-header">NOTIFICATIONS</h2>
       {/* Filter Bar */}
-      <div style={{ 
-        marginBottom: 24, 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 16,
-        padding: '12px 16px',
-        background: '#f8f9fa',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-      }}>
-        <span style={{ 
-          fontWeight: '600', 
-          color: '#2c3e50',
-          fontSize: '14px'
-        }}>Filters:</span>
+      <div className="notification-filter-bar">
+        <span className="notification-filter-label">Filters:</span>
         <select 
           value={filterType} 
           onChange={e => { setFilterType(e.target.value); setFilterValue(''); }} 
-          style={{ 
-            padding: '8px 12px', 
-            borderRadius: 6,
-            border: '1px solid #e0e0e0',
-            fontSize: '14px',
-            color: '#2c3e50',
-            backgroundColor: 'white',
-            cursor: 'pointer'
-          }}
+          className="notification-filter-select"
         >
           <option value="none">None</option>
           <option value="date">Date Only</option>
@@ -172,13 +146,7 @@ function Notifications() {
             type="date" 
             value={filterValue} 
             onChange={e => setFilterValue(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 6,
-              border: '1px solid #e0e0e0',
-              fontSize: '14px',
-              color: '#2c3e50'
-            }}
+            className="notification-filter-input"
           />
         )}
         {filterType === 'time' && (
@@ -186,13 +154,7 @@ function Notifications() {
             type="time" 
             value={filterValue} 
             onChange={e => setFilterValue(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 6,
-              border: '1px solid #e0e0e0',
-              fontSize: '14px',
-              color: '#2c3e50'
-            }}
+            className="notification-filter-input"
           />
         )}
         {filterType === 'datetime' && (
@@ -200,13 +162,7 @@ function Notifications() {
             type="datetime-local" 
             value={filterValue} 
             onChange={e => setFilterValue(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 6,
-              border: '1px solid #e0e0e0',
-              fontSize: '14px',
-              color: '#2c3e50'
-            }}
+            className="notification-filter-input"
           />
         )}
         {filterType === 'month' && (
@@ -214,288 +170,113 @@ function Notifications() {
             type="month" 
             value={filterValue} 
             onChange={e => setFilterValue(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 6,
-              border: '1px solid #e0e0e0',
-              fontSize: '14px',
-              color: '#2c3e50'
-            }}
+            className="notification-filter-input"
           />
         )}
         {(filterType !== 'none' && filterValue) && (
           <button 
             onClick={() => { setFilterType('none'); setFilterValue(''); }} 
-            style={{ 
-              background: '#f1f3f5', 
-              border: '1px solid #e0e0e0',
-              borderRadius: 6, 
-              padding: '8px 16px', 
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: '#2c3e50',
-              fontWeight: '500',
-              transition: 'all 0.2s ease'
-            }}
+            className="notification-filter-clear"
           >Clear</button>
         )}
         <button 
-          style={{ 
-            marginLeft: 'auto',
-            background: '#1976d2', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: 6, 
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '14px',
-            letterSpacing: '0.3px',
-            boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)',
-            transition: 'all 0.2s ease'
-          }} 
+          className="notification-add-btn"
           onClick={openModal}
         >
           Add Notification
         </button>
       </div>
       {notifications.length === 0 && (
-        <div style={{ 
-          textAlign: 'center', 
-          color: '#6c757d', 
-          marginTop: 32,
-          fontSize: '15px',
-          fontStyle: 'italic'
-        }}>No notifications yet.</div>
+        <div className="notification-empty">No notifications yet.</div>
       )}
       {filterNotifications(notifications).map(n => (
         <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} />
       ))}
       {showModal && (
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100vw', 
-          height: '100vh', 
-          background: 'rgba(0,0,0,0.5)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 1000,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <form 
-            style={{ 
-              background: 'white', 
-              padding: '32px', 
-              borderRadius: '12px', 
-              minWidth: '400px', 
-              maxWidth: '500px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-              animation: 'modalFadeIn 0.3s ease'
-            }} 
-            onSubmit={handleSubmit}
-          >
-            <h3 style={{ 
-              textAlign: 'center', 
-              fontWeight: '600',
-              fontSize: '20px',
-              color: '#1a1a1a',
-              marginBottom: '24px'
-            }}>Create Notification</h3>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Title</label>
-              <input 
-                name="title" 
-                value={form.title} 
-                onChange={handleChange} 
-                required 
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '14px',
-                  color: '#2c3e50',
-                  transition: 'border-color 0.2s ease',
-                  outline: 'none'
-                }}
-                placeholder="Enter notification title"
-              />
+        <div className="notification-modal-overlay">
+          <div className="notification-modal-card notification-modal-padding">
+            <div className="notification-modal-header">
+              <h3>Add Notification</h3>
+              <span className="notification-close-icon" onClick={closeModal}>&times;</span>
             </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Description</label>
-              <textarea 
-                name="description" 
-                value={form.description} 
-                onChange={handleChange} 
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '14px',
-                  color: '#2c3e50',
-                  minHeight: '100px',
-                  resize: 'vertical',
-                  transition: 'border-color 0.2s ease',
-                  outline: 'none'
-                }}
-                placeholder="Enter notification description"
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Select Associate/s to Notify</label>
-              <div style={{ 
-                border: '1px solid #e0e0e0',
-                borderRadius: '6px',
-                padding: '12px',
-                maxHeight: '150px',
-                overflowY: 'auto',
-                background: '#f8f9fa'
-              }}>
-                <div style={{ marginBottom: '8px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectAll} 
-                    onChange={handleSelectAll} 
-                    id="selectAll"
-                    style={{ marginRight: '8px' }}
-                  />
-                  <label 
-                    htmlFor="selectAll" 
-                    style={{ 
-                      fontWeight: '600',
-                      color: '#2c3e50',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >Select All</label>
-                </div>
-                {associates.map(a => (
-                  <div key={a.id} style={{ marginBottom: '6px' }}>
-                    <input
-                      type="checkbox"
-                      checked={form.associate_ids.includes(a.id)}
-                      onChange={() => handleAssociateChange(a.id)}
-                      id={`associate_${a.id}`}
-                      style={{ marginRight: '8px' }}
-                    />
-                    <label 
-                      htmlFor={`associate_${a.id}`} 
-                      style={{ 
-                        color: '#495057',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >{a.name}</label>
-                  </div>
-                ))}
+            <form className="add-edit-form notification-modal-content" onSubmit={handleSubmit}>
+              <div className="notification-icon">
+                <svg width="48" height="48" fill="#A11C22" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7v3.586l.707.707A1 1 0 0 1 19.293 16H4.707a1 1 0 0 1-.707-1.707L4.707 12.586V9a7 7 0 0 1 7-7zm0 20a3 3 0 0 1-3-3h6a3 3 0 0 1-3 3z"/></svg>
               </div>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ 
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                color: '#2c3e50',
-                fontSize: '14px'
-              }}>Number of Volunteers Needed</label>
-              <input 
-                name="volunteers_needed" 
-                type="number" 
-                value={form.volunteers_needed} 
-                onChange={handleChange} 
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: '1px solid #e0e0e0',
-                  fontSize: '14px',
-                  color: '#2c3e50',
-                  transition: 'border-color 0.2s ease',
-                  outline: 'none'
-                }}
-                placeholder="Enter number of volunteers needed"
-              />
-            </div>
-
-            {error && (
-              <div style={{ 
-                color: '#e74c3c',
-                fontSize: '14px',
-                marginBottom: '16px',
-                padding: '8px 12px',
-                background: '#fdf3f2',
-                borderRadius: '4px',
-                border: '1px solid #fadbd8'
-              }}>{error}</div>
-            )}
-
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'flex-end', 
-              gap: '12px'
-            }}>
-              <button 
-                type="button" 
-                onClick={closeModal} 
-                style={{ 
-                  background: '#f1f3f5',
-                  color: '#495057',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontWeight: '500',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >Cancel</button>
-              <button 
-                type="submit" 
-                disabled={loading}
-                style={{ 
-                  background: '#1976d2',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '10px 20px',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 4px rgba(25, 118, 210, 0.2)'
-                }}
-              >
-                {loading ? 'Creating...' : 'Create Notification'}
-              </button>
-            </div>
-          </form>
+              <h4>Notification Details</h4>
+              <p>Fill out the details to notify associates and request volunteers.</p>
+              <div className="notification-form-grid">
+                <div className="notification-form-group full-width">
+                  <label>Title *</label>
+                  <input 
+                    name="title" 
+                    value={form.title} 
+                    onChange={handleChange} 
+                    required 
+                    placeholder="Enter notification title"
+                  />
+                </div>
+                <div className="notification-form-group full-width">
+                  <label>Description *</label>
+                  <textarea 
+                    name="description" 
+                    value={form.description} 
+                    onChange={handleChange} 
+                    required
+                    placeholder="Enter notification description"
+                    rows="3"
+                  />
+                </div>
+                <div className="notification-form-group full-width">
+                  <label>Select Associate/s to Notify</label>
+                  <div className="notification-associate-list">
+                    <div className="select-all associate-checkbox-row">
+                      <input 
+                        type="checkbox" 
+                        checked={selectAll} 
+                        onChange={handleSelectAll} 
+                        id="selectAll"
+                        style={{ marginRight: '8px' }}
+                      />
+                      <label htmlFor="selectAll">Select All</label>
+                    </div>
+                    {[...associates]
+                      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+                      .map(a => (
+                        <div key={a.id} className="associate-checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={form.associate_ids.includes(a.id)}
+                            onChange={() => handleAssociateChange(a.id)}
+                            id={`associate_${a.id}`}
+                            style={{ marginRight: '8px' }}
+                          />
+                          <label htmlFor={`associate_${a.id}`} className="associate-checkbox-label">{a.name}</label>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+                <div className="notification-form-group half-width">
+                  <label>Number of Volunteers Needed</label>
+                  <input 
+                    name="volunteers_needed" 
+                    type="number" 
+                    value={form.volunteers_needed} 
+                    onChange={handleChange} 
+                    placeholder="Enter number of volunteers needed"
+                    required
+                  />
+                </div>
+              </div>
+              {error && <div className="notification-error-message">{error}</div>}
+              <div className="notification-form-actions">
+                <button type="button" className="cancel-btn" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="notification-btn-submit" disabled={loading}>
+                  {loading ? 'Creating...' : 'Create Notification'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </AdminLayout>
@@ -511,42 +292,13 @@ function ProgressBar({ recipients }) {
   const declined = recipients.filter(r => r.response === 'decline').length;
   return (
     <>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        fontSize: '13px', 
-        marginBottom: 4,
-        color: '#495057'
-      }}>
-        <span style={{ fontWeight: '500' }}>CONFIRMED {accepted} ASSOCIATES</span>
-        <span style={{ color: '#6c757d' }}>DECLINED {declined} ASSOCIATES</span>
+      <div className="notification-progress-labels">
+        <span className="notification-progress-accepted">CONFIRMED {accepted} ASSOCIATES</span>
+        <span className="notification-progress-declined">DECLINED {declined} ASSOCIATES</span>
       </div>
-      <div style={{ 
-        width: '100%', 
-        background: '#e9ecef', 
-        borderRadius: 8, 
-        height: 20, 
-        position: 'relative', 
-        marginBottom: 8,
-        overflow: 'hidden'
-      }}>
-        <div style={{ 
-          width: percent + '%', 
-          background: '#2ecc71', 
-          height: '100%', 
-          borderRadius: 8,
-          transition: 'width 0.3s ease'
-        }} />
-        <span style={{ 
-          position: 'absolute', 
-          left: '50%', 
-          top: '50%', 
-          transform: 'translate(-50%, -50%)',
-          fontSize: '12px', 
-          color: '#fff',
-          fontWeight: '600',
-          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-        }}>{percent}% RESPONDED</span>
+      <div className="notification-progress-bar-bg">
+        <div className="notification-progress-bar-fill" style={{ width: percent + '%' }} />
+        <span className="notification-progress-bar-text">{percent}% RESPONDED</span>
       </div>
     </>
   );
@@ -557,114 +309,36 @@ function NotificationDropdown({ notification, onRemove }) {
   const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
   const declined = notification.recipients ? notification.recipients.filter(r => r.response === 'decline').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
   return (
-    <div style={{ 
-      border: '1px solid #e0e0e0', 
-      marginBottom: 16, 
-      borderRadius: 8, 
-      background: '#fff', 
-      boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      transition: 'all 0.2s ease'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        padding: '16px 20px', 
-        cursor: 'pointer',
-        borderBottom: open ? '1px solid #e0e0e0' : 'none'
-      }} onClick={() => setOpen(o => !o)}>
+    <div className={`notification-dropdown${open ? ' open' : ''}`}>
+      <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)}>
         <div>
-          <div style={{ 
-            fontWeight: '600', 
-            fontSize: '16px',
-            color: '#2c3e50',
-            marginBottom: 4
-          }}>{notification.title}</div>
-          <div style={{ 
-            fontSize: '13px',
-            color: '#6c757d'
-          }}>{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
+          <div className="notification-dropdown-title">{notification.title}</div>
+          <div className="notification-dropdown-date">{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
         </div>
-        <div style={{ 
-          fontSize: '16px',
-          color: '#6c757d',
-          transition: 'transform 0.2s ease'
-        }}>{open ? '▲' : '▼'}</div>
+        <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>
       </div>
       {open && (
-        <div style={{ padding: '20px' }}>
-          <div style={{ 
-            color: '#495057', 
-            marginBottom: 16,
-            fontSize: '14px',
-            lineHeight: '1.5'
-          }}>{notification.description}</div>
+        <div className="notification-dropdown-body">
+          <div className="notification-dropdown-description">{notification.description}</div>
           <ProgressBar recipients={notification.recipients} />
-          <div style={{ 
-            display: 'flex', 
-            gap: 24, 
-            margin: '16px 0' 
-          }}>
-            <div style={{ minWidth: 200 }}>
-              <div style={{ 
-                fontWeight: '600', 
-                color: '#2ecc71', 
-                marginBottom: 8,
-                fontSize: '14px'
-              }}>Accepted ({accepted.length})</div>
-              <ul style={{ 
-                margin: 0, 
-                padding: '12px 16px', 
-                background: '#f8f9fa', 
-                borderRadius: 6, 
-                border: '1px solid #e0e0e0', 
-                listStyle: 'disc',
-                fontSize: '13px',
-                color: '#495057'
-              }}>
-                {accepted.length === 0 ? <li style={{ color: '#6c757d' }}>None</li> : accepted.map(name => <li key={name}>{name}</li>)}
+          <div className="notification-dropdown-lists">
+            <div className="notification-dropdown-list accepted">
+              <div className="notification-dropdown-list-title accepted">Accepted ({accepted.length})</div>
+              <ul>
+                {accepted.length === 0 ? <li className="notification-dropdown-list-empty">None</li> : accepted.map(name => <li key={name}>{name}</li>)}
               </ul>
             </div>
-            <div style={{ minWidth: 200 }}>
-              <div style={{ 
-                fontWeight: '600', 
-                color: '#e74c3c', 
-                marginBottom: 8,
-                fontSize: '14px'
-              }}>Declined ({declined.length})</div>
-              <ul style={{ 
-                margin: 0, 
-                padding: '12px 16px', 
-                background: '#f8f9fa', 
-                borderRadius: 6, 
-                border: '1px solid #e0e0e0', 
-                listStyle: 'disc',
-                fontSize: '13px',
-                color: '#495057'
-              }}>
-                {declined.length === 0 ? <li style={{ color: '#6c757d' }}>None</li> : declined.map(name => <li key={name}>{name}</li>)}
+            <div className="notification-dropdown-list declined">
+              <div className="notification-dropdown-list-title declined">Declined ({declined.length})</div>
+              <ul>
+                {declined.length === 0 ? <li className="notification-dropdown-list-empty">None</li> : declined.map(name => <li key={name}>{name}</li>)}
               </ul>
             </div>
           </div>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end', 
-            marginTop: 16 
-          }}>
+          <div className="notification-dropdown-actions">
             <button 
               onClick={() => onRemove(notification.id)} 
-              style={{ 
-                background: '#e74c3c', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: 6, 
-                padding: '8px 20px', 
-                fontWeight: '600',
-                fontSize: '13px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 4px rgba(231, 76, 60, 0.2)'
-              }}
+              className="notification-dropdown-remove"
             >REMOVE</button>
           </div>
         </div>

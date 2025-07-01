@@ -232,8 +232,8 @@ function ApprovalAOR() {
     <AdminLayout>
       <div className="approval-aor-container">
         <div className="header-section">
-          <h2>APPROVAL / AOR</h2>
-          <button className="show-history-btn" onClick={handleShowHistory}>
+          <h2 className="main-header">APPROVAL / AOR</h2>
+          <button className="show-history-btn" onClick={handleShowHistory} style={{ fontWeight: 700 }}>
             SHOW HISTORY
           </button>
         </div>
@@ -246,6 +246,7 @@ function ApprovalAOR() {
           <div className="reports-grid">
             {reports.map(report => {
               const logoUrl = getOrganizationLogo(report);
+              const displayStatus = report.status === 'sent' ? 'RECEIVED' : report.status.toUpperCase();
               return (
                 <div key={report.id} className="report-card">
                   <img 
@@ -261,7 +262,7 @@ function ApprovalAOR() {
                     <span className="org-label">{report.user?.organization || 'ASSOCIATE'}</span>
                     <h3>{report.title}</h3>
                     <span className={`report-status ${report.status}`}>
-                      {report.status.toUpperCase()}
+                      {displayStatus}
                     </span>
                     <button className="see-more-btn" onClick={() => handlePreview(report)}>
                       SEE MORE
@@ -284,27 +285,29 @@ function ApprovalAOR() {
                 </button>
               </div>
               <div className="modal-body">
-                {reports.map(report => (
-                  <div key={report.id} className="history-item">
-                    <img 
-                      src={getOrganizationLogo(report)}
-                      alt={report.user?.organization || 'Organization Logo'} 
-                      className="history-logo"
-                    />
-                    <div className="history-info">
-                      <h4 className="history-title">{report.title}</h4>
-                      <p className="history-date">
-                        {new Date(report.created_at).toLocaleDateString()}
-                      </p>
+                <div className="history-list">
+                  {reports.map(report => (
+                    <div key={report.id} className="history-item">
+                      <img 
+                        src={getOrganizationLogo(report)}
+                        alt={report.user?.organization || 'Organization Logo'} 
+                        className="history-logo"
+                      />
+                      <div className="history-info">
+                        <h4 className="history-title">{report.title}</h4>
+                        <p className="history-date">
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button 
+                        className="generate-btn"
+                        onClick={() => handleGenerateAOR(report.id)}
+                      >
+                        <FontAwesomeIcon icon={faDownload} /> Generate AOR
+                      </button>
                     </div>
-                    <button 
-                      className="generate-btn"
-                      onClick={() => handleGenerateAOR(report.id)}
-                    >
-                      <FontAwesomeIcon icon={faDownload} /> Generate AOR
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -333,6 +336,7 @@ function ApprovalAOR() {
               <div className="modal-body">
                 <div className="preview-content">
                   <div className="preview-details">
+                    <div className="section-header">Report Details</div>
                     {Object.entries(selectedReport.data).map(([key, value]) => {
                       const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
 
@@ -341,12 +345,29 @@ function ApprovalAOR() {
                           <div key={key} className="preview-field-group">
                             <strong>{formattedKey}:</strong>
                             <div className="activities-list">
-                              {Object.entries(value).map(([activityKey, activityValue]) => (
-                                <div key={activityKey} className="activity-item">
-                                  <span className="activity-key">{activityKey}:</span>
-                                  <span className="activity-value">{String(activityValue)}</span>
-                                </div>
-                              ))}
+                              {Array.isArray(value)
+                                ? value.map((activity, idx) => (
+                                    <div key={idx} className="activity-item">
+                                      {Object.entries(activity).map(([k, v]) => (
+                                        <span key={k} style={{ marginRight: 12 }}>
+                                          <strong>{k}:</strong> {String(v)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ))
+                                : Object.entries(value).map(([activityKey, activityValue]) => (
+                                    <div key={activityKey} className="activity-item">
+                                      {typeof activityValue === 'object'
+                                        ? Object.entries(activityValue).map(([k, v]) => (
+                                            <span key={k} style={{ marginRight: 12 }}>
+                                              <strong>{k}:</strong> {String(v)}
+                                            </span>
+                                          ))
+                                        : <span>{String(activityValue)}</span>
+                                      }
+                                    </div>
+                                  ))
+                              }
                             </div>
                           </div>
                         );
@@ -355,7 +376,7 @@ function ApprovalAOR() {
                       if (key === 'associateGroup' && typeof value === 'object' && value !== null) {
                         return (
                           <div key={key} className="preview-field-group">
-                            <strong>Associate Group:</strong>
+                            <div className="section-header">Associate Group</div>
                             <div className="associate-details">
                               <p><strong>Name:</strong> {value.name}</p>
                               <p><strong>Director:</strong> {value.director}</p>
@@ -366,9 +387,9 @@ function ApprovalAOR() {
                       }
 
                       return (
-                        <p key={key}>
-                          <strong>{formattedKey}:</strong> {String(value)}
-                        </p>
+                        <div key={key} className="preview-field">
+                          <strong>{formattedKey}:</strong> <span className="preview-value">{String(value)}</span>
+                        </div>
                       );
                     })}
                   </div>

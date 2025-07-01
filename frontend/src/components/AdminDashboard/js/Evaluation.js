@@ -195,14 +195,15 @@ function Evaluation() {
     <AdminLayout>
       <div className="evaluation-container">
         <div className="header-section">
-          <h2>ASSOCIATE EVALUATION</h2>
-          <div className="search-bar">
-            <FontAwesomeIcon icon={faSearch} />
+          <h2 className="main-header">ASSOCIATE EVALUATION</h2>
+          <div className="evaluation-search-bar">
+            <FontAwesomeIcon icon={faSearch} className="evaluation-search-icon" />
             <input
               type="text"
               placeholder="Search associates..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="evaluation-search-input"
             />
           </div>
         </div>
@@ -219,17 +220,16 @@ function Evaluation() {
                   <img
                     src={getLogoUrl(associate.logo)}
                     alt={associate.name || 'Associate Logo'}
-                    className="organization-logo"
-                    onError={(e) => {
-                      console.error('Error loading image:', e.target.src);
-                      e.target.src = `${window.location.origin}/Assets/disaster_logo.png`;
-                    }}
+                    className="organization-logo-lg"
+                    onError={e => { e.target.src = `${window.location.origin}/Assets/disaster_logo.png`; }}
                   />
-                  <h3>{associate.name}</h3>
-                  <span className="organization">{associate.organization}</span>
+                  <div className="associate-name-lg">{associate.name}</div>
+                  {associate.organization && (
+                    <div className="associate-organization-lg">{associate.organization}</div>
+                  )}
                 </div>
                 <button
-                  className="evaluate-btn"
+                  className="evaluate-btn-lg"
                   onClick={() => handleEvaluate(associate)}
                 >
                   Evaluate

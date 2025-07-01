@@ -333,6 +333,7 @@
   padding: clamp(8px, 2vw, 12px) clamp(14px, 3vw, 22px);
   border-radius: 6px;
   margin-left: 10px;
+  text-transform: uppercase;
 }
 .add-associate-btn {
   background: #28a745;

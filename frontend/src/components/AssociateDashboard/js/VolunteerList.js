@@ -475,7 +475,7 @@ function VolunteerList() {
                       <FontAwesomeIcon icon={getSortIcon('location')} />
                     </div>
                   </th>
-                  <th>Actions</th>
+                  <th style={{textAlign: 'left'}}>Actions</th>
                 </tr>
               </thead>
               <tbody>

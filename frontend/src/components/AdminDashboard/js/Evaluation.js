@@ -195,7 +195,7 @@ function Evaluation() {
     <AdminLayout>
       <div className="evaluation-container">
         <div className="header-section">
-          <h2>ASSOCIATE EVALUATION</h2>
+          <h2 className="main-header">ASSOCIATE EVALUATION</h2>
           <div className="evaluation-search-bar">
             <FontAwesomeIcon icon={faSearch} className="evaluation-search-icon" />
             <input

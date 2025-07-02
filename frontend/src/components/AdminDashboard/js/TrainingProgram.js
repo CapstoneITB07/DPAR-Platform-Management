@@ -126,7 +126,7 @@ function TrainingProgram() {
   return (
     <AdminLayout>
       <div className="training-header-row">
-        <h2 className="training-header-title">TRAINING PROGRAMS</h2>
+        <h2 className="main-header">TRAINING PROGRAMS</h2>
         <button className="training-add-btn" onClick={() => openModal()}>
           ADD PROGRAM
         </button>
@@ -208,37 +208,49 @@ function TrainingProgram() {
             const isLong = words.length >= 9;
             const shortDesc = isLong ? words.slice(0, 9).join(' ') + '...' : description;
             return (
-              <div key={program.id} className="training-card">
-                {/* Three-dot menu */}
-                <button className="training-card-menu-btn" onClick={() => handleMenuToggle(idx)}>
-                  <FaEllipsisH size={22} />
-                </button>
-                {menuOpenIndex === idx && (
-                  <div className="training-card-menu-dropdown">
-                    <div className="training-card-menu-item" onClick={() => openModal(idx)}>Edit</div>
-                    <div className="training-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={() => handleDelete(idx)}>Delete</div>
+              <div key={program.id} className="training-card"
+                onMouseOver={e => { e.currentTarget.classList.add('training-card-hover'); }}
+                onMouseOut={e => { e.currentTarget.classList.remove('training-card-hover'); }}
+              >
+                {/* Header */}
+                <div className="training-card-header">
+                  <div className="training-card-date">{program.date} {program.location && <span className="training-card-location">| {program.location}</span>}</div>
+                  <div className="training-card-menu">
+                    <button onClick={() => handleMenuToggle(idx)} className="training-card-menu-btn">
+                      <FaEllipsisH size={20} />
+                    </button>
+                    {menuOpenIndex === idx && (
+                      <div className="training-card-menu-dropdown">
+                        <div className="training-card-menu-item" onClick={() => openModal(idx)}>Edit</div>
+                        <div className="training-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={() => handleDelete(idx)}>Delete</div>
+                      </div>
+                    )}
                   </div>
-                )}
-                {/* Image */}
-                {program.image_url && (
-                  <img src={program.image_url} alt={title} className="training-card-img" />
-                )}
+                </div>
                 {/* Content */}
                 <div className="training-card-content">
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <div className="training-card-title">{title}</div>
-                    <div className="training-card-meta">
-                      {program.date} {program.location && <span className="training-card-location">| {program.location}</span>}
-                    </div>
-                    <div className="training-card-desc">
-                      {shortDesc}
-                      {isLong && (
-                        <button className="training-card-see-more" onClick={() => setDescModalContent({ title, description }) || setShowDescModal(true)}>
-                          See more
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  {title && <div className="training-card-title">{title}</div>}
+                  {description && (() => {
+                    const words = description.split(' ');
+                    const isLong = words.length > 15;
+                    const shortDesc = isLong ? words.slice(0, 15).join(' ') + '...' : description;
+                    return (
+                      <>
+                        <div className="training-card-desc">
+                          {shortDesc}
+                          {isLong && (
+                            <button
+                              className="training-card-see-more"
+                              onClick={() => setDescModalContent({ title, description }) || setShowDescModal(true)}
+                            >See More</button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                  {program.image_url && (
+                    <img src={program.image_url} alt={title} className="training-card-img" />
+                  )}
                 </div>
               </div>
             );

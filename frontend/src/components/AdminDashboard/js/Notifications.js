@@ -126,7 +126,7 @@ function Notifications() {
 
   return (
     <AdminLayout>
-      <h2 className="notification-title">NOTIFICATIONS</h2>
+      <h2 className="main-header">NOTIFICATIONS</h2>
       {/* Filter Bar */}
       <div className="notification-filter-bar">
         <span className="notification-filter-label">Filters:</span>
@@ -240,18 +240,20 @@ function Notifications() {
                       />
                       <label htmlFor="selectAll">Select All</label>
                     </div>
-                    {associates.map(a => (
-                      <div key={a.id} className="associate-checkbox-row">
-                        <input
-                          type="checkbox"
-                          checked={form.associate_ids.includes(a.id)}
-                          onChange={() => handleAssociateChange(a.id)}
-                          id={`associate_${a.id}`}
-                          style={{ marginRight: '8px' }}
-                        />
-                        <label htmlFor={`associate_${a.id}`} className="associate-checkbox-label">{a.name}</label>
-                      </div>
-                    ))}
+                    {[...associates]
+                      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+                      .map(a => (
+                        <div key={a.id} className="associate-checkbox-row">
+                          <input
+                            type="checkbox"
+                            checked={form.associate_ids.includes(a.id)}
+                            onChange={() => handleAssociateChange(a.id)}
+                            id={`associate_${a.id}`}
+                            style={{ marginRight: '8px' }}
+                          />
+                          <label htmlFor={`associate_${a.id}`} className="associate-checkbox-label">{a.name}</label>
+                        </div>
+                      ))}
                   </div>
                 </div>
                 <div className="notification-form-group half-width">

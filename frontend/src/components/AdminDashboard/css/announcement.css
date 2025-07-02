@@ -105,16 +105,21 @@
   background: #f8f8f8;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
-.announcement-upload-remove {
-  background: #eee;
-  color: #A11C22;
-  border: none;
-  padding: 4px 12px;
-  border-radius: 4px;
+.announcement-upload-remove, .announcement-cancel-btn {
+  background: none !important;
+  color: #A11C22 !important;
+  border: none !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  margin-top: 4px;
+  transition: color 0.18s;
+}
+.announcement-upload-remove:hover, .announcement-cancel-btn:hover {
+  color: #8b1a1f !important;
+  background: none !important;
 }
 .announcement-upload-placeholder {
   width: 70px;
@@ -150,36 +155,22 @@
 .announcement-modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 16px;
   margin-top: 10px;
 }
-.announcement-cancel-btn {
-  background: #A11C22;
-  color: white;
-  border: none;
-  padding: 10px 22px;
-  border-radius: 7px;
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.18s;
-}
-.announcement-cancel-btn:hover {
-  background: #c53030;
-}
 .announcement-submit-btn {
-  background: #1976d2;
-  color: white;
-  border: none;
-  padding: 10px 22px;
-  border-radius: 7px;
-  font-weight: 700;
-  font-size: 15px;
+  background: #A11C22 !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 22px !important;
+  border-radius: 7px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
   cursor: pointer;
   transition: background 0.18s;
 }
 .announcement-submit-btn:hover {
-  background: #1251a3;
+  background: #8b1a1f !important;
 }
 
 /* Announcement List Styles */
@@ -372,6 +363,7 @@
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(161,28,34,0.08);
   transition: background 0.18s;
+  text-transform: uppercase;
 }
 .announcement-create-btn:hover {
   background: #c53030;
@@ -521,14 +513,14 @@
     border: none !important;
   }
   .announcement-submit-btn {
-    background: #1976d2 !important;
+    background: #A11C22 !important;
     color: #fff !important;
     border: none !important;
     font-weight: 700;
     transition: background 0.18s;
   }
   .announcement-submit-btn:hover {
-    background: #1251a3 !important;
+    background: #8b1a1f !important;
     color: #fff !important;
   }
   .announcement-header-row {
@@ -615,4 +607,12 @@
     margin-top: 0;
     margin-bottom: 0;
   }
+} 
+
+.main-header {
+  font-size: clamp(1.2rem, 3vw, 2.2rem);
+  font-weight: bold;
+  color: #222;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
 } 

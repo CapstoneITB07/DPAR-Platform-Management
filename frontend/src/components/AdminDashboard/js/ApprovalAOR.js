@@ -232,7 +232,7 @@ function ApprovalAOR() {
     <AdminLayout>
       <div className="approval-aor-container">
         <div className="header-section">
-          <h2>APPROVAL / AOR</h2>
+          <h2 className="main-header">APPROVAL / AOR</h2>
           <button className="show-history-btn" onClick={handleShowHistory} style={{ fontWeight: 700 }}>
             SHOW HISTORY
           </button>
@@ -285,27 +285,29 @@ function ApprovalAOR() {
                 </button>
               </div>
               <div className="modal-body">
-                {reports.map(report => (
-                  <div key={report.id} className="history-item">
-                    <img 
-                      src={getOrganizationLogo(report)}
-                      alt={report.user?.organization || 'Organization Logo'} 
-                      className="history-logo"
-                    />
-                    <div className="history-info">
-                      <h4 className="history-title">{report.title}</h4>
-                      <p className="history-date">
-                        {new Date(report.created_at).toLocaleDateString()}
-                      </p>
+                <div className="history-list">
+                  {reports.map(report => (
+                    <div key={report.id} className="history-item">
+                      <img 
+                        src={getOrganizationLogo(report)}
+                        alt={report.user?.organization || 'Organization Logo'} 
+                        className="history-logo"
+                      />
+                      <div className="history-info">
+                        <h4 className="history-title">{report.title}</h4>
+                        <p className="history-date">
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <button 
+                        className="generate-btn"
+                        onClick={() => handleGenerateAOR(report.id)}
+                      >
+                        <FontAwesomeIcon icon={faDownload} /> Generate AOR
+                      </button>
                     </div>
-                    <button 
-                      className="generate-btn"
-                      onClick={() => handleGenerateAOR(report.id)}
-                    >
-                      <FontAwesomeIcon icon={faDownload} /> Generate AOR
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

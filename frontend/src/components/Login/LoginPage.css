@@ -1,3 +1,14 @@
+/* Add a wrapper to center the card in the viewport */
+.loginPageWrapper {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  position: relative;
+}
+
 .container {
   display: grid; /* Use CSS Grid */
   grid-template-columns: 1fr 1fr; /* Create two equal columns */
@@ -8,11 +19,12 @@
   font-family: 'Arial', sans-serif;
   width: 100%; /* Allow container to take full width */
   max-width: 800px; /* Limit the overall width of the container */
-  margin: 50px auto; /* Center the container horizontally and add top/bottom margin */
+  margin: 0;
   box-sizing: border-box; /* Include padding and border in width/height */
   border: 1px solid #ccc; /* Outer border as in the screenshot */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow */
   overflow: hidden; /* Hide any potential overflow from inner elements */
+  background: white;
   /* To center vertically in the viewport if not taking full height, you might need to add styles to the body or a parent container */
 }
 
@@ -60,28 +72,29 @@
 }
 
 .coalitionText {
-  font-size: 12px;
+  font-size: clamp(0.7rem, 1.2vw, 1.1rem);
   margin-bottom: 20px;
   font-weight: bold;
-  margin-top: 0; /* Remove default top margin */
+  margin-top: 0;
 }
 
 .welcomeTitle {
-  font-size: 32px;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
   margin-bottom: 10px;
-  margin-top: 0; /* Ensure no top margin */
+  margin-top: 0;
 }
 
 .welcomeSubtitle {
-  font-size: 16px;
-  margin-top: 0; /* Ensure no top margin */
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  margin-top: 0;
 }
 
 .signInTitle {
-  font-size: 24px;
-  margin-bottom: 30px;
-  color: #c0392b; /* Red color */
-  margin-top: 0; /* Remove default top margin */
+  font-size: clamp(1.3rem, 2.5vw, 2.2rem);
+  margin-bottom: 32px;
+  color: #c0392b;
+  font-weight: bold;
+  text-align: center;
 }
 
 .inputGroup {
@@ -90,9 +103,12 @@
 
 .label {
   display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
+  margin-bottom: 7px;
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
   font-weight: bold;
+  color: #222;
+  text-align: left;
+  margin-left: 0;
 }
 
 .passwordInputContainer {
@@ -143,14 +159,15 @@
 
 .signInButton {
   width: 100%;
-  padding: 10px;
-  background-color: #e74c3c; /* Red button color */
+  padding: 12px;
+  background-color: #e74c3c;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: clamp(1rem, 2vw, 1.15rem);
   cursor: pointer;
-  margin-top: 10px; /* Top margin */
+  margin-top: 8px;
+  transition: background 0.2s;
 }
 
 .errorMessage {
@@ -159,16 +176,17 @@
   text-align: center;
 }
 
+/* Absolutely position the RA button at the bottom left of the viewport */
 .raButton {
-  position: absolute;
-  bottom: 20px; /* Position from bottom */
-  left: 20px; /* Position from left */
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
   font-size: 24px;
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0; /* Remove padding */
-  z-index: 10; /* Ensure it's above other content */
+  padding: 0;
+  z-index: 10;
 }
 
 .raButtonIconBox {
@@ -255,33 +273,64 @@
   color: #fff;
 }
 
-/* Basic responsiveness */
+/* Responsive styles */
+@media (max-width: 900px) {
+  .container {
+    max-width: 98vw;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
-    grid-template-columns: 1fr; /* Stack columns */
-    padding: 10px; /* Adjust padding for smaller screens */
-    margin: 20px auto; /* Adjust margin for smaller screens */
-    /* align-items: center; Align items to center when stacked if needed */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 98vw;
+    min-height: unset;
+    box-shadow: none;
+    border: none;
   }
-
-  .loginSection {
-    max-width: 100%;
-    border-right: 1px solid #ccc; /* Add border right on small screens */
-    border-bottom: 1px solid #ccc; /* Add border bottom on small screens */
-    height: auto; /* Allow height to be auto on smaller screens */
-    padding-top: 30px; /* Consistent top padding */
+  .loginSection, .welcomeSection {
+    border-right: none;
+    border-bottom: none;
+    padding: 24px 8px;
+    min-height: unset;
   }
-
   .welcomeSection {
-    max-width: 100%;
-    padding: 30px; /* Adjusted padding to match loginSection */
-    height: auto; /* Allow height to be auto on smaller screens */
-    justify-content: center; /* Center content when stacked */
-    padding-top: 30px; /* Adjusted top padding to match loginSection */
+    border-bottom: none;
+    padding: 32px 16px 40px 16px;
   }
-
   .raButton {
-      bottom: 10px;
-      left: 10px;
+    bottom: 10px;
+    left: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    display: flex;
+    flex-direction: column;
+    max-width: 100vw;
+    box-shadow: none;
+    border: none;
+    gap: 12px;
+  }
+  .welcomeSection {
+    margin-bottom: 8px;
+  }
+  .loginSection, .welcomeSection {
+    padding: 14px 4px;
+  }
+  .signInButton {
+    font-size: 16px;
+    padding: 10px;
+  }
+  .signInTitle {
+    font-size: 22px;
+  }
+  .welcomeTitle {
+    font-size: 22px;
+  }
+  .coalitionText {
+    font-size: 10px;
   }
 } 

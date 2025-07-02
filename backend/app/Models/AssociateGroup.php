@@ -11,9 +11,14 @@ class AssociateGroup extends Model
 
     protected $fillable = [
         'name',
-        'organization',
+        'type',
+        'director',
+        'description',
         'logo',
+        'email',
+        'phone',
         'user_id',
+        'members',
         'status'
     ];
 

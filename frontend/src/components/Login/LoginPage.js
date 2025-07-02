@@ -83,75 +83,74 @@ function LoginPage() {
   };
 
   return (
-    <div className="container"> {/* Main container */}
-      <div className="loginSection"> {/* Left (Login) section */}
-        <h2 className="signInTitle">Sign In</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="inputGroup">
-            <label htmlFor="email" className="label">Email</label>
-            <input
-              type="text" // Changed type to text based on screenshot
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-              required
-              placeholder="Enter your email"
-            />
-          </div>
-          <div className="inputGroup"> {/* Password input group */}
-            <label htmlFor="password" className="label">Password</label>
-            <div className="passwordInputContainer"> {/* Container for password input and icon */}
+    <div className="loginPageWrapper">
+      <div className="container"> {/* Main container */}
+        <div className="loginSection"> {/* Left (Login) section */}
+          <h2 className="signInTitle">Sign In</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="inputGroup">
+              <label htmlFor="email" className="label">Email:</label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="passwordInput"
+                type="text"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input"
                 required
-                placeholder="Enter your password"
-                aria-label="Password"
+                placeholder="Enter your email"
               />
-              <span
-                onClick={togglePasswordVisibility}
-                className="passwordToggleIcon"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                tabIndex={0}
-                role="button"
-              >
-                {showPassword ? (
-                  <FontAwesomeIcon icon={faEye} />
-                ) : (
-                  <FontAwesomeIcon icon={faEyeSlash} />
-                )} {/* Eye icons from Font Awesome */}
-              </span>
             </div>
+            <div className="inputGroup"> {/* Password input group */}
+              <label htmlFor="password" className="label">Password:</label>
+              <div className="passwordInputContainer"> {/* Container for password input and icon */}
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="passwordInput"
+                  required
+                  placeholder="Enter your password"
+                  aria-label="Password"
+                />
+                <span
+                  onClick={togglePasswordVisibility}
+                  className="passwordToggleIcon"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  tabIndex={0}
+                  role="button"
+                >
+                  {showPassword ? (
+                    <FontAwesomeIcon icon={faEye} />
+                  ) : (
+                    <FontAwesomeIcon icon={faEyeSlash} />
+                  )}
+                </span>
+              </div>
+            </div>
+            <div className="rememberMe">
+              <input type="checkbox" id="rememberMe" className="rememberMeCheckbox" />
+              <label htmlFor="rememberMe" className="rememberMeLabel">Remember me?</label>
+            </div>
+            <button type="submit" className="signInButton">Sign In</button>
+          </form>
+          {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
+        </div>
+        <div className="welcomeSection"> {/* Right (Welcome) section */}
+          <div className="welcomeContent">
+            <p className="coalitionText">DISASTER PREPAREDNESS AND RESPONSE VOLUNTEER COALITION</p>
+            <h1 className="welcomeTitle">Welcome ,</h1>
+            <p className="welcomeSubtitle">sign in to continue access pages.</p>
           </div>
-          <div className="rememberMe">
-            <input type="checkbox" id="rememberMe" className="rememberMeCheckbox" />
-            <label htmlFor="rememberMe" className="rememberMeLabel">Remember me?</label>
-          </div>
-          <button type="submit" className="signInButton">Sign In</button>
-        </form>
-        {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
-
-        {/* Button to toggle the Republic Act pop-up */}
-        <button
-          onClick={toggleRA}
-          className="raButton"
-        >
-          <div className="raButtonIconBox">📄</div>
-        </button>
-      </div>
-
-      <div className="welcomeSection"> {/* Right (Welcome) section */}
-        <div className="welcomeContent">
-          <p className="coalitionText">DISASTER PREPAREDNESS AND RESPONSE VOLUNTEER COALITION</p>
-          <h1 className="welcomeTitle">Welcome ,</h1>
-          <p className="welcomeSubtitle">sign in to continue access pages.</p>
         </div>
       </div>
-
+      {/* Republic Act Pop-up Button - now outside the card */}
+      <button
+        onClick={toggleRA}
+        className="raButton"
+      >
+        <div className="raButtonIconBox">📄</div>
+      </button>
       {/* Republic Act Pop-up */}
       {showRA && (
         <div className="raPopup">

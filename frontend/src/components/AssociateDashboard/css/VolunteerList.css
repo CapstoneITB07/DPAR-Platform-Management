@@ -793,9 +793,6 @@
 .detail-card.full-width {
   grid-column: 1 / -1;
 }
-.detail-card.address, .detail-card.expertise {
-  /* Remove flex-basis: 100% here, now handled by .full-width */
-}
 .label {
   font-size: 0.93rem;
   color: #7b809a;

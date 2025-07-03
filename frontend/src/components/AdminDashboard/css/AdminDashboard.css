@@ -1648,7 +1648,7 @@
 .btn-next:hover {
   background: #8b1a1f;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.3);
+  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.2);
 }
 
 .btn-prev {
@@ -2528,4 +2528,394 @@
 .btn-next:hover, .btn-prev:hover {
   color: #8b1a1f !important;
   background: none !important;
-} 
+}
+
+/* Certificate Modal Styles */
+.certificate-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.certificate-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 800px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+
+.certificate-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.certificate-modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.certificate-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.certificate-modal-close:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+  .certificate-modal-content {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Certificate Form Styles */
+  .certificate-form {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  .certificate-form .form-group {
+    margin-bottom: 10px;
+  }
+
+  .certificate-form label {
+    margin-bottom: 3px;
+  }
+
+  .certificate-form .form-control {
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+
+  .certificate-form .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .certificate-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+  }
+
+  .certificate-form .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+
+  .certificate-form .form-control:focus {
+    outline: none;
+    border-color: #A11C22;
+    box-shadow: 0 0 0 3px rgba(161, 28, 34, 0.1);
+  }
+
+  .certificate-form select.form-control {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-size: 16px 16px;
+    background-position: right 12px center;
+    padding-right: 40px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 40px;
+    line-height: 1.5;
+  }
+
+  .certificate-form textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  /* Certificate Preview Styles */
+  .certificate-preview {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  .certificate-preview h4 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+.certificate-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.certificate-actions .btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.certificate-actions .btn-primary {
+  background: #A11C22;
+  color: white;
+}
+
+.certificate-actions .btn-primary:hover {
+  background: #8b1a1f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.2);
+}
+
+.certificate-actions .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+  .certificate-actions .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
+  }
+
+  .certificate-actions .btn:disabled {
+    background: #6c757d;
+    color: #adb5bd;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .certificate-actions .btn:disabled:hover {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+  }
+
+/* Print styles for certificate */
+@media print {
+  .certificate-modal-overlay {
+    background: white;
+    padding: 0;
+  }
+  
+  .certificate-modal {
+    box-shadow: none;
+    border: none;
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .certificate-modal-header,
+  .certificate-actions,
+  .certificate-form {
+    display: none;
+  }
+  
+  .certificate-modal-content {
+    padding: 0;
+  }
+}
+
+/* Responsive styles for certificate modal */
+@media (max-width: 768px) {
+  .certificate-modal {
+    width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .certificate-modal-content {
+    padding: 16px;
+  }
+  
+  .certificate-form {
+    padding: 16px;
+  }
+  
+  .certificate-preview {
+    padding: 16px;
+  }
+  
+  .certificate-actions {
+    flex-direction: column;
+  }
+  
+  .certificate-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .certificate-modal-overlay {
+    padding: 10px;
+  }
+  
+  .certificate-modal {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+  
+  .certificate-modal-header {
+    padding: 16px;
+  }
+  
+  .certificate-modal-content {
+    padding: 12px;
+  }
+  
+  .certificate-form {
+    padding: 12px;
+  }
+  
+  .certificate-preview {
+    padding: 12px;
+  }
+  
+  .certificate-form .form-group {
+    margin-bottom: 12px;
+  }
+  
+  .certificate-form label {
+    font-size: 13px;
+  }
+  
+  .certificate-form .form-control {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* Small certificate button for evaluation items */
+.certificate-btn-small {
+  background: #A11C22;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.certificate-btn-small:hover {
+  background: #8b1a1f;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(161, 28, 34, 0.3);
+}
+
+/* Update evaluation item to accommodate certificate button */
+.evaluation-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 12px;
+  transition: background-color 0.2s;
+}
+
+.evaluation-item:last-child {
+  border-bottom: none;
+}
+
+.evaluation-item:hover {
+  background-color: #f8f9fa;
+}
+
+.certificate-modal-header-red {
+  background: #A11C22;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 28px 18px 28px;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.certificate-modal-header-red h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.certificate-modal-header-red .certificate-modal-close {
+  color: #fff;
+  font-size: 1.7rem;
+  font-weight: 700;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.certificate-modal-header-red .certificate-modal-close:hover {
+  background: rgba(255,255,255,0.12);
+}
+  

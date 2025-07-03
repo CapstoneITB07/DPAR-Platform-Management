@@ -24,6 +24,7 @@ import { parseISO } from 'date-fns';
 import moment from 'moment';
 import { getLogoUrl } from '../../../utils/url';
 import Modal from 'react-modal';
+import CertificateTemplate from './CertificateTemplate';
 
 ChartJS.register(
   CategoryScale,
@@ -116,6 +117,14 @@ function AdminDashboard() {
   const [statisticsData, setStatisticsData] = useState(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [showAllEvaluations, setShowAllEvaluations] = useState(false);
+  const [certificateModalOpen, setCertificateModalOpen] = useState(false);
+  const [selectedCertificateData, setSelectedCertificateData] = useState(null);
+  const [certificateFormData, setCertificateFormData] = useState({
+    selectedAssociate: '',
+    certificateDate: format(new Date(), 'yyyy-MM-dd'),
+    signatoryName: 'Admin',
+    customMessage: ''
+  });
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -758,6 +767,19 @@ function AdminDashboard() {
             <div className="evaluation-date">
               {format(parseISO(evaluation.created_at), 'MMM dd')}
             </div>
+            <button 
+              className="certificate-btn-small"
+              onClick={() => handleCertificateRequest({
+                name: evaluation.user ? evaluation.user.name : 'Unknown User',
+                organization: evaluation.user ? evaluation.user.organization : 'No Organization',
+                logo: associate ? associate.logo : null,
+                totalScore: evaluation.total_score,
+                evaluationDate: evaluation.created_at
+              })}
+              title="Generate Certificate"
+            >
+              <FontAwesomeIcon icon={faGraduationCap} />
+            </button>
           </div>
         );
       })}
@@ -857,12 +879,62 @@ function AdminDashboard() {
               <div className="evaluation-date">
                 {format(parseISO(evaluation.created_at), 'MMM dd')}
               </div>
+              <button 
+                className="certificate-btn-small"
+                onClick={() => handleCertificateRequest({
+                  name: evaluation.user ? evaluation.user.name : 'Unknown User',
+                  organization: evaluation.user ? evaluation.user.organization : 'No Organization',
+                  logo: associate ? associate.logo : null,
+                  totalScore: evaluation.total_score,
+                  evaluationDate: evaluation.created_at
+                })}
+                title="Generate Certificate"
+              >
+                <FontAwesomeIcon icon={faGraduationCap} />
+              </button>
             </div>
           );
         })}
       </div>
     </Modal>
   );
+
+  const handleCertificateRequest = (data) => {
+    if (!data) {
+      // If no data provided, just open the modal for manual selection
+      setSelectedCertificateData(null);
+      setCertificateFormData({
+        selectedAssociate: '',
+        certificateDate: format(new Date(), 'yyyy-MM-dd'),
+        signatoryName: 'Admin',
+        customMessage: ''
+      });
+    } else {
+      // If data provided, pre-fill the form
+      setSelectedCertificateData(data);
+      setCertificateFormData({
+        selectedAssociate: data.id || data.user_id || '',
+        certificateDate: data.evaluationDate ? format(parseISO(data.evaluationDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+        signatoryName: 'Admin',
+        customMessage: `This certificate is given to ${data.name} for their outstanding performance and dedication in volunteer disaster response activities. Their performance score of ${data.totalScore} demonstrates excellence in teamwork, communication, and commitment to community service.`
+      });
+    }
+    setCertificateModalOpen(true);
+  };
+
+  const handleCertificateFormChange = (field, value) => {
+    setCertificateFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const getSelectedAssociateData = () => {
+    if (certificateFormData.selectedAssociate) {
+      return associatesPerformance.find(a => String(a.id) === String(certificateFormData.selectedAssociate));
+    }
+    return selectedCertificateData;
+  };
 
   if (loading) return (
     <AdminLayout>
@@ -1010,7 +1082,7 @@ function AdminDashboard() {
             <div className="dashboard-section recent-evaluations">
               <div className="recent-evaluations-header-row">
                 <h3 className="recent-evaluations-title"><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
-                <button className="generate-certificate-btn">Generate Certificate</button>
+                <button className="generate-certificate-btn" onClick={() => handleCertificateRequest()}>Generate Certificate</button>
               </div>
               {renderRecentEvaluations()}
               {renderAllEvaluationsModal()}
@@ -1064,6 +1136,103 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
+             {certificateModalOpen && (
+         <Modal
+           isOpen={certificateModalOpen}
+           onRequestClose={() => setCertificateModalOpen(false)}
+           className="certificate-modal"
+           overlayClassName="certificate-modal-overlay"
+           ariaHideApp={false}
+         >
+           <div className="certificate-modal-header-red">
+             <h3>Generate Certificate</h3>
+             <button className="certificate-modal-close" onClick={() => setCertificateModalOpen(false)}>&times;</button>
+           </div>
+           <div className="certificate-modal-content">
+             {/* Certificate Form */}
+             <div className="certificate-form">
+               <div className="form-group">
+                 <label htmlFor="associate-select">Select Associate:</label>
+                 <select
+                   id="associate-select"
+                   value={certificateFormData.selectedAssociate}
+                   onChange={(e) => handleCertificateFormChange('selectedAssociate', e.target.value)}
+                   className="form-control"
+                 >
+                   <option value="">-- Select an Associate --</option>
+                   {associatesPerformance.map(associate => (
+                     <option key={associate.id} value={associate.id}>
+                       {associate.name} - {associate.organization}
+                     </option>
+                   ))}
+                 </select>
+               </div>
+               
+               <div className="form-group">
+                 <label htmlFor="certificate-date">Certificate Date:</label>
+                 <input
+                   type="date"
+                   id="certificate-date"
+                   value={certificateFormData.certificateDate}
+                   onChange={(e) => handleCertificateFormChange('certificateDate', e.target.value)}
+                   className="form-control"
+                 />
+               </div>
+               
+               <div className="form-group">
+                 <label htmlFor="signatory-name">Signatory Name:</label>
+                 <input
+                   type="text"
+                   id="signatory-name"
+                   value={certificateFormData.signatoryName}
+                   onChange={(e) => handleCertificateFormChange('signatoryName', e.target.value)}
+                   className="form-control"
+                   placeholder="Enter signatory name"
+                 />
+               </div>
+               
+               <div className="form-group">
+                 <label htmlFor="custom-message">Certificate Message:</label>
+                 <textarea
+                   id="custom-message"
+                   value={certificateFormData.customMessage}
+                   onChange={(e) => handleCertificateFormChange('customMessage', e.target.value)}
+                   className="form-control"
+                   rows="4"
+                   placeholder="Enter custom certificate message..."
+                 />
+               </div>
+             </div>
+
+             {/* Certificate Preview */}
+             {getSelectedAssociateData() && (
+               <div className="certificate-preview">
+                 <h4>Certificate Preview</h4>
+                 <CertificateTemplate 
+                   name={getSelectedAssociateData().name}
+                   date={format(parseISO(certificateFormData.certificateDate), 'MMMM dd, yyyy')}
+                   signature={certificateFormData.signatoryName}
+                   orgLogo={getLogoUrl(getSelectedAssociateData().logo)}
+                   message={certificateFormData.customMessage || `This certificate is given to ${getSelectedAssociateData().name} for their outstanding performance and dedication in volunteer disaster response activities.`}
+                 />
+               </div>
+             )}
+
+             <div className="certificate-actions">
+               <button 
+                 className="btn btn-primary" 
+                 onClick={() => window.print()}
+                 disabled={!getSelectedAssociateData()}
+               >
+                 <FontAwesomeIcon icon={faGraduationCap} /> Print Certificate
+               </button>
+               <button className="btn btn-secondary" onClick={() => setCertificateModalOpen(false)}>
+                 Close
+               </button>
+             </div>
+           </div>
+         </Modal>
+       )}
     </AdminLayout>
   );
 }

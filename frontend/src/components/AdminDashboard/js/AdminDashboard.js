@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faGraduationCap, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faGraduationCap, faSignOutAlt, faPrint, faFilePdf, faFileWord, faImage } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -125,6 +125,7 @@ function AdminDashboard() {
     signatoryName: 'Admin',
     customMessage: ''
   });
+  const [downloadFormat, setDownloadFormat] = useState('print');
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -929,6 +930,35 @@ function AdminDashboard() {
     }));
   };
 
+  const handleDownloadFormatChange = (format) => {
+    setDownloadFormat(format);
+  };
+
+  const handleCertificateAction = () => {
+    switch (downloadFormat) {
+      case 'print':
+        window.print();
+        break;
+      case 'pdf':
+        // TODO: Implement PDF download functionality
+        console.log('PDF download functionality to be implemented');
+        alert('PDF download functionality will be implemented soon!');
+        break;
+      case 'word':
+        // TODO: Implement Word download functionality
+        console.log('Word download functionality to be implemented');
+        alert('Word download functionality will be implemented soon!');
+        break;
+      case 'picture':
+        // TODO: Implement Picture download functionality
+        console.log('Picture download functionality to be implemented');
+        alert('Picture download functionality will be implemented soon!');
+        break;
+      default:
+        window.print();
+    }
+  };
+
   const getSelectedAssociateData = () => {
     if (certificateFormData.selectedAssociate) {
       return associatesPerformance.find(a => String(a.id) === String(certificateFormData.selectedAssociate));
@@ -1218,13 +1248,75 @@ function AdminDashboard() {
                </div>
              )}
 
+             {/* Download Format Selection */}
+             <div className="download-format-selection">
+               <h4>Download Format</h4>
+               <div className="format-options">
+                 <label className="format-option">
+                   <input
+                     type="radio"
+                     name="downloadFormat"
+                     value="print"
+                     checked={downloadFormat === 'print'}
+                     onChange={(e) => handleDownloadFormatChange(e.target.value)}
+                   />
+                   <span className="format-label">
+                     <FontAwesomeIcon icon={faPrint} /> Print
+                   </span>
+                 </label>
+                 <label className="format-option">
+                   <input
+                     type="radio"
+                     name="downloadFormat"
+                     value="pdf"
+                     checked={downloadFormat === 'pdf'}
+                     onChange={(e) => handleDownloadFormatChange(e.target.value)}
+                   />
+                   <span className="format-label">
+                     <FontAwesomeIcon icon={faFilePdf} /> PDF
+                   </span>
+                 </label>
+                 <label className="format-option">
+                   <input
+                     type="radio"
+                     name="downloadFormat"
+                     value="word"
+                     checked={downloadFormat === 'word'}
+                     onChange={(e) => handleDownloadFormatChange(e.target.value)}
+                   />
+                   <span className="format-label">
+                     <FontAwesomeIcon icon={faFileWord} /> Word
+                   </span>
+                 </label>
+                 <label className="format-option">
+                   <input
+                     type="radio"
+                     name="downloadFormat"
+                     value="picture"
+                     checked={downloadFormat === 'picture'}
+                     onChange={(e) => handleDownloadFormatChange(e.target.value)}
+                   />
+                   <span className="format-label">
+                     <FontAwesomeIcon icon={faImage} /> Picture
+                   </span>
+                 </label>
+               </div>
+             </div>
+
              <div className="certificate-actions">
                <button 
                  className="btn btn-primary" 
-                 onClick={() => window.print()}
+                 onClick={handleCertificateAction}
                  disabled={!getSelectedAssociateData()}
                >
-                 <FontAwesomeIcon icon={faGraduationCap} /> Print Certificate
+                 {downloadFormat === 'print' && <FontAwesomeIcon icon={faPrint} />}
+                 {downloadFormat === 'pdf' && <FontAwesomeIcon icon={faFilePdf} />}
+                 {downloadFormat === 'word' && <FontAwesomeIcon icon={faFileWord} />}
+                 {downloadFormat === 'picture' && <FontAwesomeIcon icon={faImage} />}
+                 {downloadFormat === 'print' && 'Print Certificate'}
+                 {downloadFormat === 'pdf' && 'Download PDF'}
+                 {downloadFormat === 'word' && 'Download Word'}
+                 {downloadFormat === 'picture' && 'Download Picture'}
                </button>
                <button className="btn btn-secondary" onClick={() => setCertificateModalOpen(false)}>
                  Close

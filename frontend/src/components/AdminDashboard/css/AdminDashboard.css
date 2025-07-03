@@ -2630,6 +2630,20 @@
     margin-bottom: 0;
   }
 
+  .format-options {
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .format-option {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    justify-content: center;
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
   .certificate-form label {
     display: block;
     margin-bottom: 6px;
@@ -2685,6 +2699,80 @@
     color: #333;
     font-size: 16px;
     font-weight: 600;
+  }
+
+  /* Download Format Selection Styles */
+  .download-format-selection {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  .download-format-selection h4 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .format-options {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .format-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    background: white;
+    transition: all 0.2s;
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .format-option:hover {
+    border-color: #A11C22;
+    background: #fbeaec;
+  }
+
+  .format-option input[type="radio"] {
+    display: none;
+  }
+
+  .format-option input[type="radio"]:checked + .format-label {
+    color: #A11C22;
+    font-weight: 600;
+  }
+
+  .format-option input[type="radio"]:checked ~ .format-label {
+    color: #A11C22;
+    font-weight: 600;
+  }
+
+  .format-option:has(input[type="radio"]:checked) {
+    border-color: #A11C22;
+    background: #fbeaec;
+    box-shadow: 0 0 0 3px rgba(161, 28, 34, 0.1);
+  }
+
+  .format-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #666;
+    transition: color 0.2s;
+  }
+
+  .format-label svg {
+    font-size: 16px;
   }
 
 .certificate-actions {

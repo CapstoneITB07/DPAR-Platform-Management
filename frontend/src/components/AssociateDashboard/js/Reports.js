@@ -406,15 +406,15 @@ function Reports() {
       message: 'Are you sure you want to delete this report?',
       onConfirm: async () => {
         setConfirm({ ...confirm, open: false });
-        try {
-          const token = localStorage.getItem('authToken');
-          await axios.delete(`http://localhost:8000/api/reports/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          fetchReports();
-        } catch {
-          setError('Failed to delete report');
-        }
+    try {
+      const token = localStorage.getItem('authToken');
+      await axios.delete(`http://localhost:8000/api/reports/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchReports();
+    } catch {
+      setError('Failed to delete report');
+    }
       }
     });
   };
@@ -479,7 +479,7 @@ function Reports() {
       <div className="reports-container">
         <div className="header-section">
           <div className="header-left">
-            <h2>REPORTS</h2>
+          <h2>REPORTS</h2>
           </div>
           
           <div className="header-actions">
@@ -569,40 +569,40 @@ function Reports() {
                     </td>
                       <td className="actions-cell">
                       <div className="action-buttons-row">
-                        {report.status === 'draft' && (
-                          <>
-                            <button
+                      {report.status === 'draft' && (
+                        <>
+                          <button
                               className="action-btn edit-btn"
-                              onClick={() => handleEdit(report)}
+                            onClick={() => handleEdit(report)}
                               title="Edit"
                             >
                               <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button
+                          </button>
+                          <button
                               className="action-btn send-btn"
-                              onClick={() => handleSubmit(true, report)}
+                            onClick={() => handleSubmit(true, report)}
                               title="Send"
                             >
                               <FontAwesomeIcon icon={faPaperPlane} />
-                            </button>
-                            <button
+                          </button>
+                          <button
                               className="action-btn delete-btn"
-                              onClick={() => handleDelete(report.id)}
+                            onClick={() => handleDelete(report.id)}
                               title="Delete"
                             >
                               <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          </>
-                        )}
-                        {report.status !== 'draft' && (
-                          <button
+                          </button>
+                        </>
+                      )}
+                      {report.status !== 'draft' && (
+                        <button
                             className="action-btn delete-btn"
-                            onClick={() => handleDelete(report.id)}
+                          onClick={() => handleDelete(report.id)}
                             title="Delete"
                           >
                             <FontAwesomeIcon icon={faTrash} />
-                          </button>
-                        )}
+                        </button>
+                      )}
                       </div>
                     </td>
                   </tr>
@@ -794,7 +794,7 @@ function Reports() {
                                   type="button"
                                   className="activity-remove-btn"
                                   onClick={() => removeField('activities', index)}
-                                >
+                >
                                   Remove
                 </button>
                               )}
@@ -804,7 +804,7 @@ function Reports() {
                             type="button"
                             className="add-activity-btn"
                             onClick={() => addField('activities')}
-                          >
+                    >
                             Add Activity
                     </button>
                         </div>

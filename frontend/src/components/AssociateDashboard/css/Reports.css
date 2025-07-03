@@ -1172,13 +1172,13 @@ button[type="button"]:last-child:hover {
     font-size: 1.5rem;
   }
   
-  .progress-steps {
+.progress-steps {
     padding: 20px 24px;
-  }
+}
   
-  .progress-step {
-    width: 36px;
-    height: 36px;
+.progress-step {
+  width: 36px;
+  height: 36px;
     font-size: 13px;
   }
   
@@ -1660,7 +1660,7 @@ button[type="button"]:last-child:hover {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
-  }
+}
   
   .header-actions {
     width: 100%;

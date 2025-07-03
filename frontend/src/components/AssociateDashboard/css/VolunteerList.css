@@ -968,33 +968,45 @@
   margin-top: 0.5rem;
 }
 .confirm-actions .delete-btn {
-  background: #e53935;
+  background: #b71c1c;
   color: #fff;
   border: none;
-  border-radius: 7px;
-  padding: 0.5rem 1.3rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0.5rem 1.5rem;
   transition: background 0.2s;
+  outline: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-.confirm-actions .delete-btn:hover {
-  background: #b71c1c;
+.confirm-actions .delete-btn:hover,
+.confirm-actions .delete-btn:focus {
+  background: #891818;
+  color: #fff;
 }
 .confirm-actions .cancel-btn {
-  background: #fff;
-  color: #374151;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 7px;
-  padding: 0.5rem 1.3rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, border 0.2s;
+  background: #fff !important;
+  color: #b71c1c !important;
+  border: 2px solid #f8bcbc !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  padding: 0.5rem 1.5rem !important;
+  transition: background 0.2s, border 0.2s, color 0.2s !important;
+  outline: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
 }
-.confirm-actions .cancel-btn:hover {
-  background: #f3f4f6;
-  border: 1.5px solid #bdbdbd;
+.confirm-actions .cancel-btn:hover,
+.confirm-actions .cancel-btn:focus {
+  background: #fff5f5 !important;
+  border: 2px solid #e57373 !important;
+  color: #b71c1c !important;
 }
 
 .volunteer-form .form-row {

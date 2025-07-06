@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Certificate of Appreciation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', Arial, sans-serif;
+      background: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    .certificate-container {
+      width: 1123px;   /* A4 landscape */
+      height: 794px;   /* A4 landscape */
+      border-radius: 20px;
+      margin: 0 auto;
+      padding: 40px 30px;
+      box-sizing: border-box;
+      position: relative;
+      background: #fff;
+      box-shadow: 0 2px 16px #0001;
+    }
+    .cert-corner {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      opacity: 0.7;
+    }
+    .cert-corner.top-left {
+      top: 18px;
+      left: 18px;
+    }
+    .cert-corner.bottom-right {
+      bottom: 18px;
+      right: 18px;
+      transform: scaleX(-1);
+    }
+    .cert-logo {
+      position: absolute;
+      top: 32px;
+      right: 48px;
+      width: 60px;
+      height: 60px;
+    }
+    .cert-title {
+      text-align: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-bottom: 0.5rem;
+      color: #3a3a3a;
+    }
+    .cert-subtitle {
+      text-align: center;
+      font-size: 1.3rem;
+      color: #bfa22a;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+    .cert-section {
+      text-align: center;
+      font-size: 1.1rem;
+      color: #3a3a3a;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .cert-name {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 1.2rem;
+      color: #3a3a3a;
+    }
+    .cert-divider {
+      border: none;
+      border-top: 3px solid #bfa22a;
+      margin: 1.5rem 0;
+    }
+    .cert-desc {
+      text-align: center;
+      font-size: 1rem;
+      color: #444;
+      margin: 0 auto 1.5rem auto;
+      max-width: 80%;
+    }
+    .cert-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 2rem;
+      padding: 0 40px;
+    }
+    .cert-date, .cert-signature {
+      text-align: center;
+      font-size: 1rem;
+      color: #3a3a3a;
+    }
+    .cert-label {
+      color: #bfa22a;
+      font-weight: bold;
+      margin-top: 0.5rem;
+      display: block;
+    }
+    .cert-star {
+      text-align: center;
+      font-size: 2rem;
+      color: #bfa22a;
+    }
+    .cert-star img {
+      width: 40px;
+      height: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate-container">
+    <img src="{{swirlTopUrl}}" class="cert-corner top-left" />
+    <img src="{{swirlBottomUrl}}" class="cert-corner bottom-right" />
+    <img src="{{logoUrl}}" class="cert-logo" />
+    <div class="cert-title">CERTIFICATE</div>
+    <div class="cert-subtitle">OF APPRECIATION</div>
+    <div class="cert-section">THE FOLLOWING AWARD IS GIVEN TO</div>
+    <div class="cert-name">{{associate}}</div>
+    <hr class="cert-divider" />
+    <div class="cert-desc">
+      {{message}}
+    </div>
+    <hr class="cert-divider" />
+    <div class="cert-footer">
+      <div class="cert-date">
+        {{date}}
+        <span class="cert-label">Date</span>
+      </div>
+      <div class="cert-star">
+        <img src="{{medalUrl}}" alt="Medal" />
+      </div>
+      <div class="cert-signature">
+        {{signature}}
+        <span class="cert-label">Signature</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html> 

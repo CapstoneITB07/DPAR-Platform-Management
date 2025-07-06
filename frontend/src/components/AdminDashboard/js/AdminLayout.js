@@ -175,7 +175,7 @@ function AdminLayout({ children }) {
   useEffect(() => {
     fetchProfile(); // Fetch profile on initial load
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 5000);
+    const interval = setInterval(fetchNotifications, 15000); // Poll every 15 seconds for notifications
     return () => clearInterval(interval);
   }, []);
 

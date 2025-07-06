@@ -24,6 +24,7 @@ import { parseISO } from 'date-fns';
 import moment from 'moment';
 import { getLogoUrl } from '../../../utils/url';
 import Modal from 'react-modal';
+import CertificateModal from './CertificateModal';
 
 ChartJS.register(
   CategoryScale,
@@ -116,6 +117,14 @@ function AdminDashboard() {
   const [statisticsData, setStatisticsData] = useState(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [showAllEvaluations, setShowAllEvaluations] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [certificateData, setCertificateData] = useState({
+    associate: '',
+    date: '',
+    signature: '',
+    message: '',
+    format: 'pdf',
+  });
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -618,13 +627,13 @@ function AdminDashboard() {
     fetchDashboardData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Polling for live updates (debounced to 3 seconds)
+  // Polling for live updates (debounced to 10 seconds)
   useEffect(() => {
     const pollInterval = setInterval(() => {
       if (!loading && !refreshNow) {
         fetchDashboardData(selectedAssociate, true);
       }
-    }, 3000); // Poll every 3 seconds
+    }, 10000); // Poll every 10 seconds (more efficient than 3 seconds)
     return () => clearInterval(pollInterval);
   }, [selectedAssociate, loading, refreshNow]);
 
@@ -864,6 +873,10 @@ function AdminDashboard() {
     </Modal>
   );
 
+  const handleOpenCertificateModal = () => setShowCertificateModal(true);
+  const handleCloseCertificateModal = () => setShowCertificateModal(false);
+  const handleCertificateDataChange = (data) => setCertificateData(data);
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -1010,10 +1023,20 @@ function AdminDashboard() {
             <div className="dashboard-section recent-evaluations">
               <div className="recent-evaluations-header-row">
                 <h3 className="recent-evaluations-title"><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
-                <button className="generate-certificate-btn">Generate Certificate</button>
+                <button className="generate-certificate-btn" onClick={handleOpenCertificateModal}>Generate Certificate</button>
               </div>
               {renderRecentEvaluations()}
               {renderAllEvaluationsModal()}
+              {showCertificateModal && (
+                <CertificateModal
+                  show={showCertificateModal}
+                  onClose={handleCloseCertificateModal}
+                  associates={associatesPerformance}
+                  certificateData={certificateData}
+                  onCertificateDataChange={handleCertificateDataChange}
+                  style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', padding: 32 }} // Add solid background
+                />
+              )}
             </div>
              {/* Members Overview */}
             <div className="dashboard-section members-overview">

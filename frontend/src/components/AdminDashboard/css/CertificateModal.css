@@ -1,0 +1,283 @@
+/* Overlay: ensure it covers everything and is opaque */
+.certificate-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+}
+.certificate-modal-root {
+  outline: none;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+}
+.certificate-modal-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  width: 95vw;
+  max-width: 800px; /* was 1000px */
+  max-height: 95vh; /* was 98vh */
+  min-height: 320px;
+  padding: 0 0 20px 0; /* was 0 0 32px 0 */
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1.5px solid #e0e0e0;
+}
+.certificate-modal-header-red {
+  background: #A11C22;
+  color: #fff;
+  border-radius: 18px 18px 0 0;
+  padding: 18px 28px 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.18rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(161,28,34,0.08);
+  border-bottom: 2px solid #c53030;
+}
+.certificate-modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  margin-left: 12px;
+  line-height: 1;
+  transition: color 0.18s;
+}
+.certificate-modal-close:hover {
+  color: #ffd700;
+}
+.certificate-modal-subtitle {
+  text-align: center;
+  font-size: 1.01rem;
+  color: #444;
+  margin: 8px 0 0 0;
+  padding: 0 18px;
+}
+.certificate-modal-content {
+  padding: 0 12px; /* was 0 24px */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(98vh - 110px);
+  scrollbar-width: thin; /* Show thin scrollbar for overflow */
+  -ms-overflow-style: auto; /* IE/Edge */
+  background: #fff;
+}
+.certificate-modal-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.certificate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 24px 0 0 0;
+  background: #fafbfc;
+  border-radius: 12px;
+  padding: 18px 16px 10px 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.certificate-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.certificate-form-group label {
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 2px;
+}
+.certificate-form-group input,
+.certificate-form-group select,
+.certificate-form-group textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #fff;
+  transition: border 0.2s;
+}
+.certificate-form-group input:focus,
+.certificate-form-group select:focus,
+.certificate-form-group textarea:focus {
+  border-color: #A11C22;
+  outline: none;
+}
+.certificate-form-group textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+.certificate-form-group small {
+  color: #888;
+  font-size: 0.95em;
+  margin-top: 2px;
+}
+.certificate-preview-section {
+  margin-top: 40px; /* Increased space above preview */
+  margin-bottom: 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 24px 0 24px 0; /* More vertical padding */
+}
+.certificate-preview-scaler {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  /* Prevent overflow */
+  overflow: auto;
+}
+#certificate-preview {
+  max-width: 100%;
+  width: 900px;
+  height: 650px;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  /* Responsive scaling for small screens */
+  transition: transform 0.2s;
+}
+@media (max-width: 1000px) {
+  #certificate-preview {
+    width: 700px;
+    height: 500px;
+  }
+}
+@media (max-width: 800px) {
+  .certificate-preview-scaler {
+    /* Scale down preview to fit modal */
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+  #certificate-preview {
+    width: 600px;
+    height: 430px;
+  }
+}
+@media (max-width: 700px) {
+  .certificate-preview-scaler {
+    transform: scale(0.6);
+    transform-origin: top center;
+  }
+  #certificate-preview {
+    width: 500px;
+    height: 360px;
+  }
+}
+@media (max-width: 500px) {
+  .certificate-preview-scaler {
+    transform: scale(0.45);
+    transform-origin: top center;
+  }
+  #certificate-preview {
+    width: 400px;
+    height: 290px;
+  }
+}
+.certificate-header {
+  text-align: center;
+  margin-bottom: 20px;
+  background: none;
+  color: inherit;
+  position: static;
+  width: 100%;
+  padding: 0;
+  box-shadow: none;
+}
+.certificate-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+.download-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 38px;
+  font-size: 1.18rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+}
+.download-btn:disabled {
+  background: #b0b0b0;
+  cursor: not-allowed;
+}
+.download-btn:hover:not(:disabled) {
+  background: #1251a3;
+}
+/* Responsive: Tablet */
+@media (max-width: 1000px) {
+  .certificate-modal-card {
+    max-width: 99vw;
+    max-height: 99vh;
+  }
+  .certificate-modal-content {
+    max-height: calc(99vh - 110px);
+  }
+  .certificate-preview-section #certificate-preview {
+    width: 700px;
+    height: 500px;
+  }
+}
+
+/* Responsive: Mobile */
+@media (max-width: 700px) {
+  .certificate-modal-card {
+    max-width: 100vw;
+    border-radius: 0;
+    padding: 0 0 8px 0;
+    min-height: 100vh;
+    max-height: 100vh;
+  }
+  .certificate-modal-header-red {
+    border-radius: 0;
+    padding: 8px 6px 6px 10px;
+    font-size: 1rem;
+  }
+  .certificate-modal-content {
+    max-height: calc(100vh - 110px);
+    padding: 0 4px;
+  }
+  .certificate-preview-section {
+    padding: 8px 0 8px 0;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 450px) {
+  .certificate-preview-section #certificate-preview {
+    width: 100vw;
+    min-width: 0;
+    padding: 0;
+  }
+} 

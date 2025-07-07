@@ -537,9 +537,6 @@ function Reports() {
                 <div className="no-data-content">
                   <FontAwesomeIcon icon={faPlus} />
                   <p>No reports found</p>
-                  <button className="add-first-btn" onClick={openCreateModal}>
-                    Create your first report
-                  </button>
                 </div>
               </div>
             ) : (
@@ -572,6 +569,13 @@ function Reports() {
                         {report.status === 'draft' && (
                           <>
                             <button
+                              className="action-btn delete-btn"
+                              onClick={() => handleDelete(report.id)}
+                              title="Delete"
+                            >
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                            <button
                               className="action-btn edit-btn"
                               onClick={() => handleEdit(report)}
                               title="Edit"
@@ -584,13 +588,6 @@ function Reports() {
                               title="Send"
                             >
                               <FontAwesomeIcon icon={faPaperPlane} />
-                            </button>
-                            <button
-                              className="action-btn delete-btn"
-                              onClick={() => handleDelete(report.id)}
-                              title="Delete"
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
                             </button>
                           </>
                         )}

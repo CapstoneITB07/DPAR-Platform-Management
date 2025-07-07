@@ -862,21 +862,38 @@ function Reports() {
                   </div>
                     </>
                   )}
-                  <div className="report-modal-actions">
-                    {currentStep > 0 && (
-                      <button className="nav-button prev" type="button" onClick={handlePrev}>
-                        <FontAwesomeIcon icon={faArrowLeft} /> Previous
-                      </button>
-                    )}
-                    {currentStep < steps.length - 1 ? (
-                      <button className="nav-button next" type="button" onClick={handleNext} disabled={!isStepComplete(currentStep)}>
-                    Next <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-                    ) : (
-                      <button className="report-modal-submit-btn" type="submit">
-                        {editingReport ? 'Save Changes' : 'Add Report'}
-                  </button>
-                )}
+                  <div className="report-modal-actions" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
+                    {/* Left: Save as Draft (only on last step) */}
+                    <div>
+                      {currentStep === steps.length - 1 && (
+                        <button
+                          className="report-modal-draft-btn"
+                          type="button"
+                          onClick={() => handleSubmit(false)}
+                        >
+                          <FontAwesomeIcon icon={faSave} />
+                          Save as Draft
+                        </button>
+                      )}
+                    </div>
+                    {/* Right: Previous, Next, and Add Report */}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {currentStep > 0 && (
+                        <button className="nav-button prev" type="button" onClick={handlePrev}>
+                          <FontAwesomeIcon icon={faArrowLeft} /> Previous
+                        </button>
+                      )}
+                      {currentStep < steps.length - 1 && (
+                        <button className="nav-button next" type="button" onClick={handleNext} disabled={!isStepComplete(currentStep)}>
+                          Next <FontAwesomeIcon icon={faArrowRight} />
+                        </button>
+                      )}
+                      {currentStep === steps.length - 1 && (
+                        <button className="report-modal-submit-btn" type="submit">
+                          Submit
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </form>
               </div>

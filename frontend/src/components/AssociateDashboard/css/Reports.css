@@ -1896,6 +1896,20 @@ button[type="button"]:last-child:hover {
   box-shadow: 0 4px 16px rgba(165,29,29,0.18);
 }
 
+button.report-modal-draft-btn {
+  background: linear-gradient(180deg, #dee2e6 0%, #adb5bd 100%) !important;
+  color: #343a40 !important;
+  border: 1.5px solid #adb5bd !important;
+  box-shadow: 0 2px 8px rgba(108,117,125,0.13) !important;
+}
+
+button.report-modal-draft-btn:hover {
+  background: linear-gradient(180deg, #adb5bd 0%, #6c757d 100%) !important;
+  border: 1.5px solid #6c757d !important;
+  color: #212529 !important;
+  box-shadow: 0 4px 16px rgba(108,117,125,0.18) !important;
+}
+
 @media (max-width: 700px) {
   .report-modal-card {
     max-width: 98vw;

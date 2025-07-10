@@ -1,6 +1,90 @@
 import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
+import '../css/Announcements.css';
+import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt } from 'react-icons/fa';
+
+const slides = [
+  {
+    icon: <FaFire size={140} color="#ffa500" />,
+    title: "Disaster Preparedness & Response",
+    subtitle: "Protecting Communities, Saving Lives",
+    desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
+  },
+  {
+    icon: <FaCheckDouble size={140} color="#21963f" />,
+    title: "Mitigation",
+    subtitle: "Minimize Risk and Damage",
+    desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
+  },
+  {
+    icon: <FaSnowflake size={140} color="#00bcd4" />,
+    title: "Preparedness",
+    subtitle: "Get Ready for the Unexpected",
+    desc: "Tips for keeping your family safe during cold weather emergencies."
+  },
+  {
+    icon: <FaShieldAlt size={140} color="#a72828" />,
+    title: "Response",
+    subtitle: "Together, We Are Stronger",
+    desc: "Building resilient communities through preparedness and cooperation."
+  },
+  {
+    icon: <FaWater size={140} color="#00bcd4" />,
+    title: "Recovery",
+    subtitle: "Rebuilding and Restoring",
+    desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
+  }
+];
+
+function AnnouncementsLeftCard() {
+  const [current, setCurrent] = useState(0);
+  const prevSlide = () => setCurrent((current - 1 + slides.length) % slides.length);
+  const nextSlide = () => setCurrent((current + 1) % slides.length);
+
+  return (
+    <div className="announcements-left-card">
+      <div className="announcements-bg-logo" style={{ backgroundImage: "url('/Assets/disaster_logo.png')", opacity: 0.13 }} />
+      <button
+        className="announcements-arrow announcements-arrow-left"
+        onClick={prevSlide}
+        tabIndex={0}
+        aria-label="Previous slide"
+        style={{ zIndex: 20 }}
+      >
+        &#10094;
+      </button>
+      <button
+        className="announcements-arrow announcements-arrow-right"
+        onClick={nextSlide}
+        tabIndex={0}
+        aria-label="Next slide"
+        style={{ zIndex: 20 }}
+      >
+        &#10095;
+      </button>
+      <div className="announcements-content-overlay">
+        <div className="announcements-icon-bg" style={{ marginBottom: 16 }}>
+          {slides[current].icon}
+        </div>
+        <div className="announcements-title">{slides[current].title}</div>
+        <div className="announcements-subtitle">{slides[current].subtitle}</div>
+      </div>
+      <div className="announcements-gradient-bottom">
+        <div className="announcements-desc">{slides[current].desc}</div>
+        <div className="announcements-dots">
+          {slides.map((_, idx) => (
+            <span
+              key={idx}
+              className={"announcements-dot" + (idx === current ? " active" : "")}
+              onClick={() => setCurrent(idx)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
@@ -25,61 +109,60 @@ function Announcements() {
 
   return (
     <AssociateLayout>
-      <h2>Announcements</h2>
-      {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
-      {/* Image Modal */}
-      {modalImg && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }} onClick={() => setModalImg(null)}>
-          <img src={modalImg} alt="Announcement Large" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 12, boxShadow: '0 4px 32px rgba(0,0,0,0.25)' }} />
-        </div>
-      )}
-      <div style={{
-        marginTop: 32,
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: 28,
-        maxWidth: 900,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-      }}>
-        {announcements.length === 0 ? (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888', fontStyle: 'italic' }}>No announcements yet.</div>
-        ) : (
-          announcements.map(a => (
-            <div key={a.id} style={{
-              background: '#f8fafc',
-              borderRadius: 14,
-              boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-              border: '1px solid #e3e7ed',
-              position: 'relative',
-              overflow: 'hidden',
-              transition: 'box-shadow 0.2s',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 220,
-            }}>
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px 8px 20px', borderBottom: '1px solid #f0f2f5', background: '#f3f6fa' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: '#888' }}>{new Date(a.created_at).toLocaleString()}</div>
-                </div>
-              </div>
-              {/* Content */}
-              <div style={{ padding: '18px 20px 10px 20px', flex: 1 }}>
-                {a.title && <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, color: '#1a202c' }}>{a.title}</div>}
-                {a.description && <div style={{ fontSize: 16, color: '#444', marginBottom: a.photo_url ? 12 : 0 }}>{a.description}</div>}
-                {a.photo_url && (
-                  <img
-                    src={a.photo_url}
-                    alt="Announcement"
-                    style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10, marginTop: 10, marginBottom: 10, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                    onClick={() => setModalImg(a.photo_url)}
-                  />
-                )}
-              </div>
+      <div className="announcements-bg">
+        <div className="announcements-container">
+          <h1 className="announcements-header">Announcements</h1>
+          {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
+          {/* Modal for image */}
+          {modalImg && (
+            <div className="announcements-modal" onClick={() => setModalImg(null)}>
+              <img src={modalImg} alt="Announcement Large" className="announcements-modal-img" />
             </div>
-          ))
-        )}
+          )}
+          <div className="announcements-flex">
+            {/* Left: Static Card */}
+            <AnnouncementsLeftCard />
+            {/* Right: Announcements List */}
+            <div className="announcements-right-col">
+              {announcements.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#888', fontStyle: 'italic', background: '#fff', borderRadius: 10, padding: 32, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>No announcements yet.</div>
+              ) : (
+                announcements.map(a => (
+                  <div key={a.id} className="announcement-card">
+                    {/* Date/Time Row */}
+                    <div className="announcement-datetime-row">
+                      <div>
+                        <span className="announcement-date-badge">
+                          <span role="img" aria-label="calendar">📅</span> {new Date(a.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="announcement-time-badge">
+                          <span role="img" aria-label="clock">⏰</span> {new Date(a.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Title/Content */}
+                    <div className="announcement-content">
+                      {a.title && <div className="announcement-title">{a.title}</div>}
+                      {a.description && <div className="announcement-desc">{a.description}</div>}
+                      {a.photo_url && (
+                        <div className="announcement-img-wrapper">
+                          <img
+                            src={a.photo_url}
+                            alt="Announcement"
+                            className="announcement-img"
+                            onClick={() => setModalImg(a.photo_url)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </AssociateLayout>
   );

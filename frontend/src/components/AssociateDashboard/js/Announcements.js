@@ -90,6 +90,7 @@ function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
   const [error, setError] = useState('');
   const [modalImg, setModalImg] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -97,6 +98,7 @@ function Announcements() {
 
   const fetchAnnouncements = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('authToken');
       const res = await axios.get('http://localhost:8000/api/announcements', {
         headers: { Authorization: `Bearer ${token}` }
@@ -104,6 +106,8 @@ function Announcements() {
       setAnnouncements(res.data);
     } catch (err) {
       setError('Failed to load announcements');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,7 +128,12 @@ function Announcements() {
             <AnnouncementsLeftCard />
             {/* Right: Announcements List */}
             <div className="announcements-right-col">
-              {announcements.length === 0 ? (
+              {loading ? (
+                <div className="announcements-loading">
+                  <div className="announcements-loading-spinner"></div>
+                  <div className="announcements-loading-text">Loading announcements...</div>
+                </div>
+              ) : announcements.length === 0 ? (
                 <div style={{ textAlign: 'center', color: '#888', fontStyle: 'italic', background: '#fff', borderRadius: 10, padding: 32, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>No announcements yet.</div>
               ) : (
                 announcements.map(a => (

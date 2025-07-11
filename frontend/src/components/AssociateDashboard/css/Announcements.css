@@ -7,15 +7,15 @@
 }
 
 .announcements-bg {
-  background: #ffb6b6;
+  background: #ffffff;
   min-height: 100vh;
   padding: 32px 0;
 }
 
 .announcements-container {
   max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
+  margin: auto auto;
+  padding: 0;
 }
 
 .announcements-header {
@@ -42,7 +42,7 @@
   height: 100%;
   border-radius: 20px;
   overflow: hidden;
-  background: #ffb6b6;
+  background: #ffe5e5;
   box-shadow: 0 8px 32px rgba(0,0,0,0.13), 0 1.5px 6px rgba(0,0,0,0.08);
   /* border: 2px solid #fff; */
   margin: 0 auto;
@@ -247,6 +247,10 @@
   box-sizing: border-box;
 }
 
+.announcement-card:first-child:hover {
+  margin-top: 18px;
+}
+
 .announcement-datetime-row {
   display: flex;
   justify-content: space-between;
@@ -390,3 +394,39 @@
 
 /* Google Fonts Import */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@400;700&display=swap'); 
+
+/* Loading Indicator Styles */
+.announcements-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+  border: 1px solid #e3e7ed;
+  padding: 40px 20px;
+}
+
+.announcements-loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #a72828;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.announcements-loading-text {
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Montserrat', 'Poppins', Arial, sans-serif;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 

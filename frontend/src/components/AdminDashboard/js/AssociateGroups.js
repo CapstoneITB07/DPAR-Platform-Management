@@ -69,7 +69,7 @@ function AssociateGroups() {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchAssociates();
-    }, 5000); // Poll every 5 seconds
+    }, 30000); // Poll every 30 seconds (associate data doesn't change frequently)
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 

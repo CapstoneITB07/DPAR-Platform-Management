@@ -134,15 +134,15 @@
   margin-top: 2px;
 }
 .certificate-preview-section {
-  margin-top: 40px; /* Increased space above preview */
-  margin-bottom: 0;
+  margin-top: 30px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: center;
   width: 100%;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  padding: 24px 0 24px 0; /* More vertical padding */
+  padding: 16px 0 0 0; /* Less bottom padding */
 }
 .certificate-preview-scaler {
   display: flex;

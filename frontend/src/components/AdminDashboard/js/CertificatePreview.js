@@ -1,27 +1,25 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { format } from 'date-fns';
 
-const A4_WIDTH = 1123; // px (11.69in at 96dpi, landscape)
-const A4_HEIGHT = 794; // px (8.27in at 96dpi, landscape)
+const A4_WIDTH = 1123; // px (A4 landscape)
+const A4_HEIGHT = 794; // px (A4 landscape, matches your image more closely)
 const MAX_WIDTH = 1000; // px
+const GOLD = '#bfa22a';
 
 const CertificatePreview = ({ data, logoUrl }) => {
   const { associate, date, signature, message } = data;
-  // Use environment variable or fallback to localhost for development
   const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
   const logoSrc = logoUrl ? logoUrl : backendBaseUrl + '/Assets/disaster_logo.png';
-  // Use PNG assets from the frontend's public/Assets folder for preview
   const swirlTop = "/Assets/swirl_top_left.png";
   const swirlBottom = "/Assets/swirl_bottom_right.png";
   const medal = "/Assets/star.png";
 
-  // Responsive scaling logic for width only (full view mode)
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
     function handleResize() {
       if (containerRef.current) {
-        // Use 100% of the modal width, up to MAX_WIDTH
         const containerWidth = Math.min(containerRef.current.offsetWidth, MAX_WIDTH);
         const newScale = Math.min(1, containerWidth / A4_WIDTH);
         setScale(newScale);
@@ -31,6 +29,18 @@ const CertificatePreview = ({ data, logoUrl }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  let formattedDate = 'Date';
+  if (date) {
+    try {
+      formattedDate = format(new Date(date), 'MMMM dd, yyyy');
+    } catch {
+      formattedDate = date;
+    }
+  }
+
+  const displayMessage = message ||
+    `This certificate is proudly presented to ${associate || '[Associate Name]'} in recognition of their exemplary performance and unwavering dedication to volunteer disaster response activities.`;
 
   return (
     <div
@@ -57,7 +67,7 @@ const CertificatePreview = ({ data, logoUrl }) => {
           background: '#fff',
           borderRadius: 18,
           boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
-          padding: '48px 48px 32px 48px',
+          padding: '48px 60px 0 60px',
           margin: '0 auto',
           fontFamily: 'Montserrat, Playfair Display, serif',
           position: 'relative',
@@ -74,120 +84,118 @@ const CertificatePreview = ({ data, logoUrl }) => {
         }}
       >
         {/* Swirls */}
-        <img src={swirlTop} className="swirl" alt="Swirl" style={{ position: 'absolute', left: 0, top: 0, width: 120, opacity: 0.18 }} />
-        <img src={swirlBottom} className="swirl-bottom" alt="Swirl" style={{ position: 'absolute', right: 0, bottom: 0, width: 120, opacity: 0.18, transform: 'scaleX(-1)' }} />
-      {/* Logo */}
-        <img src={logoSrc} className="logo" alt="Logo" style={{ position: 'absolute', top: 32, right: 36, width: 80, height: 'auto' }} />
+        <img src={swirlTop} alt="Swirl" style={{ position: 'absolute', left: 0, top: 0, width: 140, opacity: 0.18 }} />
+        <img src={swirlBottom} alt="Swirl" style={{ position: 'absolute', right: 0, bottom: 0, width: 140, opacity: 0.18, transform: 'scaleX(-1)' }} />
+        {/* Logo */}
+        <img src={logoSrc} alt="Logo" style={{ position: 'absolute', top: 32, right: 60, width: 70, height: 'auto' }} />
         {/* Certificate Title Block */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '0.5rem', marginTop: '1.2rem' }}>
           <div style={{ 
             fontFamily: 'Playfair Display, serif', 
-            fontSize: '2.2rem', 
-            fontWeight: 'bold', 
-            letterSpacing: '2px', 
-            marginBottom: '0.5rem',
-            color: '#3a3a3a'
+            fontSize: '2.7rem', 
+            fontWeight: 700, 
+            letterSpacing: '4px', 
+            color: '#2d3142',
+            marginBottom: '0.2rem',
           }}>
             CERTIFICATE
           </div>
           <div style={{ 
-            fontSize: '1.3rem', 
-            color: '#bfa22a', 
-            fontWeight: 'bold',
-            letterSpacing: '1px'
+            fontSize: '1.35rem', 
+            color: GOLD, 
+            fontWeight: 700,
+            letterSpacing: '2px',
+            marginBottom: '0.7rem',
+            textTransform: 'uppercase',
           }}>
             OF APPRECIATION
           </div>
-        </div>
-
-        {/* Associate Section */}
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ 
-            fontSize: '1.1rem', 
-            color: '#3a3a3a', 
-            fontWeight: '600',
-            marginBottom: '1.5rem'
+            fontSize: '1.13rem', 
+            color: '#444', 
+            fontWeight: 700,
+            letterSpacing: '1px',
+            marginBottom: '1.2rem',
+            textTransform: 'uppercase',
           }}>
             THE FOLLOWING AWARD IS GIVEN TO
           </div>
           <div style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: 'bold',
-            color: '#3a3a3a'
+            fontSize: '2rem', 
+            fontWeight: 700,
+            color: '#2d3142',
+            marginBottom: '0.5rem',
           }}>
             {associate || 'Associate Name'}
           </div>
         </div>
-
         {/* Divider */}
-        <hr style={{ 
-          border: 'none', 
-          borderTop: '3px solid #bfa22a', 
-          margin: '1.5rem 0',
-          width: '80%'
-        }} />
-
+        <div style={{ width: '97%', borderBottom: `2.5px solid ${GOLD}`, margin: '0.5rem 0 1.2rem 0' }} />
         {/* Message */}
         <div style={{ 
           textAlign: 'center', 
-          fontSize: '1rem', 
+          fontSize: '1.08rem', 
           color: '#444',
-          margin: '0 auto 1.5rem auto',
-          maxWidth: '80%'
+          margin: '0 auto 1.2rem auto',
+          maxWidth: '80%',
+          lineHeight: 1.5,
+          fontWeight: 500,
         }}>
-          {message || 'Your appreciation message will appear here.'}
+          {displayMessage.split('\n').map((line, idx) => (
+            <span key={idx}>
+              {line}
+              {idx !== displayMessage.split('\n').length - 1 && <br />}
+            </span>
+          ))}
         </div>
-
-        {/* Divider */}
-        <hr style={{ 
-          border: 'none', 
-          borderTop: '3px solid #bfa22a', 
-          margin: '1.5rem 0',
-          width: '80%'
-        }} />
-
         {/* Footer */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'flex-end',
-          marginTop: '2rem',
+          marginTop: '2.2rem',
           padding: '0 40px',
           width: '100%',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1rem', color: '#3a3a3a' }}>
-              {date || 'Date'}
+          <div style={{ textAlign: 'center', minWidth: 180 }}>
+            <div style={{ fontSize: '1.15rem', color: '#2d3142', fontWeight: 500, marginBottom: 2 }}>
+              {formattedDate}
             </div>
+            <div style={{ borderBottom: `2.5px solid ${GOLD}`, width: 120, margin: '0 auto 6px auto' }} />
             <div style={{ 
-              color: '#bfa22a', 
-              fontWeight: 'bold', 
+              color: GOLD, 
+              fontWeight: 700, 
               marginTop: '0.5rem',
-              fontSize: '0.9rem'
+              fontSize: '1.08rem',
+              letterSpacing: '1px',
+              textTransform: 'capitalize',
             }}>
               Date
             </div>
           </div>
-          
-          <div style={{ textAlign: 'center' }}>
-            <img src={medal} alt="Medal" style={{ width: '40px', height: '40px' }} />
+          <div style={{ textAlign: 'center', minWidth: 100 }}>
+            <img src={medal} alt="Medal" style={{ width: '54px', height: '54px' }} />
           </div>
-          
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1rem', color: '#3a3a3a' }}>
+          <div style={{ textAlign: 'center', minWidth: 180 }}>
+            <div style={{ fontSize: '1.15rem', color: '#2d3142', fontWeight: 500, marginBottom: 2 }}>
               {signature || 'Signature'}
             </div>
+            <div style={{ borderBottom: `2.5px solid ${GOLD}`, width: 120, margin: '0 auto 6px auto' }} />
             <div style={{ 
-              color: '#bfa22a', 
-              fontWeight: 'bold', 
+              color: GOLD, 
+              fontWeight: 700, 
               marginTop: '0.5rem',
-              fontSize: '0.9rem'
+              fontSize: '1.08rem',
+              letterSpacing: '1px',
+              textTransform: 'capitalize',
             }}>
               Signature
             </div>
           </div>
         </div>
+        {/* Bottom-right swirl for extra accent */}
+        <img src={swirlBottom} alt="Swirl" style={{ position: 'absolute', right: 18, bottom: 18, width: 120, opacity: 0.18, transform: 'scaleX(-1)' }} />
       </div>
     </div>
   );

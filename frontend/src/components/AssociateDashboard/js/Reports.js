@@ -1,10 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import '../css/Reports.css';
 import imageCompression from 'browser-image-compression';
+import '../css/VolunteerList.css'; // Import confirm modal styles
+
+// Reusable ConfirmModal (copied from VolunteerList.js)
+function ConfirmModal({ open, message, onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" style={{zIndex: 10000}}>
+      <div className="confirm-modal">
+        <button className="modal-close confirm-close" onClick={onCancel}>&times;</button>
+        <div className="confirm-icon">
+          <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+            <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+          </svg>
+        </div>
+        <div className="confirm-message">{message}</div>
+        <div className="modal-actions confirm-actions">
+          <button className="delete-btn" onClick={onConfirm}>Yes, I'm sure</button>
+          <button className="cancel-btn" onClick={onCancel}>No, cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Reports() {
   const [reports, setReports] = useState([]);
@@ -13,7 +37,7 @@ function Reports() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     // Header Information
     for: '',
@@ -63,14 +87,14 @@ function Reports() {
   const steps = [
     'Header',
     'Authority',
-    'Date, Time, and Place of Activity',
+    'Date, Time, and Place',
     'Personnel Involved',
-    'Narration of Events',
+    'Narrations of Events',
     'Recommendations',
     'Attachments'
   ];
 
-  const isStepComplete = (stepIndex) => {
+  const isStepComplete = useCallback((stepIndex) => {
     switch (stepIndex) {
       case 0: // Header
         return !!formData.for && !!formData.thru && !!formData.from && !!formData.date && !!formData.subject;
@@ -89,28 +113,27 @@ function Reports() {
       default:
         return false;
     }
-  };
+  }, [formData]);
 
   useEffect(() => {
     fetchReports();
+  }, []);
     
-    // Initialize completedSteps based on actual completion status
-    const initialCompletedSteps = new Set();
+  useEffect(() => {
+    // Update completed steps when form data changes
+    const newCompletedSteps = new Set();
     steps.forEach((step, index) => {
       if (isStepComplete(index)) {
-        initialCompletedSteps.add(index);
+        newCompletedSteps.add(index);
       }
     });
-    setCompletedSteps(initialCompletedSteps);
-  }, []);
-
-  useEffect(() => {
-    // Update step validation
-    const validateStep = () => {
-      // ... validation logic
-    };
-    validateStep();
-  }, [currentStep, formData, steps]); // Added steps to dependencies
+    setCompletedSteps(newCompletedSteps);
+    
+    // Update progress
+    const totalSteps = steps.length;
+    const completedCount = newCompletedSteps.size;
+    setProgress((completedCount / totalSteps) * 100);
+  }, [formData, isStepComplete, steps.length]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -161,10 +184,16 @@ function Reports() {
   };
 
   const removeField = (field, index) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].filter((_, i) => i !== index)
-    }));
+    setFormData(prev => {
+      const newData = { ...prev };
+      if (field === 'photos') {
+        // For photos, we need to handle File objects differently
+        newData[field] = prev[field].filter((_, i) => i !== index);
+      } else {
+        newData[field] = prev[field].filter((_, i) => i !== index);
+      }
+      return newData;
+    });
   };
 
   const handlePhotoUpload = (e) => {
@@ -313,58 +342,94 @@ function Reports() {
 
   const handleEdit = (report) => {
     setEditingReport(report);
+    
+    // Parse the report data if it's stored as JSON string
+    let reportData = {};
+    try {
+      if (report.data && typeof report.data === 'string') {
+        reportData = JSON.parse(report.data);
+      } else if (report.data) {
+        reportData = report.data;
+      }
+    } catch (error) {
+      console.error('Error parsing report data:', error);
+    }
+
     setFormData({
       // Header Information
-      for: report.for || '',
-      forPosition: report.forPosition || '',
-      thru: report.thru || '',
-      thruPosition: report.thruPosition || '',
-      from: report.from || '',
-      fromPosition: report.fromPosition || '',
-      date: report.date || '',
-      subject: report.subject || '',
+      for: reportData.for || report.for || '',
+      forPosition: reportData.forPosition || report.forPosition || '',
+      thru: reportData.thru || report.thru || '',
+      thruPosition: reportData.thruPosition || report.thruPosition || '',
+      from: reportData.from || report.from || '',
+      fromPosition: reportData.fromPosition || report.fromPosition || '',
+      date: reportData.date || report.date || '',
+      subject: reportData.subject || report.subject || '',
 
       // Authority Section
-      authority: report.authority ? report.authority.split(',') : ['', ''],
+      authority: reportData.authority || (report.authority ? report.authority.split(',') : ['', '']),
 
       // Date, Time, and Place Section
-      dateTime: report.dateTime || '',
-      activityType: report.activityType || '',
-      location: report.location || '',
+      dateTime: reportData.dateTime || report.dateTime || '',
+      activityType: reportData.activityType || report.activityType || '',
+      location: reportData.location || report.location || '',
 
       // Personnel Section
-      auxiliaryPersonnel: report.auxiliaryPersonnel ? report.auxiliaryPersonnel.split(',') : [''],
-      pcgPersonnel: report.pcgPersonnel ? report.pcgPersonnel.split(',') : [''],
+      auxiliaryPersonnel: reportData.auxiliaryPersonnel || (report.auxiliaryPersonnel ? report.auxiliaryPersonnel.split(',') : ['']),
+      pcgPersonnel: reportData.pcgPersonnel || (report.pcgPersonnel ? report.pcgPersonnel.split(',') : ['']),
 
       // Narration Section
-      objective: report.objective || '',
-      summary: report.summary || '',
-      activities: report.activities ? report.activities.map(activity => ({
+      objective: reportData.objective || report.objective || '',
+      summary: reportData.summary || report.summary || '',
+      activities: reportData.activities || (report.activities ? report.activities.map(activity => ({
         title: activity.title || '',
         description: activity.description || ''
-      })) : [{ title: '', description: '' }],
-      conclusion: report.conclusion || '',
+      })) : [{ title: '', description: '' }]),
+      conclusion: reportData.conclusion || report.conclusion || '',
 
       // Recommendations Section
-      recommendations: report.recommendations ? report.recommendations.split(',') : [''],
+      recommendations: reportData.recommendations || (report.recommendations ? report.recommendations.split(',') : ['']),
 
       // Attachments Section
-      photos: report.photos ? report.photos.split(',').map(url => new Blob([], { type: 'image/jpeg' })) : []
+      photos: []
     });
+    setCurrentStep(0);
+    setCompletedSteps(new Set());
     setShowCreateModal(true);
   };
 
+  const [confirm, setConfirm] = useState({ open: false, onConfirm: null, message: '' });
+
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this report?')) return;
-    try {
-      const token = localStorage.getItem('authToken');
-      await axios.delete(`http://localhost:8000/api/reports/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      fetchReports();
-    } catch {
-      setError('Failed to delete report');
-    }
+    setConfirm({
+      open: true,
+      message: 'Are you sure you want to delete this report?',
+      onConfirm: async () => {
+        setConfirm({ ...confirm, open: false });
+        try {
+          const token = localStorage.getItem('authToken');
+          await axios.delete(`http://localhost:8000/api/reports/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          fetchReports();
+        } catch {
+          setError('Failed to delete report');
+        }
+      }
+    });
+  };
+
+  const handleModalClose = () => {
+    setConfirm({
+      open: true,
+      message: 'Are you sure you want to close? Any unsaved changes will be lost.',
+      onConfirm: () => {
+        setConfirm({ ...confirm, open: false });
+        setShowCreateModal(false);
+        setCurrentStep(0);
+        setCompletedSteps(new Set());
+      }
+    });
   };
 
   const getStatusColor = (status) => {
@@ -411,261 +476,435 @@ function Reports() {
 
   return (
     <AssociateLayout>
-      <div style={{ padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2>REPORTS</h2>
-          <button
-            onClick={openCreateModal}
-            style={{
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            MAKE A REPORT
+      <div className="reports-container">
+        <div className="header-section">
+          <div className="header-left">
+            <h2>REPORTS</h2>
+          </div>
+          
+          <div className="header-actions">
+            <div className="search-container">
+              <div className="search-bar">
+                <FontAwesomeIcon icon={faSearch} />
+                <input
+                  type="text"
+                  placeholder="Search reports..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="action-buttons">
+              <button className="add-report-btn" onClick={openCreateModal}>
+                <FontAwesomeIcon icon={faPlus} />
+                Make a Report
           </button>
+            </div>
+          </div>
         </div>
 
-        <h3 style={{ marginBottom: '16px' }}>LIST OF COMPILED REPORTS:</h3>
+        {/* Reports summary */}
+        <div className="reports-summary">
+          <span>
+            Total:
+            <span className="total">{reports.length}</span>
+          </span>
+          <span>
+            Draft:
+            <span className="draft">{reports.filter(r => r.status === 'draft').length}</span>
+          </span>
+          <span>
+            Sent:
+            <span className="sent">{reports.filter(r => r.status === 'sent').length}</span>
+          </span>
+        </div>
 
         {error && (
-          <div style={{ color: 'red', margin: '10px 0', padding: '8px', background: '#fff', borderRadius: '4px', border: '1px solid red' }}>
+          <div className="error-message">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
+          <div className="loading-container">
+            <p>Loading reports...</p>
+          </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+          <div className="table-container">
+            {reports.length === 0 ? (
+              <div className="no-data">
+                <div className="no-data-content">
+                  <FontAwesomeIcon icon={faPlus} />
+                  <p>No reports found</p>
+                </div>
+              </div>
+            ) : (
+              <table className="reports-table">
               <thead>
                 <tr>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Title</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #ddd' }}>Description</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #ddd' }}>Status</th>
-                  <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid #ddd' }}>Actions</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {reports.map(report => (
-                  <tr key={report.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px' }}>{report.title}</td>
-                    <td style={{ padding: '12px' }}>{report.description}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{
-                        backgroundColor: getStatusColor(report.status),
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px'
-                      }}>
+                  {reports
+                    .filter(report => 
+                      report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      report.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map(report => (
+                    <tr key={report.id}>
+                      <td className="title-cell">{report.title}</td>
+                      <td className="description-cell">{report.description}</td>
+                      <td className="status-cell">
+                        <span className={`status-badge ${report.status}`}>
                         {report.status?.toUpperCase() || 'DRAFT'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      {report.status === 'draft' && (
-                        <>
+                      <td className="actions-cell">
+                      <div className="action-buttons-row">
+                        {report.status === 'draft' && (
+                          <>
+                            <button
+                              className="action-btn delete-btn"
+                              onClick={() => handleDelete(report.id)}
+                              title="Delete"
+                            >
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                            <button
+                              className="action-btn edit-btn"
+                              onClick={() => handleEdit(report)}
+                              title="Edit"
+                            >
+                              <FontAwesomeIcon icon={faEdit} />
+                            </button>
+                            <button
+                              className="action-btn send-btn"
+                              onClick={() => handleSubmit(true, report)}
+                              title="Send"
+                            >
+                              <FontAwesomeIcon icon={faPaperPlane} />
+                            </button>
+                          </>
+                        )}
+                        {report.status !== 'draft' && (
                           <button
-                            onClick={() => handleEdit(report)}
-                            style={{
-                              backgroundColor: '#ffc107',
-                              color: 'black',
-                              border: 'none',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              marginRight: '8px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleSubmit(true, report)}
-                            style={{
-                              backgroundColor: '#28a745',
-                              color: 'white',
-                              border: 'none',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              marginRight: '8px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Submit
-                          </button>
-                          <button
+                            className="action-btn delete-btn"
                             onClick={() => handleDelete(report.id)}
-                            style={{
-                              backgroundColor: '#dc3545',
-                              color: 'white',
-                              border: 'none',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              cursor: 'pointer'
-                            }}
+                            title="Delete"
                           >
-                            Delete
+                            <FontAwesomeIcon icon={faTrash} />
                           </button>
-                        </>
-                      )}
-                      {report.status !== 'draft' && (
-                        <button
-                          onClick={() => handleDelete(report.id)}
-                          style={{
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            padding: '4px 8px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Delete
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         )}
 
         {/* Create/Edit Modal */}
         {showCreateModal && (
           <div className="modal-overlay">
-            <div className="modal-content modern-card">
-              {submitting && <div className="loading-spinner">Submitting...</div>}
-              {successMessage && <div className="success-message">{successMessage}</div>}
+            <div className="modal-content report-modal-card">
+              {/* Modal Header */}
+              <div className="report-modal-header">
+                <h2>{editingReport ? 'Edit Report' : 'Add New Report'}</h2>
               <button 
                 className="modal-close"
-                onClick={() => {
-                  if(window.confirm('Are you sure you want to close? Any unsaved changes will be lost.')) {
-                    setShowCreateModal(false);
-                    setCurrentStep(0);
-                    setCompletedSteps(new Set());
-                  }
-                }}
+                onClick={handleModalClose}
               >
                 <FontAwesomeIcon icon={faXmark} />
               </button>
-              <div className="modal-header">
-                <h2>{editingReport ? 'Edit Report' : 'Create New Report'}</h2>
               </div>
+              {/* Stepper and Section Header Card in one container */}
+              <div className="stepper-section-header-wrapper">
               <div className="progress-steps">
                 {steps.map((step, index) => (
                   <div
                     key={index}
-                    className={`progress-step ${currentStep === index ? 'active' : ''} ${completedSteps.has(index) ? 'completed' : ''}`}
+                      className={`progress-step${index < currentStep ? ' completed' : ''}${index === currentStep ? ' active' : ''}`}
                     onClick={() => goToStep(index)}
                   >
                     {index + 1}
-                    <span className="step-label">{step}</span>
                   </div>
                 ))}
+                </div>
+                {/* Section Header Card */}
+                {currentStep === 0 && <div className="section-gradient-card-red">I. HEADER</div>}
+                {currentStep === 1 && <div className="section-gradient-card-red">II. AUTHORITY</div>}
+                {currentStep === 2 && <div className="section-gradient-card-red">III. DATE, TIME, AND PLACE</div>}
+                {currentStep === 3 && <div className="section-gradient-card-red">IV. PERSONNEL INVOLVED</div>}
+                {currentStep === 4 && <div className="section-gradient-card-red">V. NARRATIONS OF EVENTS</div>}
+                {currentStep === 5 && <div className="section-gradient-card-red">VI. RECOMMENDATIONS</div>}
+                {currentStep === 6 && <div className="section-gradient-card-red">VII. ATTACHMENTS</div>}
               </div>
-              <div className="form-sections-container modern-form">
-                {/* Section 1: Header */}
-                <section className={`form-section ${currentStep === 0 ? 'active' : ''}`}>
-                  <h3>Header</h3>
-                  <div className="form-group"><label>FOR:</label><input type="text" value={formData.for} onChange={e => handleInputChange(e, 'for')} placeholder="Recipient Name" /></div>
-                  <div className="form-group"><label>THRU:</label><input type="text" value={formData.thru} onChange={e => handleInputChange(e, 'thru')} placeholder="Thru Name" /></div>
-                  <div className="form-group"><label>FROM:</label><input type="text" value={formData.from} onChange={e => handleInputChange(e, 'from')} placeholder="Sender Name" /></div>
-                  <div className="form-group"><label>DATE:</label><input type="date" value={formData.date} onChange={e => handleInputChange(e, 'date')} /></div>
-                  <div className="form-group"><label>SUBJECT:</label><input type="text" value={formData.subject} onChange={e => handleInputChange(e, 'subject')} placeholder="Report Subject" /></div>
-                </section>
-                {/* Section 2: Authority */}
-                <section className={`form-section ${currentStep === 1 ? 'active' : ''}`}>
-                  <h3>I. AUTHORITY</h3>
-                  {formData.authority.map((auth, index) => (
-                    <div key={index} className="form-group">
-                      <input type="text" value={auth} onChange={e => handleInputChange(e, 'authority', index)} placeholder={`Authority ${index + 1}`} />
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                        {index === formData.authority.length - 1 && (<button type="button" onClick={() => addField('authority')}>Add Authority</button>)}
-                        {formData.authority.length > 1 && (<button type="button" onClick={() => removeField('authority', index)}>Remove</button>)}
+              {/* Modal Body */}
+              <div className="report-modal-body">
+                <form className="report-form-grid" onSubmit={e => { e.preventDefault(); handleSubmit(editingReport ? true : false); }}>
+                  {/* Step 1: Header */}
+                  {currentStep === 0 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>SUBJECT:</label>
+                          <input type="text" value={formData.subject} onChange={e => handleInputChange(e, 'subject')} placeholder="Report Subject" />
+                        </div>
                       </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group">
+                          <label>FOR:</label>
+                          <input type="text" value={formData.for} onChange={e => handleInputChange(e, 'for')} placeholder="Recipient Name" />
+                        </div>
+                        <div className="report-form-group">
+                          <label>THRU:</label>
+                          <input type="text" value={formData.thru} onChange={e => handleInputChange(e, 'thru')} placeholder="Thru Name" />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group">
+                          <label>FROM:</label>
+                          <input type="text" value={formData.from} onChange={e => handleInputChange(e, 'from')} placeholder="Sender Name" />
+                        </div>
+                        <div className="report-form-group">
+                          <label>DATE:</label>
+                          <input type="date" value={formData.date} onChange={e => handleInputChange(e, 'date')} />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 2: Authority */}
+                  {currentStep === 1 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>Authority:</label>
+                  {formData.authority.map((auth, index) => (
+                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
+                              <input type="text" value={auth} onChange={e => handleInputChange(e, 'authority', index)} placeholder={`Authority ${index + 1}`} style={{flex: 1}} />
+                              {index === formData.authority.length - 1 && (
+                                <button type="button" onClick={() => addField('authority')}>Add</button>
+                              )}
+                              {formData.authority.length > 1 && (
+                                <button type="button" onClick={() => removeField('authority', index)}>Remove</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 3: Date, Time, and Place of Activity */}
+                  {currentStep === 2 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group">
+                          <label>Date and Time:</label>
+                          <input type="datetime-local" value={formData.dateTime} onChange={e => handleInputChange(e, 'dateTime')} />
+                        </div>
+                        <div className="report-form-group">
+                          <label>Type of Activity:</label>
+                          <input type="text" value={formData.activityType} onChange={e => handleInputChange(e, 'activityType')} placeholder="Activity Type" />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>Areas/Location:</label>
+                          <input type="text" value={formData.location} onChange={e => handleInputChange(e, 'location')} placeholder="Location" />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 4: Personnel Involved */}
+                  {currentStep === 3 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group">
+                          <label>Auxiliary Personnel:</label>
+                          {formData.auxiliaryPersonnel.map((person, index) => (
+                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
+                              <input type="text" value={person} onChange={e => handleInputChange(e, 'auxiliaryPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1}} />
+                              {index === formData.auxiliaryPersonnel.length - 1 && (
+                                <button type="button" onClick={() => addField('auxiliaryPersonnel')}>Add</button>
+                              )}
+                              {formData.auxiliaryPersonnel.length > 1 && (
+                                <button type="button" onClick={() => removeField('auxiliaryPersonnel', index)}>Remove</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="report-form-group">
+                          <label>PCG Personnel:</label>
+                          {formData.pcgPersonnel.map((person, index) => (
+                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
+                              <input type="text" value={person} onChange={e => handleInputChange(e, 'pcgPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1}} />
+                              {index === formData.pcgPersonnel.length - 1 && (
+                                <button type="button" onClick={() => addField('pcgPersonnel')}>Add</button>
+                              )}
+                              {formData.pcgPersonnel.length > 1 && (
+                                <button type="button" onClick={() => removeField('pcgPersonnel', index)}>Remove</button>
+                              )}
                     </div>
                   ))}
-                </section>
-                {/* Section 3: Date, Time, and Place of Activity */}
-                <section className={`form-section ${currentStep === 2 ? 'active' : ''}`}>
-                  <h3>II. DATE, TIME, AND PLACE OF ACTIVITY</h3>
-                  <div className="form-group"><label>Date and Time:</label><input type="datetime-local" value={formData.dateTime} onChange={e => handleInputChange(e, 'dateTime')} /></div>
-                  <div className="form-group"><label>Type of Activity:</label><input type="text" value={formData.activityType} onChange={e => handleInputChange(e, 'activityType')} placeholder="Activity Type" /></div>
-                  <div className="form-group"><label>Areas/Location:</label><input type="text" value={formData.location} onChange={e => handleInputChange(e, 'location')} placeholder="Location" /></div>
-                </section>
-                {/* Section 4: Personnel Involved */}
-                <section className={`form-section ${currentStep === 3 ? 'active' : ''}`}>
-                  <h3>III. PERSONNEL INVOLVED</h3>
-                  <div className="personnel-section"><h4>Auxiliary Personnel</h4>{formData.auxiliaryPersonnel.map((person, index) => (<div key={index} className="form-group"><input type="text" value={person} onChange={e => handleInputChange(e, 'auxiliaryPersonnel', index)} placeholder={`Personnel ${index + 1}`} /><div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>{index === formData.auxiliaryPersonnel.length - 1 && (<button type="button" onClick={() => addField('auxiliaryPersonnel')}>Add Personnel</button>)}{formData.auxiliaryPersonnel.length > 1 && (<button type="button" onClick={() => removeField('auxiliaryPersonnel', index)}>Remove</button>)}</div></div>))}</div>
-                  <div className="personnel-section"><h4>PCG Personnel</h4>{formData.pcgPersonnel.map((person, index) => (<div key={index} className="form-group"><input type="text" value={person} onChange={e => handleInputChange(e, 'pcgPersonnel', index)} placeholder={`Personnel ${index + 1}`} /><div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>{index === formData.pcgPersonnel.length - 1 && (<button type="button" onClick={() => addField('pcgPersonnel')}>Add Personnel</button>)}{formData.pcgPersonnel.length > 1 && (<button type="button" onClick={() => removeField('pcgPersonnel', index)}>Remove</button>)}</div></div>))}</div>
-                </section>
-                {/* Section 5: Narration of Events */}
-                <section className={`form-section ${currentStep === 4 ? 'active' : ''}`}>
-                  <h3>IV. NARRATION OF EVENTS</h3>
-                  <div className="form-group"><label>Objective:</label><textarea value={formData.objective} onChange={e => handleInputChange(e, 'objective')} placeholder="State the objective" /></div>
-                  <div className="form-group"><label>Summary:</label><textarea value={formData.summary} onChange={e => handleInputChange(e, 'summary')} placeholder="Provide a summary" /></div>
-                  <div className="activities-section"><label>Activities:</label>{formData.activities.map((activity, index) => (<div key={index} className="activity-group"><input type="text" value={activity.title} onChange={e => handleInputChange(e, 'activities', index, 'title')} placeholder="Activity Title" /><textarea value={activity.description} onChange={e => handleInputChange(e, 'activities', index, 'description')} placeholder="Activity Description" /><div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>{index === formData.activities.length - 1 && (<button type="button" onClick={() => addField('activities')}>Add Activity</button>)}{formData.activities.length > 1 && (<button type="button" onClick={() => removeField('activities', index)}>Remove</button>)}</div></div>))}</div>
-                  <div className="form-group"><label>Conclusion:</label><textarea value={formData.conclusion} onChange={e => handleInputChange(e, 'conclusion')} placeholder="State the conclusion" /></div>
-                </section>
-                {/* Section 6: Recommendations */}
-                <section className={`form-section ${currentStep === 5 ? 'active' : ''}`}>
-                  <h3>V. RECOMMENDATIONS</h3>
-                  {formData.recommendations.map((rec, index) => (<div key={index} className="form-group"><textarea value={rec} onChange={e => handleInputChange(e, 'recommendations', index)} placeholder={`Recommendation ${index + 1}`} /><div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>{index === formData.recommendations.length - 1 && (<button type="button" onClick={() => addField('recommendations')}>Add Recommendation</button>)}{formData.recommendations.length > 1 && (<button type="button" onClick={() => removeField('recommendations', index)}>Remove</button>)}</div></div>))}
-                </section>
-                {/* Section 7: Attachments */}
-                <section className={`form-section ${currentStep === 6 ? 'active' : ''}`}>
-                  <h3>VI. ATTACHMENTS</h3>
-                  <div className="photo-upload-section"><label className="photo-upload-label"><FontAwesomeIcon icon={faUpload} /> Upload Photos<input type="file" multiple accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} /></label><div className="photo-preview">{formData.photos.map((photo, index) => (<div key={index} className="photo-thumbnail"><img src={URL.createObjectURL(photo)} alt={`Upload ${index + 1}`} /><button type="button" onClick={() => removeField('photos', index)}><FontAwesomeIcon icon={faXmark} /></button></div>))}</div></div>
-                </section>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 5: Narration of Events */}
+                  {currentStep === 4 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group">
+                          <label>Objective:</label>
+                          <textarea value={formData.objective} onChange={e => handleInputChange(e, 'objective')} placeholder="State the objective" />
+                        </div>
+                        <div className="report-form-group">
+                          <label>Summary:</label>
+                          <textarea value={formData.summary} onChange={e => handleInputChange(e, 'summary')} placeholder="Provide a summary" />
+                        </div>
               </div>
-
-              <div className="section-navigation">
+                      <div className="report-form-row">
+                        <div className="report-form-group activities-panel" style={{gridColumn: '1 / span 2'}}>
+                          <label>Activities:</label>
+                          {formData.activities.map((activity, index) => (
+                            <div key={index} className="activity-row">
+                              <input
+                                type="text"
+                                value={activity.title}
+                                onChange={e => handleInputChange(e, 'activities', index, 'title')}
+                                placeholder="Activity Title"
+                              />
+                              <textarea
+                                value={activity.description}
+                                onChange={e => handleInputChange(e, 'activities', index, 'description')}
+                                placeholder="Activity Description"
+                              />
+                              {formData.activities.length > 1 && (
                 <button
-                  className="nav-button prev"
-                  onClick={handlePrev}
-                  disabled={currentStep === 0 || submitting}
-                >
-                  <FontAwesomeIcon icon={faArrowLeft} /> Previous
+                                  type="button"
+                                  className="activity-remove-btn"
+                                  onClick={() => removeField('activities', index)}
+                                >
+                                  Remove
                 </button>
-                {currentStep === steps.length - 1 ? (
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                              )}
+                            </div>
+                          ))}
                     <button
-                      className="nav-button save"
-                      onClick={() => handleSubmit(false)}
-                      disabled={submitting}
-                    >
-                      Save as Draft
+                            type="button"
+                            className="add-activity-btn"
+                            onClick={() => addField('activities')}
+                          >
+                            Add Activity
                     </button>
-                    <button
-                      className="nav-button submit"
-                      onClick={() => handleSubmit(true)}
-                      disabled={submitting}
-                    >
-                      Save & Submit
-                    </button>
-                    <div style={{ color: '#dc3545', fontSize: '0.9rem' }}>
-                      {!steps.every((step, index) => isStepComplete(index)) && 
-                        'Please complete all required fields in previous sections'}
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>Conclusion:</label>
+                          <textarea value={formData.conclusion} onChange={e => handleInputChange(e, 'conclusion')} placeholder="State the conclusion" />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 6: Recommendations */}
+                  {currentStep === 5 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>Recommendations:</label>
+                          {formData.recommendations.map((rec, index) => (
+                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
+                              <textarea value={rec} onChange={e => handleInputChange(e, 'recommendations', index)} placeholder={`Recommendation ${index + 1}`} style={{flex: 1}} />
+                              {index === formData.recommendations.length - 1 && (
+                                <button type="button" onClick={() => addField('recommendations')}>Add</button>
+                              )}
+                              {formData.recommendations.length > 1 && (
+                                <button type="button" onClick={() => removeField('recommendations', index)}>Remove</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 7: Attachments */}
+                  {currentStep === 6 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{ gridColumn: '1 / span 2' }}>
+                          <label>Attachments:</label>
+                          <div className="photo-upload-section">
+                            <label className="photo-upload-label">
+                              <FontAwesomeIcon icon={faUpload} /> Upload Photos
+                              <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                            </label>
+                            <div className="photo-preview">
+                              {formData.photos.map((photo, index) => (
+                                <div key={index} className="photo-thumbnail">
+                                  <img src={URL.createObjectURL(photo)} alt={`Upload ${index + 1}`} />
+                                  <button type="button" onClick={() => removeField('photos', index)}><FontAwesomeIcon icon={faXmark} /></button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                     </div>
                   </div>
-                ) : (
-                  <button
-                    className="nav-button next"
-                    onClick={handleNext}
-                    disabled={!isStepComplete(currentStep) || submitting}
-                  >
-                    Next <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-                )}
+                    </>
+                  )}
+                  <div className="report-modal-actions" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
+                    {/* Left: Save as Draft (only on last step) */}
+                    <div>
+                      {currentStep === steps.length - 1 && (
+                        <button
+                          className="report-modal-draft-btn"
+                          type="button"
+                          onClick={() => handleSubmit(false)}
+                        >
+                          <FontAwesomeIcon icon={faSave} />
+                          Save as Draft
+                        </button>
+                      )}
+                    </div>
+                    {/* Right: Previous, Next, and Add Report */}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {currentStep > 0 && (
+                        <button className="nav-button prev" type="button" onClick={handlePrev}>
+                          <FontAwesomeIcon icon={faArrowLeft} /> Previous
+                        </button>
+                      )}
+                      {currentStep < steps.length - 1 && (
+                        <button className="nav-button next" type="button" onClick={handleNext} disabled={!isStepComplete(currentStep)}>
+                          Next <FontAwesomeIcon icon={faArrowRight} />
+                        </button>
+                      )}
+                      {currentStep === steps.length - 1 && (
+                        <button className="report-modal-submit-btn" type="submit">
+                          Submit
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
         )}
+
+        {/* Confirm Modal */}
+        <ConfirmModal
+          open={confirm.open}
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm({ ...confirm, open: false })}
+        />
       </div>
     </AssociateLayout>
   );

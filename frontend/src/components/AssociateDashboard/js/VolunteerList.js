@@ -15,10 +15,51 @@ import {
   faUserPlus,
   faSort,
   faSortUp,
-  faSortDown
+  faSortDown,
+  faVenusMars,
+  faPhone,
+  faMapMarkerAlt,
+  faMapMarkedAlt
 } from '@fortawesome/free-solid-svg-icons';
 import AssociateLayout from './AssociateLayout';
 import '../css/VolunteerList.css';
+
+// Add Toast component
+function Toast({ message, type, onClose }) {
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(onClose, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message, onClose]);
+  if (!message) return null;
+  return (
+    <div className={`custom-toast ${type}`}>{message}</div>
+  );
+}
+
+// Add ConfirmModal component
+function ConfirmModal({ open, message, onConfirm, onCancel }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" style={{zIndex: 10000}}>
+      <div className="confirm-modal">
+        <button className="modal-close confirm-close" onClick={onCancel}>&times;</button>
+        <div className="confirm-icon">
+          <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+            <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+          </svg>
+        </div>
+        <div className="confirm-message">{message}</div>
+        <div className="modal-actions confirm-actions">
+          <button className="delete-btn" onClick={onConfirm}>Yes, I'm sure</button>
+          <button className="cancel-btn" onClick={onCancel}>No, cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function VolunteerList() {
   const [volunteers, setVolunteers] = useState([]);
@@ -26,9 +67,7 @@ function VolunteerList() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
-  const [viewingVolunteer, setViewingVolunteer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedVolunteers, setSelectedVolunteers] = useState([]);
@@ -49,6 +88,11 @@ function VolunteerList() {
     location: ''
   });
   const [formErrors, setFormErrors] = useState({});
+  const [toast, setToast] = useState({ message: '', type: '' });
+  // Add state for confirmation modal
+  const [confirm, setConfirm] = useState({ open: false, onConfirm: null, message: '' });
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsVolunteer, setDetailsVolunteer] = useState(null);
 
   useEffect(() => {
     fetchVolunteers();
@@ -63,7 +107,8 @@ function VolunteerList() {
       });
       setVolunteers(response.data);
     } catch (err) {
-      setError('Failed to fetch volunteers');
+      // setError('Failed to fetch volunteers');
+      setToast({ message: 'Failed to fetch volunteers', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -86,9 +131,7 @@ function VolunteerList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-
     try {
       const token = localStorage.getItem('authToken');
       const dataToSubmit = {
@@ -96,29 +139,26 @@ function VolunteerList() {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         contact_info: formData.contact_info.replace(/\D/g, '').slice(0, 11)
       };
-
       if (selectedVolunteer) {
         await axios.put(`http://localhost:8000/api/volunteers/${selectedVolunteer.id}`, dataToSubmit, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setSuccess('Volunteer updated successfully!');
+        // setSuccess('Volunteer updated successfully!');
+        setToast({ message: 'Volunteer updated successfully!', type: 'success' });
       } else {
         await axios.post('http://localhost:8000/api/volunteers', dataToSubmit, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setSuccess('Volunteer added successfully!');
+        // setSuccess('Volunteer added successfully!');
+        setToast({ message: 'Volunteer added successfully!', type: 'success' });
       }
-      
       setShowModal(false);
       setSelectedVolunteer(null);
       resetForm();
       fetchVolunteers();
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Failed to save volunteer');
-      setTimeout(() => setError(''), 5000);
+      // setError('Failed to save volunteer');
+      setToast({ message: 'Failed to save volunteer', type: 'error' });
     }
   };
 
@@ -150,47 +190,49 @@ function VolunteerList() {
     setShowModal(true);
   };
 
-  const handleView = (volunteer) => {
-    setViewingVolunteer(volunteer);
-    setShowViewModal(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this volunteer?')) return;
-    try {
-      const token = localStorage.getItem('authToken');
-      await axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSuccess('Volunteer deleted successfully!');
-      fetchVolunteers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Failed to delete volunteer');
-      setTimeout(() => setError(''), 5000);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete ${selectedVolunteers.length} volunteer(s)?`)) return;
-    
-    try {
-      const token = localStorage.getItem('authToken');
-      await Promise.all(
-        selectedVolunteers.map(id =>
-          axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
+  const handleDelete = (id) => {
+    setConfirm({
+      open: true,
+      message: 'Are you sure you want to delete this volunteer?',
+      onConfirm: async () => {
+        setConfirm({ ...confirm, open: false });
+        try {
+          const token = localStorage.getItem('authToken');
+          await axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
-          })
-        )
-      );
-      setSuccess(`${selectedVolunteers.length} volunteer(s) deleted successfully!`);
-      setSelectedVolunteers([]);
-      fetchVolunteers();
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Failed to delete some volunteers');
-      setTimeout(() => setError(''), 5000);
-    }
+          });
+          setToast({ message: 'Volunteer deleted successfully!', type: 'success' });
+          fetchVolunteers();
+        } catch (err) {
+          setToast({ message: 'Failed to delete volunteer', type: 'error' });
+        }
+      }
+    });
+  };
+
+  const handleBulkDelete = () => {
+    setConfirm({
+      open: true,
+      message: `Are you sure you want to delete ${selectedVolunteers.length} volunteer(s)?`,
+      onConfirm: async () => {
+        setConfirm({ ...confirm, open: false });
+        try {
+          const token = localStorage.getItem('authToken');
+          await Promise.all(
+            selectedVolunteers.map(id =>
+              axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+            )
+          );
+          setToast({ message: `${selectedVolunteers.length} volunteer(s) deleted successfully!`, type: 'success' });
+          setSelectedVolunteers([]);
+          fetchVolunteers();
+        } catch (err) {
+          setToast({ message: 'Failed to delete some volunteers', type: 'error' });
+        }
+      }
+    });
   };
 
   const handleSelectAll = (e) => {
@@ -258,14 +300,14 @@ function VolunteerList() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Gender', 'Address', 'Contact Info', 'Expertise', 'Location'];
+    const headers = ['Name', 'Gender', 'Contact Info', 'Address', 'Expertise', 'Location'];
     const csvContent = [
       headers.join(','),
       ...filteredVolunteers.map(v => [
         v.name,
         v.gender,
-        v.address,
         v.contact_info,
+        v.address,
         v.expertise,
         v.location
       ].join(','))
@@ -283,6 +325,13 @@ function VolunteerList() {
   return (
     <AssociateLayout>
       <div className="volunteer-list-container">
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
+        <ConfirmModal
+          open={confirm.open}
+          message={confirm.message}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm({ ...confirm, open: false })}
+        />
         <div className="header-section">
           <div className="header-left">
             <h2>VOLUNTEER LIST</h2>
@@ -373,23 +422,9 @@ function VolunteerList() {
           </div>
         )}
 
-        {error && (
-          <div className="alert-message error">
-            <FontAwesomeIcon icon={faXmark} />
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="alert-message success">
-            <FontAwesomeIcon icon={faCheck} />
-            {success}
-          </div>
-        )}
-
         {loading ? (
           <div className="loading-container">
-            <div className="loading-spinner"></div>
+            {/* <div className="loading-spinner"></div> */}
             <p>Loading volunteers...</p>
           </div>
         ) : (
@@ -416,16 +451,16 @@ function VolunteerList() {
                       <FontAwesomeIcon icon={getSortIcon('gender')} />
                     </div>
                   </th>
-                  <th onClick={() => handleSort('address')} className="sortable">
-                    <div className="th-content">
-                      Address
-                      <FontAwesomeIcon icon={getSortIcon('address')} />
-                    </div>
-                  </th>
                   <th onClick={() => handleSort('contact_info')} className="sortable">
                     <div className="th-content">
                       Contact Info
                       <FontAwesomeIcon icon={getSortIcon('contact_info')} />
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('address')} className="sortable">
+                    <div className="th-content">
+                      Address
+                      <FontAwesomeIcon icon={getSortIcon('address')} />
                     </div>
                   </th>
                   <th onClick={() => handleSort('expertise')} className="sortable">
@@ -440,7 +475,7 @@ function VolunteerList() {
                       <FontAwesomeIcon icon={getSortIcon('location')} />
                     </div>
                   </th>
-                  <th>Actions</th>
+                  <th style={{textAlign: 'left'}}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -450,20 +485,31 @@ function VolunteerList() {
                       <div className="no-data-content">
                         <FontAwesomeIcon icon={faUserPlus} />
                         <p>No volunteers found</p>
-                        {/* <button onClick={() => setShowModal(true)} className="add-first-btn">
-                          Add your first volunteer
-                        </button> */}
                       </div>
                     </td>
                   </tr>
                 ) : (
                   filteredVolunteers.map(volunteer => (
-                    <tr key={volunteer.id} className={selectedVolunteers.includes(volunteer.id) ? 'selected' : ''}>
+                    <tr
+                      key={volunteer.id}
+                      className={selectedVolunteers.includes(volunteer.id) ? 'selected' : ''}
+                      onClick={e => {
+                        // Prevent modal on action buttons or checkbox
+                        if (
+                          e.target.closest('.action-btn') ||
+                          e.target.closest('input[type="checkbox"]')
+                        ) return;
+                        setDetailsVolunteer(volunteer);
+                        setShowDetailsModal(true);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td>
                         <input
                           type="checkbox"
                           checked={selectedVolunteers.includes(volunteer.id)}
                           onChange={() => handleSelectVolunteer(volunteer.id)}
+                          onClick={e => e.stopPropagation()}
                         />
                       </td>
                       <td className="name-cell">
@@ -471,38 +517,23 @@ function VolunteerList() {
                           <span className="name-text">{volunteer.name}</span>
                         </div>
                       </td>
-                      <td>
-                        <span className={`gender-badge ${volunteer.gender?.toLowerCase()}`}>
-                          {volunteer.gender}
-                        </span>
-                      </td>
-                      <td className="address-cell">{volunteer.address}</td>
+                      <td>{volunteer.gender}</td>
                       <td className="contact-cell">{volunteer.contact_info}</td>
-                      <td>
-                        {volunteer.expertise && (
-                          <span className="expertise-badge">{volunteer.expertise}</span>
-                        )}
-                      </td>
+                      <td className="address-cell">{volunteer.address}</td>
+                      <td>{volunteer.expertise}</td>
                       <td>{volunteer.location}</td>
                       <td className="actions-cell">
                         <div className="action-buttons">
-                          <button 
-                            className="action-btn view-btn" 
-                            onClick={() => handleView(volunteer)}
-                            title="View Details"
-                          >
-                            <FontAwesomeIcon icon={faEye} />
-                          </button>
-                          <button 
-                            className="action-btn edit-btn" 
-                            onClick={() => handleEdit(volunteer)}
+                          <button
+                            className="action-btn edit-btn"
+                            onClick={e => { e.stopPropagation(); handleEdit(volunteer); }}
                             title="Edit"
                           >
                             <FontAwesomeIcon icon={faEdit} />
                           </button>
-                          <button 
-                            className="action-btn delete-btn" 
-                            onClick={() => handleDelete(volunteer.id)}
+                          <button
+                            className="action-btn delete-btn"
+                            onClick={e => { e.stopPropagation(); handleDelete(volunteer.id); }}
                             title="Delete"
                           >
                             <FontAwesomeIcon icon={faTrash} />
@@ -519,220 +550,166 @@ function VolunteerList() {
 
         {/* Add/Edit Modal */}
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>
-                  <FontAwesomeIcon icon={selectedVolunteer ? faEdit : faUserPlus} />
-                  {selectedVolunteer ? 'Edit Volunteer' : 'Add New Volunteer'}
-                </h3>
-                <button className="modal-close" onClick={() => {
+          <div className="volunteer-modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="volunteer-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="volunteer-modal-header">
+                <span>{selectedVolunteer ? 'Edit Volunteer' : 'Add New Volunteer'}</span>
+                <button className="volunteer-modal-close" onClick={() => {
                   setShowModal(false);
                   setSelectedVolunteer(null);
                   resetForm();
                 }}>
-                  <FontAwesomeIcon icon={faTimes} />
+                  &times;
                 </button>
               </div>
-              
-              <form onSubmit={handleSubmit} className="volunteer-form">
-                <div className="form-row">
+              <div className="volunteer-modal-body">
+                <form onSubmit={handleSubmit} className="volunteer-form">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>First Name *</label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => {
+                          setFormData({ ...formData, firstName: e.target.value });
+                          if (formErrors.firstName) setFormErrors({ ...formErrors, firstName: '' });
+                        }}
+                        className={formErrors.firstName ? 'error' : ''}
+                        placeholder="Enter first name"
+                      />
+                      {formErrors.firstName && <span className="error-text">{formErrors.firstName}</span>}
+                    </div>
+                    <div className="form-group">
+                      <label>Last Name *</label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => {
+                          setFormData({ ...formData, lastName: e.target.value });
+                          if (formErrors.lastName) setFormErrors({ ...formErrors, lastName: '' });
+                        }}
+                        className={formErrors.lastName ? 'error' : ''}
+                        placeholder="Enter last name"
+                      />
+                      {formErrors.lastName && <span className="error-text">{formErrors.lastName}</span>}
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Gender *</label>
+                      <select
+                        value={formData.gender}
+                        onChange={(e) => {
+                          setFormData({ ...formData, gender: e.target.value });
+                          if (formErrors.gender) setFormErrors({ ...formErrors, gender: '' });
+                        }}
+                        className={formErrors.gender ? 'error' : ''}
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                      {formErrors.gender && <span className="error-text">{formErrors.gender}</span>}
+                    </div>
+                    <div className="form-group">
+                      <label>Contact Number *</label>
+                      <input
+                        type="tel"
+                        value={formData.contact_info}
+                        onChange={handleContactChange}
+                        className={formErrors.contact_info ? 'error' : ''}
+                        placeholder="11-digit number (ex. 09876543212)"
+                        maxLength="11"
+                      />
+                      {formErrors.contact_info && <span className="error-text">{formErrors.contact_info}</span>}
+                    </div>
+                  </div>
                   <div className="form-group">
-                    <label>First Name *</label>
+                    <label>Address *</label>
                     <input
                       type="text"
-                      value={formData.firstName}
+                      value={formData.address}
                       onChange={(e) => {
-                        setFormData({ ...formData, firstName: e.target.value });
-                        if (formErrors.firstName) setFormErrors({ ...formErrors, firstName: '' });
+                        setFormData({ ...formData, address: e.target.value });
+                        if (formErrors.address) setFormErrors({ ...formErrors, address: '' });
                       }}
-                      className={formErrors.firstName ? 'error' : ''}
-                      placeholder="Enter first name"
+                      className={formErrors.address ? 'error' : ''}
+                      placeholder="Enter complete address"
                     />
-                    {formErrors.firstName && <span className="error-text">{formErrors.firstName}</span>}
+                    {formErrors.address && <span className="error-text">{formErrors.address}</span>}
                   </div>
-                  
-                  <div className="form-group">
-                    <label>Last Name *</label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => {
-                        setFormData({ ...formData, lastName: e.target.value });
-                        if (formErrors.lastName) setFormErrors({ ...formErrors, lastName: '' });
-                      }}
-                      className={formErrors.lastName ? 'error' : ''}
-                      placeholder="Enter last name"
-                    />
-                    {formErrors.lastName && <span className="error-text">{formErrors.lastName}</span>}
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Location *</label>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => {
+                          setFormData({ ...formData, location: e.target.value });
+                          if (formErrors.location) setFormErrors({ ...formErrors, location: '' });
+                        }}
+                        className={formErrors.location ? 'error' : ''}
+                        placeholder="Enter location"
+                      />
+                      {formErrors.location && <span className="error-text">{formErrors.location}</span>}
+                    </div>
+                    <div className="form-group">
+                      <label>Expertise</label>
+                      <input
+                        type="text"
+                        value={formData.expertise}
+                        onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
+                        placeholder="Enter expertise (optional)"
+                      />
+                    </div>
                   </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Gender *</label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => {
-                        setFormData({ ...formData, gender: e.target.value });
-                        if (formErrors.gender) setFormErrors({ ...formErrors, gender: '' });
-                      }}
-                      className={formErrors.gender ? 'error' : ''}
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                    {formErrors.gender && <span className="error-text">{formErrors.gender}</span>}
+                  <div className="volunteer-modal-actions">
+                    <button type="submit" className="volunteer-save-btn">
+                      {selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer'}
+                    </button>
                   </div>
-                  
-                  <div className="form-group">
-                    <label>Contact Number *</label>
-                    <input
-                      type="tel"
-                      value={formData.contact_info}
-                      onChange={handleContactChange}
-                      className={formErrors.contact_info ? 'error' : ''}
-                      placeholder="09XXXXXXXXX"
-                      maxLength="11"
-                    />
-                    {formErrors.contact_info && <span className="error-text">{formErrors.contact_info}</span>}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Address *</label>
-                  <input
-                    type="text"
-                    value={formData.address}
-                    onChange={(e) => {
-                      setFormData({ ...formData, address: e.target.value });
-                      if (formErrors.address) setFormErrors({ ...formErrors, address: '' });
-                    }}
-                    className={formErrors.address ? 'error' : ''}
-                    placeholder="Enter complete address"
-                  />
-                  {formErrors.address && <span className="error-text">{formErrors.address}</span>}
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Location *</label>
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => {
-                        setFormData({ ...formData, location: e.target.value });
-                        if (formErrors.location) setFormErrors({ ...formErrors, location: '' });
-                      }}
-                      className={formErrors.location ? 'error' : ''}
-                      placeholder="Enter location"
-                    />
-                    {formErrors.location && <span className="error-text">{formErrors.location}</span>}
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Expertise</label>
-                    <input
-                      type="text"
-                      value={formData.expertise}
-                      onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
-                      placeholder="Enter expertise (optional)"
-                    />
-                  </div>
-                </div>
-
-                <div className="modal-actions">
-                  {/* <button type="button" className="cancel-btn" onClick={() => {
-                    setShowModal(false);
-                    setSelectedVolunteer(null);
-                    resetForm();
-                  }}>
-                    Cancel
-                  </button> */}
-                  <button type="submit" className="save-btn">
-                    <FontAwesomeIcon icon={selectedVolunteer ? faEdit : faPlus} />
-                    {selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer'}
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
         )}
 
-        {/* View Modal */}
-        {showViewModal && viewingVolunteer && (
-          <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-            <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>
-                  <FontAwesomeIcon icon={faEye} />
-                  Volunteer Details
-                </h3>
-                <button className="modal-close" onClick={() => setShowViewModal(false)}>
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
+        {showDetailsModal && detailsVolunteer && (
+          <div className="volunteer-modal-overlay" onClick={() => setShowDetailsModal(false)}>
+            <div className="view-modal" onClick={e => e.stopPropagation()}>
+              <div className="volunteer-modal-header">
+                <span>Member Details</span>
+                <button className="volunteer-modal-close" style={{position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)'}} onClick={() => setShowDetailsModal(false)}>&times;</button>
               </div>
-              
-              <div className="volunteer-details">
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <label>Full Name:</label>
-                    <span>{viewingVolunteer.name}</span>
+              <div className="volunteer-details-card">
+                <div className="profile-name">{detailsVolunteer.name}</div>
+                <div className="profile-info-list">
+                  <div className="profile-info-row">
+                    <FontAwesomeIcon icon={faVenusMars} className="profile-info-icon" />
+                    <span className="profile-info-label">Gender:</span>
+                    <span className="profile-info-value">{detailsVolunteer.gender}</span>
                   </div>
-                  <div className="detail-item">
-                    <label>Gender:</label>
-                    <span className={`gender-badge ${viewingVolunteer.gender?.toLowerCase()}`}>
-                      {viewingVolunteer.gender}
-                    </span>
+                  <div className="profile-info-row">
+                    <FontAwesomeIcon icon={faPhone} className="profile-info-icon" />
+                    <span className="profile-info-label">Contact:</span>
+                    <span className="profile-info-value">{detailsVolunteer.contact_info}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <FontAwesomeIcon icon={faMapMarkerAlt} className="profile-info-icon" />
+                    <span className="profile-info-label">Address:</span>
+                    <span className="profile-info-value">{detailsVolunteer.address}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <FontAwesomeIcon icon={faUserPlus} className="profile-info-icon" />
+                    <span className="profile-info-label">Expertise:</span>
+                    <span className="profile-info-value">{detailsVolunteer.expertise || 'N/A'}</span>
+                  </div>
+                  <div className="profile-info-row">
+                    <FontAwesomeIcon icon={faMapMarkedAlt} className="profile-info-icon" />
+                    <span className="profile-info-label">Location:</span>
+                    <span className="profile-info-value">{detailsVolunteer.location || 'N/A'}</span>
                   </div>
                 </div>
-                
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <label>Contact Number:</label>
-                    <span>{viewingVolunteer.contact_info}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Location:</label>
-                    <span>{viewingVolunteer.location}</span>
-                  </div>
-                </div>
-                
-                <div className="detail-item full-width">
-                  <label>Address:</label>
-                  <span>{viewingVolunteer.address}</span>
-                </div>
-                
-                {viewingVolunteer.expertise && (
-                  <div className="detail-item full-width">
-                    <label>Expertise:</label>
-                    <span className="expertise-badge">{viewingVolunteer.expertise}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="modal-actions">
-                <button 
-                  className="edit-btn" 
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleEdit(viewingVolunteer);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEdit} />
-                  Edit Volunteer
-                </button>
-                <button 
-                  className="delete-btn" 
-                  onClick={() => {
-                    setShowViewModal(false);
-                    handleDelete(viewingVolunteer.id);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                  Delete Volunteer
-                </button>
               </div>
             </div>
           </div>

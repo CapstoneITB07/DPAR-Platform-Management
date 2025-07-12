@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
 import dayjs from 'dayjs';
+import '../css/Notification.css';
 
 const NOTIF_READ_KEY = 'associateNotifRead';
 
@@ -8,8 +9,12 @@ function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState(null);
+  const [reload, setReload] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
       .then(res => res.json())
       .then(data => {
@@ -18,8 +23,13 @@ function Notification() {
         } else {
           setNotifications([]);
         }
+        setLoading(false);
+      })
+      .catch(() => {
+        setNotifications([]);
+        setLoading(false);
       });
-  }, [loading]);
+  }, [reload]);
 
   const handleRespond = async (id, response) => {
     setLoading(true);
@@ -35,150 +45,128 @@ function Notification() {
       });
       if (!res.ok) throw new Error('Failed to respond');
       setLoading(false);
-      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setNotifications(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-          } else {
-            setNotifications([]);
-          }
-        });
+      setReload(r => !r);
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
   };
 
+  // Search logic only
+  const filteredNotifications = notifications.filter(n => n.title.toLowerCase().includes(search.toLowerCase()));
+
   return (
     <AssociateLayout>
-      <div className="volunteer-list-container">
-        <div className="header-section">
-          <div className="header-left">
-            <h2>NOTIFICATION/INBOX</h2>
+      <div className="notification-container">
+        <div className="notification-header">
+          <h2 className="notification-title">
+            NOTIFICATION/INBOX
+          </h2>
+          <div className="notification-search">
+            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search notification title ..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
         </div>
-        {notifications.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            color: '#6c757d',
-            marginTop: 32,
-            fontSize: '15px',
-            fontStyle: 'italic'
-          }}>No notifications yet.</div>
-        )}
-        <div style={{ width: '100%' }}>
-          {notifications.map((n, idx) => {
+        {/* Notification summary row */}
+        {(() => {
             const userId = Number(localStorage.getItem('userId'));
+          const total = filteredNotifications.length;
+          let notResponded = 0;
+          let responded = 0;
+          filteredNotifications.forEach(n => {
             const myRecipient = n.recipients && n.recipients.find(r => r.user_id === userId);
+            if (myRecipient) {
+              if (myRecipient.response) responded++;
+              else notResponded++;
+            }
+          });
+          return (
+            <div className="notification-summary">
+              <span>
+                Total:
+                <span className="total">{total}</span>
+              </span>
+              <span>
+                No Response:
+                <span className="no-response">{notResponded}</span>
+              </span>
+              <span>
+                Responded:
+                <span className="responded">{responded}</span>
+              </span>
+            </div>
+          );
+        })()}
+        {loading ? (
+          <div className="notification-loading">
+            Loading inbox ...
+          </div>
+        ) : (
+          <>
+            {filteredNotifications.length === 0 ? (
+              <div className="notification-empty">
+                No notifications found.
+              </div>
+            ) : (
+              <div style={{ width: '100%' }}>
+                {filteredNotifications.map((n, idx) => {
+                  const userId = Number(localStorage.getItem('userId'));
+                  const myRecipient = n.recipients && n.recipients.find(r => r.user_id === userId);
+                  const isOpen = expanded === n.id;
             return (
-              <div key={n.id} style={{
-                border: '1px solid #e0e0e0',
-                marginBottom: 32,
-                borderRadius: 14,
-                background: '#fff',
-                boxShadow: '0 4px 16px rgba(25, 118, 210, 0.07)',
-                transition: 'box-shadow 0.2s',
-                padding: 0,
-                position: 'relative',
-                overflow: 'hidden',
-                width: '100%',
-                marginLeft: 0,
-                marginRight: 0,
-              }}
-                onMouseOver={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(25, 118, 210, 0.13)'}
-                onMouseOut={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(25, 118, 210, 0.07)'}
+                    <div
+                      key={n.id}
+                      className={`notification-item ${isOpen ? 'expanded' : ''}`}
+                      onClick={() => setExpanded(isOpen ? null : n.id)}
               >
-                <div style={{
-                  padding: '18px 28px',
-                  borderBottom: '1px solid #e0e0e0',
-                  background: '#f8fafc',
-                  borderTopLeftRadius: 14,
-                  borderTopRightRadius: 14
-                }}>
+                <div className="notification-item-header">
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{
-                      fontWeight: '700',
-                      fontSize: '18px',
-                      color: '#2c3e50',
-                      marginBottom: 4
-                    }}>{n.title}</div>
-                    <div style={{
-                      fontSize: '13px',
-                      color: '#6c757d'
-                    }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+                    <div className="notification-item-title">{n.title}</div>
+                          <div className="notification-item-date">{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+                        </div>
+                    <div className={`notification-item-arrow ${isOpen ? 'expanded' : ''}`}>
+                          ▼
                   </div>
                 </div>
-                <div style={{ padding: '28px 28px 18px 28px' }}>
-                  <div style={{
-                    color: '#495057',
-                    marginBottom: 18,
-                    fontSize: '15px',
-                    lineHeight: '1.7',
-                    letterSpacing: '0.01em'
-                  }}>{n.description}</div>
+                      {isOpen && (
+                <div className="notification-item-content">
+                          <div className="notification-item-description">{n.description}</div>
                   <ProgressBar recipients={n.recipients} />
-                  <div style={{ fontSize: 13, color: '#555', marginTop: 4, marginBottom: 16, wordBreak: 'break-word' }}>
+                  <div className="notification-item-recipients">
                     {n.recipients && n.recipients.length > 1 && (
                       <>
-                        <span style={{ fontWeight: 500, color: '#1976d2' }}>Recipients:</span> <span style={{ color: '#333' }}>{n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}</span>
+                        <span className="notification-item-recipients-label">Recipients:</span> <span className="notification-item-recipients-value">{n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}</span>
                       </>
                     )}
                   </div>
                   {myRecipient && !myRecipient.response && (
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                      <button style={{
-                        background: 'linear-gradient(90deg, #1976d2 60%, #42a5f5 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        padding: '12px 28px',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: loading ? 0.7 : 1,
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 6px rgba(25, 118, 210, 0.13)'
-                      }} onClick={() => handleRespond(n.id, 'accept')} disabled={loading}>ACCEPT</button>
-                      <button style={{
-                        background: 'linear-gradient(90deg, #e74c3c 60%, #ff7675 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        padding: '12px 28px',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        opacity: loading ? 0.7 : 1,
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 6px rgba(231, 76, 60, 0.13)'
-                      }} onClick={() => handleRespond(n.id, 'decline')} disabled={loading}>DECLINE</button>
+                    <div className="notification-item-actions">
+                      <button className="notification-item-action accept" onClick={e => { e.stopPropagation(); handleRespond(n.id, 'accept'); }} disabled={loading}>ACCEPT</button>
+                      <button className="notification-item-action decline" onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} disabled={loading}>DECLINE</button>
                     </div>
                   )}
                   {myRecipient && myRecipient.response && (
-                    <div style={{
-                      color: myRecipient.response === 'accept' ? '#2ecc71' : '#e74c3c',
-                      fontWeight: 'bold',
-                      fontSize: '15px',
-                      marginTop: 16
-                    }}>
-                      You responded: {myRecipient.response.toUpperCase()}
+                    <div className={`notification-item-response ${myRecipient.response}`}>
+                              Action: {myRecipient.response.toUpperCase()}
                     </div>
                   )}
                 </div>
-                {/* Divider between notifications */}
-                {idx !== notifications.length - 1 && (
-                  <div style={{
-                    height: 2,
-                    background: 'linear-gradient(90deg, #e0e0e0 60%, #f8fafc 100%)',
-                    width: '100%',
-                    margin: 0
-                  }} />
                 )}
               </div>
             );
           })}
         </div>
+            )}
+          </>
+        )}
         {error && <div style={{ color: '#e74c3c', fontSize: '15px', marginTop: 20, textAlign: 'center' }}>{error}</div>}
       </div>
     </AssociateLayout>
@@ -194,45 +182,13 @@ function ProgressBar({ recipients }) {
   const declined = recipients.filter(r => r.response === 'decline').length;
   return (
     <>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '14px',
-        marginBottom: 6,
-        color: '#495057',
-        fontWeight: 500
-      }}>
-        <span style={{ color: '#2ecc71' }}>CONFIRMED {accepted} ASSOCIATES</span>
-        <span style={{ color: '#e74c3c' }}>DECLINED {declined} ASSOCIATES</span>
+      <div className="notification-item-progress-bar-text">
+        <span className="notification-item-progress-bar-text-confirmed">CONFIRMED {accepted} ASSOCIATES</span>
+        <span className="notification-item-progress-bar-text-declined">DECLINED {declined} ASSOCIATES</span>
       </div>
-      <div style={{
-        width: '100%',
-        background: '#e9ecef',
-        borderRadius: 10,
-        height: 22,
-        position: 'relative',
-        marginBottom: 10,
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(44,62,80,0.04)'
-      }}>
-        <div style={{
-          width: percent + '%',
-          background: 'linear-gradient(90deg, #2ecc71 60%, #b2f7cc 100%)',
-          height: '100%',
-          borderRadius: 10,
-          transition: 'width 0.5s cubic-bezier(.4,2,.6,1)',
-          boxShadow: '0 1px 4px rgba(46,204,113,0.08)'
-        }} />
-        <span style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontSize: '13px',
-          color: '#fff',
-          fontWeight: '700',
-          textShadow: '0 1px 2px rgba(0,0,0,0.13)'
-        }}>{percent}% RESPONDED</span>
+      <div className="notification-item-progress-bar">
+        <div className="notification-item-progress-bar-fill" style={{ width: percent + '%' }} />
+        <span className="notification-item-progress-bar-percentage">{percent}% RESPONDED</span>
       </div>
     </>
   );

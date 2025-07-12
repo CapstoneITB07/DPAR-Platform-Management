@@ -30,6 +30,9 @@ use App\Http\Controllers\VolunteerController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
+// Public GET route for announcements
+Route::get('/announcements', [AnnouncementController::class, 'index']);
+
 // Protected Routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -44,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/change-password', [PasswordController::class, 'adminChangePassword'])->middleware('role:admin');
 
     // Resource Controllers
-    Route::apiResource('/announcements', AnnouncementController::class);
+    Route::apiResource('/announcements', AnnouncementController::class)->except(['index']);
     Route::apiResource('/notifications', NotificationController::class);
     Route::post('/notifications/{id}/respond', [NotificationController::class, 'respond']);
 

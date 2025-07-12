@@ -7,6 +7,8 @@
   justify-content: center;
   background: #fafafa;
   position: relative;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .container {
@@ -18,13 +20,14 @@
   align-items: stretch; /* Ensure grid items stretch to fill the container height */
   font-family: 'Arial', sans-serif;
   width: 100%; /* Allow container to take full width */
-  max-width: 800px; /* Limit the overall width of the container */
-  margin: 0;
+  max-width: 900px; /* Increased max-width for better desktop experience */
+  margin: 0 auto;
   box-sizing: border-box; /* Include padding and border in width/height */
   border: 1px solid #ccc; /* Outer border as in the screenshot */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow */
   overflow: hidden; /* Hide any potential overflow from inner elements */
   background: white;
+  border-radius: 8px; /* Add rounded corners */
   /* To center vertically in the viewport if not taking full height, you might need to add styles to the body or a parent container */
 }
 
@@ -76,17 +79,20 @@
   margin-bottom: 20px;
   font-weight: bold;
   margin-top: 0;
+  line-height: 1.4;
 }
 
 .welcomeTitle {
   font-size: clamp(1.5rem, 3vw, 2.5rem);
   margin-bottom: 10px;
   margin-top: 0;
+  line-height: 1.2;
 }
 
 .welcomeSubtitle {
   font-size: clamp(1rem, 2vw, 1.2rem);
   margin-top: 0;
+  line-height: 1.3;
 }
 
 .signInTitle {
@@ -95,6 +101,7 @@
   color: #c0392b;
   font-weight: bold;
   text-align: center;
+  line-height: 1.2;
 }
 
 .inputGroup {
@@ -118,29 +125,52 @@
 
 .input {
   width: 100%;
-  padding: 10px;
+  padding: 12px 16px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 16px;
   box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #c0392b;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
 }
 
 .passwordInput {
   width: 100%;
-  padding: 10px;
-  padding-right: 40px; /* Space for icon */
+  padding: 12px 16px;
+  padding-right: 50px; /* Space for icon */
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 16px;
   box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.passwordInput:focus {
+  outline: none;
+  border-color: #c0392b;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
 }
 
 .passwordToggleIcon {
   position: absolute;
-  right: 10px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  color: #666;
+}
+
+.passwordToggleIcon:hover {
+  background-color: #f5f5f5;
+  color: #333;
 }
 
 .rememberMe {
@@ -150,30 +180,49 @@
 }
 
 .rememberMeCheckbox {
-  margin-right: 5px;
+  margin-right: 8px;
+  transform: scale(1.1);
 }
 
 .rememberMeLabel {
   font-size: 14px;
+  color: #555;
 }
 
 .signInButton {
   width: 100%;
-  padding: 12px;
+  padding: 14px 16px;
   background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
+}
+
+.signInButton:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.signInButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
 .errorMessage {
-  color: red;
+  color: #e74c3c;
   margin-top: 10px;
   text-align: center;
+  font-size: 14px;
+  padding: 8px 12px;
+  background-color: #fdf2f2;
+  border-radius: 4px;
+  border: 1px solid #fecaca;
 }
 
 /* Absolutely position the RA button at the bottom left of the viewport */
@@ -187,13 +236,20 @@
   border: none;
   padding: 0;
   z-index: 10;
+  transition: transform 0.2s ease;
+}
+
+.raButton:hover {
+  transform: scale(1.1);
 }
 
 .raButtonIconBox {
   border: 1px solid #ccc; /* Border around icon */
-  padding: 5px; /* Padding around icon */
+  padding: 8px; /* Padding around icon */
   display: inline-block; /* Allow padding/border */
   background-color: white; /* White background */
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .raPopup {
@@ -273,64 +329,407 @@
   color: #fff;
 }
 
-/* Responsive styles */
-@media (max-width: 900px) {
+/* Responsive styles - Desktop (1200px and above) */
+@media (min-width: 1200px) {
   .container {
-    max-width: 98vw;
+    max-width: 1000px;
+    min-height: 500px;
+  }
+  
+  .loginSection, .welcomeSection {
+    padding: 50px;
+  }
+  
+  .signInTitle {
+    font-size: 2.4rem;
+    margin-bottom: 40px;
+  }
+  
+  .welcomeTitle {
+    font-size: 2.8rem;
+  }
+  
+  .coalitionText {
+    font-size: 1.2rem;
   }
 }
 
-@media (max-width: 768px) {
+/* Laptop (1024px to 1199px) */
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .container {
+    max-width: 900px;
+  }
+  
+  .loginSection, .welcomeSection {
+    padding: 40px;
+  }
+}
+
+/* Tablet Landscape (768px to 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .loginPageWrapper {
+    padding: 16px;
+  }
+  
+  .container {
+    max-width: 95vw;
+    min-height: 450px;
+  }
+  
+  .loginSection, .welcomeSection {
+    padding: 32px 24px;
+  }
+  
+  .signInTitle {
+    font-size: 1.8rem;
+    margin-bottom: 28px;
+  }
+  
+  .welcomeTitle {
+    font-size: 2rem;
+  }
+  
+  .coalitionText {
+    font-size: 0.9rem;
+  }
+  
+  .raButton {
+    bottom: 20px;
+    left: 20px;
+  }
+}
+
+/* Tablet Portrait (600px to 767px) */
+@media (max-width: 767px) and (min-width: 600px) {
+  .loginPageWrapper {
+    padding: 12px;
+  }
+  
   .container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     max-width: 98vw;
-    min-height: unset;
+    min-height: 400px;
     box-shadow: none;
     border: none;
+    border-radius: 0;
   }
+  
   .loginSection, .welcomeSection {
     border-right: none;
     border-bottom: none;
-    padding: 24px 8px;
+    padding: 24px 16px;
     min-height: unset;
   }
+  
   .welcomeSection {
     border-bottom: none;
-    padding: 32px 16px 40px 16px;
+    padding: 32px 20px 40px 20px;
   }
+  
+  .signInTitle {
+    font-size: 1.6rem;
+    margin-bottom: 24px;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.8rem;
+  }
+  
+  .coalitionText {
+    font-size: 0.8rem;
+  }
+  
   .raButton {
-    bottom: 10px;
-    left: 10px;
+    bottom: 16px;
+    left: 16px;
+  }
+  
+  .raPopup {
+    max-width: 90vw;
+    padding: 24px 20px 20px 20px;
   }
 }
 
-@media (max-width: 480px) {
+/* Mobile Large (480px to 599px) */
+@media (max-width: 599px) and (min-width: 480px) {
+  .loginPageWrapper {
+    padding: 8px;
+  }
+  
   .container {
     display: flex;
     flex-direction: column;
     max-width: 100vw;
     box-shadow: none;
     border: none;
-    gap: 12px;
+    border-radius: 0;
+    gap: 0;
   }
+  
   .welcomeSection {
+    order: -1; /* Show welcome section first on mobile */
+    padding: 24px 16px;
+    border-radius: 0;
+  }
+  
+  .loginSection {
+    padding: 24px 16px;
+    border-radius: 0;
+  }
+  
+  .signInTitle {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.6rem;
+  }
+  
+  .coalitionText {
+    font-size: 0.7rem;
+  }
+  
+  .input, .passwordInput {
+    padding: 10px 14px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .signInButton {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+  
+  .raButton {
+    bottom: 12px;
+    left: 12px;
+    font-size: 20px;
+  }
+  
+  .raButtonIconBox {
+    padding: 6px;
+  }
+  
+  .raPopup {
+    max-width: 95vw;
+    padding: 20px 16px 16px 16px;
+    max-height: 85vh;
+  }
+  
+  .raPopup h3 {
+    font-size: 1.3rem;
+  }
+  
+  .raPopup h4 {
+    font-size: 1rem;
+  }
+  
+  .raPopup p, .raPopup li {
+    font-size: 0.95rem;
+  }
+}
+
+/* Mobile Small (320px to 479px) */
+@media (max-width: 479px) {
+  .loginPageWrapper {
+    padding: 4px;
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    max-width: 100vw;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    gap: 0;
+  }
+  
+  .welcomeSection {
+    order: -1; /* Show welcome section first on mobile */
+    padding: 20px 12px;
+    border-radius: 0;
+  }
+  
+  .loginSection {
+    padding: 20px 12px;
+    border-radius: 0;
+  }
+  
+  .signInTitle {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.4rem;
+  }
+  
+  .coalitionText {
+    font-size: 0.6rem;
+    margin-bottom: 16px;
+  }
+  
+  .welcomeSubtitle {
+    font-size: 0.9rem;
+  }
+  
+  .input, .passwordInput {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .signInButton {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+  
+  .label {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  
+  .rememberMeLabel {
+    font-size: 13px;
+  }
+  
+  .raButton {
+    bottom: 8px;
+    left: 8px;
+    font-size: 18px;
+  }
+  
+  .raButtonIconBox {
+    padding: 5px;
+  }
+  
+  .raPopup {
+    max-width: 98vw;
+    padding: 16px 12px 12px 12px;
+    max-height: 90vh;
+  }
+  
+  .raPopup h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  
+  .raPopup h4 {
+    font-size: 0.9rem;
+    margin: 16px 0 8px 0;
+  }
+  
+  .raPopup p, .raPopup li {
+    font-size: 0.85rem;
+  }
+  
+  .raCloseButton {
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.5rem;
+  }
+}
+
+/* Extra Small Mobile (below 320px) */
+@media (max-width: 319px) {
+  .loginPageWrapper {
+    padding: 2px;
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    max-width: 100vw;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    gap: 0;
+  }
+  
+  .welcomeSection {
+    order: -1;
+    padding: 16px 8px;
+  }
+  
+  .loginSection {
+    padding: 16px 8px;
+  }
+  
+  .signInTitle {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.2rem;
+  }
+  
+  .coalitionText {
+    font-size: 0.55rem;
+    margin-bottom: 12px;
+  }
+  
+  .welcomeSubtitle {
+    font-size: 0.8rem;
+  }
+  
+  .input, .passwordInput {
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+  
+  .signInButton {
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+  
+  .label {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+  
+  .rememberMeLabel {
+    font-size: 12px;
+  }
+  
+  .raButton {
+    bottom: 6px;
+    left: 6px;
+    font-size: 16px;
+  }
+  
+  .raButtonIconBox {
+    padding: 4px;
+  }
+  
+  .raPopup {
+    max-width: 99vw;
+    padding: 12px 8px 8px 8px;
+    max-height: 95vh;
+  }
+  
+  .raPopup h3 {
+    font-size: 1rem;
     margin-bottom: 8px;
   }
-  .loginSection, .welcomeSection {
-    padding: 14px 4px;
+  
+  .raPopup h4 {
+    font-size: 0.8rem;
+    margin: 12px 0 6px 0;
   }
-  .signInButton {
-    font-size: 16px;
-    padding: 10px;
+  
+  .raPopup p, .raPopup li {
+    font-size: 0.8rem;
   }
-  .signInTitle {
-    font-size: 22px;
-  }
-  .welcomeTitle {
-    font-size: 22px;
-  }
-  .coalitionText {
-    font-size: 10px;
+  
+  .raCloseButton {
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    font-size: 1.2rem;
   }
 } 

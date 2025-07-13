@@ -34,8 +34,15 @@ function AssociateLayout({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [editProfileHover, setEditProfileHover] = useState(false);
 
-  const toggleSidebar = () => setSidebarOpen(open => !open);
-  const closeSidebar = () => setSidebarOpen(false);
+  const toggleSidebar = () => {
+    console.log('Toggle sidebar called');
+    setSidebarOpen(open => !open);
+  };
+  
+  const closeSidebar = () => {
+    console.log('Close sidebar called');
+    setSidebarOpen(false);
+  };
 
   const isActive = (route) => location.pathname === route;
 
@@ -222,13 +229,29 @@ function AssociateLayout({ children }) {
   };
 
   return (
-    <div className="associate-dashboard-fixed-layout" style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
+    <div className={`associate-dashboard-fixed-layout${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
       <div>
         {sidebarOpen && (
-          <div className="sidebar-overlay" onClick={closeSidebar} />
+          <div 
+            className="sidebar-overlay" 
+            onClick={(e) => {
+              e.preventDefault();
+              console.log('Overlay clicked');
+              closeSidebar();
+            }} 
+          />
         )}
         <nav className={`sidebar-drawer${sidebarOpen ? ' open' : ''}`} tabIndex="-1">
-          <button className="sidebar-close-btn" onClick={closeSidebar} aria-label="Close Sidebar">
+          <button 
+            className="sidebar-close-btn" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Close button clicked');
+              closeSidebar();
+            }} 
+            aria-label="Close Sidebar"
+          >
             <FontAwesomeIcon icon={faTimes} />
           </button>
           <div className="sidebar-header" style={{

@@ -370,4 +370,327 @@
   .modal-buttons button {
     width: 100%;
   }
+}
+
+/* Responsive Design for Sidebar and Header */
+
+/* Sidebar Drawer Styles */
+.sidebar-drawer {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  transition: left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-drawer.open {
+  left: 0;
+}
+
+.sidebar-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  z-index: 1001;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.sidebar-close-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* Tablet Styles (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar-drawer {
+    width: 240px;
+    left: -240px;
+  }
+  
+  .header {
+    padding: 0 16px;
+  }
+  
+  .burger-icon {
+    font-size: 20px;
+    margin-right: 10px;
+  }
+  
+  .dpar-text {
+    font-size: 16px;
+  }
+  
+  .notification-icon {
+    font-size: 20px;
+  }
+  
+  .main-content {
+    padding: 16px;
+  }
+}
+
+/* Mobile Styles (up to 767px) */
+@media (max-width: 767px) {
+  .sidebar-drawer {
+    width: 70vw;
+    left: -70vw;
+  }
+  
+  .header {
+    padding: 0 12px;
+    height: 56px;
+    min-height: 56px;
+  }
+  
+  .burger-icon {
+    font-size: 24px;
+    margin-right: 8px;
+    height: 56px;
+  }
+  
+  .dpar-text {
+    font-size: 20px;
+    height: 56px;
+  }
+  
+  .header-right {
+    height: 56px;
+  }
+  
+  .notification-icon {
+    font-size: 24px;
+    height: 56px;
+  }
+  
+  .main-content {
+    padding: 12px;
+    margin-top: 56px;
+    min-height: calc(100vh - 56px);
+  }
+  
+  /* Adjust sidebar header for mobile */
+  .sidebar-header {
+    padding: 24px 16px 16px 16px;
+  }
+  
+  .profile-icon {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .user-name {
+    font-size: 1.1rem !important;
+  }
+  
+  .edit-profile {
+    font-size: 13px !important;
+  }
+  
+  /* Adjust sidebar navigation for mobile */
+  .sidebar-nav {
+    padding: 16px;
+  }
+  
+  .sidebar-nav li {
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+  }
+  
+  .sidebar-nav li svg {
+    width: 18px;
+    margin-right: 12px;
+  }
+  
+  /* Adjust sidebar footer for mobile */
+  .sidebar-footer {
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .logout-button {
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+  
+  .logout-button svg {
+    margin-right: 12px;
+  }
+}
+
+/* Small Mobile Styles (up to 480px) */
+@media (max-width: 480px) {
+  .sidebar-drawer {
+    width: 65vw;
+    left: -65vw;
+  }
+  
+  .header {
+    padding: 0 8px;
+  }
+  
+  .burger-icon {
+    font-size: 22px;
+    margin-right: 6px;
+  }
+  
+  .dpar-text {
+    font-size: 18px;
+  }
+  
+  .notification-icon {
+    font-size: 22px;
+  }
+  
+  .main-content {
+    padding: 8px;
+  }
+  
+  .sidebar-header {
+    padding: 20px 12px 12px 12px;
+  }
+  
+  .profile-icon {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .user-name {
+    font-size: 1rem !important;
+  }
+  
+  .edit-profile {
+    font-size: 12px !important;
+  }
+  
+  .sidebar-nav {
+    padding: 12px;
+  }
+  
+  .sidebar-nav li {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .sidebar-footer {
+    padding: 12px;
+  }
+  
+  .logout-button {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Landscape Mobile Styles */
+@media (max-width: 767px) and (orientation: landscape) {
+  .sidebar-drawer {
+    width: 280px;
+    left: -280px;
+  }
+  
+  .sidebar-header {
+    padding: 16px 12px 12px 12px;
+  }
+  
+  .profile-icon {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .user-name {
+    font-size: 0.9rem !important;
+  }
+  
+  .edit-profile {
+    font-size: 11px !important;
+  }
+}
+
+/* Ensure smooth transitions */
+.associate-dashboard-fixed-layout {
+  transition: all 0.3s ease;
+}
+
+.sidebar-drawer * {
+  transition: all 0.2s ease;
+}
+
+/* Prevent body scroll when sidebar is open on mobile */
+.associate-dashboard-fixed-layout.sidebar-open {
+  overflow: hidden;
+}
+
+/* Ensure proper z-index stacking */
+.header {
+  z-index: 200;
+}
+
+.sidebar-drawer {
+  z-index: 1000;
+}
+
+.sidebar-overlay {
+  z-index: 999;
+}
+
+/* Touch-friendly improvements for mobile */
+@media (max-width: 767px) {
+  .burger-icon,
+  .notification-icon,
+  .sidebar-close-btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .sidebar-nav li {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+} 
+
+/* Modal should be at the top layer */
+.ReactModal__Overlay {
+  z-index: 2001 !important;
+  background: rgba(0,0,0,0.85) !important;
+}
+.ReactModal__Content {
+  z-index: 2002 !important;
+}
+
+/* Lower z-index for dashboard and announcement card */
+.associate-dashboard-fixed-layout,
+.main-content,
+.announcements-left-card {
+  z-index: 1 !important;
 } 

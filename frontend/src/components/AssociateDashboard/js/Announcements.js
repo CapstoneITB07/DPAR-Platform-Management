@@ -6,31 +6,31 @@ import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt } from 'react-
 
 const slides = [
   {
-    icon: <FaFire size={140} color="#ffa500" />,
+    icon: <FaFire size={140} color="black" />, // Changed to black
     title: "Disaster Preparedness & Response",
     subtitle: "Protecting Communities, Saving Lives",
     desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
   },
   {
-    icon: <FaCheckDouble size={140} color="#21963f" />,
+    icon: <FaCheckDouble size={140} color="black" />, // Changed to black
     title: "Mitigation",
     subtitle: "Minimize Risk and Damage",
     desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
   },
   {
-    icon: <FaSnowflake size={140} color="#00bcd4" />,
+    icon: <FaSnowflake size={140} color="black" />, // Changed to black
     title: "Preparedness",
     subtitle: "Get Ready for the Unexpected",
     desc: "Tips for keeping your family safe during cold weather emergencies."
   },
   {
-    icon: <FaShieldAlt size={140} color="#a72828" />,
+    icon: <FaShieldAlt size={140} color="black" />, // Changed to black
     title: "Response",
     subtitle: "Together, We Are Stronger",
     desc: "Building resilient communities through preparedness and cooperation."
   },
   {
-    icon: <FaWater size={140} color="#00bcd4" />,
+    icon: <FaWater size={140} color="black" />, // Changed to black
     title: "Recovery",
     subtitle: "Rebuilding and Restoring",
     desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
@@ -115,7 +115,7 @@ function Announcements() {
     <AssociateLayout>
       <div className="announcements-bg">
         <div className="announcements-container">
-          <h1 className="announcements-header">Announcements</h1>
+          <h1 className="announcements-header">Important Updates & Announcements</h1>
           {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
           {/* Modal for image */}
           {modalImg && (

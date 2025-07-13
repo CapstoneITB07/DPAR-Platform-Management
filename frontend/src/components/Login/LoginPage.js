@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './LoginPage.css'; // Import the CSS file
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
@@ -12,8 +12,17 @@ function LoginPage() {
   const [message, setMessage] = useState('');
   const [showRA, setShowRA] = useState(false); // State for the pop-up
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [rememberMe, setRememberMe] = useState(false);
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
+
+  useEffect(() => {
+    const remembered = localStorage.getItem('rememberedEmail');
+    if (remembered) {
+      setEmail(remembered);
+      setRememberMe(true);
+    }
+  }, []);
 
   const toggleRA = () => {
     setShowRA(!showRA);
@@ -48,8 +57,14 @@ function LoginPage() {
         const userRole = data.user ? data.user.role : null; // Adjust based on actual backend response structure
         const userId = data.user ? data.user.id : null;
 
-        // Save the token (e.g., in localStorage)
-        localStorage.setItem('authToken', token); // Use a secure storage method in production
+        // Store token and email based on rememberMe
+        if (rememberMe) {
+          localStorage.setItem('authToken', token);
+          localStorage.setItem('rememberedEmail', email);
+        } else {
+          sessionStorage.setItem('authToken', token);
+          localStorage.removeItem('rememberedEmail');
+        }
         // You might also want to save user details like role
         localStorage.setItem('userRole', userRole);
         if (userId) localStorage.setItem('userId', userId);
@@ -129,7 +144,13 @@ function LoginPage() {
               </div>
             </div>
             <div className="rememberMe">
-              <input type="checkbox" id="rememberMe" className="rememberMeCheckbox" />
+              <input
+                type="checkbox"
+                id="rememberMe"
+                className="rememberMeCheckbox"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+              />
               <label htmlFor="rememberMe" className="rememberMeLabel">Remember me?</label>
             </div>
             <button type="submit" className="signInButton">Sign In</button>

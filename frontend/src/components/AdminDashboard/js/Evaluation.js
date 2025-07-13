@@ -82,7 +82,7 @@ function Evaluation() {
   const fetchAssociates = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -97,7 +97,7 @@ function Evaluation() {
   const handleEvaluate = async (associate) => {
     // Fetch the latest data for this associate before showing the modal
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups/${associate.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -164,7 +164,7 @@ function Evaluation() {
 
   const handleSubmitEvaluation = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`http://localhost:8000/api/evaluations`, {
         user_id: selectedAssociate.user_id,
         evaluation_data: evaluationData,

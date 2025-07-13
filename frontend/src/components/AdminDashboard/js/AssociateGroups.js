@@ -39,10 +39,12 @@ function AssociateGroups() {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [popupError, setPopupError] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
 
   const fetchAssociates = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -85,11 +87,14 @@ function AssociateGroups() {
     setMessage('');
   };
 
+  // --- 1. Reset error modal state when opening/closing add modal and after successful submission ---
   const openAddModal = () => {
     setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
     setLogoFile(null);
     setCurrentStep(1);
     setShowAddModal(true);
+    setShowPopup(false); // Reset error modal
+    setPopupError('');
   };
 
   const closeAddModal = () => {
@@ -98,6 +103,8 @@ function AssociateGroups() {
     setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
     setLogoFile(null);
     setError('');
+    setShowPopup(false); // Reset error modal
+    setPopupError('');
   };
 
   const openEditListMode = () => {
@@ -149,7 +156,7 @@ function AssociateGroups() {
 
   const handlePasswordChange = async (userId) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/admin/change-password`, {
         user_id: userId,
         new_password: form.password,
@@ -176,10 +183,10 @@ function AssociateGroups() {
       return false;
     }
 
-    // Validate phone number (11 digits)
-    const phoneRegex = /^[0-9]{11}$/;
+    // Validate phone number (must start with 09, 11 digits, only numbers)
+    const phoneRegex = /^09[0-9]{9}$/;
     if (!phoneRegex.test(form.phone)) {
-      setError('Phone number must be exactly 11 digits');
+      setError('Phone number must start with 09 and be exactly 11 digits');
       return false;
     }
 
@@ -237,7 +244,7 @@ function AssociateGroups() {
       if (!validateStep2()) return;
     }
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const formData = new FormData();
       formData.append('name', form.name);
       formData.append('type', form.type);
@@ -253,6 +260,7 @@ function AssociateGroups() {
       const response = await axios.post(`${API_BASE}/api/associate-groups`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
+      // --- 4. After successful submission, reset error modal state ---
       if (response.status === 201 || response.status === 200) {
         setMessage('Associate added successfully!');
         setShowAddModal(false);
@@ -260,11 +268,22 @@ function AssociateGroups() {
         setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
         setLogoFile(null);
         setError('');
+        setShowPopup(false); // Reset error modal
+        setPopupError('');
         fetchAssociates();
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to add associate. Please try again.');
+      const backendMsg = error.response?.data?.errors?.email?.[0] || error.response?.data?.message || 'Failed to add associate. Please try again.';
+      let friendlyMsg = '';
+      if (backendMsg.toLowerCase().includes('already used')) {
+        friendlyMsg = "The email address you entered is already used by another associate group. Please use a different email address.";
+      } else {
+        friendlyMsg = backendMsg;
+      }
+      setPopupError(friendlyMsg);
+      setShowPopup(true);
+      setError('');
     }
   };
 
@@ -273,7 +292,7 @@ function AssociateGroups() {
     setError('');
     if (!validateStep1()) return;
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const formData = new FormData();
       formData.append('name', form.name);
       formData.append('type', form.type);
@@ -302,7 +321,7 @@ function AssociateGroups() {
   const handleRemoveAssociate = async (associateId) => {
     if (!window.confirm('Are you sure you want to remove this associate group?')) return;
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.delete(`${API_BASE}/api/associate-groups/${associateId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -349,10 +368,10 @@ function AssociateGroups() {
       return false;
     }
 
-    // Validate phone number (11 digits)
-    const phoneRegex = /^[0-9]{11}$/;
+    // Validate phone number (must start with 09, 11 digits, only numbers)
+    const phoneRegex = /^09[0-9]{9}$/;
     if (!phoneRegex.test(form.phone)) {
-      setError('Phone number must be exactly 11 digits');
+      setError('Phone number must start with 09 and be exactly 11 digits');
       return false;
     }
 
@@ -429,7 +448,7 @@ function AssociateGroups() {
 
   const handleGroupClick = async (group) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups/${group.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -606,11 +625,18 @@ function AssociateGroups() {
                         name="phone" 
                         value={form.phone} 
                         onChange={handleFormChange} 
-                        placeholder="Enter 11-digit phone number"
+                        onInput={e => {
+                          let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+                          if (val.length === 1 && val !== '0') val = '';
+                          if (val.length === 2 && val !== '09') val = val[0] === '0' ? '0' : '';
+                          e.target.value = val;
+                        }}
+                        placeholder="Enter 11-digit phone number" 
                         required 
-                        pattern="[0-9]{11}" 
-                        title="Phone number must be exactly 11 digits"
-                        maxLength="11"
+                        pattern="09[0-9]{9}" 
+                        title="Phone number must start with 09 and be exactly 11 digits" 
+                        maxLength="11" 
+                        inputMode="numeric"
                       />
                     </div>
                     
@@ -780,11 +806,18 @@ function AssociateGroups() {
                       name="phone" 
                       value={form.phone} 
                       onChange={handleFormChange} 
+                      onInput={e => {
+                        let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+                        if (val.length === 1 && val !== '0') val = '';
+                        if (val.length === 2 && val !== '09') val = val[0] === '0' ? '0' : '';
+                        e.target.value = val;
+                      }}
                       placeholder="Enter 11-digit phone number"
                       required 
                       pattern="[0-9]{11}" 
                       title="Phone number must be exactly 11 digits"
                       maxLength="11"
+                      inputMode="numeric"
                     />
                   </div>
                   
@@ -843,6 +876,30 @@ function AssociateGroups() {
             </form>
           </div>
         </div>
+      )}
+      {showPopup && (
+        <Modal
+          isOpen={showPopup}
+          onRequestClose={() => setShowPopup(false)}
+          className="enhanced-error-modal"
+          overlayClassName="enhanced-error-overlay"
+          shouldCloseOnOverlayClick={true}
+        >
+          <div className="enhanced-error-header">
+            <span className="enhanced-error-icon" role="img" aria-label="Error">⚠️</span>
+            <h2>Error</h2>
+            <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowPopup(false)} />
+          </div>
+          <div className="enhanced-error-body">
+            <p style={{ fontWeight: 500, color: '#b00020', marginBottom: 8 }}>
+              {popupError}
+            </p>
+            <p style={{ color: '#555', fontSize: '0.95rem' }}>
+              If you need help, please check the form fields or contact support.
+            </p>
+          </div>
+          <button className="enhanced-error-btn" onClick={() => setShowPopup(false)}>Close</button>
+        </Modal>
       )}
     </AdminLayout>
   );

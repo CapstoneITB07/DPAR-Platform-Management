@@ -415,10 +415,18 @@
   position: relative;
 }
 .profile-modal-header {
+  background: linear-gradient(90deg, #A11C22 0%, #c0392b 100%);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: bold;
+  padding: 24px 32px 18px 32px; /* top, right, bottom, left */
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  margin: -36px -32px 0 -32px; /* negative margin to overlap modal padding */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  box-sizing: border-box;
 }
 .profile-modal-logo {
   width: 70px;
@@ -761,6 +769,13 @@
     max-width: 98vw;
     padding: 8px 2px;
   }
+  .profile-modal-header {
+    padding: 14px 10px 10px 10px;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    margin: -18px -10px 0 -10px;
+    font-size: 1.3rem;
+  }
   .add-edit-form .logo-preview {
     width: 60px;
     height: 60px;
@@ -887,6 +902,13 @@
     width: 48px !important;
     height: 48px !important;
   }
+  .step.active .step-number {
+    background: #A11C22;
+    color: white;
+    border-color: #A11C22;
+    box-shadow: 0 4px 12px rgba(161, 28, 34, 0.3);
+    border-radius: 50% !important; /* Always keep it a circle */
+  }
 }
 
 @media (max-width: 900px) {
@@ -915,5 +937,122 @@
   .step-connector {
     width: 36px !important;
     margin: 0 12px !important;
+  }
+} 
+
+/* --- Enhanced Error Modal Overlay: always centered, above add modal, with proper z-index --- */
+.enhanced-error-overlay {
+  background: rgba(0,0,0,0.35) !important;
+  z-index: 4000 !important; /* Above add modal */
+  position: fixed !important;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Enhanced Error Modal: always centered, with padding and rounded corners --- */
+.enhanced-error-modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 2.5rem 2rem 1.5rem 2rem;
+  max-width: 400px;
+  margin: auto;
+  position: relative;
+  text-align: center;
+  animation: popIn 0.2s;
+  z-index: 4100;
+}
+@keyframes popIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.enhanced-error-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.enhanced-error-icon {
+  font-size: 2.2rem;
+  color: #b00020;
+}
+.enhanced-error-header h2 {
+  color: #b00020;
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.5rem;
+}
+.close-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 1.3rem;
+  color: #888;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.enhanced-error-body {
+  margin-bottom: 1.5rem;
+}
+.enhanced-error-btn {
+  background: #b00020;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.enhanced-error-btn:hover {
+  background: #d32f2f;
+} 
+
+body.ReactModal__Body--open {
+  overflow: hidden;
+} 
+
+/* --- Add Modal: more padding, header with matching padding and rounded corners --- */
+.profile-modal-card.enhanced-modal {
+  padding: 40px 36px 32px 36px !important; /* top, right, bottom, left */
+  box-sizing: border-box;
+  border-radius: 18px;
+}
+.profile-modal-header {
+  padding: 0.8rem 1.2rem 0.8rem 1.2rem;
+  border-radius: 18px 18px 0 0;
+  background: #f8f8f8;
+  margin: -40px -36px 24px -36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profile-modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #222;
+}
+.close-icon {
+  font-size: 1.5rem;
+  color: #888;
+  cursor: pointer;
+  background: none;
+  border: none;
+  margin-left: 12px;
+}
+@media (max-width: 700px) {
+  .profile-modal-card.enhanced-modal {
+    padding: 18px 8px 16px 8px !important;
+  }
+  .profile-modal-header {
+    padding: 0.7rem 0.7rem 0.7rem 0.7rem;
+    margin: -18px -8px 18px -8px;
   }
 } 

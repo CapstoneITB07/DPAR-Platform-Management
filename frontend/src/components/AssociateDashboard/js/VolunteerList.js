@@ -101,7 +101,7 @@ function VolunteerList() {
   const fetchVolunteers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get('http://localhost:8000/api/volunteers', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -133,7 +133,7 @@ function VolunteerList() {
     e.preventDefault();
     if (!validateForm()) return;
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const dataToSubmit = {
         ...formData,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
@@ -197,7 +197,7 @@ function VolunteerList() {
       onConfirm: async () => {
         setConfirm({ ...confirm, open: false });
         try {
-          const token = localStorage.getItem('authToken');
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           await axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
@@ -217,7 +217,7 @@ function VolunteerList() {
       onConfirm: async () => {
         setConfirm({ ...confirm, open: false });
         try {
-          const token = localStorage.getItem('authToken');
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           await Promise.all(
             selectedVolunteers.map(id =>
               axios.delete(`http://localhost:8000/api/volunteers/${id}`, {

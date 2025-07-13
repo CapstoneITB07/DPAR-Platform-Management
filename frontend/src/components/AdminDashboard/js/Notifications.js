@@ -13,10 +13,12 @@ function Notifications() {
   const [selectAll, setSelectAll] = useState(false);
   const [filterType, setFilterType] = useState('none');
   const [filterValue, setFilterValue] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
 
   // Fetch notifications
   useEffect(() => {
-    fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -29,7 +31,8 @@ function Notifications() {
 
   // Fetch associates for selection
   useEffect(() => {
-    fetch('http://localhost:8000/api/members', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    fetch('http://localhost:8000/api/members', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(setAssociates);
   }, []);
@@ -79,11 +82,12 @@ function Notifications() {
         ...form,
         associate_ids: form.associate_ids.map(id => Number(id)),
       };
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const res = await fetch('http://localhost:8000/api/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
@@ -98,35 +102,44 @@ function Notifications() {
 
   const handleRemove = async id => {
     if (!window.confirm('Are you sure you want to remove this notification?')) return;
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     await fetch(`http://localhost:8000/api/notifications/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+      headers: { Authorization: `Bearer ${token}` }
     });
     setNotifications(notifications.filter(n => n.id !== id));
   };
 
   // Helper to filter notifications
   const filterNotifications = (notifications) => {
-    if (filterType === 'none' || !filterValue) return notifications;
-    return notifications.filter(n => {
-      if (!n.created_at) return false;
-      const created = dayjs(n.created_at);
-      if (filterType === 'date') {
+    let filtered = notifications;
+    if (filterType === 'date' && filterValue) {
+      filtered = filtered.filter(n => {
+        if (!n.created_at) return false;
+        const created = dayjs(n.created_at);
         return created.format('YYYY-MM-DD') === filterValue;
-      } else if (filterType === 'time') {
-        return created.format('HH:mm') === filterValue;
-      } else if (filterType === 'datetime') {
-        return created.format('YYYY-MM-DDTHH:mm') === filterValue;
-      } else if (filterType === 'month') {
+      });
+    } else if (filterType === 'month' && filterValue) {
+      filtered = filtered.filter(n => {
+        if (!n.created_at) return false;
+        const created = dayjs(n.created_at);
         return created.format('YYYY-MM') === filterValue;
+      });
+    }
+    // Sort
+    filtered = filtered.slice().sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return new Date(a.created_at) - new Date(b.created_at);
+      } else {
+        return new Date(b.created_at) - new Date(a.created_at);
       }
-      return true;
     });
+    return filtered;
   };
 
   return (
     <AdminLayout>
-      <h2 className="main-header">NOTIFICATIONS</h2>
+      <h2 className="main-header" style={{ textAlign: 'left', marginLeft: 24 }}>NOTIFICATIONS</h2>
       {/* Filter Bar */}
       <div className="notification-filter-bar">
         <span className="notification-filter-label">Filters:</span>
@@ -135,31 +148,12 @@ function Notifications() {
           onChange={e => { setFilterType(e.target.value); setFilterValue(''); }} 
           className="notification-filter-select"
         >
-          <option value="none">None</option>
           <option value="date">Date Only</option>
-          <option value="time">Time Only</option>
-          <option value="datetime">Date & Time</option>
           <option value="month">Month</option>
         </select>
         {filterType === 'date' && (
           <input 
             type="date" 
-            value={filterValue} 
-            onChange={e => setFilterValue(e.target.value)}
-            className="notification-filter-input"
-          />
-        )}
-        {filterType === 'time' && (
-          <input 
-            type="time" 
-            value={filterValue} 
-            onChange={e => setFilterValue(e.target.value)}
-            className="notification-filter-input"
-          />
-        )}
-        {filterType === 'datetime' && (
-          <input 
-            type="datetime-local" 
             value={filterValue} 
             onChange={e => setFilterValue(e.target.value)}
             className="notification-filter-input"
@@ -173,9 +167,18 @@ function Notifications() {
             className="notification-filter-input"
           />
         )}
-        {(filterType !== 'none' && filterValue) && (
+        <select 
+          value={sortOrder} 
+          onChange={e => setSortOrder(e.target.value)} 
+          className="notification-filter-select"
+          style={{ marginLeft: 12 }}
+        >
+          <option value="desc">Created Last</option>
+          <option value="asc">Created First</option>
+        </select>
+        {(filterValue) && (
           <button 
-            onClick={() => { setFilterType('none'); setFilterValue(''); }} 
+            onClick={() => { setFilterValue(''); }} 
             className="notification-filter-clear"
           >Clear</button>
         )}
@@ -194,18 +197,20 @@ function Notifications() {
       ))}
       {showModal && (
         <div className="notification-modal-overlay">
-          <div className="notification-modal-card notification-modal-padding">
-            <div className="notification-modal-header">
-              <h3>Add Notification</h3>
-              <span className="notification-close-icon" onClick={closeModal}>&times;</span>
-            </div>
-            <form className="add-edit-form notification-modal-content" onSubmit={handleSubmit}>
-              <div className="notification-icon">
-                <svg width="48" height="48" fill="#A11C22" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7v3.586l.707.707A1 1 0 0 1 19.293 16H4.707a1 1 0 0 1-.707-1.707L4.707 12.586V9a7 7 0 0 1 7-7zm0 20a3 3 0 0 1-3-3h6a3 3 0 0 1-3 3z"/></svg>
+          <div className="notification-modal-card enhanced-notification-modal">
+            {/* Enhanced Header */}
+            <div className="notification-modal-header enhanced-notification-header">
+              <div className="enhanced-header-left">
+                <span className="enhanced-header-icon">
+                  <svg width="38" height="38" fill="#fff" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7v3.586l.707.707A1 1 0 0 1 19.293 16H4.707a1 1 0 0 1-.707-1.707L4.707 12.586V9a7 7 0 0 1 7-7zm0 20a3 3 0 0 1-3-3h6a3 3 0 0 1-3 3z"/></svg>
+                </span>
+                <span className="enhanced-header-title">Add Notification</span>
               </div>
-              <h4>Notification Details</h4>
-              <p>Fill out the details to notify associates and request volunteers.</p>
-              <div className="notification-form-grid">
+              <button className="notification-close-icon enhanced-close-icon" onClick={closeModal} aria-label="Close">&times;</button>
+            </div>
+            <form className="add-edit-form notification-modal-content enhanced-notification-content" onSubmit={handleSubmit}>
+              <div className="enhanced-section-label">Notification Details</div>
+              <div className="notification-form-grid enhanced-form-grid">
                 <div className="notification-form-group full-width">
                   <label>Title *</label>
                   <input 
@@ -214,6 +219,7 @@ function Notifications() {
                     onChange={handleChange} 
                     required 
                     placeholder="Enter notification title"
+                    className="enhanced-input"
                   />
                 </div>
                 <div className="notification-form-group full-width">
@@ -225,12 +231,13 @@ function Notifications() {
                     required
                     placeholder="Enter notification description"
                     rows="3"
+                    className="enhanced-input"
                   />
                 </div>
                 <div className="notification-form-group full-width">
                   <label>Select Associate/s to Notify</label>
-                  <div className="notification-associate-list">
-                    <div className="select-all associate-checkbox-row">
+                  <div className="notification-associate-list enhanced-associate-list">
+                    <div className="select-all associate-checkbox-row enhanced-checkbox-row">
                       <input 
                         type="checkbox" 
                         checked={selectAll} 
@@ -243,15 +250,16 @@ function Notifications() {
                     {[...associates]
                       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
                       .map(a => (
-                        <div key={a.id} className="associate-checkbox-row">
+                        <div key={a.id} className="associate-checkbox-row enhanced-checkbox-row">
                           <input
                             type="checkbox"
                             checked={form.associate_ids.includes(a.id)}
                             onChange={() => handleAssociateChange(a.id)}
                             id={`associate_${a.id}`}
+                            className="enhanced-checkbox"
                             style={{ marginRight: '8px' }}
                           />
-                          <label htmlFor={`associate_${a.id}`} className="associate-checkbox-label">{a.name}</label>
+                          <label htmlFor={`associate_${a.id}`} className="associate-checkbox-label enhanced-checkbox-label">{a.name}</label>
                         </div>
                       ))}
                   </div>
@@ -265,14 +273,19 @@ function Notifications() {
                     onChange={handleChange} 
                     placeholder="Enter number of volunteers needed"
                     required
+                    className="enhanced-input"
+                    min={1}
+                    max={2000}
                   />
                 </div>
               </div>
-              {error && <div className="notification-error-message">{error}</div>}
-              <div className="notification-form-actions">
-                <button type="button" className="cancel-btn" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="notification-btn-submit" disabled={loading}>
-                  {loading ? 'Creating...' : 'Create Notification'}
+              {error && <div className="notification-error-message enhanced-error-message">{error}</div>}
+              <div className="notification-form-actions enhanced-form-actions">
+                <button type="button" className="cancel-btn enhanced-cancel-btn" onClick={closeModal}>
+                  <span className="enhanced-btn-icon">&#10005;</span> Cancel
+                </button>
+                <button type="submit" className="notification-btn-submit enhanced-btn-submit" disabled={loading}>
+                  <span className="enhanced-btn-icon">&#128276;</span> {loading ? 'Creating...' : 'Create Notification'}
                 </button>
               </div>
             </form>
@@ -310,10 +323,10 @@ function NotificationDropdown({ notification, onRemove }) {
   const declined = notification.recipients ? notification.recipients.filter(r => r.response === 'decline').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
   return (
     <div className={`notification-dropdown${open ? ' open' : ''}`}>
-      <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)}>
-        <div>
-          <div className="notification-dropdown-title">{notification.title}</div>
-          <div className="notification-dropdown-date">{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
+      <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)} style={{ textAlign: 'left' }}>
+        <div style={{ textAlign: 'left' }}>
+          <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>{notification.title}</div>
+          <div className="notification-dropdown-date" style={{ textAlign: 'left' }}>{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
         </div>
         <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>
       </div>

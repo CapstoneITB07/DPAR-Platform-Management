@@ -44,7 +44,7 @@ function AdminLayout({ children }) {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/change-password`, passwordForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -99,7 +99,7 @@ function AdminLayout({ children }) {
         const formData = new FormData();
         formData.append('profile_picture', newProfileImage);
         
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
         await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -142,7 +142,7 @@ function AdminLayout({ children }) {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.profile_picture_url) {
         setProfileImage(`${API_BASE}/storage/${response.data.profile_picture_url}`);
@@ -153,7 +153,7 @@ function AdminLayout({ children }) {
   };
 
   const fetchNotifications = async () => {
-    const res = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } });
+    const res = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } });
     const data = await res.json();
     const viewed = JSON.parse(localStorage.getItem(ADMIN_NOTIF_RESPONSE_KEY) || '{}');
     let unread = 0;
@@ -181,7 +181,7 @@ function AdminLayout({ children }) {
 
   useEffect(() => {
     if (location.pathname === '/admin/notifications') {
-      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
+      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {

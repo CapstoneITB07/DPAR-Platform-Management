@@ -25,7 +25,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       // Use environment variable or fallback to 127.0.0.1 for development
       const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
       // Always use 127.0.0.1 for asset URLs to ensure Puppeteer compatibility

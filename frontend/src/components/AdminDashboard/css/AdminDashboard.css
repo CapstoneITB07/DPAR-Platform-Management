@@ -729,7 +729,15 @@
   text-transform: uppercase;
   letter-spacing: 0.01em;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
+
+.generate-certificate-icon {
+  font-size: 1.2em;
+}
+
 .generate-certificate-btn:hover {
   background: #A11C22;
   color: #fff;
@@ -1429,6 +1437,7 @@
   color: white;
   border-color: #A11C22;
   box-shadow: 0 4px 12px rgba(161, 28, 34, 0.3);
+  border-radius: 50% !important; /* Always keep it a circle */
 }
 
 .step-label {
@@ -1456,6 +1465,11 @@
 .step.active + .step-connector,
 .step-connector + .step.active {
   background: #A11C22;
+}
+
+/* Remove background from .step-connector + .step.active so only the .step-number is colored */
+.step-connector + .step.active {
+  background: none !important;
 }
 
 /* Enhanced Form Styles */
@@ -2452,6 +2466,18 @@
     padding: 6px 10px;
     min-width: 0;
     max-width: 100%;
+  }
+  .generate-certificate-text {
+    display: none;
+  }
+  .generate-certificate-btn {
+    padding: 0.5em;
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  .generate-certificate-icon {
+    font-size: 1.5em;
   }
 }
 

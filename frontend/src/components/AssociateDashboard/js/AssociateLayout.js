@@ -47,7 +47,7 @@ function AssociateLayout({ children }) {
 
   const fetchNotifications = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get('http://localhost:8000/api/notifications', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -63,7 +63,7 @@ function AssociateLayout({ children }) {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/change-password`, passwordForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -114,7 +114,7 @@ function AssociateLayout({ children }) {
       try {
         const formData = new FormData();
         formData.append('profile_picture', newProfileImage);
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
         const response = await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -135,7 +135,7 @@ function AssociateLayout({ children }) {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });

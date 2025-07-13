@@ -55,8 +55,10 @@ class AssociateGroupController extends Controller
                 'description' => 'nullable|string',
                 'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'email' => 'required|email|unique:users,email',
-                'phone' => 'required|string|size:11|regex:/^[0-9]+$/',
+                'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
                 'password' => 'required|string|min:8|confirmed',
+            ], [
+                'email.unique' => 'This email is already used by another associate group.',
             ]);
 
             // Create user account

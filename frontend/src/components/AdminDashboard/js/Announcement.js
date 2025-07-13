@@ -24,7 +24,7 @@ function Announcement() {
 
   const fetchAnnouncements = async () => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const res = await axios.get('http://localhost:8000/api/announcements', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -53,7 +53,7 @@ function Announcement() {
     if (description) formData.append('description', description);
     if (photo) formData.append('photo', photo);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (editId) {
         // Edit mode
         await axios.post(`http://localhost:8000/api/announcements/${editId}?_method=PUT`, formData, {
@@ -96,7 +96,7 @@ function Announcement() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this announcement?')) return;
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.delete(`http://localhost:8000/api/announcements/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -59,7 +59,7 @@ function ApprovalAOR() {
     try {
       setLoading(true);
       setError('');
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/reports/submitted`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -139,7 +139,7 @@ function ApprovalAOR() {
 
   const handleGenerateAOR = async (reportId) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`http://localhost:8000/api/reports/${reportId}/download`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
@@ -164,7 +164,7 @@ function ApprovalAOR() {
   const handlePreview = async (report) => {
     try {
       // Fetch the latest data for this report before showing the modal
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const reportResponse = await axios.get(`${API_BASE}/api/reports/${report.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -191,7 +191,7 @@ function ApprovalAOR() {
 
   const handleApprove = async (reportId) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.put(`${API_BASE}/api/reports/${reportId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -204,7 +204,7 @@ function ApprovalAOR() {
 
   const handleReject = async (reportId) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.put(`${API_BASE}/api/reports/${reportId}/reject`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });

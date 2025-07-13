@@ -139,7 +139,7 @@ function Reports() {
     setLoading(true);
     setError('');
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const res = await axios.get('http://localhost:8000/api/reports', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -222,7 +222,7 @@ function Reports() {
     setSubmitting(true);
     setSuccessMessage('');
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
         setError('Authentication token not found. Please log in again.');
         setSubmitting(false);
@@ -407,7 +407,7 @@ function Reports() {
       onConfirm: async () => {
         setConfirm({ ...confirm, open: false });
         try {
-          const token = localStorage.getItem('authToken');
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           await axios.delete(`http://localhost:8000/api/reports/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });

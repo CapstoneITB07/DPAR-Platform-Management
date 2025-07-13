@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faGraduationCap, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faCertificate, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -664,7 +664,7 @@ function AdminDashboard() {
   const fetchDashboardData = async (specificAssociateId = null, isPolling = false) => {
     if (!isPolling) setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const [evaluationsRes, associatesRes, statisticsRes] = await Promise.all([
         axios.get('http://localhost:8000/api/evaluations', { headers: { Authorization: `Bearer ${token}` } }),
         axios.get('http://localhost:8000/api/associate-groups', { headers: { Authorization: `Bearer ${token}` } }),
@@ -1023,7 +1023,10 @@ function AdminDashboard() {
             <div className="dashboard-section recent-evaluations">
               <div className="recent-evaluations-header-row">
                 <h3 className="recent-evaluations-title"><FontAwesomeIcon icon={faUserCheck} /> Recent Evaluations</h3>
-                <button className="generate-certificate-btn" onClick={handleOpenCertificateModal}>Generate Certificate</button>
+                <button className="generate-certificate-btn" onClick={handleOpenCertificateModal}>
+                  <span className="generate-certificate-text">Generate Certificate</span>
+                  <FontAwesomeIcon icon={faCertificate} className="generate-certificate-icon" />
+                </button>
               </div>
               {renderRecentEvaluations()}
               {renderAllEvaluationsModal()}

@@ -299,6 +299,36 @@ function VolunteerList() {
     }
   };
 
+  // Mobile-friendly touch handlers
+  const handleTouchStart = (e) => {
+    // Add touch feedback for mobile
+    e.currentTarget.style.transform = 'scale(0.98)';
+  };
+
+  const handleTouchEnd = (e) => {
+    // Remove touch feedback
+    e.currentTarget.style.transform = 'scale(1)';
+  };
+
+  // Responsive table row click handler
+  const handleRowClick = (volunteer, e) => {
+    // Prevent modal on action buttons or checkbox
+    if (
+      e.target.closest('.action-btn') ||
+      e.target.closest('input[type="checkbox"]')
+    ) return;
+    
+    // On mobile, show details modal instead of edit
+    if (window.innerWidth <= 768) {
+      setDetailsVolunteer(volunteer);
+      setShowDetailsModal(true);
+    } else {
+      // On desktop, allow both click and action buttons
+      setDetailsVolunteer(volunteer);
+      setShowDetailsModal(true);
+    }
+  };
+
   const exportToCSV = () => {
     const headers = ['Name', 'Gender', 'Contact Info', 'Address', 'Expertise', 'Location'];
     const csvContent = [
@@ -332,51 +362,65 @@ function VolunteerList() {
           onConfirm={confirm.onConfirm}
           onCancel={() => setConfirm({ ...confirm, open: false })}
         />
-        <div className="header-section">
+        {/* Header Row: Title and Count */}
+        <div className="header-row">
           <div className="header-left">
             <h2>VOLUNTEER LIST</h2>
             <span className="volunteer-count">{filteredVolunteers.length} volunteer(s)</span>
           </div>
-          
-          <div className="header-actions">
-            <div className="search-container">
-              <div className="search-bar">
-                <FontAwesomeIcon icon={faSearch} />
-                <input
-                  type="text"
-                  placeholder="Search volunteers..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
+        </div>
+        {/* Controls Row: Search, Filter, Actions */}
+        <div className="controls-row">
+          <div className="search-container">
+            <div className="search-bar">
+              <FontAwesomeIcon icon={faSearch} />
+              <input
+                type="text"
+                placeholder="Search volunteers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button 
+              className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <FontAwesomeIcon icon={faFilter} />
+              Filters
+            </button>
+          </div>
+          <div className="action-buttons">
+            {selectedVolunteers.length > 0 && (
               <button 
-                className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
-                onClick={() => setShowFilters(!showFilters)}
+                className="bulk-delete-btn" 
+                onClick={handleBulkDelete}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
               >
-                <FontAwesomeIcon icon={faFilter} />
-                Filters
+                <FontAwesomeIcon icon={faTrash} />
+                Delete ({selectedVolunteers.length})
               </button>
-            </div>
-
-            <div className="action-buttons">
-              {selectedVolunteers.length > 0 && (
-                <button className="bulk-delete-btn" onClick={handleBulkDelete}>
-                  <FontAwesomeIcon icon={faTrash} />
-                  Delete ({selectedVolunteers.length})
-                </button>
-              )}
-              
-              <button className="export-btn" onClick={exportToCSV}>
-                <FontAwesomeIcon icon={faDownload} />
-                Export
-              </button>
-              
-              <button className="add-member-btn" onClick={() => setShowModal(true)}>
-                <FontAwesomeIcon icon={faUserPlus} />
-                Add Volunteer
-              </button>
-            </div>
+            )}
+            <button 
+              className="export-btn" 
+              onClick={exportToCSV}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <FontAwesomeIcon icon={faDownload} />
+              Export
+            </button>
+            <button 
+              className="add-member-btn" 
+              onClick={() => setShowModal(true)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <FontAwesomeIcon icon={faUserPlus} />
+              Add <span className="add-volunteer-text"> Volunteer</span>
+            </button>
           </div>
         </div>
 
@@ -416,7 +460,7 @@ function VolunteerList() {
                 className="clear-filters-btn"
                 onClick={() => setFilters({ type: '', location: '', expertise: '', gender: '' })}
               >
-                Clear Filters
+                Clear Filter
               </button>
             </div>
           </div>
@@ -428,124 +472,128 @@ function VolunteerList() {
             <p>Loading volunteers...</p>
           </div>
         ) : (
-          <div className="table-container">
-            <table className="volunteer-table">
-              <thead>
-                <tr>
-                  <th className="checkbox-column">
-                    <input
-                      type="checkbox"
-                      checked={selectedVolunteers.length === filteredVolunteers.length && filteredVolunteers.length > 0}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th onClick={() => handleSort('name')} className="sortable">
-                    <div className="th-content">
-                      Name
-                      <FontAwesomeIcon icon={getSortIcon('name')} />
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('gender')} className="sortable">
-                    <div className="th-content">
-                      Gender
-                      <FontAwesomeIcon icon={getSortIcon('gender')} />
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('contact_info')} className="sortable">
-                    <div className="th-content">
-                      Contact Info
-                      <FontAwesomeIcon icon={getSortIcon('contact_info')} />
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('address')} className="sortable">
-                    <div className="th-content">
-                      Address
-                      <FontAwesomeIcon icon={getSortIcon('address')} />
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('expertise')} className="sortable">
-                    <div className="th-content">
-                      Expertise
-                      <FontAwesomeIcon icon={getSortIcon('expertise')} />
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('location')} className="sortable">
-                    <div className="th-content">
-                      Location
-                      <FontAwesomeIcon icon={getSortIcon('location')} />
-                    </div>
-                  </th>
-                  <th style={{textAlign: 'left'}}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredVolunteers.length === 0 ? (
+          <>
+            <div className="table-container">
+              <table className="volunteer-table">
+                <thead>
                   <tr>
-                    <td colSpan="8" className="no-data">
-                      <div className="no-data-content">
-                        <FontAwesomeIcon icon={faUserPlus} />
-                        <p>No volunteers found</p>
+                    <th className="checkbox-column">
+                      <input
+                        type="checkbox"
+                        checked={selectedVolunteers.length === filteredVolunteers.length && filteredVolunteers.length > 0}
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                    <th onClick={() => handleSort('name')} className="sortable">
+                      <div className="th-content">
+                        Name
+                        <FontAwesomeIcon icon={getSortIcon('name')} />
                       </div>
-                    </td>
+                    </th>
+                    <th onClick={() => handleSort('gender')} className="sortable">
+                      <div className="th-content">
+                        Gender
+                        <FontAwesomeIcon icon={getSortIcon('gender')} />
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('contact_info')} className="sortable">
+                      <div className="th-content">
+                        Contact Info
+                        <FontAwesomeIcon icon={getSortIcon('contact_info')} />
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('address')} className="sortable">
+                      <div className="th-content">
+                        Address
+                        <FontAwesomeIcon icon={getSortIcon('address')} />
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('expertise')} className="sortable">
+                      <div className="th-content">
+                        Expertise
+                        <FontAwesomeIcon icon={getSortIcon('expertise')} />
+                      </div>
+                    </th>
+                    <th onClick={() => handleSort('location')} className="sortable">
+                      <div className="th-content">
+                        Location
+                        <FontAwesomeIcon icon={getSortIcon('location')} />
+                      </div>
+                    </th>
+                    <th style={{textAlign: 'left'}}>Actions</th>
                   </tr>
-                ) : (
-                  filteredVolunteers.map(volunteer => (
-                    <tr
-                      key={volunteer.id}
-                      className={selectedVolunteers.includes(volunteer.id) ? 'selected' : ''}
-                      onClick={e => {
-                        // Prevent modal on action buttons or checkbox
-                        if (
-                          e.target.closest('.action-btn') ||
-                          e.target.closest('input[type="checkbox"]')
-                        ) return;
-                        setDetailsVolunteer(volunteer);
-                        setShowDetailsModal(true);
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={selectedVolunteers.includes(volunteer.id)}
-                          onChange={() => handleSelectVolunteer(volunteer.id)}
-                          onClick={e => e.stopPropagation()}
-                        />
-                      </td>
-                      <td className="name-cell">
-                        <div className="volunteer-name">
-                          <span className="name-text">{volunteer.name}</span>
-                        </div>
-                      </td>
-                      <td>{volunteer.gender}</td>
-                      <td className="contact-cell">{volunteer.contact_info}</td>
-                      <td className="address-cell">{volunteer.address}</td>
-                      <td>{volunteer.expertise}</td>
-                      <td>{volunteer.location}</td>
-                      <td className="actions-cell">
-                        <div className="action-buttons">
-                          <button
-                            className="action-btn edit-btn"
-                            onClick={e => { e.stopPropagation(); handleEdit(volunteer); }}
-                            title="Edit"
-                          >
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-                          <button
-                            className="action-btn delete-btn"
-                            onClick={e => { e.stopPropagation(); handleDelete(volunteer.id); }}
-                            title="Delete"
-                          >
-                            <FontAwesomeIcon icon={faTrash} />
-                          </button>
+                </thead>
+                <tbody>
+                  {filteredVolunteers.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="no-data">
+                        <div className="no-data-content">
+                          <FontAwesomeIcon icon={faUserPlus} />
+                          <p>No volunteers found</p>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    filteredVolunteers.map(volunteer => (
+                      <tr
+                        key={volunteer.id}
+                        className={selectedVolunteers.includes(volunteer.id) ? 'selected' : ''}
+                        onClick={(e) => handleRowClick(volunteer, e)}
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedVolunteers.includes(volunteer.id)}
+                            onChange={() => handleSelectVolunteer(volunteer.id)}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        </td>
+                        <td className="name-cell">
+                          <div className="volunteer-name">
+                            <span className="name-text">{volunteer.name}</span>
+                          </div>
+                        </td>
+                        <td>{volunteer.gender}</td>
+                        <td className="contact-cell">{volunteer.contact_info}</td>
+                        <td className="address-cell">{volunteer.address}</td>
+                        <td>{volunteer.expertise}</td>
+                        <td>{volunteer.location}</td>
+                        <td className="actions-cell">
+                          <div className="action-buttons">
+                            <button
+                              className="action-btn edit-btn"
+                              onClick={e => { e.stopPropagation(); handleEdit(volunteer); }}
+                              onTouchStart={handleTouchStart}
+                              onTouchEnd={handleTouchEnd}
+                              title="Edit"
+                            >
+                              <FontAwesomeIcon icon={faEdit} />
+                            </button>
+                            <button
+                              className="action-btn delete-btn"
+                              onClick={e => { e.stopPropagation(); handleDelete(volunteer.id); }}
+                              onTouchStart={handleTouchStart}
+                              onTouchEnd={handleTouchEnd}
+                              title="Delete"
+                            >
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile volunteer count */}
+            <div className="volunteer-count-mobile">
+              {filteredVolunteers.length} volunteer(s)
+            </div>
+          </>
         )}
 
         {/* Add/Edit Modal */}
@@ -664,6 +712,17 @@ function VolunteerList() {
                     </div>
                   </div>
                   <div className="volunteer-modal-actions">
+                    <button
+                      type="button"
+                      className="modal-close-btn-mobile"
+                      onClick={() => {
+                        setShowModal(false);
+                        setSelectedVolunteer(null);
+                        resetForm();
+                      }}
+                    >
+                      Close
+                    </button>
                     <button type="submit" className="volunteer-save-btn">
                       {selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer'}
                     </button>

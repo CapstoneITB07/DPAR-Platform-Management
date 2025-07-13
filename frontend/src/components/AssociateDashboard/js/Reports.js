@@ -83,6 +83,7 @@ function Reports() {
   const [progress, setProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [selectedReports, setSelectedReports] = useState([]);
 
   const steps = [
     'Header',
@@ -474,6 +475,47 @@ function Reports() {
     setProgress((currentStep + 1) / totalSteps * 100);
   };
 
+  // Bulk delete handler
+  const handleBulkDelete = () => {
+    setConfirm({
+      open: true,
+      message: `Are you sure you want to delete ${selectedReports.length} report(s)?`,
+      onConfirm: async () => {
+        setConfirm({ ...confirm, open: false });
+        try {
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+          await Promise.all(
+            selectedReports.map(id =>
+              axios.delete(`http://localhost:8000/api/reports/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+            )
+          );
+          setSelectedReports([]);
+          fetchReports();
+        } catch {
+          setError('Failed to delete some reports');
+        }
+      }
+    });
+  };
+  // Select all handler
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedReports(reports.map(r => r.id));
+    } else {
+      setSelectedReports([]);
+    }
+  };
+  // Select single handler
+  const handleSelectReport = (id) => {
+    setSelectedReports(prev =>
+      prev.includes(id)
+        ? prev.filter(rid => rid !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
     <AssociateLayout>
       <div className="reports-container">
@@ -481,25 +523,26 @@ function Reports() {
           <div className="header-left">
             <h2>REPORTS</h2>
           </div>
-          
           <div className="header-actions">
-            <div className="search-container">
-              <div className="search-bar">
-                <FontAwesomeIcon icon={faSearch} />
-                <input
-                  type="text"
-                  placeholder="Search reports..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+            <div className="search-bar">
+              <FontAwesomeIcon icon={faSearch} />
+              <input
+                type="text"
+                placeholder="Search reports..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-
-            <div className="action-buttons">
+            <div className="button-row">
+              {selectedReports.length > 0 && (
+                <button className="bulk-delete-btn" onClick={handleBulkDelete}>
+                  <FontAwesomeIcon icon={faTrash} /> Delete ({selectedReports.length})
+                </button>
+              )}
               <button className="add-report-btn" onClick={openCreateModal}>
                 <FontAwesomeIcon icon={faPlus} />
                 Make a Report
-          </button>
+              </button>
             </div>
           </div>
         </div>
@@ -541,71 +584,86 @@ function Reports() {
               </div>
             ) : (
               <table className="reports-table">
-              <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+                <thead>
+                  <tr>
+                    <th className="checkbox-col">
+                      <input
+                        type="checkbox"
+                        checked={selectedReports.length === reports.length && reports.length > 0}
+                        onChange={handleSelectAll}
+                      />
+                    </th>
+                    <th className="title-col">TITLE</th>
+                    <th className="description-col">DESCRIPTION</th>
+                    <th className="status-col">STATUS</th>
+                    <th className="actions-col">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
                   {reports
                     .filter(report => 
                       report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       report.description?.toLowerCase().includes(searchTerm.toLowerCase())
                     )
                     .map(report => (
-                    <tr key={report.id}>
-                      <td className="title-cell">{report.title}</td>
-                      <td className="description-cell">{report.description}</td>
-                      <td className="status-cell">
-                        <span className={`status-badge ${report.status}`}>
-                        {report.status?.toUpperCase() || 'DRAFT'}
-                      </span>
-                    </td>
-                      <td className="actions-cell">
-                      <div className="action-buttons-row">
-                        {report.status === 'draft' && (
-                          <>
-                            <button
-                              className="action-btn delete-btn"
-                              onClick={() => handleDelete(report.id)}
-                              title="Delete"
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                            <button
-                              className="action-btn edit-btn"
-                              onClick={() => handleEdit(report)}
-                              title="Edit"
-                            >
-                              <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button
-                              className="action-btn send-btn"
-                              onClick={() => handleSubmit(true, report)}
-                              title="Send"
-                            >
-                              <FontAwesomeIcon icon={faPaperPlane} />
-                            </button>
-                          </>
-                        )}
-                        {report.status !== 'draft' && (
-                          <button
-                            className="action-btn delete-btn"
-                            onClick={() => handleDelete(report.id)}
-                            title="Delete"
-                          >
-                            <FontAwesomeIcon icon={faTrash} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <tr key={report.id} className={selectedReports.includes(report.id) ? 'selected' : ''}>
+                        <td className="checkbox-col">
+                          <input
+                            type="checkbox"
+                            checked={selectedReports.includes(report.id)}
+                            onChange={() => handleSelectReport(report.id)}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        </td>
+                        <td className="title-cell title-col">{report.title}</td>
+                        <td className="description-cell description-col">{report.description}</td>
+                        <td className="status-cell status-col">
+                          <span className={`status-badge ${report.status}`}>
+                            {report.status?.toUpperCase() || 'DRAFT'}
+                          </span>
+                        </td>
+                        <td className="actions-cell actions-col">
+                          <div className="action-buttons-row">
+                            {report.status === 'draft' && (
+                              <>
+                                <button
+                                  className="action-btn delete-btn"
+                                  onClick={() => handleDelete(report.id)}
+                                  title="Delete"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                                <button
+                                  className="action-btn edit-btn"
+                                  onClick={() => handleEdit(report)}
+                                  title="Edit"
+                                >
+                                  <FontAwesomeIcon icon={faEdit} />
+                                </button>
+                                <button
+                                  className="action-btn send-btn"
+                                  onClick={() => handleSubmit(true, report)}
+                                  title="Send"
+                                >
+                                  <FontAwesomeIcon icon={faPaperPlane} />
+                                </button>
+                              </>
+                            )}
+                            {report.status !== 'draft' && (
+                              <button
+                                className="action-btn delete-btn"
+                                onClick={() => handleDelete(report.id)}
+                                title="Delete"
+                              >
+                                <FontAwesomeIcon icon={faTrash} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             )}
           </div>
         )}

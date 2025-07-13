@@ -59,9 +59,11 @@ function Notification() {
     <AssociateLayout>
       <div className="notification-container">
         <div className="notification-header">
-          <h2 className="notification-title">
-            NOTIFICATION/INBOX
-          </h2>
+          <div className="notification-title-row">
+            <h2 className="notification-title">
+              NOTIFICATION/INBOX
+            </h2>
+          </div>
           <div className="notification-search">
             <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />

@@ -7,6 +7,16 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
 
+// Notification component
+function Notification({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="associate-groups-success-notification">
+      {message}
+    </div>
+  );
+}
+
 const API_BASE = 'http://localhost:8000';
 
 // Set the app element for React Modal
@@ -41,6 +51,7 @@ function AssociateGroups() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [popupError, setPopupError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
+  const [notification, setNotification] = useState('');
 
   const fetchAssociates = async () => {
     try {
@@ -262,7 +273,7 @@ function AssociateGroups() {
       });
       // --- 4. After successful submission, reset error modal state ---
       if (response.status === 201 || response.status === 200) {
-        setMessage('Associate added successfully!');
+        setNotification('Associate group added successfully!');
         setShowAddModal(false);
         setCurrentStep(1);
         setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
@@ -271,7 +282,7 @@ function AssociateGroups() {
         setShowPopup(false); // Reset error modal
         setPopupError('');
         fetchAssociates();
-        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setNotification(''), 2000);
       }
     } catch (error) {
       const backendMsg = error.response?.data?.errors?.email?.[0] || error.response?.data?.message || 'Failed to add associate. Please try again.';
@@ -305,13 +316,13 @@ function AssociateGroups() {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       if (response.status === 200) {
-        setMessage('Associate updated successfully!');
+        setNotification('Associate group updated successfully!');
         setShowEditModal(false);
         setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
         setLogoFile(null);
         setError('');
         fetchAssociates();
-        setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setNotification(''), 2000);
       }
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to update associate. Please try again.');
@@ -330,6 +341,8 @@ function AssociateGroups() {
         setSelectedAssociate(null);
         setShowProfileModal(false);
       }
+      setNotification('Associate group removed successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (error) {
       setError('Failed to remove associate group.');
     }
@@ -462,6 +475,7 @@ function AssociateGroups() {
 
   return (
     <AdminLayout>
+      <Notification message={notification} onClose={() => setNotification('')} />
       <div className="associate-groups-header">
         <h2 className="main-header">ASSOCIATE GROUPS:</h2>
         <div>

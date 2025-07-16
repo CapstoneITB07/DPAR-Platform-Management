@@ -5,6 +5,16 @@ import '../css/ApprovalAOR.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload, faTimes, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
 
+// Notification component
+function Notification({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="approval-aor-success-notification">
+      {message}
+    </div>
+  );
+}
+
 const organizationLogos = {
   'AKLMV': '/Assets/AKLMV.png',
   'ALERT': '/Assets/ALERT.png',
@@ -50,6 +60,7 @@ function ApprovalAOR() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
     fetchReports();
@@ -152,6 +163,8 @@ function ApprovalAOR() {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      setNotification('AOR downloaded successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to generate AOR');
     }
@@ -197,6 +210,8 @@ function ApprovalAOR() {
       });
       await fetchReports(); // Refresh the list after approval
       setShowPreviewModal(false);
+      setNotification('Report approved successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to approve report');
     }
@@ -210,6 +225,8 @@ function ApprovalAOR() {
       });
       await fetchReports(); // Refresh the list after rejection
       setShowPreviewModal(false);
+      setNotification('Report rejected successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to reject report');
     }
@@ -230,6 +247,7 @@ function ApprovalAOR() {
 
   return (
     <AdminLayout>
+      <Notification message={notification} onClose={() => setNotification('')} />
       <div className="approval-aor-container">
         <div className="header-section">
           <h2 className="main-header">APPROVAL / AOR</h2>

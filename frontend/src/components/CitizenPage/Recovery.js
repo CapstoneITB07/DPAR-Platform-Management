@@ -37,7 +37,7 @@ function Recovery() {
           <li onClick={handleHomeClick}>HOME</li>
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
             <span onClick={handleDropdown} style={{ background: dropdownOpen ? '#a52a1a' : 'transparent' }}>
-              PREPAREDNESS <span style={{ fontSize: 12 }}>▼</span>
+              CATEGORIES <span style={{ fontSize: 12 }}>▼</span>
             </span>
             {dropdownOpen && (
               <ul className="citizen-navbar-dropdown-list">

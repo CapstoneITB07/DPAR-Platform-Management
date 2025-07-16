@@ -29,6 +29,25 @@ class AssociateGroupController extends Controller
         }
     }
 
+    public function publicIndex()
+    {
+        try {
+            $groups = AssociateGroup::select('id', 'name', 'type', 'director', 'description', 'logo', 'email', 'phone')
+                ->get();
+            
+            // Add full URLs for logos
+            foreach ($groups as $group) {
+                if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
+                    $group->logo = Storage::url($group->logo);
+                }
+            }
+            return response()->json($groups);
+        } catch (\Exception $e) {
+            Log::error('Error fetching public associate groups: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch associate groups'], 500);
+        }
+    }
+
     public function show($id)
     {
         try {

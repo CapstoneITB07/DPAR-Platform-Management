@@ -5,6 +5,27 @@
   background: #f7f8fa;
 }
 
+.approval-aor-success-notification {
+  position: fixed;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 16px 32px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 550;
+  z-index: 2000;
+  box-shadow: 0 4px 24px rgba(46,125,50,0.18), 0 2px 8px rgba(0,0,0,0.10);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 90vw;
+  letter-spacing: 0.2px;
+}
+
 .header-section {
   display: flex;
   justify-content: space-between;

@@ -97,8 +97,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     >
       <div className="certificate-modal-card">
         <div className="certificate-modal-header-red">
-          <h2 style={{margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center'}}>
-            <span role="img" aria-label="award" style={{marginRight: 10, fontSize: 28}}>🏆</span>
+          <h2 style={{margin: 0, fontWeight: 700}}>
             Generate Certificate
           </h2>
           <button className="certificate-modal-close" onClick={onClose}>&times;</button>
@@ -139,7 +138,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
               <h3 className="preview-certificate-header" style={{ textAlign: 'left', fontWeight: 700, fontSize: '1.15rem', margin: '0 0 12px 4px', letterSpacing: '0.5px' }}>
                 Certificate Preview
               </h3>
-              <div className="certificate-preview-section enhanced-preview-section">
+              <div className="certificate-preview-section enhanced-preview-section" style={{ marginBottom: 8 }}>
                 <CertificatePreview data={localData} logoUrl={logoUrl} />
                 {downloading && (
                   <div className="enhanced-spinner-overlay">
@@ -148,7 +147,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                 )}
               </div>
               {/* Main Action Button */}
-              <div className="certificate-modal-actions enhanced-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
+              <div className="certificate-modal-actions enhanced-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                 <button
                   className="download-btn enhanced-download-btn"
                   style={{

@@ -4,6 +4,17 @@ import { FaEllipsisH } from 'react-icons/fa';
 import axios from 'axios';
 import '../css/TrainingProgram.css';
 
+// Notification component
+function Notification({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="training-success-notification">
+      {message}
+      <button className="training-success-notification-close" onClick={onClose}>&times;</button>
+    </div>
+  );
+}
+
 function TrainingProgram() {
   const [programs, setPrograms] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -16,6 +27,7 @@ function TrainingProgram() {
   const [expanded, setExpanded] = useState({});
   const [showDescModal, setShowDescModal] = useState(false);
   const [descModalContent, setDescModalContent] = useState({ title: '', description: '' });
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
     fetchPrograms();
@@ -87,13 +99,16 @@ function TrainingProgram() {
         await axios.post(`http://localhost:8000/api/training-programs/${editId}?_method=PUT`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+        setNotification('Training program updated successfully!');
       } else {
         await axios.post('http://localhost:8000/api/training-programs', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+        setNotification('Training program added successfully!');
       }
       closeModal();
       fetchPrograms();
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to save training program');
     } finally {
@@ -107,6 +122,8 @@ function TrainingProgram() {
       const id = programs[index].id;
       await axios.delete(`http://localhost:8000/api/training-programs/${id}`);
       fetchPrograms();
+      setNotification('Training program deleted successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to delete training program');
     }
@@ -125,6 +142,7 @@ function TrainingProgram() {
 
   return (
     <AdminLayout>
+      <Notification message={notification} onClose={() => setNotification('')} />
       <div className="training-header-row">
         <h2 className="main-header">TRAINING PROGRAMS</h2>
         <button className="training-add-btn" onClick={() => openModal()}>

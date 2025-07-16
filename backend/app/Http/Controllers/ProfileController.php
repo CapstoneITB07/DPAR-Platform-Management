@@ -18,8 +18,9 @@ class ProfileController extends Controller
         return response()->json([
             'name' => $user->name,
             'email' => $user->email,
-            'organization' => $associateGroup ? $associateGroup->name : null,
+            'organization' => $associateGroup ? $associateGroup->name : $user->organization,
             'logo' => $associateGroup ? $associateGroup->logo : null,
+            'profile_picture_url' => $user->profile_picture ? asset('storage/' . $user->profile_picture) : null,
         ]);
     }
 
@@ -31,26 +32,32 @@ class ProfileController extends Controller
 
         try {
             $user = Auth::user();
-            $associateGroup = AssociateGroup::where('user_id', $user->id)->first();
-
-            if (!$associateGroup) {
-                return response()->json(['message' => 'Associate group not found'], 404);
-            }
 
             if ($request->hasFile('profile_picture')) {
-                // Delete old logo if exists
-                if ($associateGroup->logo && Storage::exists('public/' . $associateGroup->logo)) {
-                    Storage::delete('public/' . $associateGroup->logo);
+                // Delete old profile picture if exists
+                if ($user->profile_picture && Storage::exists('public/' . $user->profile_picture)) {
+                    Storage::delete('public/' . $user->profile_picture);
                 }
 
-                // Store new logo
-                $path = $request->file('profile_picture')->store('logos', 'public');
-                $associateGroup->logo = $path;
-                $associateGroup->save();
+                // Store new profile picture
+                $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+                $user->profile_picture = $path;
+                $user->save();
+
+                // If user is an associate group leader, also update the associate group logo
+                $associateGroup = AssociateGroup::where('user_id', $user->id)->first();
+                if ($associateGroup) {
+                    // Delete old logo if exists
+                    if ($associateGroup->logo && Storage::exists('public/' . $associateGroup->logo)) {
+                        Storage::delete('public/' . $associateGroup->logo);
+                    }
+                    $associateGroup->logo = $path;
+                    $associateGroup->save();
+                }
 
                 return response()->json([
                     'message' => 'Profile picture updated successfully',
-                    'logo' => Storage::url($path)
+                    'profile_picture_url' => asset('storage/' . $path)
                 ]);
             }
 

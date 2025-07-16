@@ -6,6 +6,17 @@ import { faSearch, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/Evaluation.css';
 import { getLogoUrl } from '../../../utils/url';
 
+// Notification component
+function Notification({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="evaluation-success-notification">
+      {message}
+      <button className="evaluation-success-notification-close" onClick={onClose}>&times;</button>
+    </div>
+  );
+}
+
 const KPI_WEIGHTS = {
   'Volunteer Participation': 0.25,
   'Task Accommodation and Completion': 0.30,
@@ -73,6 +84,7 @@ function Evaluation() {
   const [showEvaluationModal, setShowEvaluationModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [evaluationData, setEvaluationData] = useState({});
+  const [notification, setNotification] = useState('');
   const API_BASE = 'http://localhost:8000';
 
   useEffect(() => {
@@ -175,6 +187,8 @@ function Evaluation() {
       window.refreshNow = true; // Trigger dashboard refresh
       setShowEvaluationModal(false);
       fetchAssociates(); // Refresh the list
+      setNotification('Evaluation submitted successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to submit evaluation');
     }
@@ -193,6 +207,7 @@ function Evaluation() {
 
   return (
     <AdminLayout>
+      <Notification message={notification} onClose={() => setNotification('')} />
       <div className="evaluation-container">
         <div className="header-section">
           <h2 className="main-header">ASSOCIATE EVALUATION</h2>

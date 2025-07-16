@@ -109,9 +109,34 @@ function CitizenPage() {
             </span>
             {dropdownOpen && (
               <ul className="citizen-navbar-dropdown-list">
-                {['TYPHOON', 'PANDEMIC', 'FIRE', 'FLOOD'].map((item) => (
-                  <li key={item} onClick={closeDropdown} onMouseDown={e => e.preventDefault()}>{item}</li>
-                ))}
+                <li onClick={() => {
+                  closeDropdown();
+                  setFade(true);
+                  setTimeout(() => {
+                    navigate('/citizen/mitigation');
+                  }, 350);
+                }} data-tooltip="Prevent and reduce disaster risks through long-term strategies">MITIGATION</li>
+                <li onClick={() => {
+                  closeDropdown();
+                  setFade(true);
+                  setTimeout(() => {
+                    navigate('/citizen/preparedness');
+                  }, 350);
+                }} data-tooltip="Develop plans and acquire resources for effective disaster response">PREPAREDNESS</li>
+                <li onClick={() => {
+                  closeDropdown();
+                  setFade(true);
+                  setTimeout(() => {
+                    navigate('/citizen/response');
+                  }, 350);
+                }} data-tooltip="Immediate actions during disasters to save lives and protect property">RESPONSE</li>
+                <li onClick={() => {
+                  closeDropdown();
+                  setFade(true);
+                  setTimeout(() => {
+                    navigate('/citizen/recovery');
+                  }, 350);
+                }} data-tooltip="Long-term rebuilding and restoration of communities">RECOVERY</li>
               </ul>
             )}
           </li>

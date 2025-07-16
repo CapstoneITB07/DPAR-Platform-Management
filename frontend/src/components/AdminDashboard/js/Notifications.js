@@ -3,6 +3,16 @@ import AdminLayout from './AdminLayout';
 import dayjs from 'dayjs';
 import '../css/Notifications.css';
 
+// Notification component
+function Notification({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="notifications-success-notification">
+      {message}
+    </div>
+  );
+}
+
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -14,6 +24,7 @@ function Notifications() {
   const [filterType, setFilterType] = useState('none');
   const [filterValue, setFilterValue] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
+  const [notification, setNotification] = useState('');
 
   // Fetch notifications
   useEffect(() => {
@@ -93,6 +104,8 @@ function Notifications() {
       });
       if (!res.ok) throw new Error('Failed to create notification');
       setShowModal(false);
+      setNotification('Notification created successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -108,6 +121,8 @@ function Notifications() {
       headers: { Authorization: `Bearer ${token}` }
     });
     setNotifications(notifications.filter(n => n.id !== id));
+    setNotification('Notification removed successfully!');
+    setTimeout(() => setNotification(''), 2000);
   };
 
   // Helper to filter notifications
@@ -139,6 +154,7 @@ function Notifications() {
 
   return (
     <AdminLayout>
+      <Notification message={notification} onClose={() => setNotification('')} />
       <h2 className="main-header" style={{ textAlign: 'left', marginLeft: 24 }}>NOTIFICATIONS</h2>
       {/* Filter Bar */}
       <div className="notification-filter-bar">

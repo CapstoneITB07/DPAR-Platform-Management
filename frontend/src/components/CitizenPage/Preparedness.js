@@ -36,8 +36,31 @@ function Preparedness() {
         <ul className="citizen-navbar-list">
           <li onClick={handleHomeClick}>HOME</li>
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
-            <span onClick={handleDropdown} style={{ background: dropdownOpen ? '#a52a1a' : 'transparent' }}>
-              PREPAREDNESS <span style={{ fontSize: 12 }}>▼</span>
+            <span 
+              onClick={handleDropdown} 
+              className="citizen-dropdown-button"
+              style={{ 
+                background: dropdownOpen ? '#a52a1a' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: dropdownOpen ? '2px solid #fff' : '2px solid transparent',
+                boxShadow: dropdownOpen ? '0 4px 12px rgba(165,42,26,0.3)' : 'none'
+              }}
+            >
+              <span style={{ fontWeight: 'bold', fontSize: '16px' }}>CATEGORIES</span>
+              <span 
+                style={{ 
+                  fontSize: '10px',
+                  transition: 'transform 0.3s ease',
+                  transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                }}
+              >
+                ▼
+              </span>
             </span>
             {dropdownOpen && (
               <ul className="citizen-navbar-dropdown-list">

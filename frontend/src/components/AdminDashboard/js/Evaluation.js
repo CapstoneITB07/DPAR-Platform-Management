@@ -12,7 +12,6 @@ function Notification({ message, onClose }) {
   return (
     <div className="evaluation-success-notification">
       {message}
-      <button className="evaluation-success-notification-close" onClick={onClose}>&times;</button>
     </div>
   );
 }

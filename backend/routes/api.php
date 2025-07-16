@@ -33,6 +33,9 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 // Public GET route for announcements
 Route::get('/announcements', [AnnouncementController::class, 'index']);
 
+// Public GET route for associate groups
+Route::get('/associate-groups/public', [AssociateGroupController::class, 'publicIndex']);
+
 // Protected Routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

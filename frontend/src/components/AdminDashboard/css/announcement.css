@@ -430,38 +430,25 @@
 
 .announcement-success-notification {
   position: fixed;
-  top: 24px;
+  top: 48px;
   left: 50%;
   transform: translateX(-50%);
-  background: #A11C22;
-  color: #fff;
-  padding: 14px 32px 14px 20px;
-  border-radius: 8px;
-  font-size: 1.08rem;
-  font-weight: 600;
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 16px 32px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 550;
   z-index: 2000;
-  box-shadow: 0 2px 12px rgba(161,28,34,0.13), 0 1.5px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 24px rgba(46,125,50,0.18), 0 2px 8px rgba(0,0,0,0.10);
   display: flex;
   align-items: center;
-  gap: 16px;
-  min-width: 220px;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 90vw;
+  letter-spacing: 0.2px;
 }
-.announcement-success-notification-close {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 1.3rem;
-  font-weight: bold;
-  cursor: pointer;
-  margin-left: 10px;
-  line-height: 1;
-  padding: 0 4px;
-  border-radius: 4px;
-  transition: background 0.18s;
-}
-.announcement-success-notification-close:hover {
-  background: rgba(255,255,255,0.18);
-}
+
 
 @media (max-width: 700px) {
   .announcement-list {

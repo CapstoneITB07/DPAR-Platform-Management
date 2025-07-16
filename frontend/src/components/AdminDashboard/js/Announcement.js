@@ -10,7 +10,6 @@ function Notification({ message, onClose }) {
   return (
     <div className="announcement-success-notification">
       {message}
-      <button className="announcement-success-notification-close" onClick={onClose}>&times;</button>
     </div>
   );
 }

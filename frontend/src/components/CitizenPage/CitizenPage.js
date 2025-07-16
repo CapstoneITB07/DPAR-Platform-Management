@@ -30,6 +30,17 @@ function CitizenPage() {
   // For announcement modal
   const [modalAnn, setModalAnn] = useState(null);
 
+  // Associate groups state
+  const [associateGroups, setAssociateGroups] = useState([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [groupsError, setGroupsError] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+
+  // For training program modal
+  const [selectedProgram, setSelectedProgram] = useState(null);
+  const [showProgramModal, setShowProgramModal] = useState(false);
+
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
 
@@ -46,6 +57,7 @@ function CitizenPage() {
 
   useEffect(() => {
     fetchPrograms();
+    fetchAssociateGroups();
   }, []);
 
   const fetchPrograms = async () => {
@@ -57,6 +69,19 @@ function CitizenPage() {
       setError('Failed to load training programs');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch associate groups (no auth required for public view)
+  const fetchAssociateGroups = async () => {
+    setGroupsLoading(true);
+    try {
+      const res = await axios.get('http://localhost:8000/api/associate-groups/public');
+      setAssociateGroups(res.data);
+    } catch (err) {
+      setGroupsError('Failed to load associate groups');
+    } finally {
+      setGroupsLoading(false);
     }
   };
 
@@ -96,6 +121,50 @@ function CitizenPage() {
   // Track which announcement is expanded
   const [expandedAnn, setExpandedAnn] = useState({});
 
+  // Helper function to get logo URL (similar to AssociateGroups.js)
+  const getLogoUrl = (logoPath) => {
+    if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
+    
+    // Handle storage URLs
+    if (logoPath.startsWith('logos/')) {
+      return `http://localhost:8000/storage/${logoPath}`;
+    }
+    
+    // Handle full URLs
+    if (logoPath.startsWith('http')) {
+      return logoPath;
+    }
+    
+    // Handle storage paths
+    if (logoPath.startsWith('/storage/')) {
+      return `http://localhost:8000${logoPath}`;
+    }
+    
+    // Handle asset paths
+    if (logoPath.startsWith('/Assets/')) {
+      return `${window.location.origin}${logoPath}`;
+    }
+    
+    // If it's just a filename, assume it's in storage
+    if (!logoPath.includes('/')) {
+      return `http://localhost:8000/storage/logos/${logoPath}`;
+    }
+    
+    return logoPath;
+  };
+
+  // Handle group click to show details
+  const handleGroupClick = (group) => {
+    setSelectedGroup(group);
+    setShowGroupModal(true);
+  };
+
+  // Handle training program click to show details
+  const handleProgramClick = (program) => {
+    setSelectedProgram(program);
+    setShowProgramModal(true);
+  };
+
   return (
     <div className="citizen-page-wrapper">
       {/* Navigation Bar */}
@@ -104,8 +173,31 @@ function CitizenPage() {
         <ul className="citizen-navbar-list">
           <li style={{ background: '#a52a1a' }}>HOME</li>
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
-            <span onClick={handleDropdown} style={{ background: dropdownOpen ? '#a52a1a' : 'transparent' }}>
-              PREPAREDNESS <span style={{ fontSize: 12 }}>▼</span>
+            <span 
+              onClick={handleDropdown} 
+              className="citizen-dropdown-button"
+              style={{ 
+                background: dropdownOpen ? '#a52a1a' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: dropdownOpen ? '2px solid #fff' : '2px solid transparent',
+                boxShadow: dropdownOpen ? '0 4px 12px rgba(165,42,26,0.3)' : 'none'
+              }}
+            >
+              <span style={{ fontWeight: 'bold', fontSize: '16px' }}>CATEGORIES</span>
+              <span 
+                style={{ 
+                  fontSize: '10px',
+                  transition: 'transform 0.3s ease',
+                  transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                }}
+              >
+                ▼
+              </span>
             </span>
             {dropdownOpen && (
               <ul className="citizen-navbar-dropdown-list">
@@ -115,28 +207,28 @@ function CitizenPage() {
                   setTimeout(() => {
                     navigate('/citizen/mitigation');
                   }, 350);
-                }} data-tooltip="Prevent and reduce disaster risks through long-term strategies">MITIGATION</li>
+                }}>MITIGATION</li>
                 <li onClick={() => {
                   closeDropdown();
                   setFade(true);
                   setTimeout(() => {
                     navigate('/citizen/preparedness');
                   }, 350);
-                }} data-tooltip="Develop plans and acquire resources for effective disaster response">PREPAREDNESS</li>
+                }}>PREPAREDNESS</li>
                 <li onClick={() => {
                   closeDropdown();
                   setFade(true);
                   setTimeout(() => {
                     navigate('/citizen/response');
                   }, 350);
-                }} data-tooltip="Immediate actions during disasters to save lives and protect property">RESPONSE</li>
+                }}>RESPONSE</li>
                 <li onClick={() => {
                   closeDropdown();
                   setFade(true);
                   setTimeout(() => {
                     navigate('/citizen/recovery');
                   }, 350);
-                }} data-tooltip="Long-term rebuilding and restoration of communities">RECOVERY</li>
+                }}>RECOVERY</li>
               </ul>
             )}
           </li>
@@ -148,22 +240,33 @@ function CitizenPage() {
           </li>
         </ul>
       </nav>
-      {/* Main Content: 3 Rows of Organization Logos */}
+      {/* Main Content: Dynamic Organization Logos */}
       <div className="citizen-logos-container" style={{ opacity: fade ? 0 : 1 }}>
-        <div className="citizen-logos-row">
-          {[
-            'SPAG.png', 'RMFB.png', 'ALERT.png', 'MRAP.png', 'MSG - ERU.png',
-            'DRRM - Y.png', 'AKLMV.png', 'JKM.png', 'KAIC.png', 'CCVOL.png',
-            'FRONTLINER.png', 'CRRG.png', 'TF.png', 'SRG.png', 'PCGA 107th.png'
-          ].map(img => (
-            <img
-              key={img}
-              src={process.env.PUBLIC_URL + '/Assets/' + img}
-              alt={img.replace('.png', '')}
-              className="citizen-logo-img"
-            />
-          ))}
-        </div>
+        {groupsLoading ? (
+          <div className="citizen-loading-message">Loading organizations...</div>
+        ) : groupsError ? (
+          <div className="citizen-error-message">{groupsError}</div>
+        ) : associateGroups.length === 0 ? (
+          <div className="citizen-no-data-message">No organizations available.</div>
+        ) : (
+          <div className="citizen-logos-row">
+            {associateGroups.map(group => (
+              <img
+                key={group.id}
+                src={getLogoUrl(group.logo)}
+                alt={group.name}
+                className="citizen-logo-img"
+                onClick={() => handleGroupClick(group)}
+                style={{ cursor: 'pointer' }}
+                onError={(e) => {
+                  console.error('Error loading image:', e.target.src);
+                  e.target.src = `${window.location.origin}/Assets/disaster_logo.png`;
+                }}
+                title={`Click to view ${group.name} details`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Announcements Section */}
@@ -239,34 +342,49 @@ function CitizenPage() {
           ) : programs.length === 0 ? (
             <p className="citizen-no-data-message">No training programs available.</p>
           ) : (
-            programs.map((program) => (
-              <div
-                key={program.id}
-                className="citizen-training-card"
-              >
-                {/* Date and Location Bar */}
-                <div className="citizen-training-header">
-                  {program.date && <span>{program.date}</span>}
-                  {program.location && <span className="citizen-training-location">| {program.location}</span>}
+            programs.map((program) => {
+              const isLong = program.description && program.description.split(' ').length > 15;
+              return (
+                <div
+                  key={program.id}
+                  className="citizen-training-card"
+                >
+                  {/* Date and Location Bar */}
+                  <div className="citizen-training-header">
+                    {program.date && <span>{program.date}</span>}
+                    {program.location && <span className="citizen-training-location">| {program.location}</span>}
+                  </div>
+                  {/* Title and Description */}
+                  <div className="citizen-training-content">
+                    <div className="citizen-training-title-card">{program.name}</div>
+                    <div className="citizen-training-desc">
+                      {getPreview(program.description, 15)}
+                      {isLong && (
+                        <button
+                          className="citizen-training-see-more"
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleProgramClick(program);
+                          }}
+                        >
+                          See more
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Post image */}
+                  {program.image_url && (
+                    <img
+                      src={program.image_url}
+                      alt="Program"
+                      className="citizen-training-img"
+                      onClick={() => openImageModal(program.image_url)}
+                      title="Click to view larger"
+                    />
+                  )}
                 </div>
-                {/* Title and Description */}
-                <div className="citizen-training-content">
-                  <div className="citizen-training-title-card">{program.name}</div>
-                  <div className="citizen-training-date">{program.date}{program.location && <span> &bull; {program.location}</span>}</div>
-                  <div className="citizen-training-desc">{program.description}</div>
-                </div>
-                {/* Post image */}
-                {program.image_url && (
-                  <img
-                    src={program.image_url}
-                    alt="Program"
-                    className="citizen-training-img"
-                    onClick={() => openImageModal(program.image_url)}
-                    title="Click to view larger"
-                  />
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -291,6 +409,81 @@ function CitizenPage() {
             )}
             <div className="citizen-modal-title">{modalAnn.title}</div>
             <div className="citizen-modal-desc">{modalAnn.description}</div>
+          </div>
+        </div>
+      )}
+      {/* Organization Details Modal */}
+      {showGroupModal && selectedGroup && (
+        <div className="citizen-modal-overlay" onClick={() => setShowGroupModal(false)}>
+          <div className="citizen-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="citizen-modal-close" onClick={() => setShowGroupModal(false)}>&times;</button>
+            <div className="citizen-group-modal-header">
+              <img
+                src={getLogoUrl(selectedGroup.logo)}
+                alt={selectedGroup.name}
+                className="citizen-group-modal-logo"
+                onError={(e) => {
+                  e.target.src = `${window.location.origin}/Assets/disaster_logo.png`;
+                }}
+              />
+              <h3 className="citizen-group-modal-title">{selectedGroup.name}</h3>
+            </div>
+            <div className="citizen-group-modal-info">
+              <div className="citizen-group-info-row">
+                <strong>Director:</strong> {selectedGroup.director}
+              </div>
+              <div className="citizen-group-info-row">
+                <strong>Type:</strong> {selectedGroup.type}
+              </div>
+              <div className="citizen-group-info-row">
+                <strong>Members:</strong> {selectedGroup.members_count || 0}
+              </div>
+            </div>
+            <div className="citizen-group-modal-description">
+              <strong>Description:</strong>
+              <p>{selectedGroup.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Training Program Details Modal */}
+      {showProgramModal && selectedProgram && (
+        <div className="citizen-modal-overlay" onClick={() => setShowProgramModal(false)}>
+          <div className="citizen-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="citizen-modal-close" onClick={() => setShowProgramModal(false)}>&times;</button>
+            <div className="citizen-program-modal-header">
+              <h3 className="citizen-program-modal-title">{selectedProgram.name}</h3>
+            </div>
+            <div className="citizen-program-modal-info">
+              {selectedProgram.date && (
+                <div className="citizen-program-info-row">
+                  <strong>Date:</strong> {selectedProgram.date}
+                </div>
+              )}
+              {selectedProgram.location && (
+                <div className="citizen-program-info-row">
+                  <strong>Location:</strong> {selectedProgram.location}
+                </div>
+              )}
+            </div>
+            <div className="citizen-program-modal-description">
+              <strong>Description:</strong>
+              <p>{selectedProgram.description}</p>
+            </div>
+            {selectedProgram.image_url && (
+              <div className="citizen-program-modal-image">
+                <img
+                  src={selectedProgram.image_url}
+                  alt="Training Program"
+                  className="citizen-program-modal-img"
+                  onClick={() => {
+                    setShowProgramModal(false);
+                    openImageModal(selectedProgram.image_url);
+                  }}
+                  title="Click to view larger"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -53,10 +53,20 @@
 }
 .citizen-navbar-dropdown-list li {
   list-style: none;
-  padding: 10px 20px;
+  padding: 8px 12px;
   cursor: pointer;
   font-weight: bold;
   border-bottom: 1px solid #eee;
+  transition: background-color 0.2s ease;
+}
+
+.citizen-navbar-dropdown-list li:hover {
+  background-color: #f8f9fa;
+}
+
+.citizen-navbar-dropdown-list li.active {
+  background-color: #a52a1a;
+  color: white;
 }
 
 .citizen-logos-container {
@@ -1052,5 +1062,470 @@
 @media (max-width: 700px) {
   .citizen-training-section {
     margin-bottom: 48px;
+  }
+}
+
+/* Styles for Disaster Management Phase Pages */
+.citizen-content-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 40px auto 0 auto;
+  padding: 0 20px;
+  flex: 1;
+}
+
+.citizen-phase-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 40px 0;
+  background: linear-gradient(135deg, #8B1409 0%, #a52a1a 100%);
+  color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(139, 20, 9, 0.2);
+}
+
+.citizen-phase-header h1 {
+  font-size: 48px;
+  font-weight: 800;
+  margin: 0 0 16px 0;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.citizen-phase-subtitle {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+  opacity: 0.9;
+  letter-spacing: 1px;
+}
+
+.citizen-phase-content {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  margin-bottom: 40px;
+}
+
+.citizen-phase-section {
+  margin-bottom: 40px;
+}
+
+.citizen-phase-section:last-child {
+  margin-bottom: 0;
+}
+
+.citizen-phase-section h2 {
+  color: #8B1409;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  border-bottom: 3px solid #a52a1a;
+  padding-bottom: 10px;
+}
+
+.citizen-phase-section h3 {
+  color: #a52a1a;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.citizen-phase-section h4 {
+  color: #8B1409;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.citizen-phase-section p {
+  color: #444;
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 15px;
+}
+
+.citizen-strategies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.citizen-strategy-card {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.citizen-strategy-card:hover {
+  border-color: #a52a1a;
+  box-shadow: 0 4px 16px rgba(165, 42, 26, 0.15);
+  transform: translateY(-2px);
+}
+
+.citizen-strategy-card h3 {
+  color: #8B1409;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.citizen-strategy-card p {
+  color: #555;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.citizen-action-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.citizen-action-list li {
+  color: #444;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding-left: 24px;
+  position: relative;
+}
+
+.citizen-action-list li:before {
+  content: "•";
+  color: #a52a1a;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  font-size: 18px;
+}
+
+.citizen-individual-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.citizen-step-item {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #a52a1a;
+}
+
+.citizen-step-item h4 {
+  color: #8B1409;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.citizen-step-item p {
+  color: #555;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.citizen-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.citizen-benefit-item {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 16px;
+  color: #856404;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.citizen-benefit-item strong {
+  color: #8B1409;
+  font-weight: 600;
+}
+
+.citizen-checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.citizen-checklist-category {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #e9ecef;
+}
+
+.citizen-checklist-category h3 {
+  color: #8B1409;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.citizen-disaster-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.citizen-disaster-type {
+  background: #fff5f5;
+  border: 2px solid #fed7d7;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.citizen-disaster-type h3 {
+  color: #8B1409;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.citizen-recovery-priorities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.citizen-priority-category {
+  background: #f0f8ff;
+  border: 2px solid #bee3f8;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.citizen-priority-category h3 {
+  color: #8B1409;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.citizen-volunteer-roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.citizen-role-item {
+  background: #f0fff4;
+  border: 2px solid #c6f6d5;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.citizen-role-item h4 {
+  color: #8B1409;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.citizen-role-item p {
+  color: #555;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+/* Enhanced Phase Page Styles */
+.citizen-phase-highlight {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 2px solid #fdcb6e;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  color: #856404;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.citizen-success-stories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.citizen-story-card {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.citizen-story-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #a52a1a 0%, #8B1409 100%);
+}
+
+.citizen-story-card:hover {
+  border-color: #a52a1a;
+  box-shadow: 0 4px 16px rgba(165, 42, 26, 0.15);
+  transform: translateY(-2px);
+}
+
+.citizen-story-card h3 {
+  color: #8B1409;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.citizen-story-card p {
+  color: #555;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Enhanced Dropdown with Tooltips */
+.citizen-navbar-dropdown-list li {
+  position: relative;
+}
+
+.citizen-navbar-dropdown-list li::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  margin-left: 10px;
+  max-width: 200px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.citizen-navbar-dropdown-list li::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #333;
+  margin-left: 5px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.citizen-navbar-dropdown-list li:hover::after,
+.citizen-navbar-dropdown-list li:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Responsive Design for Phase Pages */
+@media (max-width: 768px) {
+  .citizen-content-container {
+    padding: 0 15px;
+  }
+  
+  .citizen-phase-header {
+    padding: 30px 20px;
+    margin-bottom: 30px;
+  }
+  
+  .citizen-phase-header h1 {
+    font-size: 36px;
+  }
+  
+  .citizen-phase-subtitle {
+    font-size: 18px;
+  }
+  
+  .citizen-phase-content {
+    padding: 25px;
+    margin-bottom: 30px;
+  }
+  
+  .citizen-phase-section h2 {
+    font-size: 24px;
+  }
+  
+  .citizen-strategies-grid,
+  .citizen-individual-steps,
+  .citizen-benefits-grid,
+  .citizen-checklist-grid,
+  .citizen-disaster-types,
+  .citizen-recovery-priorities,
+  .citizen-volunteer-roles {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .citizen-phase-header {
+    padding: 25px 15px;
+  }
+  
+  .citizen-phase-header h1 {
+    font-size: 28px;
+  }
+  
+  .citizen-phase-subtitle {
+    font-size: 16px;
+  }
+  
+  .citizen-phase-content {
+    padding: 20px;
+  }
+  
+  .citizen-phase-section h2 {
+    font-size: 22px;
+  }
+  
+  .citizen-strategy-card,
+  .citizen-step-item,
+  .citizen-benefit-item,
+  .citizen-checklist-category,
+  .citizen-disaster-type,
+  .citizen-priority-category,
+  .citizen-role-item {
+    padding: 16px;
   }
 } 

@@ -4,6 +4,17 @@ import axios from 'axios';
 import { FaEllipsisH } from 'react-icons/fa';
 import '../css/announcement.css';
 
+// Notification component
+function Notification({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="announcement-success-notification">
+      {message}
+      <button className="announcement-success-notification-close" onClick={onClose}>&times;</button>
+    </div>
+  );
+}
+
 function Announcement() {
   const [announcements, setAnnouncements] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -17,6 +28,7 @@ function Announcement() {
   const [editId, setEditId] = useState(null);
   const [showDescModal, setShowDescModal] = useState(false);
   const [descModalContent, setDescModalContent] = useState({ title: '', description: '', photo_url: null });
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
     fetchAnnouncements();
@@ -59,11 +71,13 @@ function Announcement() {
         await axios.post(`http://localhost:8000/api/announcements/${editId}?_method=PUT`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
         });
+        setNotification('Announcement updated successfully!');
       } else {
         // Create mode
         await axios.post('http://localhost:8000/api/announcements', formData, {
           headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
         });
+        setNotification('Announcement created successfully!');
       }
       setShowModal(false);
       setTitle('');
@@ -72,6 +86,7 @@ function Announcement() {
       setPreview(null);
       setEditId(null);
       fetchAnnouncements();
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to post announcement');
     } finally {
@@ -101,6 +116,8 @@ function Announcement() {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchAnnouncements();
+      setNotification('Announcement deleted successfully!');
+      setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to delete announcement');
     }
@@ -109,6 +126,7 @@ function Announcement() {
 
   return (
     <AdminLayout>
+      <Notification message={notification} onClose={() => setNotification('')} />
       <div className="announcement-header-row">
         <h2 className="main-header">ANNOUNCEMENT</h2>
         <button

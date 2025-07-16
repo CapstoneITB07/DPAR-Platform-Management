@@ -30,27 +30,39 @@ class NotificationController extends Controller
     // Create a new notification and assign to associates
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'volunteers_needed' => 'nullable|integer',
-            'associate_ids' => 'nullable|array', // If null, send to all associates
-        ]);
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'expertise_requirements' => 'required|array|min:1',
+                'expertise_requirements.*.expertise' => 'required|string|max:255',
+                'expertise_requirements.*.count' => 'required|integer|min:1',
+                'associate_ids' => 'nullable|array', // If null, send to all associates
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed', ['errors' => $e->errors()]);
+            return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
+        }
 
         $user = $request->user();
         DB::beginTransaction();
         try {
-            $volunteersNeeded = $request->volunteers_needed !== null ? (int)$request->volunteers_needed : null;
+            Log::info('Creating notification', [
+                'title' => $request->title,
+                'expertise_requirements' => $request->expertise_requirements,
+                'associate_ids' => $request->associate_ids
+            ]);
+            
             $notification = Notification::create([
                 'title' => $request->title,
                 'description' => $request->description,
                 'created_by' => $user->id,
-                'volunteers_needed' => $volunteersNeeded,
+                'expertise_requirements' => $request->expertise_requirements,
             ]);
 
             // Get associate group leaders
             $query = User::where('role', 'associate_group_leader');
-            if ($request->associate_ids) {
+            if ($request->associate_ids && !empty($request->associate_ids)) {
                 $query->whereIn('id', $request->associate_ids);
             }
             $associates = $query->get();
@@ -65,8 +77,16 @@ class NotificationController extends Controller
             return response()->json(['message' => 'Notification created and sent.', 'notification' => $notification], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Notification creation failed: ' . $e->getMessage(), ['exception' => $e]);
-            return response()->json(['error' => 'Failed to create notification', 'details' => $e->getMessage()], 500);
+            Log::error('Notification creation failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Failed to create notification', 
+                'details' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
         }
     }
 
@@ -86,8 +106,16 @@ class NotificationController extends Controller
     // Update a notification (admin only)
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'expertise_requirements' => 'required|array|min:1',
+            'expertise_requirements.*.expertise' => 'required|string|max:255',
+            'expertise_requirements.*.count' => 'required|integer|min:1',
+        ]);
+        
         $notification = Notification::findOrFail($id);
-        $notification->update($request->only(['title', 'description', 'volunteers_needed']));
+        $notification->update($request->only(['title', 'description', 'expertise_requirements']));
         return response()->json(['message' => 'Notification updated.', 'notification' => $notification]);
     }
 
@@ -99,20 +127,76 @@ class NotificationController extends Controller
         return response()->json(['message' => 'Notification deleted.']);
     }
 
-    // Associate responds to a notification
+    // Associate responds to a notification with volunteer selections
     public function respond(Request $request, $id)
     {
         $request->validate([
             'response' => 'required|in:accept,decline',
+            'volunteer_selections' => 'nullable|array',
+            'volunteer_selections.*.expertise' => 'required_with:volunteer_selections|string|max:255',
+            'volunteer_selections.*.count' => 'required_with:volunteer_selections|integer|min:1',
         ]);
+        
         $user = $request->user();
         $recipient = NotificationRecipient::where('notification_id', $id)
             ->where('user_id', $user->id)
             ->firstOrFail();
+            
         $recipient->update([
             'response' => $request->response,
+            'volunteer_selections' => $request->volunteer_selections,
             'responded_at' => now(),
         ]);
+        
         return response()->json(['message' => 'Response recorded.']);
+    }
+
+    // Get volunteer progress for a notification
+    public function getVolunteerProgress($id)
+    {
+        $notification = Notification::with('recipients.user')->findOrFail($id);
+        
+        if (!$notification->expertise_requirements) {
+            return response()->json(['progress' => []]);
+        }
+        
+        $progress = [];
+        $totalProgress = [];
+        
+        // Initialize progress tracking for each expertise requirement
+        foreach ($notification->expertise_requirements as $requirement) {
+            $expertise = $requirement['expertise'];
+            $required = $requirement['count'];
+            $progress[$expertise] = [
+                'required' => $required,
+                'provided' => 0,
+                'remaining' => $required,
+                'groups' => []
+            ];
+        }
+        
+        // Calculate progress from responses
+        foreach ($notification->recipients as $recipient) {
+            if ($recipient->response === 'accept' && $recipient->volunteer_selections) {
+                foreach ($recipient->volunteer_selections as $selection) {
+                    $expertise = $selection['expertise'];
+                    $count = $selection['count'];
+                    
+                    if (isset($progress[$expertise])) {
+                        $progress[$expertise]['provided'] += $count;
+                        $progress[$expertise]['remaining'] = max(0, $progress[$expertise]['required'] - $progress[$expertise]['provided']);
+                        
+                        // Track which group provided these volunteers
+                        $groupName = $recipient->user ? $recipient->user->name : 'Unknown Group';
+                        $progress[$expertise]['groups'][] = [
+                            'group' => $groupName,
+                            'count' => $count
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return response()->json(['progress' => $progress]);
     }
 }

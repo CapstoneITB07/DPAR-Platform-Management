@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/announcements', AnnouncementController::class)->except(['index']);
     Route::apiResource('/notifications', NotificationController::class);
     Route::post('/notifications/{id}/respond', [NotificationController::class, 'respond']);
+    Route::get('/notifications/{id}/volunteer-progress', [NotificationController::class, 'getVolunteerProgress']);
 
     // Reports routes - specific routes first
     Route::get('/reports/submitted', [ReportController::class, 'getSubmittedReports']);

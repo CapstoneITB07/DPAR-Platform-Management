@@ -12,6 +12,7 @@ function Notification() {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [reload, setReload] = useState(false);
+  const [volunteerSelections, setVolunteerSelections] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -31,25 +32,58 @@ function Notification() {
       });
   }, [reload]);
 
-  const handleRespond = async (id, response) => {
+  const handleRespond = async (id, response, selections = null) => {
     setLoading(true);
     setError('');
     try {
+      const payload = { response };
+      if (response === 'accept' && selections) {
+        payload.volunteer_selections = selections;
+      }
+      
       const res = await fetch(`http://localhost:8000/api/notifications/${id}/respond`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}`
         },
-        body: JSON.stringify({ response })
+        body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error('Failed to respond');
       setLoading(false);
       setReload(r => !r);
+      setVolunteerSelections({});
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
+  };
+
+  const handleVolunteerSelection = (notificationId, expertise, count) => {
+    setVolunteerSelections(prev => ({
+      ...prev,
+      [notificationId]: {
+        ...prev[notificationId],
+        [expertise]: parseInt(count) || 0
+      }
+    }));
+  };
+
+  const getVolunteerSelections = (notificationId) => {
+    const selections = volunteerSelections[notificationId] || {};
+    return Object.entries(selections)
+      .filter(([_, count]) => count > 0)
+      .map(([expertise, count]) => ({ expertise, count }));
+  };
+
+  const canAccept = (notification) => {
+    if (!notification.expertise_requirements) return true;
+    
+    const selections = getVolunteerSelections(notification.id);
+    const totalSelected = selections.reduce((sum, sel) => sum + sel.count, 0);
+    
+    // Only require at least one expertise type to be selected
+    return totalSelected > 0;
   };
 
   // Search logic only
@@ -107,92 +141,139 @@ function Notification() {
             </div>
           );
         })()}
-        {loading ? (
+        
+        {loading && (
           <div className="notification-loading">
-            Loading inbox ...
+            <div className="notification-loading-spinner"></div>
+            <span>Loading notifications...</span>
           </div>
-        ) : (
+        )}
+        
+        {!loading && (
           <>
             {filteredNotifications.length === 0 ? (
               <div className="notification-empty">
-                No notifications found.
+                <div className="notification-empty-icon">📭</div>
+                <div className="notification-empty-text">No notifications found</div>
               </div>
             ) : (
-              <div style={{ width: '100%' }}>
-                {filteredNotifications.map((n, idx) => {
+              <div className="notification-list">
+                {filteredNotifications.map(n => {
                   const userId = Number(localStorage.getItem('userId'));
                   const myRecipient = n.recipients && n.recipients.find(r => r.user_id === userId);
                   const isOpen = expanded === n.id;
-            return (
-                    <div
-                      key={n.id}
-                      className={`notification-item ${isOpen ? 'expanded' : ''}`}
-                      onClick={() => setExpanded(isOpen ? null : n.id)}
-              >
-                <div className="notification-item-header">
-                  <div style={{ textAlign: 'left' }}>
-                    <div className="notification-item-title">{n.title}</div>
-                          <div className="notification-item-date">{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
-                        </div>
-                    <div className={`notification-item-arrow ${isOpen ? 'expanded' : ''}`}>
-                          ▼
-                  </div>
-                </div>
+                  
+                  return (
+                    <div key={n.id} className="notification-item">
+                      <div className="notification-item-header" onClick={() => setExpanded(isOpen ? null : n.id)}>
+                        <div className="notification-item-title">{n.title}</div>
+                        <div className="notification-item-date">{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+                        <div className="notification-item-arrow">{isOpen ? '▲' : '▼'}</div>
+                      </div>
                       {isOpen && (
-                <div className="notification-item-content">
+                        <div className="notification-item-content">
                           <div className="notification-item-description">{n.description}</div>
-                  <ProgressBar recipients={n.recipients} />
-                  <div className="notification-item-recipients">
-                    {n.recipients && n.recipients.length > 1 && (
-                      <>
-                        <span className="notification-item-recipients-label">Recipients:</span> <span className="notification-item-recipients-value">{n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}</span>
-                      </>
-                    )}
-                  </div>
-                  {myRecipient && !myRecipient.response && (
-                    <div className="notification-item-actions">
-                      <button className="notification-item-action accept" onClick={e => { e.stopPropagation(); handleRespond(n.id, 'accept'); }} disabled={loading}>ACCEPT</button>
-                      <button className="notification-item-action decline" onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} disabled={loading}>DECLINE</button>
+                          
+                          {/* Volunteer Requirements Display */}
+                          {n.expertise_requirements && n.expertise_requirements.length > 0 && (
+                            <div className="notification-volunteer-requirements">
+                              <div className="volunteer-requirements-title">Volunteers Needed:</div>
+                              {n.expertise_requirements.map((req, index) => (
+                                <div key={index} className="volunteer-requirement-display">
+                                  <span className="expertise-name">{req.expertise}</span>
+                                  <span className="expertise-count">{req.count} needed</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="notification-item-recipients">
+                            {n.recipients && n.recipients.length > 1 && (
+                              <>
+                                <span className="notification-item-recipients-label">Recipients:</span> <span className="notification-item-recipients-value">{n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}</span>
+                              </>
+                            )}
+                          </div>
+                          
+                          {myRecipient && !myRecipient.response && (
+                            <div className="notification-item-actions">
+                              {/* Volunteer Selection Form */}
+                              {n.expertise_requirements && n.expertise_requirements.length > 0 && (
+                                <div className="volunteer-selection-form">
+                                  <div className="volunteer-selection-title">How many volunteers can you provide?</div>
+                                  <div className="volunteer-selection-row">
+                                    {n.expertise_requirements.map((req, index) => (
+                                      <div key={index} className="volunteer-selection-item">
+                                        <div className="volunteer-selection-label">{req.expertise}:</div>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max={req.count}
+                                          value={volunteerSelections[n.id]?.[req.expertise] || ''}
+                                          onChange={(e) => handleVolunteerSelection(n.id, req.expertise, e.target.value)}
+                                          className="volunteer-selection-input"
+                                          placeholder={`0-${req.count}`}
+                                        />
+                                        <div className="volunteer-selection-max">max {req.count}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div className="notification-item-action-buttons">
+                                <button 
+                                  className="notification-item-action accept" 
+                                  onClick={e => { 
+                                    e.stopPropagation(); 
+                                    const selections = getVolunteerSelections(n.id);
+                                    handleRespond(n.id, 'accept', selections.length > 0 ? selections : null); 
+                                  }} 
+                                  disabled={loading || !canAccept(n)}
+                                >
+                                  {canAccept(n) ? 'CONFIRM VOLUNTEERS' : 'SELECT AT LEAST ONE EXPERTISE'}
+                                </button>
+                                <button 
+                                  className="notification-item-action decline" 
+                                  onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} 
+                                  disabled={loading}
+                                >
+                                  DECLINE
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {myRecipient && myRecipient.response && (
+                            <div className="notification-item-response">
+                              <div className={`response-status ${myRecipient.response}`}>
+                                Action: {myRecipient.response.toUpperCase()}
+                              </div>
+                              {myRecipient.response === 'accept' && myRecipient.volunteer_selections && (
+                                <div className="volunteer-selections-display">
+                                  <div className="volunteer-selections-title">Your Volunteer Commitments:</div>
+                                  {myRecipient.volunteer_selections.map((selection, index) => (
+                                    <div key={index} className="volunteer-selection-display">
+                                      <span className="selection-expertise">{selection.expertise}</span>
+                                      <span className="selection-count">{selection.count} volunteers</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {myRecipient && myRecipient.response && (
-                    <div className={`notification-item-response ${myRecipient.response}`}>
-                              Action: {myRecipient.response.toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
             )}
           </>
         )}
         {error && <div style={{ color: '#e74c3c', fontSize: '15px', marginTop: 20, textAlign: 'center' }}>{error}</div>}
       </div>
     </AssociateLayout>
-  );
-}
-
-function ProgressBar({ recipients }) {
-  if (!recipients || recipients.length === 0) return null;
-  const total = recipients.length;
-  const responded = recipients.filter(r => r.response).length;
-  const percent = Math.round((responded / total) * 100);
-  const accepted = recipients.filter(r => r.response === 'accept').length;
-  const declined = recipients.filter(r => r.response === 'decline').length;
-  return (
-    <>
-      <div className="notification-item-progress-bar-text">
-        <span className="notification-item-progress-bar-text-confirmed">CONFIRMED {accepted} ASSOCIATES</span>
-        <span className="notification-item-progress-bar-text-declined">DECLINED {declined} ASSOCIATES</span>
-      </div>
-      <div className="notification-item-progress-bar">
-        <div className="notification-item-progress-bar-fill" style={{ width: percent + '%' }} />
-        <span className="notification-item-progress-bar-percentage">{percent}% RESPONDED</span>
-      </div>
-    </>
   );
 }
 

@@ -6,7 +6,12 @@ import '../css/Notifications.css';
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', volunteers_needed: '', associate_ids: [] });
+  const [form, setForm] = useState({ 
+    title: '', 
+    description: '', 
+    associate_ids: [],
+    expertise_requirements: [{ expertise: '', count: 1 }]
+  });
   const [associates, setAssociates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,7 +43,12 @@ function Notifications() {
   }, []);
 
   const openModal = () => {
-    setForm({ title: '', description: '', volunteers_needed: '', associate_ids: [] });
+    setForm({ 
+      title: '', 
+      description: '', 
+      associate_ids: [],
+      expertise_requirements: [{ expertise: '', count: 1 }]
+    });
     setSelectAll(false);
     setShowModal(true);
     setError('');
@@ -69,6 +79,33 @@ function Notifications() {
     }
   };
 
+  const addExpertiseRequirement = () => {
+    setForm(f => ({
+      ...f,
+      expertise_requirements: [...f.expertise_requirements, { expertise: '', count: 1 }]
+    }));
+  };
+
+  const removeExpertiseRequirement = (index) => {
+    setForm(f => ({
+      ...f,
+      expertise_requirements: f.expertise_requirements.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateExpertiseRequirement = (index, field, value) => {
+    setForm(f => ({
+      ...f,
+      expertise_requirements: f.expertise_requirements.map((req, i) => 
+        i === index ? { ...req, [field]: value } : req
+      )
+    }));
+  };
+
+  const calculateTotalVolunteers = () => {
+    return form.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0);
+  };
+
   useEffect(() => {
     setSelectAll(form.associate_ids.length === associates.length && associates.length > 0);
   }, [form.associate_ids, associates]);
@@ -77,10 +114,37 @@ function Notifications() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Validate that expertise requirements are provided
+    const hasExpertiseRequirements = form.expertise_requirements && form.expertise_requirements.length > 0;
+    
+    if (!hasExpertiseRequirements) {
+      setError('Please add at least one expertise requirement');
+      setLoading(false);
+      return;
+    }
+    
+    // Validate expertise requirements
+    if (hasExpertiseRequirements) {
+      const invalidRequirements = form.expertise_requirements.filter(req => !req.expertise.trim());
+      if (invalidRequirements.length > 0) {
+        setError('Please fill in all expertise fields');
+        setLoading(false);
+        return;
+      }
+    }
+    
+    // Ensure associate_ids is always an array
+    const associateIds = form.associate_ids && form.associate_ids.length > 0 
+      ? form.associate_ids.map(id => Number(id))
+      : [];
+    
     try {
       const payload = {
-        ...form,
-        associate_ids: form.associate_ids.map(id => Number(id)),
+        title: form.title,
+        description: form.description,
+        associate_ids: associateIds,
+        expertise_requirements: form.expertise_requirements,
       };
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const res = await fetch('http://localhost:8000/api/notifications', {
@@ -91,7 +155,12 @@ function Notifications() {
         },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Failed to create notification');
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to create notification');
+      }
+      
       setShowModal(false);
     } catch (err) {
       setError(err.message);
@@ -264,19 +333,54 @@ function Notifications() {
                       ))}
                   </div>
                 </div>
-                <div className="notification-form-group half-width">
-                  <label>Number of Volunteers Needed</label>
-                  <input 
-                    name="volunteers_needed" 
-                    type="number" 
-                    value={form.volunteers_needed} 
-                    onChange={handleChange} 
-                    placeholder="Enter number of volunteers needed"
-                    required
-                    className="enhanced-input"
-                    min={1}
-                    max={2000}
-                  />
+                <div className="notification-form-group full-width">
+                  <label>Numbers of Volunteers Needed</label>
+                  <div className="expertise-requirements-help">
+                    Specify volunteers needed by expertise (e.g., Medical, Engineering, Rescue).
+                  </div>
+                  <div className="expertise-requirements-container">
+                    {form.expertise_requirements.map((req, index) => (
+                      <div key={index} className="expertise-requirement-row">
+                        <input
+                          type="text"
+                          value={req.expertise}
+                          onChange={(e) => updateExpertiseRequirement(index, 'expertise', e.target.value)}
+                          placeholder="Enter expertise (e.g., Medical, Engineering, Rescue)"
+                          className="enhanced-input expertise-input"
+                        />
+                        <input
+                          type="number"
+                          value={req.count}
+                          onChange={(e) => updateExpertiseRequirement(index, 'count', parseInt(e.target.value) || 1)}
+                          placeholder="Count"
+                          className="enhanced-input count-input"
+                          min={1}
+                          max={100}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExpertiseRequirement(index)}
+                          className="remove-expertise-btn"
+                          title="Remove this requirement"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    <div className="expertise-actions-row">
+                      <div className="expertise-total-chip">
+                        <span className="expertise-total-label">Total:</span>
+                        <span className="expertise-total-value">{calculateTotalVolunteers()}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addExpertiseRequirement}
+                        className="add-expertise-btn"
+                      >
+                        + Add Expertise Requirement
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
               {error && <div className="notification-error-message enhanced-error-message">{error}</div>}
@@ -296,31 +400,262 @@ function Notifications() {
   );
 }
 
-function ProgressBar({ recipients }) {
-  if (!recipients || recipients.length === 0) return null;
-  const total = recipients.length;
-  const responded = recipients.filter(r => r.response).length;
-  const percent = Math.round((responded / total) * 100);
-  const accepted = recipients.filter(r => r.response === 'accept').length;
-  const declined = recipients.filter(r => r.response === 'decline').length;
+function VolunteerProgress({ notification }) {
+  const [progress, setProgress] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [hoveredSegment, setHoveredSegment] = useState(null);
+  const [hoveredLegend, setHoveredLegend] = useState(false);
+  const [activeTab, setActiveTab] = useState('contributing');
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch(`http://localhost:8000/api/notifications/${notification.id}/volunteer-progress`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        setProgress(data.progress || {});
+      } catch (error) {
+        console.error('Failed to fetch volunteer progress:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, [notification.id]);
+
+  if (loading) {
+    return <div className="volunteer-progress-loading">Loading volunteer progress...</div>;
+  }
+
+  if (!notification.expertise_requirements || notification.expertise_requirements.length === 0) {
+    return null;
+  }
+
+  // Calculate overall progress
+  const totalRequired = notification.expertise_requirements.reduce((sum, req) => sum + (parseInt(req.count) || 0), 0);
+  const totalProvided = Object.values(progress).reduce((sum, data) => sum + (data.provided || 0), 0);
+  const progressPercentage = totalRequired > 0 ? Math.min(100, (totalProvided / totalRequired) * 100) : 0;
+  const isComplete = totalProvided >= totalRequired;
+
+  // Collect all contributing groups with their expertise breakdown
+  const groupContributions = [];
+  Object.entries(progress).forEach(([expertise, data]) => {
+    if (data.groups) {
+      data.groups.forEach(group => {
+        const existingGroup = groupContributions.find(g => g.groupName === group.group);
+        if (existingGroup) {
+          existingGroup.contributions.push({
+            expertise: expertise,
+            count: group.count
+          });
+          existingGroup.totalCount += group.count;
+        } else {
+          groupContributions.push({
+            groupName: group.group,
+            totalCount: group.count,
+            contributions: [{
+              expertise: expertise,
+              count: group.count
+            }]
+          });
+        }
+      });
+    }
+  });
+
+  // Sort groups by total contribution
+  groupContributions.sort((a, b) => b.totalCount - a.totalCount);
+
+  // Get declined groups
+  const declinedGroups = notification.recipients 
+    ? notification.recipients
+        .filter(r => r.response === 'decline')
+        .map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`)
+    : [];
+
   return (
-    <>
-      <div className="notification-progress-labels">
-        <span className="notification-progress-accepted">CONFIRMED {accepted} ASSOCIATES</span>
-        <span className="notification-progress-declined">DECLINED {declined} ASSOCIATES</span>
+    <div className="volunteer-progress-container">
+      {/* <div className="volunteer-progress-title">Volunteer Progress</div> */}
+      
+      <div className="volunteer-progress-overview">
+        <div className="volunteer-progress-bar-container">
+          <div className="volunteer-progress-bar">
+            {/* Progress bar with left and right labels */}
+            <div className="progress-bar-with-labels">
+              <div className="progress-label-left">
+                <span className="label-text">Provided</span>
+                <span className="label-value">{totalProvided}</span>
+              </div>
+              
+              <div className="progress-bar-wrapper">
+                <div className="progress-segments">
+                  {/* Main progress fill */}
+                  <div 
+                    className="progress-fill"
+                    style={{
+                      width: `${progressPercentage}%`,
+                      backgroundColor: isComplete ? '#2ecc71' : '#f39c12'
+                    }}
+                  />
+                  
+                  {/* Group dividers */}
+                  {groupContributions.map((group, index) => {
+                    const segmentWidth = (group.totalCount / totalRequired) * 100;
+                    const segmentPosition = groupContributions.slice(0, index).reduce((sum, g) => sum + (g.totalCount / totalRequired) * 100, 0);
+                    
+                    return (
+                      <div
+                        key={group.groupName}
+                        className={`progress-segment ${hoveredSegment === group.groupName ? 'hovered' : ''}`}
+                        style={{
+                          width: `${segmentWidth}%`,
+                          left: `${segmentPosition}%`,
+                          position: 'absolute',
+                          height: '100%',
+                          zIndex: hoveredSegment === group.groupName ? 20 : 10
+                        }}
+                        onMouseEnter={() => {
+                          console.log('Hovering over:', group.groupName);
+                          setHoveredSegment(group.groupName);
+                        }}
+                        onMouseLeave={() => {
+                          console.log('Leaving:', group.groupName);
+                          setHoveredSegment(null);
+                        }}
+                      >
+                        {/* Divider line */}
+                        {index > 0 && (
+                          <div className="segment-divider" />
+                        )}
+                        
+                        {hoveredSegment === group.groupName && (
+                          <div className="segment-tooltip">
+                            <div className="tooltip-header">{group.groupName}</div>
+                            <div className="tooltip-content">
+                              {group.contributions.length > 0 ? (
+                                group.contributions.map((contribution, idx) => (
+                                  <div key={idx} className="tooltip-item">
+                                    {contribution.count} {contribution.expertise}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="tooltip-item">No volunteers provided</div>
+                              )}
+                            </div>
+                            <div className="tooltip-total">
+                              Total: {group.totalCount} volunteers
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="progress-label-right">
+                <span className="label-text">Remaining</span>
+                <span className="label-value">{Math.max(0, totalRequired - totalProvided)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="notification-progress-bar-bg">
-        <div className="notification-progress-bar-fill" style={{ width: percent + '%' }} />
-        <span className="notification-progress-bar-text">{percent}% RESPONDED</span>
+
+      {/* Simple Groups Section */}
+      <div className="groups-simple-container">
+        <div className="groups-simple-header">
+          <button 
+            className={`groups-decline-link ${activeTab === 'contributing' ? 'contributing' : 'declined'}`}
+            onClick={() => setActiveTab(activeTab === 'contributing' ? 'declined' : 'contributing')}
+          >
+            {activeTab === 'contributing' ? 'Contributing Groups' : 'Declined Groups'}
+          </button>
+          <button 
+            className={`groups-eye-button ${activeTab === 'contributing' ? 'contributing' : 'declined'}`}
+            onClick={() => setHoveredLegend(!hoveredLegend)}
+          >
+            {hoveredLegend ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                <path d="M2 2l20 20" stroke="currentColor" strokeWidth="2" fill="none"/>
+              </svg>
+            )}
+          </button>
+        </div>
+        
+        {hoveredLegend && (
+          <div className="groups-simple-content">
+            {activeTab === 'contributing' && (
+              <div className="group-legend">
+                <div className="legend-items">
+                  {groupContributions.length === 0 ? (
+                    <div className="legend-empty">No groups have contributed</div>
+                  ) : (
+                    groupContributions.map((group, index) => (
+                      <div key={group.groupName} className="legend-item">
+                        <span className="legend-name">{group.groupName}</span>
+                        <span className="legend-count">{group.totalCount} volunteers</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'declined' && (
+              <div className="group-legend declined">
+                <div className="legend-items">
+                  {declinedGroups.length === 0 ? (
+                    <div className="legend-empty">No groups have declined</div>
+                  ) : (
+                    declinedGroups.map((groupName, index) => (
+                      <div key={index} className="legend-item declined">
+                        <span className="legend-name">{groupName}</span>
+                        <span className="legend-count declined">Declined</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
+}
+
+// Helper function to generate colors for segments
+function getSegmentColor(index) {
+  const colors = [
+    '#3498db', // Blue
+    '#e74c3c', // Red
+    '#2ecc71', // Green
+    '#f39c12', // Orange
+    '#9b59b6', // Purple
+    '#1abc9c', // Teal
+    '#e67e22', // Dark Orange
+    '#34495e', // Dark Blue
+    '#f1c40f', // Yellow
+    '#e91e63'  // Pink
+  ];
+  return colors[index % colors.length];
 }
 
 function NotificationDropdown({ notification, onRemove }) {
   const [open, setOpen] = useState(false);
+  const [hoveredStatus, setHoveredStatus] = useState(null);
   const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
   const declined = notification.recipients ? notification.recipients.filter(r => r.response === 'decline').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
+  
   return (
     <div className={`notification-dropdown${open ? ' open' : ''}`}>
       <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)} style={{ textAlign: 'left' }}>
@@ -333,21 +668,56 @@ function NotificationDropdown({ notification, onRemove }) {
       {open && (
         <div className="notification-dropdown-body">
           <div className="notification-dropdown-description">{notification.description}</div>
-          <ProgressBar recipients={notification.recipients} />
-          <div className="notification-dropdown-lists">
-            <div className="notification-dropdown-list accepted">
+          
+          {/* Volunteer Requirements Display - Hover Popup */}
+            {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
+            <div className="volunteer-requirements-hover-container">
+              <div className="volunteer-requirements-trigger">
+                <span className="requirement-label">Volunteer Requirements</span>
+                  <span className="requirement-value">
+                  {notification.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                  </span>
+                </div>
+              <div className="volunteer-requirements-popup">
+                <div className="popup-content">
+                  {notification.expertise_requirements.map((req, index) => (
+                    <div key={index} className="popup-expertise-item">
+                      <span className="expertise-name">{req.expertise}</span>
+                      <span className="expertise-count">{req.count} needed</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <VolunteerProgress notification={notification} />
+          {/* <div className="notification-dropdown-lists">
+            <div 
+              className="notification-dropdown-list accepted"
+              onMouseEnter={() => setHoveredStatus('accepted')}
+              onMouseLeave={() => setHoveredStatus(null)}
+            >
               <div className="notification-dropdown-list-title accepted">Accepted ({accepted.length})</div>
+              {hoveredStatus === 'accepted' && (
               <ul>
                 {accepted.length === 0 ? <li className="notification-dropdown-list-empty">None</li> : accepted.map(name => <li key={name}>{name}</li>)}
               </ul>
+              )}
             </div>
-            <div className="notification-dropdown-list declined">
+            <div 
+              className="notification-dropdown-list declined"
+              onMouseEnter={() => setHoveredStatus('declined')}
+              onMouseLeave={() => setHoveredStatus(null)}
+            >
               <div className="notification-dropdown-list-title declined">Declined ({declined.length})</div>
+              {hoveredStatus === 'declined' && (
               <ul>
                 {declined.length === 0 ? <li className="notification-dropdown-list-empty">None</li> : declined.map(name => <li key={name}>{name}</li>)}
               </ul>
+              )}
             </div>
-          </div>
+          </div> */}
           <div className="notification-dropdown-actions">
             <button 
               onClick={() => onRemove(notification.id)} 

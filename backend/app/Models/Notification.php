@@ -13,7 +13,11 @@ class Notification extends Model
         'title',
         'description',
         'created_by', // admin user id
-        'volunteers_needed',
+        'expertise_requirements',
+    ];
+
+    protected $casts = [
+        'expertise_requirements' => 'array',
     ];
 
     public function recipients()

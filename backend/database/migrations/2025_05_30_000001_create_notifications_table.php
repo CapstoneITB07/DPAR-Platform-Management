@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->unsignedBigInteger('created_by');
             $table->integer('volunteers_needed')->nullable();
+            $table->json('expertise_requirements')->nullable(); // Store expertise-based requirements
             $table->timestamps();
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

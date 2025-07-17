@@ -165,38 +165,89 @@ function Notification() {
                   
                   return (
                     <div key={n.id} className="notification-item">
-                      <div className="notification-item-header" onClick={() => setExpanded(isOpen ? null : n.id)}>
-                        <div className="notification-item-title">{n.title}</div>
-                        <div className="notification-item-date">{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+                      <div className="notification-item-header" onClick={() => setExpanded(isOpen ? null : n.id)} style={{ textAlign: 'left' }}>
+                        <div style={{ textAlign: 'left' }}>
+                          <div className="notification-item-title" style={{ textAlign: 'left' }}>{n.title}</div>
+                          <div className="notification-item-date" style={{ textAlign: 'left' }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+                        </div>
                         <div className="notification-item-arrow">{isOpen ? '▲' : '▼'}</div>
                       </div>
                       {isOpen && (
                         <div className="notification-item-content">
                           <div className="notification-item-description">{n.description}</div>
                           
-                          {/* Volunteer Requirements Display */}
-                          {n.expertise_requirements && n.expertise_requirements.length > 0 && (
-                            <div className="notification-volunteer-requirements">
-                              <div className="volunteer-requirements-title">Volunteers Needed:</div>
-                              {n.expertise_requirements.map((req, index) => (
-                                <div key={index} className="volunteer-requirement-display">
-                                  <span className="expertise-name">{req.expertise}</span>
-                                  <span className="expertise-count">{req.count} needed</span>
+                          {/* Invited Groups Display */}
+                          {n.recipients && n.recipients.length > 0 && (
+                            <div className="invited-groups-container">
+                              <div className="invited-groups-trigger">
+                                <span className="requirement-label">Invited Groups</span>
+                                <span className="requirement-value">
+                                  {n.recipients.length} groups
+                                </span>
+                              </div>
+                              <div className="invited-groups-popup">
+                                <div className="invited-groups-content">
+                                  {n.recipients.map((recipient, index) => (
+                                    <div key={index} className="invited-group-item">
+                                      <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              </div>
                             </div>
                           )}
                           
-                          <div className="notification-item-recipients">
-                            {n.recipients && n.recipients.length > 1 && (
-                              <>
-                                <span className="notification-item-recipients-label">Recipients:</span> <span className="notification-item-recipients-value">{n.recipients.map(r => r.user && r.user.name ? r.user.name : '').filter(Boolean).join(', ')}</span>
-                              </>
-                            )}
-                          </div>
+                          {/* Volunteer Requirements Display */}
+                          {n.expertise_requirements && n.expertise_requirements.length > 0 && (
+                            <div className="volunteer-requirements-hover-container">
+                              <div className="volunteer-requirements-trigger">
+                                <span className="requirement-label">Volunteer Requirements</span>
+                                <span className="requirement-value">
+                                  {n.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                                </span>
+                              </div>
+                              <div className="volunteer-requirements-popup">
+                                <div className="popup-content">
+                                  {n.expertise_requirements.map((req, index) => (
+                                    <div key={index} className="popup-expertise-item">
+                                      <span className="expertise-name">{req.expertise}</span>
+                                      <span className="expertise-count">{req.count} needed</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Progress Tracker */}
+                          {n.expertise_requirements && n.expertise_requirements.length > 0 && (
+                            <div className="notification-progress-container">
+                              <div className="notification-progress-title">Volunteer Progress</div>
+                              <div className="notification-progress-overview">
+                                <div className="notification-progress-stat">
+                                  <div className="notification-progress-label">Provided</div>
+                                  <div className="notification-progress-number">0</div>
+                                </div>
+                                <div className="notification-progress-bar-container">
+                                  <div className="notification-progress-bar">
+                                    <div 
+                                      className="notification-progress-fill" 
+                                      style={{ width: '0%' }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div className="notification-progress-stat">
+                                  <div className="notification-progress-label">Remaining</div>
+                                  <div className="notification-progress-number">
+                                    {n.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           
                           {myRecipient && !myRecipient.response && (
-                            <div className="notification-item-actions">
+                            <>
                               {/* Volunteer Selection Form */}
                               {n.expertise_requirements && n.expertise_requirements.length > 0 && (
                                 <div className="volunteer-selection-form">
@@ -221,43 +272,50 @@ function Notification() {
                                 </div>
                               )}
                               
-                              <div className="notification-item-action-buttons">
-                                <button 
-                                  className="notification-item-action accept" 
-                                  onClick={e => { 
-                                    e.stopPropagation(); 
-                                    const selections = getVolunteerSelections(n.id);
-                                    handleRespond(n.id, 'accept', selections.length > 0 ? selections : null); 
-                                  }} 
-                                  disabled={loading || !canAccept(n)}
-                                >
-                                  {canAccept(n) ? 'CONFIRM VOLUNTEERS' : 'SELECT AT LEAST ONE EXPERTISE'}
-                                </button>
-                                <button 
-                                  className="notification-item-action decline" 
-                                  onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} 
-                                  disabled={loading}
-                                >
-                                  DECLINE
-                                </button>
+                              {/* Action Buttons - Separate Row */}
+                              <div className="notification-item-actions">
+                                <div className="notification-item-action-buttons">
+                                  <button 
+                                    className="notification-item-action accept" 
+                                    onClick={e => { 
+                                      e.stopPropagation(); 
+                                      const selections = getVolunteerSelections(n.id);
+                                      handleRespond(n.id, 'accept', selections.length > 0 ? selections : null); 
+                                    }} 
+                                    disabled={loading || !canAccept(n)}
+                                  >
+                                    {canAccept(n) ? 'CONFIRM VOLUNTEERS' : 'SELECT AT LEAST ONE EXPERTISE'}
+                                  </button>
+                                  <button 
+                                    className="notification-item-action decline" 
+                                    onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} 
+                                    disabled={loading}
+                                  >
+                                    DECLINE
+                                  </button>
+                                </div>
                               </div>
-                            </div>
+                            </>
                           )}
                           
                           {myRecipient && myRecipient.response && (
-                            <div className="notification-item-response">
-                              <div className={`response-status ${myRecipient.response}`}>
-                                Action: {myRecipient.response.toUpperCase()}
+                            <div className={`volunteer-commitments-hover-container ${myRecipient.response}`}>
+                              <div className="volunteer-commitments-trigger">
+                                <div className={`response-status ${myRecipient.response}`}>
+                                  Action: {myRecipient.response.toUpperCase()}
+                                </div>
                               </div>
                               {myRecipient.response === 'accept' && myRecipient.volunteer_selections && (
-                                <div className="volunteer-selections-display">
-                                  <div className="volunteer-selections-title">Your Volunteer Commitments:</div>
-                                  {myRecipient.volunteer_selections.map((selection, index) => (
-                                    <div key={index} className="volunteer-selection-display">
-                                      <span className="selection-expertise">{selection.expertise}</span>
-                                      <span className="selection-count">{selection.count} volunteers</span>
-                                    </div>
-                                  ))}
+                                <div className="volunteer-commitments-popup">
+                                  <div className="commitments-popup-content">
+                                    <div className="popup-title">Your Volunteer Commitments:</div>
+                                    {myRecipient.volunteer_selections.map((selection, index) => (
+                                      <div key={index} className="commitment-popup-item">
+                                        <span className="commitment-popup-expertise">{selection.expertise}</span>
+                                        <span className="commitment-popup-count">{selection.count} volunteers</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                             </div>

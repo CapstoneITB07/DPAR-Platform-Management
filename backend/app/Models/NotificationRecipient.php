@@ -12,8 +12,13 @@ class NotificationRecipient extends Model
     protected $fillable = [
         'notification_id',
         'user_id',
-        'response', // accept, decline, or null
+        'response', // accept, decline, volunteer_selection
+        'volunteer_selections', // JSON array of volunteer selections with counts
         'responded_at',
+    ];
+
+    protected $casts = [
+        'volunteer_selections' => 'array',
     ];
 
     public function notification()

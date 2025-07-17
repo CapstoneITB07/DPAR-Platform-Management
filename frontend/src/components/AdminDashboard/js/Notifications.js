@@ -685,6 +685,27 @@ function NotificationDropdown({ notification, onRemove }) {
         <div className="notification-dropdown-body">
           <div className="notification-dropdown-description">{notification.description}</div>
           
+          {/* Invited Groups Display - Hover Popup */}
+          {notification.recipients && notification.recipients.length > 0 && (
+            <div className="invited-groups-container">
+              <div className="invited-groups-trigger">
+                <span className="requirement-label">Invited Groups</span>
+                <span className="requirement-value">
+                  {notification.recipients.length} groups
+                </span>
+              </div>
+              <div className="invited-groups-popup">
+                <div className="invited-groups-content">
+                  {notification.recipients.map((recipient, index) => (
+                    <div key={index} className="invited-group-item">
+                      <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Volunteer Requirements Display - Hover Popup */}
             {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
             <div className="volunteer-requirements-hover-container">

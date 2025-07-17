@@ -1701,6 +1701,7 @@
   border-radius: 14px;
   transition: width 0.5s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #f87171 100%) !important;
 }
 
 .progress-segment {
@@ -1789,7 +1790,7 @@
 
 .tooltip-total {
   font-weight: 600;
-  color: #28a745;
+  color: #dc2626;
   text-align: center;
   padding-top: 8px;
   border-top: 1px solid #e9ecef;
@@ -1853,9 +1854,9 @@
 }
 
 .legend-count {
-  color: #28a745;
+  color: #dc2626;
   font-weight: 600;
-  background: #d4edda;
+  background: #fde8e8;
   padding: 2px 6px;
   border-radius: 8px;
   font-size: 0.8rem;

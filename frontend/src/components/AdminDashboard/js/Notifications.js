@@ -453,8 +453,10 @@ function VolunteerProgress({ notification }) {
   // Calculate overall progress
   const totalRequired = notification.expertise_requirements.reduce((sum, req) => sum + (parseInt(req.count) || 0), 0);
   const totalProvided = Object.values(progress).reduce((sum, data) => sum + (data.provided || 0), 0);
-  const progressPercentage = totalRequired > 0 ? Math.min(100, (totalProvided / totalRequired) * 100) : 0;
-  const isComplete = totalProvided >= totalRequired;
+  // Ensure provided never exceeds required
+  const cappedProvided = Math.min(totalProvided, totalRequired);
+  const progressPercentage = totalRequired > 0 ? Math.min(100, (cappedProvided / totalRequired) * 100) : 0;
+  const isComplete = cappedProvided >= totalRequired;
 
   // Collect all contributing groups with their expertise breakdown
   const groupContributions = [];
@@ -503,7 +505,7 @@ function VolunteerProgress({ notification }) {
             <div className="progress-bar-with-labels">
               <div className="progress-label-left">
                 <span className="label-text">Provided</span>
-                <span className="label-value">{totalProvided}</span>
+                <span className="label-value">{cappedProvided}</span>
               </div>
               
               <div className="progress-bar-wrapper">
@@ -513,7 +515,7 @@ function VolunteerProgress({ notification }) {
                     className="progress-fill"
                     style={{
                       width: `${progressPercentage}%`,
-                      backgroundColor: isComplete ? '#2ecc71' : '#f39c12'
+                      backgroundColor: isComplete ? '#2ecc71' : '#dc2626'
                     }}
                   />
                   
@@ -574,7 +576,7 @@ function VolunteerProgress({ notification }) {
               
               <div className="progress-label-right">
                 <span className="label-text">Remaining</span>
-                <span className="label-value">{Math.max(0, totalRequired - totalProvided)}</span>
+                <span className="label-value">{Math.max(0, totalRequired - cappedProvided)}</span>
               </div>
             </div>
           </div>

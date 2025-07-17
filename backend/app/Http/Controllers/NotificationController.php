@@ -138,9 +138,66 @@ class NotificationController extends Controller
         ]);
         
         $user = $request->user();
+        $notification = Notification::with('recipients.user')->findOrFail($id);
         $recipient = NotificationRecipient::where('notification_id', $id)
             ->where('user_id', $user->id)
             ->firstOrFail();
+        
+        // If accepting, validate volunteer selections against available capacity
+        if ($request->response === 'accept' && $request->volunteer_selections) {
+            $errors = [];
+            
+            // Calculate current progress for each expertise
+            $currentProgress = [];
+            foreach ($notification->expertise_requirements as $requirement) {
+                $expertise = $requirement['expertise'];
+                $required = $requirement['count'];
+                $currentProgress[$expertise] = [
+                    'required' => $required,
+                    'provided' => 0,
+                    'remaining' => $required
+                ];
+            }
+            
+            // Calculate what's already been provided by other associates
+            foreach ($notification->recipients as $otherRecipient) {
+                if ($otherRecipient->user_id !== $user->id && 
+                    $otherRecipient->response === 'accept' && 
+                    $otherRecipient->volunteer_selections) {
+                    
+                    foreach ($otherRecipient->volunteer_selections as $selection) {
+                        $expertise = $selection['expertise'];
+                        $count = $selection['count'];
+                        
+                        if (isset($currentProgress[$expertise])) {
+                            $currentProgress[$expertise]['provided'] += $count;
+                            $currentProgress[$expertise]['remaining'] = max(0, $currentProgress[$expertise]['required'] - $currentProgress[$expertise]['provided']);
+                        }
+                    }
+                }
+            }
+            
+            // Validate the new selections
+            foreach ($request->volunteer_selections as $selection) {
+                $expertise = $selection['expertise'];
+                $requestedCount = $selection['count'];
+                
+                if (isset($currentProgress[$expertise])) {
+                    $available = $currentProgress[$expertise]['remaining'];
+                    
+                    if ($requestedCount > $available) {
+                        $errors[] = "Cannot provide {$requestedCount} {$expertise} volunteers. Only {$available} remaining.";
+                    }
+                }
+            }
+            
+            if (!empty($errors)) {
+                return response()->json([
+                    'error' => 'Validation failed',
+                    'details' => $errors
+                ], 422);
+            }
+        }
             
         $recipient->update([
             'response' => $request->response,
@@ -183,20 +240,78 @@ class NotificationController extends Controller
                     $count = $selection['count'];
                     
                     if (isset($progress[$expertise])) {
-                        $progress[$expertise]['provided'] += $count;
-                        $progress[$expertise]['remaining'] = max(0, $progress[$expertise]['required'] - $progress[$expertise]['provided']);
+                        // Cap the provided count to not exceed required
+                        $currentProvided = $progress[$expertise]['provided'];
+                        $maxAllowed = $progress[$expertise]['required'] - $currentProvided;
+                        $actualCount = min($count, $maxAllowed);
                         
-                        // Track which group provided these volunteers
-                        $groupName = $recipient->user ? $recipient->user->name : 'Unknown Group';
-                        $progress[$expertise]['groups'][] = [
-                            'group' => $groupName,
-                            'count' => $count
-                        ];
+                        if ($actualCount > 0) {
+                            $progress[$expertise]['provided'] += $actualCount;
+                            $progress[$expertise]['remaining'] = max(0, $progress[$expertise]['required'] - $progress[$expertise]['provided']);
+                            
+                            // Track which group provided these volunteers
+                            $groupName = $recipient->user ? $recipient->user->name : 'Unknown Group';
+                            $progress[$expertise]['groups'][] = [
+                                'group' => $groupName,
+                                'count' => $actualCount
+                            ];
+                        }
                     }
                 }
             }
         }
         
         return response()->json(['progress' => $progress]);
+    }
+
+    // Get current available capacity for a specific notification (for associates)
+    public function getAvailableCapacity($id, Request $request)
+    {
+        $notification = Notification::with('recipients.user')->findOrFail($id);
+        $currentUser = $request->user();
+        
+        if (!$notification->expertise_requirements) {
+            return response()->json(['available' => []]);
+        }
+        
+        $available = [];
+        
+        // Initialize available capacity for each expertise requirement
+        foreach ($notification->expertise_requirements as $requirement) {
+            $expertise = $requirement['expertise'];
+            $required = $requirement['count'];
+            $available[$expertise] = [
+                'required' => $required,
+                'provided' => 0,
+                'remaining' => $required
+            ];
+        }
+        
+        // Calculate what's already been provided by OTHER associates (excluding current user)
+        foreach ($notification->recipients as $recipient) {
+            if ($recipient->user_id !== $currentUser->id && 
+                $recipient->response === 'accept' && 
+                $recipient->volunteer_selections) {
+                
+                foreach ($recipient->volunteer_selections as $selection) {
+                    $expertise = $selection['expertise'];
+                    $count = $selection['count'];
+                    
+                    if (isset($available[$expertise])) {
+                        // Cap the provided count to not exceed required
+                        $currentProvided = $available[$expertise]['provided'];
+                        $maxAllowed = $available[$expertise]['required'] - $currentProvided;
+                        $actualCount = min($count, $maxAllowed);
+                        
+                        if ($actualCount > 0) {
+                            $available[$expertise]['provided'] += $actualCount;
+                            $available[$expertise]['remaining'] = max(0, $available[$expertise]['required'] - $available[$expertise]['provided']);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return response()->json(['available' => $available]);
     }
 }

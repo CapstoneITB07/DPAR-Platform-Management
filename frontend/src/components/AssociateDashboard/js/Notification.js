@@ -5,6 +5,80 @@ import '../css/Notification.css';
 
 const NOTIF_READ_KEY = 'associateNotifRead';
 
+// Progress Tracker Component
+function NotificationProgress({ notification }) {
+  const [progress, setProgress] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        // Use the volunteer progress endpoint to get overall progress from all associates
+        const response = await fetch(`http://localhost:8000/api/notifications/${notification.id}/volunteer-progress`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        setProgress(data.progress || {});
+      } catch (error) {
+        console.error('Failed to fetch volunteer progress:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, [notification.id]);
+
+  if (loading) {
+    return (
+      <div className="notification-progress-container">
+        <div className="notification-progress-title">Volunteer Progress</div>
+        <div className="notification-progress-loading">Loading progress...</div>
+      </div>
+    );
+  }
+
+  if (!notification.expertise_requirements || notification.expertise_requirements.length === 0) {
+    return null;
+  }
+
+  // Calculate overall progress from ALL associates (including current one)
+  const totalRequired = notification.expertise_requirements.reduce((sum, req) => sum + (parseInt(req.count) || 0), 0);
+  const totalProvided = Object.values(progress).reduce((sum, data) => sum + (data.provided || 0), 0);
+  // Ensure provided never exceeds required
+  const cappedProvided = Math.min(totalProvided, totalRequired);
+  const progressPercentage = totalRequired > 0 ? Math.min(100, (cappedProvided / totalRequired) * 100) : 0;
+  const remaining = Math.max(0, totalRequired - cappedProvided);
+
+  return (
+    <div className="notification-progress-container">
+      <div className="notification-progress-title">
+        Volunteer Progress
+        {/* <span className="live-indicator">● LIVE</span> */}
+      </div>
+      <div className="notification-progress-overview">
+        <div className="notification-progress-stat">
+          <div className="notification-progress-label">Provided</div>
+          <div className="notification-progress-number">{cappedProvided}</div>
+        </div>
+        <div className="notification-progress-bar-container">
+          <div className="notification-progress-bar">
+            <div 
+              className="notification-progress-fill" 
+              style={{ width: `${progressPercentage}%` }}
+            ></div>
+          </div>
+        </div>
+        <div className="notification-progress-stat">
+          <div className="notification-progress-label">Remaining</div>
+          <div className="notification-progress-number">{remaining}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -13,6 +87,9 @@ function Notification() {
   const [expanded, setExpanded] = useState(null);
   const [reload, setReload] = useState(false);
   const [volunteerSelections, setVolunteerSelections] = useState({});
+  const [availableCapacity, setAvailableCapacity] = useState({});
+  const [liveUpdateIntervals, setLiveUpdateIntervals] = useState({});
+  const [updatedMaxValues, setUpdatedMaxValues] = useState({});
 
   useEffect(() => {
     setLoading(true);
@@ -32,6 +109,15 @@ function Notification() {
       });
   }, [reload]);
 
+  // Cleanup live updates when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(liveUpdateIntervals).forEach(interval => {
+        clearInterval(interval);
+      });
+    };
+  }, [liveUpdateIntervals]);
+
   const handleRespond = async (id, response, selections = null) => {
     setLoading(true);
     setError('');
@@ -49,7 +135,18 @@ function Notification() {
         },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Failed to respond');
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        if (errorData.details && Array.isArray(errorData.details)) {
+          setError(errorData.details.join(', '));
+        } else {
+          throw new Error('Failed to respond');
+        }
+        setLoading(false);
+        return;
+      }
+      
       setLoading(false);
       setReload(r => !r);
       setVolunteerSelections({});
@@ -84,6 +181,78 @@ function Notification() {
     
     // Only require at least one expertise type to be selected
     return totalSelected > 0;
+  };
+
+  const fetchAvailableCapacity = async (notificationId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await fetch(`http://localhost:8000/api/notifications/${notificationId}/available-capacity`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      // Check if values have changed to trigger animation
+      const currentCapacity = availableCapacity[notificationId] || {};
+      const newCapacity = data.available || {};
+      
+      const hasChanged = Object.keys(newCapacity).some(expertise => {
+        const currentRemaining = currentCapacity[expertise]?.remaining || 0;
+        const newRemaining = newCapacity[expertise]?.remaining || 0;
+        return currentRemaining !== newRemaining;
+      });
+      
+      if (hasChanged) {
+        // Trigger animation for updated values
+        setUpdatedMaxValues(prev => ({
+          ...prev,
+          [notificationId]: Date.now()
+        }));
+        
+        // Clear animation after 1 second
+        setTimeout(() => {
+          setUpdatedMaxValues(prev => {
+            const newState = { ...prev };
+            delete newState[notificationId];
+            return newState;
+          });
+        }, 1000);
+      }
+      
+      setAvailableCapacity(prev => ({
+        ...prev,
+        [notificationId]: newCapacity
+      }));
+    } catch (error) {
+      console.error('Failed to fetch available capacity:', error);
+    }
+  };
+
+  const startLiveUpdates = (notificationId) => {
+    // Clear any existing interval for this notification
+    if (liveUpdateIntervals[notificationId]) {
+      clearInterval(liveUpdateIntervals[notificationId]);
+    }
+
+    // Start new interval to fetch updates every 5 seconds
+    const interval = setInterval(() => {
+      fetchAvailableCapacity(notificationId);
+    }, 5000);
+
+    setLiveUpdateIntervals(prev => ({
+      ...prev,
+      [notificationId]: interval
+    }));
+  };
+
+  const stopLiveUpdates = (notificationId) => {
+    if (liveUpdateIntervals[notificationId]) {
+      clearInterval(liveUpdateIntervals[notificationId]);
+      setLiveUpdateIntervals(prev => {
+        const newIntervals = { ...prev };
+        delete newIntervals[notificationId];
+        return newIntervals;
+      });
+    }
   };
 
   // Search logic only
@@ -165,7 +334,15 @@ function Notification() {
                   
                   return (
                     <div key={n.id} className="notification-item">
-                      <div className="notification-item-header" onClick={() => setExpanded(isOpen ? null : n.id)} style={{ textAlign: 'left' }}>
+                                              <div className="notification-item-header" onClick={() => {
+                          if (!isOpen) {
+                            fetchAvailableCapacity(n.id);
+                            startLiveUpdates(n.id);
+                          } else {
+                            stopLiveUpdates(n.id);
+                          }
+                          setExpanded(isOpen ? null : n.id);
+                        }} style={{ textAlign: 'left' }}>
                         <div style={{ textAlign: 'left' }}>
                           <div className="notification-item-title" style={{ textAlign: 'left' }}>{n.title}</div>
                           <div className="notification-item-date" style={{ textAlign: 'left' }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
@@ -220,81 +397,103 @@ function Notification() {
                           )}
                           
                           {/* Progress Tracker */}
-                          {n.expertise_requirements && n.expertise_requirements.length > 0 && (
-                            <div className="notification-progress-container">
-                              <div className="notification-progress-title">Volunteer Progress</div>
-                              <div className="notification-progress-overview">
-                                <div className="notification-progress-stat">
-                                  <div className="notification-progress-label">Provided</div>
-                                  <div className="notification-progress-number">0</div>
-                                </div>
-                                <div className="notification-progress-bar-container">
-                                  <div className="notification-progress-bar">
-                                    <div 
-                                      className="notification-progress-fill" 
-                                      style={{ width: '0%' }}
-                                    ></div>
-                                  </div>
-                                </div>
-                                <div className="notification-progress-stat">
-                                  <div className="notification-progress-label">Remaining</div>
-                                  <div className="notification-progress-number">
-                                    {n.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          <NotificationProgress notification={n} />
                           
                           {myRecipient && !myRecipient.response && (
                             <>
-                              {/* Volunteer Selection Form */}
-                              {n.expertise_requirements && n.expertise_requirements.length > 0 && (
-                                <div className="volunteer-selection-form">
-                                  <div className="volunteer-selection-title">How many volunteers can you provide?</div>
-                                  <div className="volunteer-selection-row">
-                                    {n.expertise_requirements.map((req, index) => (
-                                      <div key={index} className="volunteer-selection-item">
-                                        <div className="volunteer-selection-label">{req.expertise}:</div>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max={req.count}
-                                          value={volunteerSelections[n.id]?.[req.expertise] || ''}
-                                          onChange={(e) => handleVolunteerSelection(n.id, req.expertise, e.target.value)}
-                                          className="volunteer-selection-input"
-                                          placeholder={`0-${req.count}`}
-                                        />
-                                        <div className="volunteer-selection-max">max {req.count}</div>
+                              {/* Check if all volunteers have been met */}
+                              {(() => {
+                                const totalRequired = n.expertise_requirements.reduce((sum, req) => sum + (parseInt(req.count) || 0), 0);
+                                const totalRemaining = availableCapacity[n.id] ? 
+                                  Object.values(availableCapacity[n.id]).reduce((sum, data) => sum + (data.remaining || 0), 0) : 
+                                  totalRequired;
+                                const allVolunteersMet = totalRemaining === 0;
+                                
+                                return (
+                                  <>
+                                    {allVolunteersMet ? (
+                                      <div className="volunteer-requirements-met">
+                                        <div className="requirements-met-icon">
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="12" y1="8" x2="12" y2="12"/>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                          </svg>
+                                        </div>
+                                        <div className="requirements-met-message">
+                                        Sorry, all volunteer requirements have been met. 
+                                          No additional volunteers are needed at this time. 
+                                          We hope to collaborate with your group next time.
+                                        </div>
                                       </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* Action Buttons - Separate Row */}
-                              <div className="notification-item-actions">
-                                <div className="notification-item-action-buttons">
-                                  <button 
-                                    className="notification-item-action accept" 
-                                    onClick={e => { 
-                                      e.stopPropagation(); 
-                                      const selections = getVolunteerSelections(n.id);
-                                      handleRespond(n.id, 'accept', selections.length > 0 ? selections : null); 
-                                    }} 
-                                    disabled={loading || !canAccept(n)}
-                                  >
-                                    {canAccept(n) ? 'CONFIRM VOLUNTEERS' : 'SELECT AT LEAST ONE EXPERTISE'}
-                                  </button>
-                                  <button 
-                                    className="notification-item-action decline" 
-                                    onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} 
-                                    disabled={loading}
-                                  >
-                                    DECLINE
-                                  </button>
-                                </div>
-                              </div>
+                                    ) : (
+                                      <>
+                                        {/* Volunteer Selection Form */}
+                                        {n.expertise_requirements && n.expertise_requirements.length > 0 && (
+                                          <div className="volunteer-selection-form">
+                                            <div className="volunteer-selection-title">How many volunteers can you provide?</div>
+                                            <div className="volunteer-selection-row">
+                                              {n.expertise_requirements.map((req, index) => (
+                                                <div key={index} className="volunteer-selection-item">
+                                                  <div className="volunteer-selection-label">{req.expertise}:</div>
+                                                  <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={availableCapacity[n.id] ? (availableCapacity[n.id][req.expertise]?.remaining || 0) : req.count}
+                                                    value={volunteerSelections[n.id]?.[req.expertise] || ''}
+                                                    onChange={(e) => {
+                                                      const value = parseInt(e.target.value) || 0;
+                                                      const maxAllowed = availableCapacity[n.id] ? (availableCapacity[n.id][req.expertise]?.remaining || 0) : req.count;
+                                                      if (value <= maxAllowed) {
+                                                        handleVolunteerSelection(n.id, req.expertise, e.target.value);
+                                                      }
+                                                    }}
+                                                    className="volunteer-selection-input"
+                                                    placeholder={availableCapacity[n.id] ? 
+                                                      `0-${availableCapacity[n.id][req.expertise]?.remaining || 0}` : 
+                                                      `0-${req.count}`
+                                                    }
+                                                  />
+                                                  <div className={`volunteer-selection-max ${updatedMaxValues[n.id] ? 'updated' : ''}`}>
+                                                    {availableCapacity[n.id] ? 
+                                                      `still need ${availableCapacity[n.id][req.expertise]?.remaining || 0}` : 
+                                                      'Loading...'
+                                                    }
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Action Buttons - Separate Row */}
+                                        <div className="notification-item-actions">
+                                          <div className="notification-item-action-buttons">
+                                            <button 
+                                              className="notification-item-action accept" 
+                                              onClick={e => { 
+                                                e.stopPropagation(); 
+                                                const selections = getVolunteerSelections(n.id);
+                                                handleRespond(n.id, 'accept', selections.length > 0 ? selections : null); 
+                                              }} 
+                                              disabled={loading || !canAccept(n)}
+                                            >
+                                              {canAccept(n) ? 'CONFIRM VOLUNTEERS' : 'SELECT AT LEAST ONE EXPERTISE'}
+                                            </button>
+                                            <button 
+                                              className="notification-item-action decline" 
+                                              onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} 
+                                              disabled={loading}
+                                            >
+                                              DECLINE
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </>
                           )}
                           
@@ -308,7 +507,10 @@ function Notification() {
                               {myRecipient.response === 'accept' && myRecipient.volunteer_selections && (
                                 <div className="volunteer-commitments-popup">
                                   <div className="commitments-popup-content">
-                                    <div className="popup-title">Your Volunteer Commitments:</div>
+                                    <div className="popup-title">
+                                      <span>Your Volunteer Commitments</span>
+                                      <span style={{ marginLeft: '50px' }}><strong>{myRecipient.volunteer_selections.reduce((total, selection) => total + selection.count, 0)} in total</strong></span>
+                                    </div>
                                     {myRecipient.volunteer_selections.map((selection, index) => (
                                       <div key={index} className="commitment-popup-item">
                                         <span className="commitment-popup-expertise">{selection.expertise}</span>

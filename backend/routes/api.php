@@ -14,6 +14,7 @@ use App\Http\Controllers\AssociateGroupController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\VolunteerController;
+use App\Http\Controllers\CalendarEventController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,6 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/volunteers/{volunteer}', [VolunteerController::class, 'update']);
     Route::delete('/volunteers/{volunteer}', [VolunteerController::class, 'destroy']);
     Route::get('/volunteers/count', [VolunteerController::class, 'count']);
+
+    // Calendar Events routes
+    Route::apiResource('/calendar-events', CalendarEventController::class);
 });
 
 // Public Training Programs API

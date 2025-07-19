@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faCertificate, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faCertificate, faSignOutAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -25,6 +25,9 @@ import moment from 'moment';
 import { getLogoUrl } from '../../../utils/url';
 import Modal from 'react-modal';
 import CertificateModal from './CertificateModal';
+import EventModal from './EventModal';
+import EventDetailsModal from './EventDetailsModal';
+import EventsListModal from './EventsListModal';
 
 ChartJS.register(
   CategoryScale,
@@ -68,7 +71,7 @@ const associateLogos = {
 };
 
 // Custom Calendar Toolbar
-function CustomCalendarToolbar({ date, onNavigate }) {
+function CustomCalendarToolbar({ date, onNavigate, onAddEvent }) {
   const monthYear = moment(date).format('MMMM YYYY');
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
@@ -95,6 +98,15 @@ function CustomCalendarToolbar({ date, onNavigate }) {
           aria-label="Next Month"
         >
           <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: '1rem' }} />
+        </button>
+        <button
+          className="add-event-btn"
+          onClick={onAddEvent}
+          style={{ marginLeft: 8 }}
+          aria-label="Add Event"
+        >
+          <FontAwesomeIcon icon={faPlus} />
+          <span>EV</span>
         </button>
       </div>
     </div>
@@ -125,6 +137,11 @@ function AdminDashboard() {
     message: '',
     format: 'pdf',
   });
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [showEventsListModal, setShowEventsListModal] = useState(false);
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -625,7 +642,18 @@ function AdminDashboard() {
   // Initial data fetch
   useEffect(() => {
     fetchDashboardData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchCalendarEvents();
+  }, []);
+
+  // Debug calendar events
+  useEffect(() => {
+    console.log('Calendar events state updated:', calendarEvents);
+  }, [calendarEvents]);
+
+  // Refresh events when calendar date changes
+  useEffect(() => {
+    fetchCalendarEvents();
+  }, [calendarDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Polling for live updates (debounced to 10 seconds)
   useEffect(() => {
@@ -877,6 +905,117 @@ function AdminDashboard() {
   const handleCloseCertificateModal = () => setShowCertificateModal(false);
   const handleCertificateDataChange = (data) => setCertificateData(data);
 
+  // Calendar Event Handlers
+  const handleOpenEventModal = () => {
+    setEditingEvent(null);
+    setShowEventModal(true);
+  };
+
+  const handleCloseEventModal = () => {
+    setShowEventModal(false);
+    setEditingEvent(null);
+  };
+
+  const handleEventCreated = (newEvent) => {
+    setCalendarEvents(prev => [...prev, newEvent]);
+    fetchCalendarEvents();
+  };
+
+  const handleEventUpdated = (updatedEvent) => {
+    setCalendarEvents(prev => prev.map(event => 
+      event.id === updatedEvent.id ? updatedEvent : event
+    ));
+  };
+
+  const handleEventDeleted = (eventId) => {
+    setCalendarEvents(prev => prev.filter(event => event.id !== eventId));
+  };
+
+  const handleEventClick = (event) => {
+    // If it's a grouped event (has multiple events), show the first one as default
+    if (event.resource && event.resource.events && event.resource.events.length > 0) {
+      const firstEvent = event.resource.events[0];
+      setSelectedEvent({
+        ...event,
+        resource: firstEvent
+      });
+      setShowEventDetailsModal(true);
+    } else {
+      setSelectedEvent(event);
+      setShowEventDetailsModal(true);
+    }
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setShowEventDetailsModal(false);
+    setShowEventModal(true);
+  };
+
+  const handleOpenEventsListModal = () => {
+    setShowEventsListModal(true);
+  };
+
+  const handleCloseEventsListModal = () => {
+    setShowEventsListModal(false);
+  };
+
+  const fetchCalendarEvents = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:8000/api/calendar-events', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Raw calendar events response:', response.data);
+      
+      if (response.data.success) {
+        // Group events by date and count them
+        const eventsByDate = {};
+        response.data.data.forEach(event => {
+          const startDate = new Date(event.start_date);
+          const dateKey = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          
+          if (!eventsByDate[dateKey]) {
+            eventsByDate[dateKey] = [];
+          }
+          eventsByDate[dateKey].push(event);
+        });
+        
+        // Create calendar events with count as title
+        const events = Object.entries(eventsByDate).map(([dateKey, dayEvents]) => {
+          const startDate = new Date(dateKey);
+          
+          return {
+            id: `date-${dateKey}`,
+            title: dayEvents.length.toString(), // Show count instead of title
+            start: startDate,
+            end: startDate,
+            allDay: true,
+            resource: {
+              date: dateKey,
+              events: dayEvents,
+              count: dayEvents.length
+            },
+            // Ensure these properties are set for React Big Calendar
+            start_date: startDate,
+            end_date: startDate,
+            display: 'block'
+          };
+        });
+        
+        console.log('Processed calendar events with counts:', events);
+        setCalendarEvents(events);
+      } else {
+        console.log('No events found or API error:', response.data);
+        setCalendarEvents([]);
+      }
+    } catch (err) {
+      console.error('Error fetching calendar events:', err);
+      setCalendarEvents([]);
+    }
+  };
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -1002,10 +1141,17 @@ function AdminDashboard() {
           <div className="sidebar-column">
             {/* Calendar Section */}
             <div className="dashboard-section calendar-section">
-              <h3><FontAwesomeIcon icon={faCalendarAlt} /> Calendar</h3>
+              <div className="calendar-header">
+                <h3><FontAwesomeIcon icon={faCalendarAlt} /> Calendar</h3>
+              </div>
               <div style={{ height: 400, background: 'white', borderRadius: 12, padding: 10 }}>
-                <CustomCalendarToolbar date={calendarDate} onNavigate={handleCalendarNavigate} />
+                <CustomCalendarToolbar 
+                  date={calendarDate} 
+                  onNavigate={handleCalendarNavigate} 
+                  onAddEvent={handleOpenEventModal}
+                />
                 <Calendar
+                  key={`calendar-${calendarEvents.length}-${calendarDate.toISOString()}`}
                   localizer={localizer}
                   events={calendarEvents}
                   startAccessor="start"
@@ -1016,7 +1162,18 @@ function AdminDashboard() {
                   toolbar={false}
                   date={calendarDate}
                   onNavigate={date => setCalendarDate(date)}
+                  onSelectEvent={handleEventClick}
+                  onView={() => console.log('Calendar view changed, events:', calendarEvents)}
                 />
+              </div>
+              <div style={{ marginTop: 12, textAlign: 'center' }}>
+                <button 
+                  className="see-events-btn" 
+                  onClick={handleOpenEventsListModal}
+                >
+                  <FontAwesomeIcon icon={faCalendarAlt} />
+                  <span>SEE EVENTS</span>
+                </button>
               </div>
             </div>
             {/* Recent Evaluations */}
@@ -1089,6 +1246,39 @@ function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Event Modals */}
+        {showEventModal && (
+          <EventModal
+            show={showEventModal}
+            onClose={handleCloseEventModal}
+            event={editingEvent}
+            onEventCreated={handleEventCreated}
+            onEventUpdated={handleEventUpdated}
+            onEventDeleted={handleEventDeleted}
+          />
+        )}
+
+        {showEventDetailsModal && selectedEvent && (
+          <EventDetailsModal
+            show={showEventDetailsModal}
+            onClose={() => setShowEventDetailsModal(false)}
+            event={selectedEvent.resource}
+            onEdit={handleEditEvent}
+          />
+        )}
+
+        {showEventsListModal && (
+          <EventsListModal
+            show={showEventsListModal}
+            onClose={handleCloseEventsListModal}
+            events={calendarEvents.flatMap(event => 
+              event.resource && event.resource.events ? event.resource.events : [event.resource]
+            )}
+            onEdit={handleEditEvent}
+            onDelete={handleEventDeleted}
+          />
+        )}
       </div>
     </AdminLayout>
   );

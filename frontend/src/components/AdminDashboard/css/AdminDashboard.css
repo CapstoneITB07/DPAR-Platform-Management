@@ -879,6 +879,108 @@
   grid-column: span 2;
 }
 
+.calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.calendar-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.add-event-btn {
+  background: #A11C22;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(161, 28, 34, 0.2);
+}
+
+.add-event-btn:hover {
+  background: #8b1a1f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.3);
+}
+
+.add-event-btn:active {
+  transform: translateY(0);
+}
+
+.see-events-btn {
+  background: white;
+  color: #A11C22;
+  border: 2px solid #A11C22;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 50px;
+}
+
+.see-events-btn:hover {
+  background: #A11C22;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.3);
+}
+
+.see-events-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+  }
+  
+  .calendar-header h3 {
+    order: 1;
+  }
+  
+  .add-event-btn {
+    position: static;
+    transform: none;
+    order: 2;
+    align-self: center;
+  }
+  
+  .add-event-btn:hover {
+    transform: translateY(-1px);
+  }
+  
+  .add-event-btn:active {
+    transform: translateY(0);
+  }
+}
+
 /* Associate Selector Styles */
 .associate-selector {
   margin: 20px 0;
@@ -2526,13 +2628,84 @@
 .calendar-section .rbc-date-cell .rbc-event,
 .calendar-section .rbc-date-cell .rbc-event-dot,
 .calendar-section .rbc-date-cell .rbc-day-dot {
-  background: #dc3545 !important;
-  border-radius: 50%;
-  width: 7px;
-  height: 7px;
-  display: inline-block;
-  margin-left: 2px;
-  margin-right: 2px;
+  background: #A11C22 !important;
+  color: white !important;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  margin: 1px 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: block !important;
+  width: auto;
+  height: auto;
+  z-index: 10;
+  position: relative;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.calendar-section .rbc-date-cell .rbc-event:hover,
+.calendar-section .rbc-date-cell .rbc-event-dot:hover {
+  background: #8b1a1f !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-section .rbc-event {
+  background: #A11C22 !important;
+  color: white !important;
+  border: none !important;
+  display: block !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+.calendar-section .rbc-event:hover {
+  background: #8b1a1f !important;
+}
+
+/* Ensure events are visible on calendar */
+.calendar-section .rbc-month-view .rbc-event {
+  background: #A11C22 !important;
+  color: white !important;
+  border: none !important;
+  display: block !important;
+  z-index: 10 !important;
+  position: relative !important;
+  margin: 1px 0 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  line-height: 16px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force events to always be visible */
+.calendar-section .rbc-event,
+.calendar-section .rbc-event-content,
+.calendar-section .rbc-event-label {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Override any React Big Calendar default hiding */
+.calendar-section .rbc-event.rbc-selected,
+.calendar-section .rbc-event.rbc-show-more,
+.calendar-section .rbc-event.rbc-event-continues-after,
+.calendar-section .rbc-event.rbc-event-continues-prior {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
 }
 .calendar-section .rbc-today {
   background: #fff0f0 !important;

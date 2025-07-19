@@ -421,6 +421,7 @@ function VolunteerProgress({ notification }) {
   const [loading, setLoading] = useState(true);
   const [hoveredSegment, setHoveredSegment] = useState(null);
   const [hoveredLegend, setHoveredLegend] = useState(false);
+  const [hoveredLegendItem, setHoveredLegendItem] = useState(null);
   const [activeTab, setActiveTab] = useState('contributing');
 
   useEffect(() => {
@@ -544,11 +545,6 @@ function VolunteerProgress({ notification }) {
                           setHoveredSegment(null);
                         }}
                       >
-                        {/* Divider line */}
-                        {index > 0 && (
-                          <div className="segment-divider" />
-                        )}
-                        
                         {hoveredSegment === group.groupName && (
                           <div className="segment-tooltip">
                             <div className="tooltip-header">{group.groupName}</div>
@@ -618,9 +614,28 @@ function VolunteerProgress({ notification }) {
                     <div className="legend-empty">No groups have contributed</div>
                   ) : (
                     groupContributions.map((group, index) => (
-                      <div key={group.groupName} className="legend-item">
+                      <div 
+                        key={group.groupName} 
+                        className="legend-item"
+                        onMouseEnter={() => setHoveredLegendItem(group.groupName)}
+                        onMouseLeave={() => setHoveredLegendItem(null)}
+                      >
                         <span className="legend-name">{group.groupName}</span>
                         <span className="legend-count">{group.totalCount} volunteers</span>
+                        
+                        {/* Hover popup for group breakdown */}
+                        {hoveredLegendItem === group.groupName && group.contributions && group.contributions.length > 0 && (
+                          <div className="legend-item-popup">
+                            <div className="legend-item-popup-content">
+                              {group.contributions.map((contribution, idx) => (
+                                <div key={idx} className="legend-item-popup-row">
+                                  <span className="legend-item-popup-expertise">{contribution.expertise}</span>
+                                  <span className="legend-item-popup-count">{contribution.count} volunteers</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -687,48 +702,51 @@ function NotificationDropdown({ notification, onRemove }) {
         <div className="notification-dropdown-body">
           <div className="notification-dropdown-description">{notification.description}</div>
           
-          {/* Invited Groups Display - Hover Popup */}
-          {notification.recipients && notification.recipients.length > 0 && (
-            <div className="invited-groups-container">
-              <div className="invited-groups-trigger">
-                <span className="requirement-label">Invited Groups</span>
-                <span className="requirement-value">
-                  {notification.recipients.length} groups
-                </span>
-              </div>
-              <div className="invited-groups-popup">
-                <div className="invited-groups-content">
-                  {notification.recipients.map((recipient, index) => (
-                    <div key={index} className="invited-group-item">
-                      <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Volunteer Requirements Display - Hover Popup */}
-            {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
-            <div className="volunteer-requirements-hover-container">
-              <div className="volunteer-requirements-trigger">
-                <span className="requirement-label">Volunteer Requirements</span>
+          {/* Requirements Info Container */}
+          <div className="requirements-info-container">
+            {/* Invited Groups Display - Hover Popup */}
+            {notification.recipients && notification.recipients.length > 0 && (
+              <div className="invited-groups-container">
+                <div className="invited-groups-trigger">
+                  <span className="requirement-label">Invited Groups</span>
                   <span className="requirement-value">
-                  {notification.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                    {notification.recipients.length} groups
                   </span>
                 </div>
-              <div className="volunteer-requirements-popup">
-                <div className="popup-content">
-                  {notification.expertise_requirements.map((req, index) => (
-                    <div key={index} className="popup-expertise-item">
-                      <span className="expertise-name">{req.expertise}</span>
-                      <span className="expertise-count">{req.count} needed</span>
-                    </div>
-                  ))}
+                <div className="invited-groups-popup">
+                  <div className="invited-groups-content">
+                    {notification.recipients.map((recipient, index) => (
+                      <div key={index} className="invited-group-item">
+                        <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+            
+            {/* Volunteer Requirements Display - Hover Popup */}
+            {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
+              <div className="volunteer-requirements-hover-container">
+                <div className="volunteer-requirements-trigger">
+                  <span className="requirement-label">Volunteer Requirements</span>
+                  <span className="requirement-value">
+                    {notification.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                  </span>
+                </div>
+                <div className="volunteer-requirements-popup">
+                  <div className="popup-content">
+                    {notification.expertise_requirements.map((req, index) => (
+                      <div key={index} className="popup-expertise-item">
+                        <span className="expertise-name">{req.expertise}</span>
+                        <span className="expertise-count">{req.count} needed</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           
           <VolunteerProgress notification={notification} />
           {/* <div className="notification-dropdown-lists">

@@ -57,10 +57,16 @@ function NotificationProgress({ notification }) {
         Volunteer Progress
         {/* <span className="live-indicator">● LIVE</span> */}
       </div>
-      <div className="notification-progress-overview">
-        <div className="notification-progress-stat">
-          <div className="notification-progress-label">Provided</div>
-          <div className="notification-progress-number">{cappedProvided}</div>
+      <div className="notification-progress-bar-with-labels">
+        <div className="notification-progress-bar-labels">
+          <div className="notification-progress-bar-label">
+            <div className="notification-progress-bar-label-text">Provided</div>
+            <div className="notification-progress-bar-label-value">{cappedProvided}</div>
+          </div>
+          <div className="notification-progress-bar-label">
+            <div className="notification-progress-bar-label-text">Remaining</div>
+            <div className="notification-progress-bar-label-value">{remaining}</div>
+          </div>
         </div>
         <div className="notification-progress-bar-container">
           <div className="notification-progress-bar">
@@ -69,10 +75,6 @@ function NotificationProgress({ notification }) {
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-        </div>
-        <div className="notification-progress-stat">
-          <div className="notification-progress-label">Remaining</div>
-          <div className="notification-progress-number">{remaining}</div>
         </div>
       </div>
     </div>
@@ -353,48 +355,51 @@ function Notification() {
                         <div className="notification-item-content">
                           <div className="notification-item-description">{n.description}</div>
                           
-                          {/* Invited Groups Display */}
-                          {n.recipients && n.recipients.length > 0 && (
-                            <div className="invited-groups-container">
-                              <div className="invited-groups-trigger">
-                                <span className="requirement-label">Invited Groups</span>
-                                <span className="requirement-value">
-                                  {n.recipients.length} groups
-                                </span>
-                              </div>
-                              <div className="invited-groups-popup">
-                                <div className="invited-groups-content">
-                                  {n.recipients.map((recipient, index) => (
-                                    <div key={index} className="invited-group-item">
-                                      <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
-                                    </div>
-                                  ))}
+                          {/* Requirements Info Container */}
+                          <div className="requirements-info-container">
+                            {/* Invited Groups Display */}
+                            {n.recipients && n.recipients.length > 0 && (
+                              <div className="invited-groups-container">
+                                <div className="invited-groups-trigger">
+                                  <span className="requirement-label">Invited Groups</span>
+                                  <span className="requirement-value">
+                                    {n.recipients.length} groups
+                                  </span>
+                                </div>
+                                <div className="invited-groups-popup">
+                                  <div className="invited-groups-content">
+                                    {n.recipients.map((recipient, index) => (
+                                      <div key={index} className="invited-group-item">
+                                        <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          {/* Volunteer Requirements Display */}
-                          {n.expertise_requirements && n.expertise_requirements.length > 0 && (
-                            <div className="volunteer-requirements-hover-container">
-                              <div className="volunteer-requirements-trigger">
-                                <span className="requirement-label">Volunteer Requirements</span>
-                                <span className="requirement-value">
-                                  {n.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
-                                </span>
-                              </div>
-                              <div className="volunteer-requirements-popup">
-                                <div className="popup-content">
-                                  {n.expertise_requirements.map((req, index) => (
-                                    <div key={index} className="popup-expertise-item">
-                                      <span className="expertise-name">{req.expertise}</span>
-                                      <span className="expertise-count">{req.count} needed</span>
-                                    </div>
-                                  ))}
+                            )}
+                            
+                            {/* Volunteer Requirements Display */}
+                            {n.expertise_requirements && n.expertise_requirements.length > 0 && (
+                              <div className="volunteer-requirements-hover-container">
+                                <div className="volunteer-requirements-trigger">
+                                  <span className="requirement-label">Volunteer Requirements</span>
+                                  <span className="requirement-value">
+                                    {n.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                                  </span>
+                                </div>
+                                <div className="volunteer-requirements-popup">
+                                  <div className="popup-content">
+                                    {n.expertise_requirements.map((req, index) => (
+                                      <div key={index} className="popup-expertise-item">
+                                        <span className="expertise-name">{req.expertise}</span>
+                                        <span className="expertise-count">{req.count} needed</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                           
                           {/* Progress Tracker */}
                           <NotificationProgress notification={n} />
@@ -508,7 +513,7 @@ function Notification() {
                                 <div className="volunteer-commitments-popup">
                                   <div className="commitments-popup-content">
                                     <div className="popup-title">
-                                      <span>Your Volunteer Commitments</span>
+                                      <span>Your Group's Commitments</span>
                                       <span style={{ marginLeft: '50px' }}><strong>{myRecipient.volunteer_selections.reduce((total, selection) => total + selection.count, 0)} in total</strong></span>
                                     </div>
                                     {myRecipient.volunteer_selections.map((selection, index) => (

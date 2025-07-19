@@ -194,6 +194,29 @@ function Notifications() {
     setTimeout(() => setNotification(''), 2000);
   };
 
+  const handleToggleHold = async id => {
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    try {
+      const response = await fetch(`http://localhost:8000/api/notifications/${id}/toggle-hold`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setNotifications(notifications.map(n => 
+          n.id === id ? { ...n, status: data.status } : n
+        ));
+        setNotification(data.message);
+        setTimeout(() => setNotification(''), 2000);
+      } else {
+        setError(data.message || 'Failed to toggle hold status');
+      }
+    } catch (err) {
+      setError('Failed to toggle hold status');
+    }
+  };
+
   // Helper to filter notifications
   const filterNotifications = (notifications) => {
     let filtered = notifications;
@@ -278,7 +301,7 @@ function Notifications() {
         <div className="notification-empty">No notifications yet.</div>
       )}
       {filterNotifications(notifications).map(n => (
-        <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} />
+        <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} onToggleHold={handleToggleHold} />
       ))}
       {showModal && (
         <div className="notification-modal-overlay">
@@ -683,7 +706,7 @@ function getSegmentColor(index) {
   return colors[index % colors.length];
 }
 
-function NotificationDropdown({ notification, onRemove }) {
+function NotificationDropdown({ notification, onRemove, onToggleHold }) {
   const [open, setOpen] = useState(false);
   const [hoveredStatus, setHoveredStatus] = useState(null);
   const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
@@ -693,7 +716,12 @@ function NotificationDropdown({ notification, onRemove }) {
     <div className={`notification-dropdown${open ? ' open' : ''}`}>
       <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)} style={{ textAlign: 'left' }}>
         <div style={{ textAlign: 'left' }}>
-          <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>{notification.title}</div>
+          <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>
+            {notification.title}
+            {notification.status === 'on_hold' && (
+              <span className="notification-hold-badge">ON HOLD</span>
+            )}
+          </div>
           <div className="notification-dropdown-date" style={{ textAlign: 'left' }}>{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
         </div>
         <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>
@@ -776,6 +804,12 @@ function NotificationDropdown({ notification, onRemove }) {
             </div>
           </div> */}
           <div className="notification-dropdown-actions">
+            <button 
+              onClick={() => onToggleHold(notification.id)} 
+              className={`notification-dropdown-hold ${notification.status === 'on_hold' ? 'active' : ''}`}
+            >
+              {notification.status === 'on_hold' ? 'ACTIVATE' : 'HOLD'}
+            </button>
             <button 
               onClick={() => onRemove(notification.id)} 
               className="notification-dropdown-remove"

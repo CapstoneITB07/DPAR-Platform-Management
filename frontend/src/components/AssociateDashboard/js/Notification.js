@@ -43,6 +43,11 @@ function NotificationProgress({ notification }) {
     return null;
   }
 
+  // Hide progress if notification is on hold
+  if (notification.status === 'on_hold') {
+    return null;
+  }
+
   // Calculate overall progress from ALL associates (including current one)
   const totalRequired = notification.expertise_requirements.reduce((sum, req) => sum + (parseInt(req.count) || 0), 0);
   const totalProvided = Object.values(progress).reduce((sum, data) => sum + (data.provided || 0), 0);
@@ -404,7 +409,25 @@ function Notification() {
                           {/* Progress Tracker */}
                           <NotificationProgress notification={n} />
                           
-                          {myRecipient && !myRecipient.response && (
+                          {/* Show hold message to ALL associates when notification is on hold */}
+                          {n.status === 'on_hold' && (
+                            <div className="notification-on-hold">
+                              <div className="notification-on-hold-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <line x1="12" y1="8" x2="12" y2="12"/>
+                                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                              </div>
+                              <div className="notification-on-hold-message"> 
+                                Volunteer recruitment has been temporarily paused by the admin. 
+                                Please check back later for updates.
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Only show response options if notification is active and user hasn't responded */}
+                          {myRecipient && !myRecipient.response && n.status !== 'on_hold' && (
                             <>
                               {/* Check if all volunteers have been met */}
                               {(() => {
@@ -502,7 +525,8 @@ function Notification() {
                             </>
                           )}
                           
-                          {myRecipient && myRecipient.response && (
+                          {/* Only show response status if notification is not on hold */}
+                          {myRecipient && myRecipient.response && n.status !== 'on_hold' && (
                             <div className={`volunteer-commitments-hover-container ${myRecipient.response}`}>
                               <div className="volunteer-commitments-trigger">
                                 <div className={`response-status ${myRecipient.response}`}>

@@ -14,6 +14,7 @@ class Notification extends Model
         'description',
         'created_by', // admin user id
         'expertise_requirements',
+        'status',
     ];
 
     protected $casts = [

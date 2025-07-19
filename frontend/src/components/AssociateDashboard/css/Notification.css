@@ -216,6 +216,33 @@
 }
 
 /* Admin-style hover containers */
+.requirements-info-container {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.requirements-info-container .invited-groups-container,
+.requirements-info-container .volunteer-requirements-hover-container {
+  flex: 1;
+  margin: 0;
+}
+
+/* Desktop: 2 columns */
+@media (min-width: 768px) {
+  .requirements-info-container {
+    flex-direction: row;
+  }
+}
+
+/* Tablet and Mobile: 2 rows */
+@media (max-width: 767px) {
+  .requirements-info-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
 .invited-groups-container {
   margin: 16px 0;
   position: relative;
@@ -443,12 +470,161 @@
   transition: width 0.3s ease;
 }
 
+/* Progress bar with labels positioned at top */
+.notification-progress-bar-with-labels {
+  position: relative;
+  width: 100%;
+}
+
+.notification-progress-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.notification-progress-bar-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.notification-progress-bar-label-text {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.notification-progress-bar-label-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #b72828;
+}
+
 .notification-progress-loading {
   text-align: center;
   padding: 12px;
   color: #6c757d;
   font-style: italic;
   font-size: 0.9rem;
+}
+
+/* Mobile responsive improvements for progress container */
+@media (max-width: 767px) {
+  .notification-progress-container {
+    margin: 16px 0;
+    padding: 16px;
+  }
+  
+  .notification-progress-overview {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    display: flex;
+  }
+  
+  .notification-progress-stat {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 8px;
+    display: flex;
+  }
+  
+  .notification-progress-label {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+  }
+  
+  .notification-progress-number {
+    font-size: 1.1rem;
+  }
+  
+  .notification-progress-bar-container {
+    margin: 8px 0 0 0;
+    min-width: auto !important;
+    width: 100% !important;
+    flex: none !important;
+    order: 2;
+    display: block;
+    position: relative;
+  }
+  
+  .notification-progress-bar {
+    height: 20px;
+    width: 100%;
+    display: block;
+  }
+  
+  .notification-progress-fill {
+    height: 100%;
+    display: block;
+  }
+  
+  .notification-progress-title {
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+  }
+  
+  /* Mobile styles for new progress bar layout */
+  .notification-progress-bar-labels {
+    margin-bottom: 6px;
+  }
+  
+  .notification-progress-bar-label-text {
+    font-size: 0.7rem;
+  }
+  
+  .notification-progress-bar-label-value {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-progress-container {
+    padding: 12px;
+  }
+  
+  .notification-progress-overview {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .notification-progress-stat {
+    padding: 0 4px;
+  }
+  
+  .notification-progress-label {
+    font-size: 0.75rem;
+  }
+  
+  .notification-progress-number {
+    font-size: 1rem;
+  }
+  
+  .notification-progress-bar {
+    height: 18px;
+  }
+  
+  .notification-progress-bar-container {
+    margin: 6px 0 0 0;
+  }
+  
+  /* Small mobile styles for new progress bar layout */
+  .notification-progress-bar-labels {
+    margin-bottom: 4px;
+  }
+  
+  .notification-progress-bar-label-text {
+    font-size: 0.65rem;
+  }
+  
+  .notification-progress-bar-label-value {
+    font-size: 0.9rem;
+  }
 }
 
 .notification-item-content {
@@ -461,6 +637,30 @@
   font-size: 1.08rem;
   line-height: 1.5;
   text-align: center;
+}
+
+/* Mobile responsive improvements for notification content */
+@media (max-width: 767px) {
+  .notification-item-content {
+    padding: 16px 20px 0 20px;
+  }
+  
+  .notification-item-description {
+    font-size: 1rem;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-item-content {
+    padding: 12px 16px 0 16px;
+  }
+  
+  .notification-item-description {
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
 }
 
 .notification-item-recipients {
@@ -506,6 +706,48 @@
   overflow: hidden;
 }
 
+/* Mobile responsive improvements for action buttons */
+@media (max-width: 767px) {
+  .notification-item-actions {
+    padding-top: 16px;
+  }
+  
+  .notification-item-action {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+  
+  .notification-item-action-buttons {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  
+  .notification-item-action-buttons .notification-item-action {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-item-actions {
+    padding-top: 12px;
+  }
+  
+  .notification-item-action {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+  
+  .notification-item-action-buttons {
+    gap: 8px;
+  }
+  
+  .notification-item-action-buttons .notification-item-action {
+    max-width: 240px;
+  }
+}
+
 .notification-item-action::before {
   content: '';
   position: absolute;
@@ -538,6 +780,62 @@
 
 .notification-item-action.decline:hover:not(:disabled) {
   box-shadow: 0 6px 16px rgba(153, 27, 27, 0.25);
+}
+
+/* Hold Message Styles */
+.notification-item-hold-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 10px;
+  color: #856404;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.notification-item-hold-icon {
+  font-size: 18px;
+  opacity: 0.8;
+}
+
+.notification-item-hold-text {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* Notification On Hold Message Styles */
+.notification-on-hold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #dc2626;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  animation: fadeInUp 0.5s ease;
+}
+
+.notification-on-hold-icon {
+  font-size: 24px;
+  color: #dc2626;
+  animation: pulse 2s infinite;
+}
+
+.notification-on-hold-message {
+  color: #991b1b;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .notification-item-response {
@@ -603,12 +901,12 @@
 
 /* Volunteer Selection Form Styles */
 .volunteer-selection-form {
-  margin: 16px 0 16px 0;
-  padding: 20px 24px 8px 24px;
-  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 12px;
-  border: 2px solid #feb2b2;
-  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.08);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
 }
@@ -620,26 +918,69 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+  background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+  border-radius: 12px 12px 0 0;
 }
 
 .volunteer-selection-title {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #991b1b;
-  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #374151;
+  margin-bottom: 16px;
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
 }
 
 .volunteer-selection-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  gap: 20px;
   flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Mobile responsive improvements for volunteer selection */
+@media (max-width: 767px) {
+  .volunteer-selection-form {
+    margin: 16px 0;
+    padding: 16px;
+  }
+  
+  .volunteer-selection-title {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+  
+  .volunteer-selection-row {
+    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .volunteer-selection-item {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .volunteer-selection-form {
+    padding: 12px;
+  }
+  
+  .volunteer-selection-title {
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+  
+  .volunteer-selection-row {
+    gap: 8px;
+  }
+  
+  .volunteer-selection-item {
+    max-width: 180px;
+  }
 }
 
 .volunteer-selection-label {

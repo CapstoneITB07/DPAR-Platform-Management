@@ -194,6 +194,29 @@ function Notifications() {
     setTimeout(() => setNotification(''), 2000);
   };
 
+  const handleToggleHold = async id => {
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    try {
+      const response = await fetch(`http://localhost:8000/api/notifications/${id}/toggle-hold`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setNotifications(notifications.map(n => 
+          n.id === id ? { ...n, status: data.status } : n
+        ));
+        setNotification(data.message);
+        setTimeout(() => setNotification(''), 2000);
+      } else {
+        setError(data.message || 'Failed to toggle hold status');
+      }
+    } catch (err) {
+      setError('Failed to toggle hold status');
+    }
+  };
+
   // Helper to filter notifications
   const filterNotifications = (notifications) => {
     let filtered = notifications;
@@ -278,7 +301,7 @@ function Notifications() {
         <div className="notification-empty">No notifications yet.</div>
       )}
       {filterNotifications(notifications).map(n => (
-        <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} />
+        <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} onToggleHold={handleToggleHold} />
       ))}
       {showModal && (
         <div className="notification-modal-overlay">
@@ -421,6 +444,7 @@ function VolunteerProgress({ notification }) {
   const [loading, setLoading] = useState(true);
   const [hoveredSegment, setHoveredSegment] = useState(null);
   const [hoveredLegend, setHoveredLegend] = useState(false);
+  const [hoveredLegendItem, setHoveredLegendItem] = useState(null);
   const [activeTab, setActiveTab] = useState('contributing');
 
   useEffect(() => {
@@ -544,11 +568,6 @@ function VolunteerProgress({ notification }) {
                           setHoveredSegment(null);
                         }}
                       >
-                        {/* Divider line */}
-                        {index > 0 && (
-                          <div className="segment-divider" />
-                        )}
-                        
                         {hoveredSegment === group.groupName && (
                           <div className="segment-tooltip">
                             <div className="tooltip-header">{group.groupName}</div>
@@ -618,9 +637,28 @@ function VolunteerProgress({ notification }) {
                     <div className="legend-empty">No groups have contributed</div>
                   ) : (
                     groupContributions.map((group, index) => (
-                      <div key={group.groupName} className="legend-item">
+                      <div 
+                        key={group.groupName} 
+                        className="legend-item"
+                        onMouseEnter={() => setHoveredLegendItem(group.groupName)}
+                        onMouseLeave={() => setHoveredLegendItem(null)}
+                      >
                         <span className="legend-name">{group.groupName}</span>
                         <span className="legend-count">{group.totalCount} volunteers</span>
+                        
+                        {/* Hover popup for group breakdown */}
+                        {hoveredLegendItem === group.groupName && group.contributions && group.contributions.length > 0 && (
+                          <div className="legend-item-popup">
+                            <div className="legend-item-popup-content">
+                              {group.contributions.map((contribution, idx) => (
+                                <div key={idx} className="legend-item-popup-row">
+                                  <span className="legend-item-popup-expertise">{contribution.expertise}</span>
+                                  <span className="legend-item-popup-count">{contribution.count} volunteers</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -668,7 +706,7 @@ function getSegmentColor(index) {
   return colors[index % colors.length];
 }
 
-function NotificationDropdown({ notification, onRemove }) {
+function NotificationDropdown({ notification, onRemove, onToggleHold }) {
   const [open, setOpen] = useState(false);
   const [hoveredStatus, setHoveredStatus] = useState(null);
   const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
@@ -678,7 +716,12 @@ function NotificationDropdown({ notification, onRemove }) {
     <div className={`notification-dropdown${open ? ' open' : ''}`}>
       <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)} style={{ textAlign: 'left' }}>
         <div style={{ textAlign: 'left' }}>
-          <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>{notification.title}</div>
+          <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>
+            {notification.title}
+            {notification.status === 'on_hold' && (
+              <span className="notification-hold-badge">ON HOLD</span>
+            )}
+          </div>
           <div className="notification-dropdown-date" style={{ textAlign: 'left' }}>{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
         </div>
         <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>
@@ -687,48 +730,51 @@ function NotificationDropdown({ notification, onRemove }) {
         <div className="notification-dropdown-body">
           <div className="notification-dropdown-description">{notification.description}</div>
           
-          {/* Invited Groups Display - Hover Popup */}
-          {notification.recipients && notification.recipients.length > 0 && (
-            <div className="invited-groups-container">
-              <div className="invited-groups-trigger">
-                <span className="requirement-label">Invited Groups</span>
-                <span className="requirement-value">
-                  {notification.recipients.length} groups
-                </span>
-              </div>
-              <div className="invited-groups-popup">
-                <div className="invited-groups-content">
-                  {notification.recipients.map((recipient, index) => (
-                    <div key={index} className="invited-group-item">
-                      <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Volunteer Requirements Display - Hover Popup */}
-            {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
-            <div className="volunteer-requirements-hover-container">
-              <div className="volunteer-requirements-trigger">
-                <span className="requirement-label">Volunteer Requirements</span>
+          {/* Requirements Info Container */}
+          <div className="requirements-info-container">
+            {/* Invited Groups Display - Hover Popup */}
+            {notification.recipients && notification.recipients.length > 0 && (
+              <div className="invited-groups-container">
+                <div className="invited-groups-trigger">
+                  <span className="requirement-label">Invited Groups</span>
                   <span className="requirement-value">
-                  {notification.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                    {notification.recipients.length} groups
                   </span>
                 </div>
-              <div className="volunteer-requirements-popup">
-                <div className="popup-content">
-                  {notification.expertise_requirements.map((req, index) => (
-                    <div key={index} className="popup-expertise-item">
-                      <span className="expertise-name">{req.expertise}</span>
-                      <span className="expertise-count">{req.count} needed</span>
-                    </div>
-                  ))}
+                <div className="invited-groups-popup">
+                  <div className="invited-groups-content">
+                    {notification.recipients.map((recipient, index) => (
+                      <div key={index} className="invited-group-item">
+                        <span className="group-name">{recipient.user ? recipient.user.name : `User ${recipient.user_id}`}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+            
+            {/* Volunteer Requirements Display - Hover Popup */}
+            {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
+              <div className="volunteer-requirements-hover-container">
+                <div className="volunteer-requirements-trigger">
+                  <span className="requirement-label">Volunteer Requirements</span>
+                  <span className="requirement-value">
+                    {notification.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0)} needed
+                  </span>
+                </div>
+                <div className="volunteer-requirements-popup">
+                  <div className="popup-content">
+                    {notification.expertise_requirements.map((req, index) => (
+                      <div key={index} className="popup-expertise-item">
+                        <span className="expertise-name">{req.expertise}</span>
+                        <span className="expertise-count">{req.count} needed</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           
           <VolunteerProgress notification={notification} />
           {/* <div className="notification-dropdown-lists">
@@ -758,6 +804,12 @@ function NotificationDropdown({ notification, onRemove }) {
             </div>
           </div> */}
           <div className="notification-dropdown-actions">
+            <button 
+              onClick={() => onToggleHold(notification.id)} 
+              className={`notification-dropdown-hold ${notification.status === 'on_hold' ? 'active' : ''}`}
+            >
+              {notification.status === 'on_hold' ? 'ACTIVATE' : 'HOLD'}
+            </button>
             <button 
               onClick={() => onRemove(notification.id)} 
               className="notification-dropdown-remove"

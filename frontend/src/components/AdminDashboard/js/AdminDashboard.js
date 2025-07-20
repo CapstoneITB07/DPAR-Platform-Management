@@ -75,14 +75,6 @@ function CustomCalendarToolbar({ date, onNavigate, onAddEvent }) {
   const monthYear = moment(date).format('MMMM YYYY');
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
-      <button
-        className="calendar-nav-btn calendar-nav-btn-small"
-        onClick={() => onNavigate('TODAY')}
-        style={{ marginRight: 16, minWidth: 40, textAlign: 'center' }}
-        aria-label="Go to Today"
-      >
-        TD
-      </button>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 240, justifyContent: 'center' }}>
         <button
           className="calendar-nav-btn calendar-nav-btn-icon"
@@ -142,6 +134,9 @@ function AdminDashboard() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
   const [showEventsListModal, setShowEventsListModal] = useState(false);
+  const [preserveCalendarEvents, setPreserveCalendarEvents] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState([]);
+  const [selectedDayDate, setSelectedDayDate] = useState(null);
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -625,7 +620,9 @@ function AdminDashboard() {
       const currentAssociateData = associatesPerformance.find(a => String(a.id) === String(selectedAssociate));
       if (currentAssociateData) {
         setSelectedAssociateData(currentAssociateData);
-        // Update calendar events for the selected associate
+        // Only update calendar events if we don't have any events yet (initial load)
+        // or if we haven't set the preserve flag (meaning no manual events were created)
+        if (calendarEvents.length === 0 && !preserveCalendarEvents) {
         const associateEvals = evaluations.filter(ev => String(ev.user_id) === String(selectedAssociate));
         setCalendarEvents(
           associateEvals.map(ev => ({
@@ -637,23 +634,76 @@ function AdminDashboard() {
         );
       }
     }
-  }, [selectedAssociate, associatesPerformance, evaluations]);
+    }
+  }, [selectedAssociate, associatesPerformance, evaluations, preserveCalendarEvents]);
 
   // Initial data fetch
   useEffect(() => {
     fetchDashboardData();
-    fetchCalendarEvents();
+    fetchCalendarEventsOnly();
   }, []);
+
+  // Separate function to fetch calendar events without interfering with live polling
+  const fetchCalendarEventsOnly = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:8000/api/calendar-events', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      console.log('Raw calendar events response:', response.data);
+      
+      if (response.data.success) {
+        // Group events by date and count them
+        const eventsByDate = {};
+        response.data.data.forEach(event => {
+          const startDate = new Date(event.start_date);
+          const dateKey = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          
+          if (!eventsByDate[dateKey]) {
+            eventsByDate[dateKey] = [];
+          }
+          eventsByDate[dateKey].push(event);
+        });
+        
+        // Create calendar events with count as title
+        const events = Object.entries(eventsByDate).map(([dateKey, dayEvents]) => {
+          const startDate = new Date(dateKey);
+          
+          return {
+            id: `date-${dateKey}`,
+            title: dayEvents.length.toString(), // Show count instead of title
+            start: startDate,
+            end: startDate,
+            allDay: true,
+            resource: {
+              date: dateKey,
+              events: dayEvents,
+              count: dayEvents.length
+            },
+            // Ensure these properties are set for React Big Calendar
+            start_date: startDate,
+            end_date: startDate,
+            display: 'block'
+          };
+        });
+        
+        console.log('Processed calendar events with counts:', events);
+        setCalendarEvents(events);
+      } else {
+        console.log('No events found or API error:', response.data);
+        setCalendarEvents([]);
+      }
+    } catch (err) {
+      console.error('Error fetching calendar events:', err);
+      setCalendarEvents([]);
+    }
+  };
 
   // Debug calendar events
   useEffect(() => {
     console.log('Calendar events state updated:', calendarEvents);
   }, [calendarEvents]);
-
-  // Refresh events when calendar date changes
-  useEffect(() => {
-    fetchCalendarEvents();
-  }, [calendarDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Polling for live updates (debounced to 10 seconds)
   useEffect(() => {
@@ -723,8 +773,9 @@ function AdminDashboard() {
         setSelectedAssociateData(firstAssociateData);
       }
 
-      // If a specific associate was requested (e.g., from dropdown), find their data
-      if (specificAssociateId) {
+      // Only update calendar events if not polling and if a specific associate was requested
+      // This prevents the live polling from overwriting manually added events
+      if (!isPolling && specificAssociateId) {
         const targetAssociate = performanceData.find(a => String(a.id) === String(specificAssociateId));
         if (targetAssociate) {
           setSelectedAssociateData(targetAssociate);
@@ -810,9 +861,7 @@ function AdminDashboard() {
   }, [selectedAssociate, associatesPerformance, associateBarData]);
 
   const handleCalendarNavigate = (action) => {
-    if (action === 'TODAY') {
-      setCalendarDate(new Date());
-    } else if (action === 'PREV') {
+    if (action === 'PREV') {
       setCalendarDate(prev => moment(prev).subtract(1, 'month').toDate());
     } else if (action === 'NEXT') {
       setCalendarDate(prev => moment(prev).add(1, 'month').toDate());
@@ -917,30 +966,135 @@ function AdminDashboard() {
   };
 
   const handleEventCreated = (newEvent) => {
-    setCalendarEvents(prev => [...prev, newEvent]);
-    fetchCalendarEvents();
+    // Set flag to preserve calendar events from being overwritten
+    setPreserveCalendarEvents(true);
+    
+    // Process the new event to match the calendar display format
+    const startDate = new Date(newEvent.start_date);
+    const dateKey = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    setCalendarEvents(prev => {
+      // Check if there's already an event for this date
+      const existingDateEvent = prev.find(event => {
+        const eventDate = new Date(event.start);
+        const eventDateKey = eventDate.toISOString().split('T')[0];
+        return eventDateKey === dateKey;
+      });
+      
+      if (existingDateEvent) {
+        // Update existing date event to include the new event
+        return prev.map(event => {
+          const eventDate = new Date(event.start);
+          const eventDateKey = eventDate.toISOString().split('T')[0];
+          
+          if (eventDateKey === dateKey) {
+            // Add the new event to the existing group
+            const updatedEvents = [...event.resource.events, newEvent];
+            return {
+              ...event,
+              title: updatedEvents.length.toString(),
+              resource: {
+                ...event.resource,
+                events: updatedEvents,
+                count: updatedEvents.length
+              }
+            };
+          }
+          return event;
+        });
+      } else {
+        // Create a new date event for this date
+        const newDateEvent = {
+          id: `date-${dateKey}`,
+          title: '1',
+          start: startDate,
+          end: startDate,
+          allDay: true,
+          resource: {
+            date: dateKey,
+            events: [newEvent],
+            count: 1
+          },
+          // Ensure these properties are set for React Big Calendar
+          start_date: startDate,
+          end_date: startDate,
+          display: 'block'
+        };
+        
+        return [...prev, newDateEvent];
+      }
+    });
   };
 
   const handleEventUpdated = (updatedEvent) => {
-    setCalendarEvents(prev => prev.map(event => 
-      event.id === updatedEvent.id ? updatedEvent : event
-    ));
+    setCalendarEvents(prev => prev.map(event => {
+      // Check if this calendar event contains the updated event
+      if (event.resource && event.resource.events) {
+        const eventIndex = event.resource.events.findIndex(e => e.id === updatedEvent.id);
+        if (eventIndex !== -1) {
+          // Update the specific event in the group
+          const updatedEvents = [...event.resource.events];
+          updatedEvents[eventIndex] = updatedEvent;
+          
+          return {
+            ...event,
+            title: updatedEvents.length.toString(),
+            resource: {
+              ...event.resource,
+              events: updatedEvents,
+              count: updatedEvents.length
+            }
+          };
+        }
+      }
+      return event;
+    }));
   };
 
   const handleEventDeleted = (eventId) => {
-    setCalendarEvents(prev => prev.filter(event => event.id !== eventId));
+    setCalendarEvents(prev => {
+      return prev.map(event => {
+        // Check if this calendar event contains the deleted event
+        if (event.resource && event.resource.events) {
+          const eventIndex = event.resource.events.findIndex(e => e.id === eventId);
+          if (eventIndex !== -1) {
+            // Remove the specific event from the group
+            const updatedEvents = event.resource.events.filter(e => e.id !== eventId);
+            
+            // If no events left for this date, remove the entire date event
+            if (updatedEvents.length === 0) {
+              return null; // This will be filtered out
+            }
+            
+            return {
+              ...event,
+              title: updatedEvents.length.toString(),
+              resource: {
+                ...event.resource,
+                events: updatedEvents,
+                count: updatedEvents.length
+              }
+            };
+          }
+        }
+        return event;
+      }).filter(event => event !== null); // Remove null events (empty dates)
+    });
   };
 
   const handleEventClick = (event) => {
-    // If it's a grouped event (has multiple events), show the first one as default
+    // If it's a grouped event (has multiple events), show all events for that day
     if (event.resource && event.resource.events && event.resource.events.length > 0) {
-      const firstEvent = event.resource.events[0];
       setSelectedEvent({
         ...event,
-        resource: firstEvent
+        resource: event.resource.events[0] // Keep first event for backward compatibility
       });
       setShowEventDetailsModal(true);
+      // Pass events and date to EventDetailsModal
+      setSelectedDayEvents(event.resource.events);
+      setSelectedDayDate(new Date(event.start));
     } else {
+      // Single event - show details modal
       setSelectedEvent(event);
       setShowEventDetailsModal(true);
     }
@@ -958,62 +1112,6 @@ function AdminDashboard() {
 
   const handleCloseEventsListModal = () => {
     setShowEventsListModal(false);
-  };
-
-  const fetchCalendarEvents = async () => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8000/api/calendar-events', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      console.log('Raw calendar events response:', response.data);
-      
-      if (response.data.success) {
-        // Group events by date and count them
-        const eventsByDate = {};
-        response.data.data.forEach(event => {
-          const startDate = new Date(event.start_date);
-          const dateKey = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-          
-          if (!eventsByDate[dateKey]) {
-            eventsByDate[dateKey] = [];
-          }
-          eventsByDate[dateKey].push(event);
-        });
-        
-        // Create calendar events with count as title
-        const events = Object.entries(eventsByDate).map(([dateKey, dayEvents]) => {
-          const startDate = new Date(dateKey);
-          
-          return {
-            id: `date-${dateKey}`,
-            title: dayEvents.length.toString(), // Show count instead of title
-            start: startDate,
-            end: startDate,
-            allDay: true,
-            resource: {
-              date: dateKey,
-              events: dayEvents,
-              count: dayEvents.length
-            },
-            // Ensure these properties are set for React Big Calendar
-            start_date: startDate,
-            end_date: startDate,
-            display: 'block'
-          };
-        });
-        
-        console.log('Processed calendar events with counts:', events);
-        setCalendarEvents(events);
-      } else {
-        console.log('No events found or API error:', response.data);
-        setCalendarEvents([]);
-      }
-    } catch (err) {
-      console.error('Error fetching calendar events:', err);
-      setCalendarEvents([]);
-    }
   };
 
   if (loading) return (
@@ -1265,6 +1363,9 @@ function AdminDashboard() {
             onClose={() => setShowEventDetailsModal(false)}
             event={selectedEvent.resource}
             onEdit={handleEditEvent}
+            onDelete={handleEventDeleted}
+            events={selectedDayEvents.length > 1 ? selectedDayEvents : null}
+            date={selectedDayDate}
           />
         )}
 
@@ -1272,9 +1373,6 @@ function AdminDashboard() {
           <EventsListModal
             show={showEventsListModal}
             onClose={handleCloseEventsListModal}
-            events={calendarEvents.flatMap(event => 
-              event.resource && event.resource.events ? event.resource.events : [event.resource]
-            )}
             onEdit={handleEditEvent}
             onDelete={handleEventDeleted}
           />

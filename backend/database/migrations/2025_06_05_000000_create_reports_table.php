@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('status', ['draft', 'sent', 'reviewed', 'approved', 'cancelled'])->default('draft');
+            $table->enum('status', ['draft', 'sent', 'reviewed', 'approved', 'cancelled', 'rejected'])->default('draft');
             $table->string('photo_path')->nullable();
             $table->json('data')->nullable(); // for storing report details, photos, etc.
             $table->timestamps();

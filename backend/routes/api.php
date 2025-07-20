@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/{id}/respond', [NotificationController::class, 'respond']);
     Route::get('/notifications/{id}/volunteer-progress', [NotificationController::class, 'getVolunteerProgress']);
     Route::get('/notifications/{id}/available-capacity', [NotificationController::class, 'getAvailableCapacity']);
+    Route::post('/notifications/{id}/toggle-hold', [NotificationController::class, 'toggleHold']);
 
     // Reports routes - specific routes first
     Route::get('/reports/submitted', [ReportController::class, 'getSubmittedReports']);

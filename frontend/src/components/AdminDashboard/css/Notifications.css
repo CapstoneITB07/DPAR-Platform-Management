@@ -524,6 +524,47 @@
   box-shadow: 0 4px 16px rgba(231, 76, 60, 0.18);
 }
 
+/* Hold Button Styles */
+.notification-dropdown-hold {
+  background: #f39c12;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(243, 156, 18, 0.10);
+  letter-spacing: 0.5px;
+  margin-right: 12px;
+}
+.notification-dropdown-hold:hover {
+  background: #e67e22;
+  box-shadow: 0 4px 16px rgba(243, 156, 18, 0.18);
+}
+.notification-dropdown-hold.active {
+  background: #27ae60;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.10);
+}
+.notification-dropdown-hold.active:hover {
+  background: #229954;
+  box-shadow: 0 4px 16px rgba(39, 174, 96, 0.18);
+}
+
+/* Hold Badge Styles */
+.notification-hold-badge {
+  background: #e74c3c;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
 /* Progress Bar */
 .notification-progress-labels {
   display: flex;
@@ -1675,7 +1716,7 @@
 .label-value {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #495057;
+  color: #dc2626;
 }
 
 .progress-bar-wrapper {
@@ -1701,7 +1742,7 @@
   border-radius: 14px;
   transition: width 0.5s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #f87171 100%) !important;
+  background: #dc2626 !important;
 }
 
 .progress-segment {
@@ -1725,15 +1766,7 @@
 
 /* Divider Styles */
 .segment-divider {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 60%;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
-  pointer-events: none;
+  display: none;
 }
 
 /* Tooltip Styles */
@@ -1846,6 +1879,79 @@
   border-radius: 16px;
   border: 1px solid #dee2e6;
   font-size: 0.85rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.legend-item:hover {
+  border-color: #adb5bd;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Legend Item Popup Styles */
+.legend-item-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  margin-bottom: 8px;
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  animation: fadeInUp 0.2s ease forwards;
+}
+
+.legend-item:hover .legend-item-popup {
+  opacity: 1;
+  visibility: visible;
+}
+
+.legend-item-popup::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: white;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.legend-item-popup-content {
+  padding: 12px;
+}
+
+.legend-item-popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.legend-item-popup-row:last-child {
+  border-bottom: none;
+}
+
+.legend-item-popup-expertise {
+  font-weight: 600;
+  color: #155724;
+  font-size: 0.85rem;
+}
+
+.legend-item-popup-count {
+  color: #28a745;
+  font-weight: 700;
+  background: #d4edda;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  border: 1px solid #c3e6cb;
 }
 
 .legend-name {
@@ -1860,6 +1966,17 @@
   padding: 2px 6px;
   border-radius: 8px;
   font-size: 0.8rem;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 @keyframes fadeIn {
@@ -1881,6 +1998,33 @@
 }
 
 /* Invited Groups Display */
+.requirements-info-container {
+  display: flex;
+  gap: 16px;
+  margin: 8px 0;
+}
+
+.requirements-info-container .invited-groups-container,
+.requirements-info-container .volunteer-requirements-hover-container {
+  flex: 1;
+  margin: 0;
+}
+
+/* Desktop: 2 columns */
+@media (min-width: 768px) {
+  .requirements-info-container {
+    flex-direction: row;
+  }
+}
+
+/* Tablet and Mobile: 2 rows */
+@media (max-width: 767px) {
+  .requirements-info-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
 .invited-groups-container {
   position: relative;
   margin: 8px 0;

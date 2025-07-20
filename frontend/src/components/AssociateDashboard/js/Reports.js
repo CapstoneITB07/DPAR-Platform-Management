@@ -41,11 +41,7 @@ function Reports() {
   const [formData, setFormData] = useState({
     // Header Information
     for: '',
-    forPosition: '',
-    thru: '',
-    thruPosition: '',
-    from: '',
-    fromPosition: '',
+    forPosition: [''], // Array for multiple positions
     date: '',
     subject: '',
 
@@ -84,6 +80,8 @@ function Reports() {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedReports, setSelectedReports] = useState([]);
+  const [approvalNotification, setApprovalNotification] = useState('');
+  const [rejectionNotification, setRejectionNotification] = useState('');
 
   const steps = [
     'Header',
@@ -98,15 +96,24 @@ function Reports() {
   const isStepComplete = useCallback((stepIndex) => {
     switch (stepIndex) {
       case 0: // Header
-        return !!formData.for && !!formData.thru && !!formData.from && !!formData.date && !!formData.subject;
+        return !!formData.for?.trim() && 
+               formData.forPosition.some(pos => pos.trim()) && 
+               !!formData.date && 
+               !!formData.subject?.trim();
       case 1: // Authority
         return formData.authority.some(auth => auth.trim());
       case 2: // Date, Time, and Place of Activity
-        return !!formData.dateTime && !!formData.activityType && !!formData.location;
+        return !!formData.dateTime && 
+               !!formData.activityType?.trim() && 
+               !!formData.location?.trim();
       case 3: // Personnel Involved
-        return formData.auxiliaryPersonnel.some(p => p.trim()) || formData.pcgPersonnel.some(p => p.trim());
+        return formData.auxiliaryPersonnel.some(p => p.trim()) || 
+               formData.pcgPersonnel.some(p => p.trim());
       case 4: // Narration of Events
-        return !!formData.objective && !!formData.summary && formData.activities.some(a => a.title.trim() || a.description.trim()) && !!formData.conclusion;
+        return !!formData.objective?.trim() && 
+               !!formData.summary?.trim() && 
+               formData.activities.some(a => a.title.trim() || a.description.trim()) && 
+               !!formData.conclusion?.trim();
       case 5: // Recommendations
         return formData.recommendations.some(r => r.trim());
       case 6: // Attachments
@@ -119,6 +126,42 @@ function Reports() {
   useEffect(() => {
     fetchReports();
   }, []);
+
+  // Check for approval/rejection notifications
+  useEffect(() => {
+    const checkForNotifications = () => {
+      reports.forEach(report => {
+        if (report.status === 'approved' && report.approved_at) {
+          const approvedTime = new Date(report.approved_at).getTime();
+          const now = Date.now();
+          const timeDiff = now - approvedTime;
+          
+          // Show notification if approved within last 5 minutes
+          if (timeDiff < 5 * 60 * 1000) {
+            setApprovalNotification('Your report has been approved! You can now download the AOR.');
+            setTimeout(() => setApprovalNotification(''), 5000);
+          }
+        }
+        
+        if (report.status === 'rejected' && report.rejected_at) {
+          const rejectedTime = new Date(report.rejected_at).getTime();
+          const now = Date.now();
+          const timeDiff = now - rejectedTime;
+          
+          // Show notification if rejected within last 5 minutes
+          if (timeDiff < 5 * 60 * 1000) {
+            setRejectionNotification('Your report has been rejected. Please submit a new one.');
+            setTimeout(() => setRejectionNotification(''), 5000);
+          }
+        }
+      });
+    };
+
+    checkForNotifications();
+    const interval = setInterval(checkForNotifications, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [reports]);
     
   useEffect(() => {
     // Update completed steps when form data changes
@@ -199,16 +242,38 @@ function Reports() {
 
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
+    console.log('Photo upload - selected files:', files.length, files.map(f => f.name));
+    console.log('File input files:', e.target.files);
+    console.log('Files length:', e.target.files.length);
+    
+    // Validate that we have files
+    if (files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
+    
+    // Check if we're adding to existing photos or replacing them
+    const currentPhotos = formData.photos || [];
+    const newPhotos = [...currentPhotos, ...files];
+    
+    console.log('Current photos:', currentPhotos.length);
+    console.log('New photos to add:', files.length);
+    console.log('Total photos after merge:', newPhotos.length);
+    console.log('All photo names:', newPhotos.map(f => f.name));
+    
     setFormData(prev => ({
       ...prev,
-      photos: [...prev.photos, ...files]
+      photos: newPhotos // Merge with existing photos
     }));
+    
+    // Reset the input value to allow selecting the same files again
+    e.target.value = '';
   };
 
   const openCreateModal = () => {
     setEditingReport(null);
     setFormData({
-      for: '', forPosition: '', thru: '', thruPosition: '', from: '', fromPosition: '', date: '', subject: '',
+      for: '', forPosition: [''], date: '', subject: '',
       authority: ['', ''], dateTime: '', activityType: '', location: '', auxiliaryPersonnel: [''], pcgPersonnel: [''],
       objective: '', summary: '', activities: [{ title: '', description: '' }], conclusion: '', recommendations: [''], photos: []
     });
@@ -268,11 +333,7 @@ function Reports() {
         // Prepare the report data
         const reportData = {
           for: formData.for || '',
-          forPosition: formData.forPosition || '',
-          thru: formData.thru || '',
-          thruPosition: formData.thruPosition || '',
-          from: formData.from || '',
-          fromPosition: formData.fromPosition || '',
+          forPosition: formData.forPosition.filter(pos => pos.trim()),
           date: formData.date || '',
           subject: formData.subject || '',
           authority: formData.authority.filter(auth => auth.trim()),
@@ -286,7 +347,7 @@ function Reports() {
           activities: formData.activities.filter(a => a.title.trim() || a.description.trim()),
           conclusion: formData.conclusion || '',
           recommendations: formData.recommendations.filter(r => r.trim()),
-          details: formData.summary || ''
+          photos: [] // Initialize empty photos array
         };
 
         formDataToSend.append('title', formData.subject || 'Untitled Report');
@@ -296,11 +357,17 @@ function Reports() {
 
         // Compress and append photos
         if (formData.photos && formData.photos.length > 0) {
+          console.log('Processing photos:', formData.photos.length, 'files');
+          console.log('Photo names:', formData.photos.map(f => f.name));
           for (let i = 0; i < formData.photos.length; i++) {
             const file = formData.photos[i];
+            console.log(`Processing photo ${i + 1}:`, file.name, 'Size:', file.size);
             const compressed = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true });
-            formDataToSend.append('photo', compressed, file.name);
+            formDataToSend.append(`photo[${i}]`, compressed, file.name);
+            console.log('Appended photo:', file.name, 'with key:', `photo[${i}]`);
           }
+        } else {
+          console.log('No photos to upload');
         }
 
         const url = editingReport 
@@ -317,6 +384,9 @@ function Reports() {
             'Accept': 'application/json'
           }
         });
+        
+        console.log('Response received:', response.data);
+        
         if (response.data) {
           setError('');
           setShowCreateModal(false);
@@ -359,11 +429,7 @@ function Reports() {
     setFormData({
       // Header Information
       for: reportData.for || report.for || '',
-      forPosition: reportData.forPosition || report.forPosition || '',
-      thru: reportData.thru || report.thru || '',
-      thruPosition: reportData.thruPosition || report.thruPosition || '',
-      from: reportData.from || report.from || '',
-      fromPosition: reportData.fromPosition || report.fromPosition || '',
+      forPosition: reportData.forPosition || (report.forPosition ? report.forPosition.split(',') : ['']),
       date: reportData.date || report.date || '',
       subject: reportData.subject || report.subject || '',
 
@@ -453,6 +519,11 @@ function Reports() {
           return newSet;
         });
         setCurrentStep(prev => prev + 1);
+        setError(''); // Clear any previous errors
+      } else {
+        // Show specific validation error for current step
+        const stepName = steps[currentStep];
+        setError(`Please complete all required fields in ${stepName} before proceeding.`);
       }
     }
   };
@@ -519,6 +590,18 @@ function Reports() {
   return (
     <AssociateLayout>
       <div className="reports-container">
+        {/* Approval/Rejection Notification */}
+        {approvalNotification && (
+          <div className="approval-notification approved">
+            {approvalNotification}
+          </div>
+        )}
+        {rejectionNotification && (
+          <div className="approval-notification rejected">
+            {rejectionNotification}
+          </div>
+        )}
+        
         <div className="header-section">
           <div className="header-left">
             <h2>REPORTS</h2>
@@ -619,8 +702,21 @@ function Reports() {
                         <td className="description-cell description-col">{report.description}</td>
                         <td className="status-cell status-col">
                           <span className={`status-badge ${report.status}`}>
-                            {report.status?.toUpperCase() || 'DRAFT'}
+                            {report.status === 'sent' ? 'PENDING APPROVAL' : 
+                             report.status === 'approved' ? 'APPROVED' :
+                             report.status === 'rejected' ? 'REJECTED' :
+                             report.status?.toUpperCase() || 'DRAFT'}
                           </span>
+                          {report.status === 'approved' && report.approved_at && (
+                            <div className="status-detail">
+                              Approved on {new Date(report.approved_at).toLocaleDateString()}
+                            </div>
+                          )}
+                          {report.status === 'rejected' && report.rejected_at && (
+                            <div className="status-detail rejected">
+                              Rejected on {new Date(report.rejected_at).toLocaleDateString()}
+                            </div>
+                          )}
                         </td>
                         <td className="actions-cell actions-col">
                           <div className="action-buttons-row">
@@ -711,29 +807,101 @@ function Reports() {
                   {currentStep === 0 && (
                     <>
                       <div className="report-form-row">
+                        <div className="report-form-group">
+                          <label>FOR: <span style={{color: '#ef4444'}}>*</span></label>
+                          <input 
+                            type="text" 
+                            value={formData.for} 
+                            onChange={e => handleInputChange(e, 'for')} 
+                            placeholder="Recipient Name" 
+                            style={{
+                              borderColor: !formData.for?.trim() ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                        <div className="report-form-group">
+                          <label>POSITION: <span style={{color: '#ef4444'}}>*</span></label>
+                          {formData.forPosition.map((position, index) => (
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input 
+                                type="text" 
+                                value={position} 
+                                onChange={e => handleInputChange(e, 'forPosition', index)} 
+                                placeholder={`Position ${index + 1}`} 
+                                style={{flex: 1, minWidth: 0}} 
+                              />
+                              {index === formData.forPosition.length - 1 && position.trim() && (
+                                <button type="button" onClick={() => addField('forPosition')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
+                              )}
+                              {formData.forPosition.length > 1 && (
+                                <button type="button" onClick={() => removeField('forPosition', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="report-form-group">
+                          <label>DATE: <span style={{color: '#ef4444'}}>*</span></label>
+                          <input 
+                            type="date" 
+                            value={formData.date} 
+                            onChange={e => handleInputChange(e, 'date')} 
+                            style={{
+                              borderColor: !formData.date ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
-                          <label>SUBJECT:</label>
-                          <input type="text" value={formData.subject} onChange={e => handleInputChange(e, 'subject')} placeholder="Report Subject" />
-                        </div>
-                      </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group">
-                          <label>FOR:</label>
-                          <input type="text" value={formData.for} onChange={e => handleInputChange(e, 'for')} placeholder="Recipient Name" />
-                        </div>
-                        <div className="report-form-group">
-                          <label>THRU:</label>
-                          <input type="text" value={formData.thru} onChange={e => handleInputChange(e, 'thru')} placeholder="Thru Name" />
-                        </div>
-                      </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group">
-                          <label>FROM:</label>
-                          <input type="text" value={formData.from} onChange={e => handleInputChange(e, 'from')} placeholder="Sender Name" />
-                        </div>
-                        <div className="report-form-group">
-                          <label>DATE:</label>
-                          <input type="date" value={formData.date} onChange={e => handleInputChange(e, 'date')} />
+                          <label>SUBJECT: <span style={{color: '#ef4444'}}>*</span></label>
+                          <input 
+                            type="text" 
+                            value={formData.subject} 
+                            onChange={e => handleInputChange(e, 'subject')} 
+                            placeholder="Report Subject" 
+                            style={{
+                              borderColor: !formData.subject?.trim() ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
                         </div>
                       </div>
                     </>
@@ -745,13 +913,52 @@ function Reports() {
                         <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
                           <label>Authority:</label>
                   {formData.authority.map((auth, index) => (
-                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
-                              <input type="text" value={auth} onChange={e => handleInputChange(e, 'authority', index)} placeholder={`Authority ${index + 1}`} style={{flex: 1}} />
-                              {index === formData.authority.length - 1 && (
-                                <button type="button" onClick={() => addField('authority')}>Add</button>
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input type="text" value={auth} onChange={e => handleInputChange(e, 'authority', index)} placeholder={`Authority ${index + 1}`} style={{flex: 1, minWidth: 0}} />
+                              {index === formData.authority.length - 1 && auth.trim() && (
+                                <button type="button" onClick={() => addField('authority')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
                               )}
                               {formData.authority.length > 1 && (
-                                <button type="button" onClick={() => removeField('authority', index)}>Remove</button>
+                                <button type="button" onClick={() => removeField('authority', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
                               )}
                             </div>
                           ))}
@@ -787,13 +994,52 @@ function Reports() {
                         <div className="report-form-group">
                           <label>Auxiliary Personnel:</label>
                           {formData.auxiliaryPersonnel.map((person, index) => (
-                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
-                              <input type="text" value={person} onChange={e => handleInputChange(e, 'auxiliaryPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1}} />
-                              {index === formData.auxiliaryPersonnel.length - 1 && (
-                                <button type="button" onClick={() => addField('auxiliaryPersonnel')}>Add</button>
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input type="text" value={person} onChange={e => handleInputChange(e, 'auxiliaryPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1, minWidth: 0}} />
+                              {index === formData.auxiliaryPersonnel.length - 1 && person.trim() && (
+                                <button type="button" onClick={() => addField('auxiliaryPersonnel')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
                               )}
                               {formData.auxiliaryPersonnel.length > 1 && (
-                                <button type="button" onClick={() => removeField('auxiliaryPersonnel', index)}>Remove</button>
+                                <button type="button" onClick={() => removeField('auxiliaryPersonnel', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
                               )}
                             </div>
                           ))}
@@ -801,13 +1047,52 @@ function Reports() {
                         <div className="report-form-group">
                           <label>PCG Personnel:</label>
                           {formData.pcgPersonnel.map((person, index) => (
-                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
-                              <input type="text" value={person} onChange={e => handleInputChange(e, 'pcgPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1}} />
-                              {index === formData.pcgPersonnel.length - 1 && (
-                                <button type="button" onClick={() => addField('pcgPersonnel')}>Add</button>
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input type="text" value={person} onChange={e => handleInputChange(e, 'pcgPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1, minWidth: 0}} />
+                              {index === formData.pcgPersonnel.length - 1 && person.trim() && (
+                                <button type="button" onClick={() => addField('pcgPersonnel')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
                               )}
                               {formData.pcgPersonnel.length > 1 && (
-                                <button type="button" onClick={() => removeField('pcgPersonnel', index)}>Remove</button>
+                                <button type="button" onClick={() => removeField('pcgPersonnel', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
                               )}
                     </div>
                   ))}
@@ -879,13 +1164,54 @@ function Reports() {
                         <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
                           <label>Recommendations:</label>
                           {formData.recommendations.map((rec, index) => (
-                            <div key={index} style={{display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: 8}}>
-                              <textarea value={rec} onChange={e => handleInputChange(e, 'recommendations', index)} placeholder={`Recommendation ${index + 1}`} style={{flex: 1}} />
-                              {index === formData.recommendations.length - 1 && (
-                                <button type="button" onClick={() => addField('recommendations')}>Add</button>
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'flex-start', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <textarea value={rec} onChange={e => handleInputChange(e, 'recommendations', index)} placeholder={`Recommendation ${index + 1}`} style={{flex: 1, minWidth: 0, minHeight: '60px'}} />
+                              {index === formData.recommendations.length - 1 && rec.trim() && (
+                                <button type="button" onClick={() => addField('recommendations')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0,
+                                  marginTop: '8px'
+                                }}>+</button>
                               )}
                               {formData.recommendations.length > 1 && (
-                                <button type="button" onClick={() => removeField('recommendations', index)}>Remove</button>
+                                <button type="button" onClick={() => removeField('recommendations', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0,
+                                  marginTop: '8px'
+                                }}>×</button>
                               )}
                             </div>
                           ))}
@@ -902,8 +1228,63 @@ function Reports() {
                           <div className="photo-upload-section">
                             <label className="photo-upload-label">
                               <FontAwesomeIcon icon={faUpload} /> Upload Photos
-                              <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                              <input 
+                                key={`photo-input-${Date.now()}`}
+                                type="file" 
+                                multiple 
+                                accept="image/*" 
+                                onChange={handlePhotoUpload} 
+                                style={{ display: 'none' }} 
+                              />
                             </label>
+                            <div style={{marginTop: '5px', fontSize: '11px', color: '#666', fontStyle: 'italic'}}>
+                              💡 Tip: Hold Ctrl (or Cmd on Mac) to select multiple photos at once
+                            </div>
+                            <div style={{marginTop: '10px', fontSize: '12px', color: '#666'}}>
+                              Selected: {formData.photos.length} photo(s)
+                              {formData.photos.length > 0 && (
+                                <>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setFormData(prev => ({ ...prev, photos: [] }))}
+                                    style={{
+                                      marginLeft: '10px',
+                                      padding: '2px 8px',
+                                      fontSize: '10px',
+                                      backgroundColor: '#dc3545',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    Clear All
+                                  </button>
+                                  <div style={{marginTop: '5px'}}>
+                                    {formData.photos.map((photo, index) => (
+                                      <div key={index} style={{fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px'}}>
+                                        <span>• {photo.name} ({(photo.size / 1024).toFixed(1)} KB)</span>
+                                        <button 
+                                          type="button" 
+                                          onClick={() => removeField('photos', index)}
+                                          style={{
+                                            padding: '1px 4px',
+                                            fontSize: '8px',
+                                            backgroundColor: '#dc3545',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '2px',
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          Remove
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                             <div className="photo-preview">
                               {formData.photos.map((photo, index) => (
                                 <div key={index} className="photo-thumbnail">

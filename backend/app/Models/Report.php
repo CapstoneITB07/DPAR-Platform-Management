@@ -15,7 +15,12 @@ class Report extends Model
         'description',
         'status',
         'photo_path',
-        'data'
+        'data',
+        'approved_at',
+        'approved_by',
+        'rejected_at',
+        'rejected_by',
+        'rejection_reason'
     ];
 
     protected $casts = [
@@ -34,4 +39,3 @@ class Report extends Model
         return $this->photo_path ? asset('storage/' . $this->photo_path) : null;
     }
 }
- 

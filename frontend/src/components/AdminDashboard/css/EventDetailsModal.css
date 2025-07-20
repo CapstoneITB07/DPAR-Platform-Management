@@ -18,7 +18,8 @@
   max-width: 500px;
   width: 90%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   position: relative;
 }
@@ -32,6 +33,7 @@
   background: #A11C22;
   color: white;
   border-radius: 12px 12px 0 0;
+  flex-shrink: 0;
 }
 
 .event-details-header h3 {
@@ -85,6 +87,9 @@
 
 .event-details-content {
   padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .event-title {
@@ -228,4 +233,149 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* Accordion Styles for Multiple Events */
+.events-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-accordion-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.2s;
+}
+
+.event-accordion-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.event-accordion-header {
+  background: #f8fafc;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-accordion-header:hover {
+  background: #f1f5f9;
+}
+
+.event-accordion-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.expand-icon {
+  color: #6b7280;
+  font-size: 0.875rem;
+  transition: transform 0.2s;
+}
+
+.event-accordion-info .event-title {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.event-accordion-info .event-time {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.event-accordion-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.event-accordion-content {
+  padding: 20px;
+  background: white;
+}
+
+.event-accordion-content .event-info-grid {
+  margin-bottom: 20px;
+}
+
+.event-accordion-content .event-description {
+  margin-bottom: 20px;
+}
+
+.event-accordion-content .event-meta {
+  padding-top: 16px;
+}
+
+/* Responsive design for accordion */
+@media (max-width: 768px) {
+  .event-accordion-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  
+  .event-accordion-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .event-accordion-actions {
+    align-self: flex-end;
+  }
+  
+  .event-accordion-content {
+    padding: 16px;
+  }
+} 
+
+.btn-edit-icon {
+  background: #3b82f6;
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.btn-edit-icon:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-delete-icon {
+  background: #ef4444;
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.btn-delete-icon:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
 } 

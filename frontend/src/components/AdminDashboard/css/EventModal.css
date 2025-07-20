@@ -18,7 +18,8 @@
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   position: relative;
 }
@@ -66,6 +67,9 @@
 
 .event-modal-content {
   padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(90vh - 80px); /* Subtract header height */
 }
 
 .error-message {

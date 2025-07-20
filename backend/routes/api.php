@@ -48,7 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Password routes
     Route::post('/change-password', [PasswordController::class, 'changePassword']);
-    Route::post('/admin/change-password', [PasswordController::class, 'adminChangePassword'])->middleware('role:admin');
+    Route::post('/admin/change-password', [PasswordController::class, 'adminChangePassword'])->middleware('role:head_admin');
 
     // Resource Controllers
     Route::apiResource('/announcements', AnnouncementController::class)->except(['index']);
@@ -61,6 +61,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports routes - specific routes first
     Route::get('/reports/submitted', [ReportController::class, 'getSubmittedReports']);
     Route::get('/reports/{id}/download', [ReportController::class, 'download']);
+    Route::put('/reports/{id}/approve', [ReportController::class, 'approve']);
+    Route::put('/reports/{id}/reject', [ReportController::class, 'reject']);
     Route::apiResource('/reports', ReportController::class);
 
     Route::apiResource('/certificates', CertificateController::class);

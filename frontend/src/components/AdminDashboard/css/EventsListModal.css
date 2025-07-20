@@ -18,7 +18,8 @@
   max-width: 800px;
   width: 90%;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   position: relative;
 }
@@ -32,6 +33,7 @@
   background: #A11C22;
   color: white;
   border-radius: 12px 12px 0 0;
+  flex-shrink: 0;
 }
 
 .events-list-modal-header h3 {
@@ -66,6 +68,9 @@
 
 .events-list-modal-content {
   padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .no-events {
@@ -346,5 +351,296 @@
   .pagination-btn {
     width: 100%;
     justify-content: center;
+  }
+} 
+
+/* Loading and Error States */
+.loading-events {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #A11C22;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #dc2626;
+}
+
+.retry-btn {
+  background: #A11C22;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  background: #8b1a1f;
+}
+
+/* Accordion Styles */
+.events-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.month-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.2s;
+}
+
+.month-group:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.month-header {
+  background: #f8fafc;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.month-header:hover {
+  background: #f1f5f9;
+}
+
+.month-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expand-icon {
+  color: #6b7280;
+  font-size: 0.875rem;
+  transition: transform 0.2s;
+}
+
+.month-label {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1.125rem;
+  flex: 1;
+}
+
+.event-count {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.month-events {
+  padding: 0;
+}
+
+.month-events .event-item {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.month-events .event-item:last-child {
+  border-bottom: none;
+}
+
+.month-events .event-item:hover {
+  background: #f8fafc;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Enhanced event item styles for accordion */
+.month-events .event-item {
+  padding: 16px 20px;
+  background: white;
+}
+
+.month-events .event-header {
+  margin-bottom: 12px;
+}
+
+.month-events .event-title {
+  font-size: 1.125rem;
+}
+
+.month-events .event-info {
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.month-events .event-info-item {
+  gap: 10px;
+}
+
+.month-events .info-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+.month-events .info-label {
+  font-size: 0.7rem;
+}
+
+.month-events .info-value {
+  font-size: 0.8rem;
+}
+
+.month-events .event-description {
+  margin-bottom: 12px;
+  padding: 10px;
+  font-size: 0.8rem;
+}
+
+.month-events .event-meta {
+  padding-top: 10px;
+  font-size: 0.7rem;
+}
+
+/* Responsive design for accordion */
+@media (max-width: 768px) {
+  .month-header {
+    padding: 14px 16px;
+  }
+  
+  .month-label {
+    font-size: 1rem;
+  }
+  
+  .month-events .event-item {
+    padding: 12px 16px;
+  }
+  
+  .month-events .event-title {
+    font-size: 1rem;
+  }
+  
+  .month-info {
+    gap: 8px;
+  }
+} 
+
+/* Event Accordion Styles */
+.event-accordion-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.event-accordion-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.event-accordion-header {
+  background: #f8fafc;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-accordion-header:hover {
+  background: #f1f5f9;
+}
+
+.event-accordion-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.event-accordion-info .event-title {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.event-accordion-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.event-month {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.event-accordion-content {
+  padding: 20px;
+  background: white;
+}
+
+.event-accordion-content .event-info {
+  margin-bottom: 20px;
+}
+
+.event-accordion-content .event-description {
+  margin-bottom: 20px;
+}
+
+.event-accordion-content .event-meta {
+  padding-top: 16px;
+}
+
+/* Responsive design for event accordion */
+@media (max-width: 768px) {
+  .event-accordion-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  
+  .event-accordion-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .event-accordion-actions {
+    align-self: flex-end;
+    gap: 8px;
+  }
+  
+  .event-accordion-content {
+    padding: 16px;
   }
 } 

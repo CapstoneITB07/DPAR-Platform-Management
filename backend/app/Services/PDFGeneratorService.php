@@ -5,6 +5,7 @@ namespace App\Services;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use App\Models\Report;
+use Illuminate\Support\Facades\Log;
 
 class PDFGeneratorService
 {
@@ -18,6 +19,8 @@ class PDFGeneratorService
         $options->set('defaultMediaType', 'print');
         $options->set('defaultPaperSize', 'A4');
         $options->set('defaultPaperOrientation', 'portrait');
+        $options->set('isRemoteEnabled', true);
+        $options->set('chroot', base_path());
 
         // Create Dompdf instance
         $dompdf = new Dompdf($options);
@@ -28,14 +31,19 @@ class PDFGeneratorService
             $reportData = json_decode($reportData, true) ?? [];
         }
 
-        // Merge report data with report model
-        $data = [
-            'report' => $report,
-            'data' => $reportData
-        ];
+        // Log the report data for debugging
+        Log::info('PDF Generation - Report Data', [
+            'report_id' => $report->id,
+            'has_photos' => isset($reportData['photos']),
+            'photo_count' => isset($reportData['photos']) ? count($reportData['photos']) : 0,
+            'photos' => $reportData['photos'] ?? []
+        ]);
+
+        // Ensure the report object has the data property set
+        $report->data = $reportData;
 
         // Render the template
-        $html = view('pdf.aor_template', $data)->render();
+        $html = view('pdf.aor_template', ['report' => $report])->render();
 
         // Load HTML into Dompdf
         $dompdf->loadHtml($html);

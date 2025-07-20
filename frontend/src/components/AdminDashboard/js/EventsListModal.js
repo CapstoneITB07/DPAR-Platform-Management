@@ -1,13 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faCalendarAlt, faMapMarkerAlt, faUser, faClock, faEdit, faTrash, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { format } from 'date-fns';
+import { faTimes, faCalendarAlt, faMapMarkerAlt, faUser, faClock, faEdit, faTrash, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { format, parseISO } from 'date-fns';
+import axios from 'axios';
 import '../css/EventsListModal.css';
 
-const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const eventsPerPage = 5; // Show 5 events per page
+const EventsListModal = ({ show, onClose, onEdit, onDelete }) => {
+  const [events, setEvents] = useState([]);
+  const [expandedEvents, setExpandedEvents] = useState(new Set());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Fetch all events when modal opens
+  useEffect(() => {
+    if (show) {
+      fetchAllEvents();
+    }
+  }, [show]);
+
+  const fetchAllEvents = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get('http://localhost:8000/api/calendar-events', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        const allEvents = response.data.data;
+        // Sort events by start date (newest first)
+        const sortedEvents = allEvents.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+        setEvents(sortedEvents);
+      } else {
+        setError('Failed to fetch events');
+      }
+    } catch (err) {
+      console.error('Error fetching events:', err);
+      setError('Failed to fetch events');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const formatDateTime = (dateTime) => {
     if (!dateTime) return 'Not specified';
@@ -19,6 +54,16 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
     return format(new Date(dateTime), 'PPP');
   };
 
+  const formatTime = (dateTime) => {
+    if (!dateTime) return '';
+    return format(new Date(dateTime), 'p');
+  };
+
+  const formatMonth = (dateTime) => {
+    if (!dateTime) return '';
+    return format(new Date(dateTime), 'MMM yyyy');
+  };
+
   const isAllDay = (startDate, endDate) => {
     if (!startDate || !endDate) return false;
     const start = new Date(startDate);
@@ -28,6 +73,16 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
     return diffDays >= 1;
   };
 
+  const toggleEvent = (eventId) => {
+    const newExpanded = new Set(expandedEvents);
+    if (newExpanded.has(eventId)) {
+      newExpanded.delete(eventId);
+    } else {
+      newExpanded.add(eventId);
+    }
+    setExpandedEvents(newExpanded);
+  };
+
   const handleEditEvent = (event) => {
     if (onEdit) {
       onEdit(event);
@@ -35,22 +90,22 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
     }
   };
 
-  const handleDeleteEvent = (eventId) => {
+  const handleDeleteEvent = async (eventId) => {
     if (onDelete && window.confirm('Are you sure you want to delete this event?')) {
-      onDelete(eventId);
+      try {
+        await onDelete(eventId);
+        // Refresh events after deletion
+        fetchAllEvents();
+      } catch (error) {
+        console.error('Error deleting event:', error);
+      }
     }
   };
 
-  const handlePreviousPage = () => {
-    setCurrentPage(prev => Math.max(0, prev - 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(Math.ceil(events.length / eventsPerPage) - 1, prev + 1));
-  };
-
   const handleCloseModal = () => {
-    setCurrentPage(0); // Reset to first page when closing
+    setExpandedEvents(new Set());
+    setEvents([]);
+    setError('');
     onClose();
   };
 
@@ -65,7 +120,7 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
       <div className="events-list-modal-header">
         <h3>
           <FontAwesomeIcon icon={faCalendarAlt} />
-          All Events
+          All Events ({events.length} total)
         </h3>
         <button className="events-list-modal-close" onClick={handleCloseModal}>
           <FontAwesomeIcon icon={faTimes} />
@@ -73,32 +128,55 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
       </div>
 
       <div className="events-list-modal-content">
-        {events.length === 0 ? (
+        {loading ? (
+          <div className="loading-events">
+            <div className="loading-spinner"></div>
+            <p>Loading events...</p>
+          </div>
+        ) : error ? (
+          <div className="error-message">
+            <p>{error}</p>
+            <button onClick={fetchAllEvents} className="retry-btn">Retry</button>
+          </div>
+        ) : events.length === 0 ? (
           <div className="no-events">
             <FontAwesomeIcon icon={faCalendarAlt} />
             <p>No events created yet.</p>
             <p>Click the "+ EV" button to create your first event!</p>
           </div>
         ) : (
-          <>
-            <div className="events-list">
-              {events
-                .slice(currentPage * eventsPerPage, (currentPage + 1) * eventsPerPage)
-                .map((event) => (
-                  <div key={event.id} className="event-item">
-                    <div className="event-header">
-                      <h4 className="event-title">{event.title}</h4>
-                      <div className="event-actions">
+          <div className="events-accordion">
+            {events.map((event) => (
+              <div key={event.id} className="event-accordion-item">
+                <div 
+                  className="event-accordion-header"
+                  onClick={() => toggleEvent(event.id)}
+                >
+                  <div className="event-accordion-info">
+                    <FontAwesomeIcon 
+                      icon={expandedEvents.has(event.id) ? faChevronDown : faChevronRight} 
+                      className="expand-icon"
+                    />
+                    <span className="event-title">{event.title}</span>
+                  </div>
+                  <div className="event-accordion-actions">
+                    <span className="event-month">{formatMonth(event.start_date)}</span>
                         <button 
                           className="btn-edit-event" 
-                          onClick={() => handleEditEvent(event)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditEvent(event);
+                      }}
                           title="Edit Event"
                         >
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <button 
                           className="btn-delete-event" 
-                          onClick={() => handleDeleteEvent(event.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteEvent(event.id);
+                      }}
                           title="Delete Event"
                         >
                           <FontAwesomeIcon icon={faTrash} />
@@ -106,6 +184,8 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
                       </div>
                     </div>
                     
+                {expandedEvents.has(event.id) && (
+                  <div className="event-accordion-content">
                     <div className="event-info">
                       <div className="event-info-item">
                         <div className="info-icon">
@@ -121,8 +201,8 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
                               </>
                             ) : (
                               <>
-                                <div><strong>Start:</strong> {formatDateTime(event.start_date)}</div>
-                                <div><strong>End:</strong> {formatDateTime(event.end_date)}</div>
+                                <div><strong>Start:</strong> {formatDate(event.start_date)} at {formatTime(event.start_date)}</div>
+                                <div><strong>End:</strong> {formatDate(event.end_date)} at {formatTime(event.end_date)}</div>
                               </>
                             )}
                           </div>
@@ -164,36 +244,10 @@ const EventsListModal = ({ show, onClose, events, onEdit, onDelete }) => {
                       <span><strong>Last updated:</strong> {formatDateTime(event.updated_at)}</span>
                     </div>
                   </div>
-                ))}
-            </div>
-            
-            {/* Pagination Controls */}
-            {events.length > eventsPerPage && (
-              <div className="events-pagination">
-                <button 
-                  className="pagination-btn prev-btn" 
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 0}
-                >
-                  <FontAwesomeIcon icon={faChevronLeft} />
-                  Previous
-                </button>
-                
-                <span className="pagination-info">
-                  Page {currentPage + 1} of {Math.ceil(events.length / eventsPerPage)}
-                </span>
-                
-                <button 
-                  className="pagination-btn next-btn" 
-                  onClick={handleNextPage}
-                  disabled={currentPage >= Math.ceil(events.length / eventsPerPage) - 1}
-                >
-                  Next
-                  <FontAwesomeIcon icon={faChevronRight} />
-                </button>
+                )}
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
     </Modal>

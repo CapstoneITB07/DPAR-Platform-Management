@@ -24,6 +24,22 @@ const EventModal = ({
   const [error, setError] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Helper to format backend date to local input value
+  function formatLocalInput(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const tzOffset = date.getTimezoneOffset();
+    const local = new Date(date.getTime() - tzOffset * 60 * 1000);
+    return local.toISOString().slice(0, 16);
+  }
+
+  // Helper to convert local datetime-local input to UTC string for backend
+  function localToUTCString(localDateTime) {
+    if (!localDateTime) return '';
+    const date = new Date(localDateTime);
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+  }
+
   useEffect(() => {
     if (event) {
       setIsEditMode(true);
@@ -31,8 +47,8 @@ const EventModal = ({
         title: event.title || '',
         description: event.description || '',
         location: event.location || '',
-        start_date: event.start_date ? new Date(event.start_date).toISOString().slice(0, 16) : '',
-        end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : ''
+        start_date: event.start_date ? formatLocalInput(event.start_date) : '',
+        end_date: event.end_date ? formatLocalInput(event.end_date) : ''
       });
     } else {
       setIsEditMode(false);
@@ -82,6 +98,13 @@ const EventModal = ({
     setLoading(true);
     setError('');
 
+    // Convert local input to UTC string for backend
+    const dataToSend = {
+      ...formData,
+      start_date: localToUTCString(formData.start_date),
+      end_date: localToUTCString(formData.end_date),
+    };
+
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const headers = { Authorization: `Bearer ${token}` };
@@ -89,7 +112,7 @@ const EventModal = ({
       if (isEditMode) {
         const response = await axios.put(
           `http://localhost:8000/api/calendar-events/${event.id}`,
-          formData,
+          dataToSend,
           { headers }
         );
         if (response.data.success) {
@@ -99,7 +122,7 @@ const EventModal = ({
       } else {
         const response = await axios.post(
           'http://localhost:8000/api/calendar-events',
-          formData,
+          dataToSend,
           { headers }
         );
         if (response.data.success) {

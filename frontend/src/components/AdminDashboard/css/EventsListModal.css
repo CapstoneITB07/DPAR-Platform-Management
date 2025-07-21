@@ -249,32 +249,28 @@
     width: 95%;
     margin: 10px;
   }
-  
   .events-list-modal-header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
+    flex-direction: row !important;
+    gap: 0 !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 14px 10px !important;
   }
-  
   .events-list-modal-header h3 {
     font-size: 1.125rem;
   }
-  
   .event-header {
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
-  
   .event-actions {
     align-self: flex-end;
   }
-  
   .event-info-item {
     flex-direction: column;
     gap: 8px;
   }
-  
   .info-icon {
     width: 28px;
     height: 28px;
@@ -441,11 +437,12 @@
   transition: transform 0.2s;
 }
 
-.month-label {
+.month-label, .event-title {
   font-weight: 600;
   color: #1f2937;
   font-size: 1.125rem;
   flex: 1;
+  text-align: left;
 }
 
 .event-count {

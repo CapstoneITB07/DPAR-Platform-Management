@@ -71,11 +71,38 @@ const associateLogos = {
 };
 
 // Custom Calendar Toolbar
-function CustomCalendarToolbar({ date, onNavigate, onAddEvent }) {
+function CustomCalendarToolbar({ date, onNavigate, onAddEvent, onToday }) {
   const monthYear = moment(date).format('MMMM YYYY');
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 240, justifyContent: 'center' }}>
+        {/* TD Button */}
+        <button
+          className="add-event-btn calendar-today-btn"
+          onClick={onToday}
+          aria-label="Today"
+          style={{
+            minWidth: 0,
+            padding: '8px 16px',
+            fontSize: '1rem',
+            fontWeight: 700,
+            marginRight: 8,
+            letterSpacing: '0.5px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#A11C22',
+            color: 'white',
+            borderRadius: 8,
+            border: 'none',
+            boxShadow: '0 2px 8px rgba(161, 28, 34, 0.2)',
+            cursor: 'pointer',
+            lineHeight: 1,
+          }}
+        >
+          TD
+        </button>
+        {/* Existing left arrow */}
         <button
           className="calendar-nav-btn calendar-nav-btn-icon"
           onClick={() => onNavigate('PREV')}
@@ -870,6 +897,11 @@ function AdminDashboard() {
     }
   };
 
+  // Handler to go to today
+  const handleToday = () => {
+    setCalendarDate(new Date());
+  };
+
   // In the chartOptions for the comparisonData (Group Performance Comparison), add responsive horizontal scrolling and dynamic width.
   const comparisonChartRef = useRef();
 
@@ -1051,35 +1083,53 @@ function AdminDashboard() {
     }));
   };
 
-  const handleEventDeleted = (eventId) => {
-    setCalendarEvents(prev => {
-      return prev.map(event => {
-        // Check if this calendar event contains the deleted event
-        if (event.resource && event.resource.events) {
-          const eventIndex = event.resource.events.findIndex(e => e.id === eventId);
-          if (eventIndex !== -1) {
-            // Remove the specific event from the group
-            const updatedEvents = event.resource.events.filter(e => e.id !== eventId);
-            
-            // If no events left for this date, remove the entire date event
-            if (updatedEvents.length === 0) {
-              return null; // This will be filtered out
-            }
-            
-            return {
-              ...event,
-              title: updatedEvents.length.toString(),
-              resource: {
-                ...event.resource,
-                events: updatedEvents,
-                count: updatedEvents.length
+  // Update handleEventDeleted to call backend API
+  const handleEventDeleted = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) {
+      return;
+    }
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      // Call backend to delete the event
+      const response = await axios.delete(`http://localhost:8000/api/calendar-events/${eventId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setCalendarEvents(prev => {
+          return prev.map(event => {
+            // Check if this calendar event contains the deleted event
+            if (event.resource && event.resource.events) {
+              const eventIndex = event.resource.events.findIndex(e => e.id === eventId);
+              if (eventIndex !== -1) {
+                // Remove the specific event from the group
+                const updatedEvents = event.resource.events.filter(e => e.id !== eventId);
+                // If no events left for this date, remove the entire date event
+                if (updatedEvents.length === 0) {
+                  return null; // This will be filtered out
+                }
+                return {
+                  ...event,
+                  title: updatedEvents.length.toString(),
+                  resource: {
+                    ...event.resource,
+                    events: updatedEvents,
+                    count: updatedEvents.length
+                  }
+                };
               }
-            };
-          }
-        }
-        return event;
-      }).filter(event => event !== null); // Remove null events (empty dates)
-    });
+            }
+            return event;
+          }).filter(event => event !== null); // Remove null events (empty dates)
+        });
+        setShowEventDetailsModal(false); // Close the event details modal after deletion
+      } else {
+        // Optionally show an error message to the user
+        alert('Failed to delete event: ' + (response.data.message || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Error deleting event:', err);
+      alert('Failed to delete event: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const handleEventClick = (event) => {
@@ -1247,6 +1297,7 @@ function AdminDashboard() {
                   date={calendarDate} 
                   onNavigate={handleCalendarNavigate} 
                   onAddEvent={handleOpenEventModal}
+                  onToday={handleToday}
                 />
                 <Calendar
                   key={`calendar-${calendarEvents.length}-${calendarDate.toISOString()}`}

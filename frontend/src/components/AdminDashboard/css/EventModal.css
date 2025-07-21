@@ -204,12 +204,13 @@
 }
 
 .btn-delete {
-  background-color: #ef4444;
-  color: white;
+  background-color: #A11C22 !important;
+  color: white !important;
+  border: none !important;
 }
-
 .btn-delete:hover {
-  background-color: #dc2626;
+  background-color: #8b1a1f !important;
+  color: white !important;
   transform: translateY(-1px);
 }
 
@@ -296,4 +297,19 @@ input[type="datetime-local"] {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+} 
+
+.btn-cancel {
+  background: none !important;
+  color: #A11C22 !important;
+  border: none !important;
+  font-weight: bold !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  font-size: 1rem !important;
+  text-align: left !important;
+}
+.btn-cancel:hover {
+  background: none !important;
+  color: #8b1a1f !important;
 } 

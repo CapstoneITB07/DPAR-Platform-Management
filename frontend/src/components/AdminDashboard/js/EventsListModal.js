@@ -128,12 +128,7 @@ const EventsListModal = ({ show, onClose, onEdit, onDelete }) => {
       </div>
 
       <div className="events-list-modal-content">
-        {loading ? (
-          <div className="loading-events">
-            <div className="loading-spinner"></div>
-            <p>Loading events...</p>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="error-message">
             <p>{error}</p>
             <button onClick={fetchAllEvents} className="retry-btn">Retry</button>

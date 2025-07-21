@@ -23,6 +23,13 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
     return format(new Date(dateTime), 'p');
   };
 
+  // Helper to format date/time as local string for display
+  function formatLocalDateTime(dateTime) {
+    if (!dateTime) return 'Not specified';
+    const date = new Date(dateTime);
+    return date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
   const isAllDay = (startDate, endDate) => {
     if (!startDate || !endDate) return false;
     const start = new Date(startDate);
@@ -110,7 +117,7 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
                     />
                     <span className="event-title">{eventItem.title}</span>
                     <span className="event-time">
-                      {formatDate(eventItem.start_date)} at {formatTime(eventItem.start_date)}
+                      {formatLocalDateTime(eventItem.start_date)}
                     </span>
                   </div>
                   <div className="event-accordion-actions">
@@ -151,13 +158,13 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
                           <div className="info-value">
                             {isAllDay(eventItem.start_date, eventItem.end_date) ? (
                               <>
-                                <div><strong>Start:</strong> {formatDate(eventItem.start_date)}</div>
-                                <div><strong>End:</strong> {formatDate(eventItem.end_date)}</div>
+                                <div><strong>Start:</strong> {formatLocalDateTime(eventItem.start_date)}</div>
+                                <div><strong>End:</strong> {formatLocalDateTime(eventItem.end_date)}</div>
                               </>
                             ) : (
                               <>
-                                <div><strong>Start:</strong> {formatDate(eventItem.start_date)} at {formatTime(eventItem.start_date)}</div>
-                                <div><strong>End:</strong> {formatDate(eventItem.end_date)} at {formatTime(eventItem.end_date)}</div>
+                                <div><strong>Start:</strong> {formatLocalDateTime(eventItem.start_date)}</div>
+                                <div><strong>End:</strong> {formatLocalDateTime(eventItem.end_date)}</div>
                               </>
                             )}
                           </div>
@@ -262,13 +269,13 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
               <div className="info-value">
                 {isAllDay(event.start_date, event.end_date) ? (
                   <>
-                    <div><strong>Start:</strong> {formatDate(event.start_date)}</div>
-                    <div><strong>End:</strong> {formatDate(event.end_date)}</div>
+                    <div><strong>Start:</strong> {formatLocalDateTime(event.start_date)}</div>
+                    <div><strong>End:</strong> {formatLocalDateTime(event.end_date)}</div>
                   </>
                 ) : (
                   <>
-                    <div><strong>Start:</strong> {formatDate(event.start_date)} at {formatTime(event.start_date)}</div>
-                    <div><strong>End:</strong> {formatDate(event.end_date)} at {formatTime(event.end_date)}</div>
+                    <div><strong>Start:</strong> {formatLocalDateTime(event.start_date)}</div>
+                    <div><strong>End:</strong> {formatLocalDateTime(event.end_date)}</div>
                   </>
                 )}
               </div>

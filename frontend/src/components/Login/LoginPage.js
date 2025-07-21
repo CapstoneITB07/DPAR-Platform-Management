@@ -97,8 +97,19 @@ function LoginPage() {
     }
   };
 
+  const bgStyle = {
+    minHeight: '100vh',
+    width: '100vw',
+    position: 'relative',
+    background: "url('/Assets/compiled_activities.jpg') no-repeat center center fixed",
+    backgroundSize: 'cover',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
   return (
-    <div className="loginPageWrapper">
+    <div className="loginPageWrapper" style={bgStyle}>
       <div className="container"> {/* Main container */}
         <div className="loginSection"> {/* Left (Login) section */}
           <h2 className="signInTitle">Sign In</h2>
@@ -159,6 +170,7 @@ function LoginPage() {
         </div>
         <div className="welcomeSection"> {/* Right (Welcome) section */}
           <div className="welcomeContent">
+            <img src="/Assets/disaster_logo.png" alt="Disaster Logo" className="loginLogo" />
             <p className="coalitionText">DISASTER PREPAREDNESS AND RESPONSE VOLUNTEER COALITION</p>
             <h1 className="welcomeTitle">Welcome ,</h1>
             <p className="welcomeSubtitle">sign in to continue access pages.</p>

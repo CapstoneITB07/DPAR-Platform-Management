@@ -131,10 +131,10 @@ class NotificationController extends Controller
     public function toggleHold($id)
     {
         $notification = Notification::findOrFail($id);
-        $notification->status = $notification->status === 'active' ? 'on_hold' : 'active';
+        $notification->status = $notification->status === 'active' ? 'paused' : 'active';
         $notification->save();
         
-        $action = $notification->status === 'on_hold' ? 'put on hold' : 'activated';
+        $action = $notification->status === 'paused' ? 'paused' : 'activated';
         return response()->json([
             'message' => "Notification {$action} successfully.",
             'status' => $notification->status
@@ -155,8 +155,8 @@ class NotificationController extends Controller
         $notification = Notification::with('recipients.user')->findOrFail($id);
         
         // Check if notification is on hold
-        if ($notification->status === 'on_hold') {
-            return response()->json(['error' => 'This notification is currently on hold and cannot accept responses.'], 403);
+        if ($notification->status === 'paused') {
+            return response()->json(['error' => 'This notification is currently paused and cannot accept responses.'], 403);
         }
         
         $recipient = NotificationRecipient::where('notification_id', $id)
@@ -234,8 +234,8 @@ class NotificationController extends Controller
         $notification = Notification::with('recipients.user')->findOrFail($id);
         
         // Check if notification is on hold
-        if ($notification->status === 'on_hold') {
-            return response()->json(['error' => 'This notification is currently on hold.'], 403);
+        if ($notification->status === 'paused') {
+            return response()->json(['error' => 'This notification is currently paused.'], 403);
         }
         
         if (!$notification->expertise_requirements) {
@@ -296,8 +296,8 @@ class NotificationController extends Controller
         $currentUser = $request->user();
         
         // Check if notification is on hold
-        if ($notification->status === 'on_hold') {
-            return response()->json(['error' => 'This notification is currently on hold.'], 403);
+        if ($notification->status === 'paused') {
+            return response()->json(['error' => 'This notification is currently paused.'], 403);
         }
         
         if (!$notification->expertise_requirements) {

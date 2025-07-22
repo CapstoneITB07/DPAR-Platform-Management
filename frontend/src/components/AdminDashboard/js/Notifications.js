@@ -20,7 +20,7 @@ function Notifications() {
     title: '', 
     description: '', 
     associate_ids: [],
-    expertise_requirements: [{ expertise: '', count: 1 }]
+    expertise_requirements: [{ expertise: '', count: '' }]
   });
   const [associates, setAssociates] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,7 @@ function Notifications() {
       title: '', 
       description: '', 
       associate_ids: [],
-      expertise_requirements: [{ expertise: '', count: 1 }]
+      expertise_requirements: [{ expertise: '', count: '' }]
     });
     setSelectAll(false);
     setShowModal(true);
@@ -93,11 +93,15 @@ function Notifications() {
   const addExpertiseRequirement = () => {
     setForm(f => ({
       ...f,
-      expertise_requirements: [...f.expertise_requirements, { expertise: '', count: 1 }]
+      expertise_requirements: [...f.expertise_requirements, { expertise: '', count: '' }]
     }));
   };
 
   const removeExpertiseRequirement = (index) => {
+    // Don't allow removing the last requirement
+    if (form.expertise_requirements.length <= 1) {
+      return;
+    }
     setForm(f => ({
       ...f,
       expertise_requirements: f.expertise_requirements.filter((_, i) => i !== index)
@@ -137,9 +141,11 @@ function Notifications() {
     
     // Validate expertise requirements
     if (hasExpertiseRequirements) {
-      const invalidRequirements = form.expertise_requirements.filter(req => !req.expertise.trim());
+      const invalidRequirements = form.expertise_requirements.filter(req => 
+        !req.expertise.trim() || !req.count || req.count <= 0
+      );
       if (invalidRequirements.length > 0) {
-        setError('Please fill in all expertise fields');
+        setError('Please fill in all expertise fields and ensure count is greater than 0');
         setLoading(false);
         return;
       }
@@ -390,11 +396,11 @@ function Notifications() {
                         <input
                           type="number"
                           value={req.count}
-                          onChange={(e) => updateExpertiseRequirement(index, 'count', parseInt(e.target.value) || 1)}
-                          placeholder="Count"
+                          onChange={(e) => updateExpertiseRequirement(index, 'count', parseInt(e.target.value) || 0)}
+                          placeholder="min 1"
                           className="enhanced-input count-input"
                           min={1}
-                          max={100}
+                          max={512}
                         />
                         <button
                           type="button"

@@ -690,7 +690,7 @@
 }
 
 .notification-item-action {
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+  background: #dc2626;
   color: white;
   border: none;
   border-radius: 10px;
@@ -773,13 +773,26 @@
   cursor: not-allowed;
 }
 
+/* Accept/Confirm button - Green */
+.notification-item-action.accept {
+  background: #22c55e;
+  box-shadow: 0 3px 8px rgba(34, 197, 94, 0.15);
+}
+
+.notification-item-action.accept:hover:not(:disabled) {
+  background: #16a34a;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.25);
+}
+
+/* Decline button - Red */
 .notification-item-action.decline {
-  background: linear-gradient(90deg, #991b1b 0%, #b91c1c 50%, #dc2626 100%);
-  box-shadow: 0 3px 8px rgba(153, 27, 27, 0.15);
+  background: #dc2626;
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.15);
 }
 
 .notification-item-action.decline:hover:not(:disabled) {
-  box-shadow: 0 6px 16px rgba(153, 27, 27, 0.25);
+  background: #b91c1c;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
 }
 
 /* Hold Message Styles */

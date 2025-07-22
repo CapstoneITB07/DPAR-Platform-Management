@@ -711,25 +711,65 @@ function NotificationDropdown({ notification, onRemove, onToggleHold }) {
   const [hoveredStatus, setHoveredStatus] = useState(null);
   const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
   const declined = notification.recipients ? notification.recipients.filter(r => r.response === 'decline').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
-  
+
+  // Toggle switch component with icons and color, icon on opposite side of circle
+  const ToggleSwitch = ({ checked, onChange }) => (
+    <label className="notification-toggle-switch">
+      <input type="checkbox" checked={checked} onChange={onChange} />
+      <span
+        className="slider"
+        style={{
+          background: checked ? '#bdbdbd' : '#dc2626', // grey for paused, red for active
+        }}
+      >
+        {/* Icon on opposite side of the toggle circle */}
+        {checked ? (
+          // Paused: icon left, circle right
+          <>
+            <svg className="toggle-icon left" width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <rect x="4" y="4" width="4" height="12" rx="1.5" fill="#fff"/>
+              <rect x="12" y="4" width="4" height="12" rx="1.5" fill="#fff"/>
+            </svg>
+          </>
+        ) : (
+          // Active: icon right, circle left
+          <>
+            <svg className="toggle-icon right" width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M5 10.5L9 14.5L15 7.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </>
+        )}
+      </span>
+    </label>
+  );
+
   return (
     <div className={`notification-dropdown${open ? ' open' : ''}`}>
-      <div className="notification-dropdown-header" onClick={() => setOpen(o => !o)} style={{ textAlign: 'left' }}>
+      <div
+        className="notification-dropdown-header"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', cursor: 'pointer' }}
+        onClick={() => setOpen(o => !o)}
+      >
         <div style={{ textAlign: 'left' }}>
           <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>
             {notification.title}
-            {notification.status === 'on_hold' && (
-              <span className="notification-hold-badge">ON HOLD</span>
-            )}
           </div>
           <div className="notification-dropdown-date" style={{ textAlign: 'left' }}>{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
         </div>
-        <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>
+        {/* Right side: toggle and arrow */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span onClick={e => e.stopPropagation()}>
+            <ToggleSwitch
+              checked={notification.status === 'paused'}
+              onChange={e => onToggleHold(notification.id)}
+            />
+          </span>
+          <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>
+        </div>
       </div>
       {open && (
         <div className="notification-dropdown-body">
           <div className="notification-dropdown-description">{notification.description}</div>
-          
           {/* Requirements Info Container */}
           <div className="requirements-info-container">
             {/* Invited Groups Display - Hover Popup */}
@@ -752,7 +792,6 @@ function NotificationDropdown({ notification, onRemove, onToggleHold }) {
                 </div>
               </div>
             )}
-            
             {/* Volunteer Requirements Display - Hover Popup */}
             {notification.expertise_requirements && notification.expertise_requirements.length > 0 && (
               <div className="volunteer-requirements-hover-container">
@@ -775,41 +814,9 @@ function NotificationDropdown({ notification, onRemove, onToggleHold }) {
               </div>
             )}
           </div>
-          
           <VolunteerProgress notification={notification} />
-          {/* <div className="notification-dropdown-lists">
-            <div 
-              className="notification-dropdown-list accepted"
-              onMouseEnter={() => setHoveredStatus('accepted')}
-              onMouseLeave={() => setHoveredStatus(null)}
-            >
-              <div className="notification-dropdown-list-title accepted">Accepted ({accepted.length})</div>
-              {hoveredStatus === 'accepted' && (
-              <ul>
-                {accepted.length === 0 ? <li className="notification-dropdown-list-empty">None</li> : accepted.map(name => <li key={name}>{name}</li>)}
-              </ul>
-              )}
-            </div>
-            <div 
-              className="notification-dropdown-list declined"
-              onMouseEnter={() => setHoveredStatus('declined')}
-              onMouseLeave={() => setHoveredStatus(null)}
-            >
-              <div className="notification-dropdown-list-title declined">Declined ({declined.length})</div>
-              {hoveredStatus === 'declined' && (
-              <ul>
-                {declined.length === 0 ? <li className="notification-dropdown-list-empty">None</li> : declined.map(name => <li key={name}>{name}</li>)}
-              </ul>
-              )}
-            </div>
-          </div> */}
           <div className="notification-dropdown-actions">
-            <button 
-              onClick={() => onToggleHold(notification.id)} 
-              className={`notification-dropdown-hold ${notification.status === 'on_hold' ? 'active' : ''}`}
-            >
-              {notification.status === 'on_hold' ? 'ACTIVATE' : 'HOLD'}
-            </button>
+            {/* Removed hold button, only keep remove */}
             <button 
               onClick={() => onRemove(notification.id)} 
               className="notification-dropdown-remove"

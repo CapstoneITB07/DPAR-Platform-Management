@@ -114,6 +114,21 @@ function Notification() {
         setNotifications([]);
         setLoading(false);
       });
+
+    // Add polling to update notifications every 5 seconds
+    const interval = setInterval(() => {
+      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setNotifications(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+          } else {
+            setNotifications([]);
+          }
+        });
+    }, 5000); // every 5 seconds
+
+    return () => clearInterval(interval);
   }, [reload]);
 
   // Cleanup live updates when component unmounts
@@ -410,7 +425,7 @@ function Notification() {
                           <NotificationProgress notification={n} />
                           
                           {/* Show hold message to ALL associates when notification is on hold */}
-                          {n.status === 'on_hold' && (
+                          {(n.status === 'on_hold' || n.status === 'paused') && (
                             <div className="notification-on-hold">
                               <div className="notification-on-hold-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -420,14 +435,15 @@ function Notification() {
                                 </svg>
                               </div>
                               <div className="notification-on-hold-message"> 
-                                Volunteer recruitment has been temporarily paused by the admin. 
+                                Volunteer recruitment is on hold for this notification. 
+                                You will not be able to respond at this time. 
                                 Please check back later for updates.
                               </div>
                             </div>
                           )}
                           
                           {/* Only show response options if notification is active and user hasn't responded */}
-                          {myRecipient && !myRecipient.response && n.status !== 'on_hold' && (
+                          {myRecipient && !myRecipient.response && n.status !== 'on_hold' && n.status !== 'paused' && (
                             <>
                               {/* Check if all volunteers have been met */}
                               {(() => {
@@ -449,7 +465,7 @@ function Notification() {
                                           </svg>
                                         </div>
                                         <div className="requirements-met-message">
-                                        Sorry, all volunteer requirements have been met. 
+                                          Sorry, all volunteer requirements have been met. 
                                           No additional volunteers are needed at this time. 
                                           We hope to collaborate with your group next time.
                                         </div>
@@ -526,7 +542,7 @@ function Notification() {
                           )}
                           
                           {/* Only show response status if notification is not on hold */}
-                          {myRecipient && myRecipient.response && n.status !== 'on_hold' && (
+                          {myRecipient && myRecipient.response && n.status !== 'on_hold' && n.status !== 'paused' && (
                             <div className={`volunteer-commitments-hover-container ${myRecipient.response}`}>
                               <div className="volunteer-commitments-trigger">
                                 <div className={`response-status ${myRecipient.response}`}>

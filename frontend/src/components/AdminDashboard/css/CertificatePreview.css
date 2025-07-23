@@ -1,0 +1,120 @@
+.certificate-viewer-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: #f5f5f5;
+    height: 100vh;
+    box-sizing: border-box;
+  }
+  
+  .toolbar {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .toolbar button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    transition: background 0.3s;
+  }
+  
+  .toolbar button:hover {
+    background: #0056b3;
+  }
+  
+  .certificate-scroll-container {
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .certificate {
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    background-color: white;
+    position: relative;
+  }
+  
+  .certificate-content {
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+  }
+  
+  .logo {
+    width: 100px;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+  }
+  
+  .title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-top: 80px;
+    margin-bottom: 20px;
+  }
+  
+  .presented {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  
+  .name {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .associate {
+    font-size: 1.2rem;
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+  
+  .message {
+    font-size: 1.1rem;
+    max-width: 800px;
+    margin: 0 auto 30px;
+  }
+  
+  .date {
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+  
+  .signatories {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    flex-wrap: wrap;
+  }
+  
+  .signatory {
+    text-align: center;
+    min-width: 150px;
+  }
+  
+  .line {
+    border-bottom: 1px solid #000;
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  
+  .sign-name {
+    font-weight: bold;
+  }
+  
+  .sign-role {
+    font-size: 0.9rem;
+  }
+  

@@ -875,9 +875,9 @@ function Reports() {
                                   flexShrink: 0
                                 }}>×</button>
                               )}
-                            </div>
-                          ))}
                         </div>
+                          ))}
+                      </div>
                         <div className="report-form-group">
                           <label>DATE: <span style={{color: '#ef4444'}}>*</span></label>
                           <input 

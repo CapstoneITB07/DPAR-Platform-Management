@@ -9,7 +9,6 @@ import '../css/CertificateModal.css';
 const CertificateModal = ({ show, onClose, associates, certificateData, onCertificateDataChange }) => {
   const [localData, setLocalData] = useState(certificateData);
   const [downloading, setDownloading] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState('print'); // 'print' or 'pdf'
 
   useEffect(() => {
     setLocalData(certificateData);
@@ -22,35 +21,77 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     onCertificateDataChange(updated);
   };
 
+  const handleSignatoryChange = (index, field, value) => {
+    const updatedSignatories = [...(localData.signatories || [{ name: '', title: '' }])];
+    updatedSignatories[index] = { ...updatedSignatories[index], [field]: value };
+    const updated = { ...localData, signatories: updatedSignatories };
+    setLocalData(updated);
+    onCertificateDataChange(updated);
+  };
+
+  const addSignatory = () => {
+    const currentSignatories = localData.signatories || [{ name: '', title: '' }];
+    if (currentSignatories.length < 5) {
+      const updatedSignatories = [...currentSignatories, { name: '', title: '' }];
+      const updated = { ...localData, signatories: updatedSignatories };
+      setLocalData(updated);
+      onCertificateDataChange(updated);
+    }
+  };
+
+  const removeSignatory = (index) => {
+    const currentSignatories = localData.signatories || [{ name: '', title: '' }];
+    if (currentSignatories.length > 1) {
+      const updatedSignatories = currentSignatories.filter((_, i) => i !== index);
+      const updated = { ...localData, signatories: updatedSignatories };
+      setLocalData(updated);
+      onCertificateDataChange(updated);
+    }
+  };
+
+  const isFormValid = () => {
+    if (!localData.name || !localData.message) return false;
+    const signatories = localData.signatories || [];
+    for (const signatory of signatories) {
+      if (!signatory.name || !signatory.title) return false;
+    }
+    return true;
+  };
+
   const handleDownload = async () => {
+    if (!isFormValid()) {
+      alert('Please fill out all required fields: recipient name, message, and each signatory\'s name and title.');
+      return;
+    }
+
     setDownloading(true);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      // Use environment variable or fallback to 127.0.0.1 for development
       const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
-      // Always use 127.0.0.1 for asset URLs to ensure Puppeteer compatibility
       const assetBaseUrl = 'http://127.0.0.1:8000/Assets';
-      // Find the selected associate object
+
       const selectedAssociateObj = associates.find(a => a.name === localData.associate);
       const logoUrl = selectedAssociateObj
         ? `${assetBaseUrl}/${selectedAssociateObj.logo.replace('/Assets/', '')}`
         : `${assetBaseUrl}/disaster_logo.png`;
+
       const swirlTopUrl = `${assetBaseUrl}/swirl_top_left.png`;
       const swirlBottomUrl = `${assetBaseUrl}/swirl_bottom_right.png`;
       const medalUrl = `${assetBaseUrl}/star.png`;
+
       const response = await axios.post(
         `${backendBaseUrl}/api/certificates`,
         {
-          associate: localData.associate,
+          name: localData.name,
           date: localData.date,
-          signature: localData.signature,
+          signatories: localData.signatories || [{ name: '', title: '' }],
           message: localData.message,
-          logoUrl: logoUrl, // Always full URL
+          logoUrl: logoUrl,
           swirlTopUrl: swirlTopUrl,
           swirlBottomUrl: swirlBottomUrl,
           medalUrl: medalUrl,
           format: 'pdf',
-          timestamp: Date.now(), // Add timestamp to prevent caching
+          timestamp: Date.now(),
         },
         {
           responseType: 'blob',
@@ -62,11 +103,12 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
           },
         }
       );
+
       const blob = new Blob([response.data], { type: response.headers['content-type'] });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `certificate_${Date.now()}.pdf`; // Add timestamp to filename
+      a.download = `certificate_${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -79,9 +121,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     }
   };
 
-  // Use environment variable or fallback to 127.0.0.1 for development
   const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
-  // Find the selected associate object
   const selectedAssociateObj = associates.find(a => a.name === localData.associate);
   const logoUrl = selectedAssociateObj
     ? `${backendBaseUrl}${selectedAssociateObj.logo}`
@@ -97,44 +137,113 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     >
       <div className="certificate-modal-card">
         <div className="certificate-modal-header-red">
-          <h2 style={{margin: 0, fontWeight: 700}}>
-            Generate Certificate
-          </h2>
+          <h2 style={{margin: 0, fontWeight: 700}}>Generate Certificate</h2>
           <button className="certificate-modal-close" onClick={onClose}>&times;</button>
         </div>
         <div className="certificate-modal-content enhanced-modal-content">
           <div className="enhanced-modal-flex">
-            {/* Form Section */}
             <div className="enhanced-form-card">
-              <h3 className="enhanced-form-title">Certificate Details</h3>
               <form className="certificate-form">
                 <div className="certificate-form-group">
-                  <label htmlFor="associate">Select Associate:</label>
-                  <select id="associate" name="associate" value={localData.associate} onChange={handleChange}>
-                    <option value="">Select...</option>
-                    {associates.map(a => (
-                      <option key={a.id} value={a.name}>{a.name}</option>
-                    ))}
-                  </select>
+                  <label htmlFor="name">Recipient Name:</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Enter recipient name"
+                    value={localData.name || ''}
+                    onChange={handleChange}
+                  />
                 </div>
+
                 <div className="certificate-form-group">
-                  <label htmlFor="date">Date:</label>
-                  <input type="date" id="date" name="date" value={localData.date} onChange={handleChange} />
+                  <label>Signatories:</label>
+                  <small style={{ color: '#666', display: 'block', marginBottom: 8 }}>
+                    Maximum 5 signatories
+                  </small>
+                  {(localData.signatories || [{ name: '', title: '' }]).map((signatory, index, arr) => (
+                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <div style={{ flex: 1, display: 'flex', gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="text"
+                            placeholder="Enter signatory name"
+                            value={signatory.name || ''}
+                            onChange={(e) => handleSignatoryChange(index, 'name', e.target.value)}
+                            style={{ width: '100%', padding: '5px', marginTop: '2px' }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="text"
+                            placeholder="e.g. Founder, CEO, etc."
+                            value={signatory.title || ''}
+                            onChange={(e) => handleSignatoryChange(index, 'title', e.target.value)}
+                            style={{ width: '100%', padding: '5px', marginTop: '2px' }}
+                          />
+                        </div>
+                      </div>
+                      {index === arr.length - 1 && arr.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={addSignatory}
+                          style={{
+                            background: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          +
+                        </button>
+                      )}
+                      {arr.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeSignatory(index)}
+                          style={{
+                            background: '#f44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div className="certificate-form-group">
-                  <label htmlFor="signature">Signature:</label>
-                  <input type="text" id="signature" name="signature" placeholder="e.g. Dr. Jane Smith" value={localData.signature} onChange={handleChange} />
-                  <small>Type your name as it should appear on the certificate.</small>
-                </div>
+
                 <div className="certificate-form-group">
                   <label htmlFor="message">Appreciation Message:</label>
-                  <textarea id="message" name="message" value={localData.message} onChange={handleChange} />
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={localData.message}
+                    onChange={handleChange}
+                  />
                 </div>
               </form>
             </div>
-            {/* Preview Section */}
+
             <div className="enhanced-preview-col">
-              {/* Download Format Section removed */}
               <h3 className="preview-certificate-header" style={{ textAlign: 'left', fontWeight: 700, fontSize: '1.15rem', margin: '0 0 12px 4px', letterSpacing: '0.5px' }}>
                 Certificate Preview
               </h3>
@@ -146,7 +255,6 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                   </div>
                 )}
               </div>
-              {/* Main Action Button */}
               <div className="certificate-modal-actions enhanced-actions" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                 <button
                   className="download-btn enhanced-download-btn"
@@ -178,4 +286,4 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   );
 };
 
-export default CertificateModal; 
+export default CertificateModal;

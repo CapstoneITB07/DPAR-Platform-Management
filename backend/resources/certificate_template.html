@@ -14,39 +14,60 @@
     .certificate-container {
       width: 1123px;   /* A4 landscape */
       height: 794px;   /* A4 landscape */
-      border-radius: 20px;
       margin: 0 auto;
-      padding: 32px 48px 32px 48px;
       box-sizing: border-box;
       position: relative;
-      background: #fff;
-      box-shadow: 0 2px 16px #0001;
+      background-image:
+      url('data:image/svg+xml;utf8,<svg width="1123" height="794" xmlns="http://www.w3.org/2000/svg"><g transform="translate(823,494)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(0,494)"><g transform="rotate(90,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></g><g transform="rotate(180,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(823,0) rotate(270,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></svg>'),
+      url('{{backgroundBase64}}');
+      background-size: cover, cover;
+      background-position: center, center;
+      background-repeat: no-repeat, no-repeat;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .certificate-card {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-    }
-    .cert-corner {
       position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      width: auto;
+      height: auto;
+      background: rgba(255,255,255,0.78);
+      border-radius: 25px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+      z-index: 2;
+      padding: 0;
+      max-width: 1000px;
+      min-height: 540px;
+      margin: auto;
+    }
+    .main-logo {
+      position: static;
+      display: block;
+      margin: 0 auto 8px auto;
       width: 120px;
       height: auto;
-      opacity: 0.18;
+      z-index: 5;
     }
-    .cert-corner.top-left {
-      top: 0;
-      left: 0;
-    }
-    .cert-corner.bottom-right {
-      bottom: 0;
-      right: 0;
-      transform: scaleX(-1);
-    }
-    .cert-logo {
-      position: absolute;
-      top: 32px;
-      right: 36px;
-      width: 80px;
-      height: auto;
+    .main-content {
+      width: 100%;
+      max-width: none;
+      text-align: center;
+      margin: 0;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      padding: 0;
     }
     .cert-title {
       text-align: center;
@@ -54,10 +75,12 @@
       font-size: 2.5rem;
       font-weight: bold;
       letter-spacing: 4px;
-      color: #3a3a3a;
+      color: #2d3142;
       margin-bottom: 0.2rem;
-      margin-top: 1.2rem;
+      padding-top: 0px;
+      margin-top: 0.3rem;
     }
+    
     .cert-subtitle {
       text-align: center;
       font-size: 1.3rem;
@@ -67,94 +90,177 @@
       margin-bottom: 0.7rem;
       text-transform: uppercase;
     }
-    .cert-section {
+    
+    .cert-presentation {
       text-align: center;
       font-size: 1.1rem;
       color: #444;
-      font-weight: 600;
-      letter-spacing: 1px;
+      font-weight: 400;
       margin-bottom: 1.2rem;
-      text-transform: uppercase;
+      margin-top: 0.2rem;
     }
+    
     .cert-name {
       text-align: center;
       font-size: 1.7rem;
       font-weight: bold;
       margin-bottom: 0.5rem;
       color: #222;
+      font-family: 'Playfair Display', serif;
+      margin-top: 2.2rem;
     }
+    
     .cert-divider {
       border: none;
-      border-top: 2.5px solid #bfa22a;
-      margin: 0.5rem 0 1.2rem 0;
-      width: 90%;
+      border-top: 1px solid #000;
+      margin: 0.5rem auto 1.2rem auto;
+      width: 60%;
     }
-    .cert-desc {
+    
+    .cert-body {
       text-align: center;
       font-size: 1.08rem;
       color: #444;
-      margin: 0 auto 1.2rem auto;
+      margin: 0 auto 2.2rem auto;
       max-width: 80%;
       line-height: 1.5;
+      margin-top: 1.2rem;
     }
+    
     .cert-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: flex-end;
       margin-top: 2.2rem;
-      padding: 0 40px;
+      padding: 0 20px;
       width: 100%;
       box-sizing: border-box;
     }
-    .cert-date, .cert-signature {
+    
+    /* Multi-signatory layout classes */
+    .signatures-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-end;
+      width: 100%;
+      gap: 2rem;
+    }
+    
+    .signature-item {
       text-align: center;
       font-size: 1.1rem;
       color: #222;
       font-weight: 500;
-      min-width: 120px;
+      flex: 1 1 180px;
+      max-width: 200px;
     }
-    .cert-label {
-      color: #bfa22a;
+    
+    .signature-item .name {
       font-weight: bold;
-      margin-top: 0.5rem;
-      display: block;
-      font-size: 1.05rem;
-      letter-spacing: 1px;
     }
-    .cert-star {
+    
+    .signature-item hr {
+      margin-bottom: 0.3rem;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .cert-title-small {
       text-align: center;
-      min-width: 80px;
+      font-size: 1rem;
+      color: #222;
+      font-weight: 400;
+      margin-top: 0.5rem;
     }
-    .cert-star img {
-      width: 48px;
-      height: 48px;
+    
+    /* Layout for different numbers of signatories */
+    .signatures-1 { justify-content: center; }
+    .signatures-2 { justify-content: space-between; }
+    .signatures-3 { justify-content: space-between; }
+    .signatures-4 { 
+      position: relative;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .signatures-5 { 
+      position: relative;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    
+    /* For 4 signatories: 3 on top row, 1 below leftmost */
+    .signatures-4 .signature-item:nth-child(4) {
+      position: static;
+      top: auto;
+      left: auto;
+      right: auto;
+      margin-top: 0;
+      width: auto;
+    }
+    
+    /* For 5 signatories: 3 on top row, 1 below leftmost, 1 below rightmost */
+    .signatures-5 .signature-item:nth-child(4) {
+      position: static;
+      top: auto;
+      left: auto;
+      right: auto;
+      margin-top: 0;
+      width: auto;
+    }
+    .signatures-5 .signature-item:nth-child(5) {
+      position: static;
+      top: auto;
+      left: auto;
+      right: auto;
+      margin-top: 0;
+      width: auto;
+    }
+    .content-box {
+      background: rgba(255,255,255,0.05);
+      border: 6px solid #2563b6;
+      border-radius: 20px;
+      padding: 36px 40px;
+      margin: 0;
+      max-width: 900px;
+      width: 80%;
+      min-height: 540px;
+      position: relative;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
 <body>
   <div class="certificate-container">
-    <img src="{{swirlTopUrl}}" class="cert-corner top-left" />
-    <img src="{{swirlBottomUrl}}" class="cert-corner bottom-right" />
-    <img src="{{logoUrl}}" class="cert-logo" />
-    <div class="cert-title">CERTIFICATE</div>
-    <div class="cert-subtitle">OF APPRECIATION</div>
-    <div class="cert-section">THE FOLLOWING AWARD IS GIVEN TO</div>
-    <div class="cert-name">{{associate}}</div>
-    <hr class="cert-divider" />
-    <div class="cert-desc">
-      {{message}}
-    </div>
-    <div class="cert-footer">
-      <div class="cert-date">
-        {{date}}
-        <span class="cert-label">Date</span>
-      </div>
-      <div class="cert-star">
-        <img src="{{medalUrl}}" alt="Medal" />
-      </div>
-      <div class="cert-signature">
-        {{signature}}
-        <span class="cert-label">Signature</span>
+    <!-- Removed the background overlay for faded effect -->
+    <div class="certificate-card">
+      <div class="content-box">
+        <img src="{{baseUrl}}/Assets/disaster_logo.png" class="main-logo" alt="Main Logo" />
+        <div class="main-content">
+          <div class="cert-title">CERTIFICATE OF APPRECIATION</div>
+          <div class="cert-presentation">This certificate is proudly presented to</div>
+          <div class="cert-name">{{associate}}</div>
+          <hr class="cert-divider" />
+          <div class="cert-body">
+            {{message}}
+          </div>
+          <div class="cert-footer">
+            <div class="signatures-container signatures-{{signatories|length}}">
+              {% for signatory in signatories %}
+              <div class="signature-item">
+                <span class="name">{{signatory.name}}</span>
+                <hr class="cert-divider" />
+                <div class="cert-title-small">{{signatory.title}}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

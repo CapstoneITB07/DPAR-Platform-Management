@@ -2,28 +2,24 @@
 .certificate-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(24, 24, 24, 0.98) !important;
+  background: rgba(0,0,0,0.45);
   z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-}
-
-.certificate-modal-root {
-  z-index: 2100;
-  pointer-events: auto;
-  background: none !important;
-  box-shadow: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   min-width: 100vw;
 }
-
+.certificate-modal-root {
+  outline: none;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+}
 .certificate-modal-card {
   background: #fff;
   border-radius: 18px;
@@ -138,13 +134,15 @@
   margin-top: 2px;
 }
 .certificate-preview-section {
+  margin-top: 30px;
+  margin-bottom: 20px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: none;
-  min-height: 60vh;
-  min-width: 60vw;
-  padding: 0;
+  width: 100%;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 16px 0 0 0; /* Less bottom padding */
 }
 .certificate-preview-scaler {
   display: flex;
@@ -156,25 +154,19 @@
   overflow: auto;
 }
 #certificate-preview {
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-  border-radius: 18px;
-  background: #fff;
-  margin: 0 auto;
-  max-width: 98vw;
-  max-height: 95vh;
-  width: 100%;
-  height: auto;
+  max-width: 100%;
+  width: 900px;
+  height: 650px;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  /* Responsive scaling for small screens */
+  transition: transform 0.2s;
 }
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   #certificate-preview {
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-  .certificate-modal-root {
-    min-width: 100vw;
-    min-height: 100vh;
-    border-radius: 0;
+    width: 700px;
+    height: 500px;
   }
 }
 @media (max-width: 800px) {

@@ -139,10 +139,8 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                   <label htmlFor="name">Recipient Name:</label>
                   <input type="text" id="name" name="name" placeholder="Enter recipient name" value={localData.name || ''} onChange={handleChange} />
                 </div>
-                <div className="certificate-form-group">
-                  <label htmlFor="date">Date:</label>
-                  <input type="date" id="date" name="date" value={localData.date} onChange={handleChange} />
-                </div>
+                
+                {/* Remove the date input field and its containing div */}
                 
                 {/* Signatories Section */}
                 <div className="certificate-form-group">

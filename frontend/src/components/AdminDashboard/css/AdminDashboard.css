@@ -2728,3 +2728,47 @@
   color: #8b1a1f !important;
   background: none !important;
 } 
+
+@media (max-width: 1200px) {
+  .see-events-btn {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 24px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+@media (max-width: 1024px) {
+  .see-events-btn {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 18px;
+    width: 100%;
+    font-size: 0.93rem;
+    padding: 10px 10px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .calendar-header {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .calendar-today-btn {
+    order: -1;
+    margin-right: 8px !important;
+  }
+}
+@media (max-width: 768px) {
+  .calendar-header {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .calendar-today-btn {
+    order: -1;
+    margin-right: 8px !important;
+  }
+}

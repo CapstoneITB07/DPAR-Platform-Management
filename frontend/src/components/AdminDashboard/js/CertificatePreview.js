@@ -1,137 +1,128 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 
-const A4_WIDTH = 1123; // px (A4 landscape)
-const A4_HEIGHT = 794; // px (A4 landscape, matches your image more closely)
-const MAX_WIDTH = 1000; // px
-const GOLD = '#bfa22a';
+const A4_WIDTH = 1123;
+const A4_HEIGHT = 794;
+const MAX_WIDTH = 1000;
 
-const CertificatePreview = ({ data, logoUrl }) => {
-  const { name, associate, date, signatories, message } = data;
+const CertificatePreview = ({ data }) => {
+  const { name, associate, signatories, message } = data;
   const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
-  // Always use disaster_logo.png as the main logo
   const logoSrc = backendBaseUrl + '/Assets/disaster_logo.png';
+  const backgroundSrc = backendBaseUrl + '/Assets/background.jpg';
 
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    function handleResize() {
+    const handleResize = () => {
       if (containerRef.current) {
-        const containerWidth = Math.min(containerRef.current.offsetWidth, MAX_WIDTH);
-        const newScale = Math.min(1, containerWidth / A4_WIDTH);
-        setScale(newScale);
+        const containerWidth = containerRef.current.offsetWidth;
+        setScale(Math.min(1, containerWidth / A4_WIDTH));
       }
-    }
+    };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  let formattedDate = 'Date';
-  if (date) {
-    try {
-      formattedDate = format(new Date(date), 'MMMM dd, yyyy');
-    } catch {
-      formattedDate = date;
-    }
-  }
-
-  // Use name if available, otherwise fall back to associate, then default
   const recipientName = name || associate || 'Certificate Recipient';
-
-  const displayMessage = message ||
-    `This certificate is proudly presented to ${recipientName} in recognition of their exemplary performance and unwavering dedication to volunteer disaster response activities.`;
-
-  // Get signatories with fallback
+  const displayMessage = message || `This certificate is proudly presented to ${recipientName} in recognition of their exemplary performance and unwavering dedication to volunteer disaster response activities.`;
   const signatoriesList = signatories || [{ name: 'MICHAEL G. CAPARAS', title: 'Founder' }];
-  const signatoryCount = signatoriesList.length;
+  const sigClass = `signatures-${signatoriesList.length}`;
 
-  // Generate signature layout based on count
-  const getSignatureLayout = () => {
-    const baseStyle = {
-      textAlign: 'center',
-      fontSize: '1.1rem',
-      color: '#222',
-      fontWeight: 500,
-      flex: 1,
-      maxWidth: '200px',
-    };
-
-    const lineStyle = {
-      width: '100%',
-      borderBottom: '1px solid #000',
-      margin: '0 auto 0.3rem auto',
-    };
-
-    const titleStyle = {
-      textAlign: 'center',
-      fontSize: '1rem',
-      color: '#222',
-      fontWeight: 400,
-      marginTop: '0.5rem',
-    };
-
-    return signatoriesList.map((signatory, index) => {
-      let itemStyle = { ...baseStyle };
-      
-      // Special positioning for 4th and 5th signatories
-      if (signatoryCount === 4 && index === 3) {
-        // 4th signatory: below leftmost
-        itemStyle = {
-          ...baseStyle,
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          marginTop: '2rem',
-          width: '200px',
-        };
-      } else if (signatoryCount === 5 && index === 3) {
-        // 4th signatory: below leftmost
-        itemStyle = {
-          ...baseStyle,
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          marginTop: '2rem',
-          width: '200px',
-        };
-      } else if (signatoryCount === 5 && index === 4) {
-        // 5th signatory: below rightmost
-        itemStyle = {
-          ...baseStyle,
-          position: 'absolute',
-          top: '100%',
-          right: 0,
-          marginTop: '2rem',
-          width: '200px',
-        };
-      }
-
+  // Helper for custom signatory layout (4 or 5 signatories)
+  const renderSignatories = () => {
+    if (signatoriesList.length === 4) {
       return (
-        <div key={index} style={itemStyle}>
-          <div style={lineStyle} />
-          {signatory.name || 'MICHAEL G. CAPARAS'}
-          <div style={titleStyle}>{signatory.title || 'Founder'}</div>
+        <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+            {signatoriesList.slice(0, 3).map((sig, idx) => (
+              <div key={idx} className="signature-item" style={{ textAlign: 'center', fontSize: '1.1rem', color: '#222', fontWeight: 500, flex: '1 1 180px', maxWidth: 200 }}>
+                <span className="name" style={{ fontWeight: 'bold' }}>{sig.name}</span>
+                <hr style={{ marginBottom: '0.3rem', width: '100%', marginLeft: 'auto', marginRight: 'auto', borderTop: '1px solid #000', border: 'none' }} />
+                <div className="cert-title-small" style={{ textAlign: 'center', fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>{sig.title}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%', marginTop: '1.5rem' }}>
+            <div className="signature-item" style={{ textAlign: 'center', fontSize: '1.1rem', color: '#222', fontWeight: 500, flex: '1 1 180px', maxWidth: 200 }}>
+              <span className="name" style={{ fontWeight: 'bold' }}>{signatoriesList[3].name}</span>
+              <hr style={{ marginBottom: '0.3rem', width: '100%', marginLeft: 'auto', marginRight: 'auto', borderTop: '1px solid #000', border: 'none' }} />
+              <div className="cert-title-small" style={{ textAlign: 'center', fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>{signatoriesList[3].title}</div>
+            </div>
+          </div>
         </div>
       );
-    });
+    }
+    if (signatoriesList.length === 5) {
+      return (
+        <div style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+            {signatoriesList.slice(0, 3).map((sig, idx) => (
+              <div key={idx} className="signature-item" style={{ textAlign: 'center', fontSize: '1.1rem', color: '#222', fontWeight: 500, flex: '1 1 180px', maxWidth: 200 }}>
+                <span className="name" style={{ fontWeight: 'bold' }}>{sig.name}</span>
+                <hr style={{ marginBottom: '0.3rem', width: '100%', marginLeft: 'auto', marginRight: 'auto', borderTop: '1px solid #000', border: 'none' }} />
+                <div className="cert-title-small" style={{ textAlign: 'center', fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>{sig.title}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '1.5rem' }}>
+            <div className="signature-item" style={{ textAlign: 'center', fontSize: '1.1rem', color: '#222', fontWeight: 500, flex: '1 1 180px', maxWidth: 200 }}>
+              <span className="name" style={{ fontWeight: 'bold' }}>{signatoriesList[3].name}</span>
+              <hr style={{ marginBottom: '0.3rem', width: '100%', marginLeft: 'auto', marginRight: 'auto', borderTop: '1px solid #000', border: 'none' }} />
+              <div className="cert-title-small" style={{ textAlign: 'center', fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>{signatoriesList[3].title}</div>
+            </div>
+            <div className="signature-item" style={{ textAlign: 'center', fontSize: '1.1rem', color: '#222', fontWeight: 500, flex: '1 1 180px', maxWidth: 200 }}>
+              <span className="name" style={{ fontWeight: 'bold' }}>{signatoriesList[4].name}</span>
+              <hr style={{ marginBottom: '0.3rem', width: '100%', marginLeft: 'auto', marginRight: 'auto', borderTop: '1px solid #000', border: 'none' }} />
+              <div className="cert-title-small" style={{ textAlign: 'center', fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>{signatoriesList[4].title}</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    // Default: 1-3 signatories, or fallback
+    return (
+      <div className={`signatures-container ${sigClass}`}
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent:
+            signatoriesList.length === 1 ? 'center' :
+              signatoriesList.length <= 3 ? 'space-between' :
+                'space-evenly',
+          alignItems: 'flex-end',
+          width: '100%',
+          gap: '2rem',
+          marginTop: '2rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid #ccc',
+        }}
+      >
+        {signatoriesList.map((sig, idx) => (
+          <div key={idx} className="signature-item" style={{ textAlign: 'center', fontSize: '1.1rem', color: '#222', fontWeight: 500, flex: '1 1 180px', maxWidth: 200 }}>
+            <span className="name" style={{ fontWeight: 'bold' }}>{sig.name}</span>
+            <hr style={{ marginBottom: '0.3rem', width: '100%', marginLeft: 'auto', marginRight: 'auto', borderTop: '1px solid #000', border: 'none' }} />
+            <div className="cert-title-small" style={{ textAlign: 'center', fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>{sig.title}</div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
     <div
       ref={containerRef}
       style={{
-        width: '100%',
-        minHeight: 0,
-        minWidth: 0,
+        width: '100vw',
+        height: '100vh',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        background: 'none',
-        overflow: 'visible',
         padding: 0,
-        margin: '0 auto',
+        margin: 0,
+        background: 'none',
         boxSizing: 'border-box',
       }}
     >
@@ -140,179 +131,187 @@ const CertificatePreview = ({ data, logoUrl }) => {
         style={{
           width: `${A4_WIDTH}px`,
           height: `${A4_HEIGHT}px`,
-          background: '#fff',
-          borderRadius: 18,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
-          padding: '48px 32px 0 32px',
-          margin: '0 auto',
-          fontFamily: 'Montserrat, Playfair Display, serif',
           position: 'relative',
-          border: 'none',
-          boxSizing: 'border-box',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
           transform: `scale(${scale})`,
           transformOrigin: 'top center',
-          transition: 'transform 0.2s',
+          transition: 'transform 0.2s ease-in-out',
+          fontFamily: `'Montserrat', 'Playfair Display', serif`,
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          margin: 0,
+          padding: 0,
+          background: 'none',
         }}
       >
-        {/* Border with gradient */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          border: '8px solid #4a90e2',
-          borderRadius: 18,
-          background: 'linear-gradient(135deg, #4a90e2 0%, #f39c12 50%, #e74c3c 100%)',
-          zIndex: -2,
-        }}></div>
-        
-        {/* Background watermark images */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: -1,
-          opacity: 0.1,
-        }}>
-          <div style={{
-            position: 'absolute',
-            width: 150,
-            height: 100,
-            opacity: 0.3,
-            top: 50,
-            left: 50,
-            transform: 'rotate(-15deg)',
-          }}></div>
-          <div style={{
-            position: 'absolute',
-            width: 150,
-            height: 100,
-            opacity: 0.3,
-            top: 100,
-            right: 80,
-            transform: 'rotate(10deg)',
-          }}></div>
-          <div style={{
-            position: 'absolute',
-            width: 150,
-            height: 100,
-            opacity: 0.3,
-            bottom: 120,
-            left: 60,
-            transform: 'rotate(-5deg)',
-          }}></div>
-          <div style={{
-            position: 'absolute',
-            width: 150,
-            height: 100,
-            opacity: 0.3,
-            bottom: 80,
-            right: 100,
-            transform: 'rotate(20deg)',
-          }}></div>
-        </div>
-        
-        {/* Main logo at top center */}
-        <img 
-          src={logoSrc} 
-          alt="Main Logo" 
+        {/* Background Image */}
+        <img
+          src={backgroundSrc}
+          alt="Background"
           style={{
             position: 'absolute',
-            top: 40,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 120,
-            height: 'auto',
-            zIndex: 10,
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.78,
+            zIndex: 0,
+            pointerEvents: 'none',
           }}
         />
-        
-        {/* Main content */}
-        <div style={{
-          width: '100%',
-          maxWidth: 800,
-          textAlign: 'center',
-          marginTop: 180,
-          zIndex: 5,
-        }}>
-          <div style={{ 
-            fontFamily: 'Playfair Display, serif', 
-            fontSize: '2.7rem', 
-            fontWeight: 700, 
-            letterSpacing: '4px', 
-            color: '#2d3142',
-            marginBottom: '0.2rem',
+        {/* Corner SVG Decorations */}
+        <svg
+          width={A4_WIDTH}
+          height={A4_HEIGHT}
+          viewBox="0 0 1123 794"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 1,
+            pointerEvents: 'none',
+            display: 'block',
+          }}
+        >
+          <g transform="rotate(180,150,150)">
+            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
+            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
+            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
+          </g>
+          <g transform="translate(823,0) rotate(270,150,150)">
+            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
+            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
+            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
+          </g>
+          <g transform="translate(0,494) rotate(90,150,150)">
+            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
+            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
+            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
+          </g>
+          <g transform="translate(823,494)">
+            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
+            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
+            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
+          </g>
+        </svg>
+        {/* Certificate Main Content */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 18,
+            left: 18,
+            right: 18,
+            bottom: 18,
+            margin: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255,255,255,0.78)',
+            borderRadius: 25,
+            boxShadow: '0 4px 32px rgba(0,0,0,0.10)',
+            zIndex: 2,
+            padding: 0,
+            border: 'none',
+            width: 'calc(100% - 36px)',
+            height: 'calc(100% - 36px)',
+          }}
+        >
+          <div style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '6px solid #2563b6',
+            borderRadius: 20,
+            padding: '36px 40px',
+            margin: 0,
+            maxWidth: 900,
+            width: '80%',
+            minHeight: 540,
+            position: 'relative',
+            zIndex: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
-            CERTIFICATE OF APPRECIATION
+            <img src={logoSrc} alt="Main Logo" style={{ width: 120, height: 'auto', margin: '0 auto 8px auto', display: 'block' }} />
+            <div style={{
+              width: '100%',
+              textAlign: 'center',
+              zIndex: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'rgba(255,255,255,0.05)',
+              padding: 0,
+            }}>
+              <div style={{
+                textAlign: 'center',
+                fontFamily: 'Playfair Display, serif',
+                fontSize: '2.5rem',
+                fontWeight: 'bold',
+                letterSpacing: 4,
+                color: '#2d3142',
+                marginBottom: '0.2rem',
+                paddingTop: 0,
+                marginTop: '0.3rem',
+              }}>
+                CERTIFICATE OF APPRECIATION
+              </div>
+              <div style={{
+                textAlign: 'center',
+                fontSize: '1.1rem',
+                color: '#444',
+                fontWeight: 400,
+                marginBottom: '1.2rem',
+                marginTop: '0.2rem',
+              }}>
+                This certificate is proudly presented to
+              </div>
+              <div style={{
+                textAlign: 'center',
+                fontSize: '1.7rem',
+                fontWeight: 'bold',
+                marginBottom: '0.5rem',
+                color: '#222',
+                fontFamily: 'Playfair Display, serif',
+                marginTop: '2.2rem',
+              }}>
+                {recipientName}
+              </div>
+              <hr style={{
+                border: 'none',
+                borderTop: '1px solid #000',
+                margin: '0.5rem auto 1.2rem auto',
+                width: '60%',
+              }} />
+              <div style={{
+                textAlign: 'center',
+                fontSize: '1.08rem',
+                color: '#444',
+                margin: '0 auto 2.2rem auto',
+                maxWidth: '80%',
+                lineHeight: 1.5,
+                marginTop: '1.2rem',
+              }}>
+                {displayMessage.split('\n').map((line, idx) => (
+                  <span key={idx}>
+                    {line}
+                    {idx !== displayMessage.split('\n').length - 1 && <br />}
+                  </span>
+                ))}
+              </div>
+              {/* Signatories custom layout */}
+              {renderSignatories()}
+            </div>
           </div>
-          <div style={{ 
-            fontSize: '1.1rem', 
-            color: '#444', 
-            fontWeight: 400,
-            marginBottom: '1.2rem',
-          }}>
-            This certificate is proudly presented to
-          </div>
-          <div style={{ 
-            fontSize: '2rem', 
-            fontWeight: 700,
-            color: '#2d3142',
-            marginBottom: '0.5rem',
-            fontFamily: 'Playfair Display, serif',
-          }}>
-            {recipientName}
-          </div>
-        </div>
-        
-        {/* Divider */}
-        <div style={{ width: '60%', borderBottom: '1px solid #000', margin: '0.5rem auto 1.2rem auto' }} />
-        
-        {/* Message */}
-        <div style={{ 
-          textAlign: 'center', 
-          fontSize: '1.08rem', 
-          color: '#444',
-          margin: '0 auto 1.2rem auto',
-          maxWidth: '80%',
-          lineHeight: 1.5,
-          fontWeight: 500,
-        }}>
-          {displayMessage.split('\n').map((line, idx) => (
-            <span key={idx}>
-              {line}
-              {idx !== displayMessage.split('\n').length - 1 && <br />}
-            </span>
-          ))}
-        </div>
-        
-        {/* Divider */}
-        <div style={{ width: '60%', borderBottom: '1px solid #000', margin: '0.5rem auto 1.2rem auto' }} />
-        
-        {/* Footer */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: signatoryCount === 1 ? 'center' : 'space-between',
-          alignItems: 'flex-end',
-          marginTop: '4rem',
-          padding: '0 20px',
-          width: '100%',
-          boxSizing: 'border-box',
-          gap: '2rem',
-          position: signatoryCount >= 4 ? 'relative' : 'static',
-        }}>
-          {getSignatureLayout()}
         </div>
       </div>
     </div>
   );
 };
 
-export default CertificatePreview; 
+export default CertificatePreview;

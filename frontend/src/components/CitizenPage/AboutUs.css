@@ -108,6 +108,27 @@
   line-height: 1.6;
 }
 
+.about-hero-logo {
+  display: block;
+  margin: 0 auto 16px auto;
+  object-fit: contain;
+  max-width: 100%;
+  width: 120px;
+  height: auto;
+}
+
+@media (min-width: 600px) {
+  .about-hero-logo {
+    width: 200px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about-hero-logo {
+    width: 340px;
+  }
+}
+
 /* Main Content */
 .about-main-content {
   max-width: 1200px;

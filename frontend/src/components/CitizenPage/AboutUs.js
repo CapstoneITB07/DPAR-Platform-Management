@@ -1,18 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import './CitizenPage.css';
 import './AboutUs.css';
+// import disasterLogo from '../../../public/Assets/disaster_logo.png';
 
 function AboutUs() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [fade, setFade] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
 
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    setSidebarDropdownOpen(false);
+  };
+  const toggleSidebarDropdown = () => setSidebarDropdownOpen(!sidebarDropdownOpen);
+
   // Animation and navigation for About Us
   const handleAboutClick = () => {
+    closeSidebar();
     if (location.pathname === '/citizen/about') return;
     setFade(true);
     setTimeout(() => {
@@ -22,10 +36,19 @@ function AboutUs() {
 
   // Animation and navigation for Home
   const handleHomeClick = () => {
+    closeSidebar();
     if (location.pathname === '/citizen') return;
     setFade(true);
     setTimeout(() => {
       navigate('/citizen');
+    }, 350);
+  };
+
+  const handleCategoryClick = (category) => {
+    closeSidebar();
+    setFade(true);
+    setTimeout(() => {
+      navigate(`/citizen/${category.toLowerCase()}`);
     }, 350);
   };
 
@@ -35,9 +58,42 @@ function AboutUs() {
 
   return (
     <div className="about-page-wrapper">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="citizen-sidebar-overlay" onClick={closeSidebar} />
+      )}
+      {/* Mobile Sidebar */}
+      <nav className={`citizen-sidebar${sidebarOpen ? ' open' : ''}`}>
+        <button className="citizen-sidebar-close" onClick={closeSidebar}>
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+        <ul className="citizen-sidebar-nav">
+          <li onClick={handleHomeClick}>HOME</li>
+          <li className="citizen-sidebar-dropdown">
+            <div className="citizen-sidebar-dropdown-header" onClick={toggleSidebarDropdown}>
+              <span>CATEGORIES</span>
+              <span className={`citizen-sidebar-dropdown-arrow${sidebarDropdownOpen ? ' open' : ''}`}>▼</span>
+            </div>
+            {sidebarDropdownOpen && (
+              <ul className="citizen-sidebar-dropdown-list">
+                <li onClick={() => handleCategoryClick('mitigation')}>MITIGATION</li>
+                <li onClick={() => handleCategoryClick('preparedness')}>PREPAREDNESS</li>
+                <li onClick={() => handleCategoryClick('response')}>RESPONSE</li>
+                <li onClick={() => handleCategoryClick('recovery')}>RECOVERY</li>
+              </ul>
+            )}
+          </li>
+          <li onClick={handleAboutClick}>ABOUT US</li>
+        </ul>
+      </nav>
       {/* Navigation Bar */}
       <nav className="citizen-navbar">
         <div className="citizen-navbar-title">DPAR VOLUNTEER COALITION</div>
+        {/* Hamburger Menu for Mobile */}
+        <button className="citizen-hamburger-btn" onClick={toggleSidebar}>
+          <FontAwesomeIcon icon={faBars} />
+        </button>
+        {/* Desktop Navigation */}
         <ul className="citizen-navbar-list">
           <li className={isHomeActive ? 'active' : ''} onClick={handleHomeClick}>HOME</li>
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
@@ -106,6 +162,12 @@ function AboutUs() {
 
       {/* Hero Section */}
       <div className="about-hero">
+        <img 
+          src="/Assets/disaster_logo.png" 
+          alt="Disaster Preparedness and Response Logo" 
+          className="about-hero-logo"
+          style={{ objectFit: 'contain', margin: '0 auto 16px', display: 'block' }}
+        />
         <h1 className="about-hero-title">About DPAR VOLUNTEER COALITION</h1>
         <p className="about-hero-subtitle">
           Empowering communities through volunteer-driven disaster preparedness and response initiatives
@@ -141,7 +203,7 @@ function AboutUs() {
             {/* Timeline events */}
             {[
               {
-                year: '2018',
+                year: '2023',
                 title: 'The Beginning',
                 desc: 'DPAR Volunteer Coalition was founded with a vision to create a unified network of volunteers dedicated to disaster preparedness and response.',
                 achievements: ['Established core volunteer team', 'Developed initial response protocols', 'Created first community partnerships'],
@@ -149,7 +211,7 @@ function AboutUs() {
                 side: 'left',
               },
               {
-                year: '2019',
+                year: '2024',
                 title: 'Building Partnerships',
                 desc: 'Established crucial partnerships with local government units, NGOs, and community organizations to strengthen our disaster response capabilities.',
                 achievements: ['Partnered with 15 local organizations', 'Launched first training programs', 'Developed emergency response network'],
@@ -157,15 +219,7 @@ function AboutUs() {
                 side: 'right',
               },
               {
-                year: '2020',
-                title: 'Pandemic Response',
-                desc: 'Mobilized volunteers for COVID-19 response, providing essential services and support to vulnerable communities during the global crisis.',
-                achievements: ['Distributed 50,000+ relief packages', 'Established 24/7 emergency hotline', 'Trained 1,000+ volunteers'],
-                impact: 'Served over 100,000 individuals during the pandemic',
-                side: 'left',
-              },
-              {
-                year: '2021',
+                year: '2025',
                 title: 'Digital Transformation',
                 desc: 'Launched innovative digital platforms and training programs to enhance volunteer coordination and community preparedness.',
                 achievements: ['Developed mobile response app', 'Created online training portal', 'Implemented real-time tracking system'],
@@ -173,7 +227,7 @@ function AboutUs() {
                 side: 'right',
               },
               {
-                year: '2022',
+                year: '2025',
                 title: 'Expanding Impact',
                 desc: 'Grew our volunteer network to over 5,000 members, implementing comprehensive disaster risk reduction programs across multiple communities.',
                 achievements: ['Covered 25+ communities', 'Conducted 100+ training sessions', 'Responded to 50+ emergencies'],

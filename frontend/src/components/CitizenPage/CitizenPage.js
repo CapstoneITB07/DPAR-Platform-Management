@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../logo.svg';
 import axios from 'axios';
-import { FaBullhorn } from 'react-icons/fa';
+import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import './CitizenPage.css';
 
 // Helper for formatting date
@@ -14,6 +16,8 @@ function formatDate(dateStr) {
 function CitizenPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [fade, setFade] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [programs, setPrograms] = useState([]);
@@ -43,12 +47,37 @@ function CitizenPage() {
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
+  
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    setSidebarDropdownOpen(false);
+  };
+  
+  const toggleSidebarDropdown = () => setSidebarDropdownOpen(!sidebarDropdownOpen);
 
   // Animation and navigation for About Us
   const handleAboutClick = () => {
     setFade(true);
     setTimeout(() => {
       navigate('/citizen/about');
+    }, 350);
+  };
+
+  // Navigation handlers for sidebar
+  const handleHomeClick = () => {
+    closeSidebar();
+    setFade(true);
+    setTimeout(() => {
+      navigate('/citizen');
+    }, 350);
+  };
+
+  const handleCategoryClick = (category) => {
+    closeSidebar();
+    setFade(true);
+    setTimeout(() => {
+      navigate(`/citizen/${category.toLowerCase()}`);
     }, 350);
   };
 
@@ -165,11 +194,59 @@ function CitizenPage() {
     setShowProgramModal(true);
   };
 
+  // Inline style for associate groups background image
+  const logosBgStyle = {
+    background: "url('/Assets/compiled_activities.jpg') no-repeat center center",
+    backgroundSize: "cover",
+    position: "relative",
+    overflow: "hidden"
+  };
+
   return (
     <div className="citizen-page-wrapper">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="citizen-sidebar-overlay" onClick={closeSidebar} />
+      )}
+      
+      {/* Mobile Sidebar */}
+      <nav className={`citizen-sidebar${sidebarOpen ? ' open' : ''}`}>
+        <button className="citizen-sidebar-close" onClick={closeSidebar}>
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+        {/* Removed sidebar header title */}
+        <ul className="citizen-sidebar-nav">
+          <li onClick={handleHomeClick}>HOME</li>
+          <li className="citizen-sidebar-dropdown">
+            <div className="citizen-sidebar-dropdown-header" onClick={toggleSidebarDropdown}>
+              <span>CATEGORIES</span>
+              <span className={`citizen-sidebar-dropdown-arrow${sidebarDropdownOpen ? ' open' : ''}`}>
+                ▼
+              </span>
+            </div>
+            {sidebarDropdownOpen && (
+              <ul className="citizen-sidebar-dropdown-list">
+                <li onClick={() => handleCategoryClick('mitigation')}>MITIGATION</li>
+                <li onClick={() => handleCategoryClick('preparedness')}>PREPAREDNESS</li>
+                <li onClick={() => handleCategoryClick('response')}>RESPONSE</li>
+                <li onClick={() => handleCategoryClick('recovery')}>RECOVERY</li>
+              </ul>
+            )}
+          </li>
+          <li onClick={handleAboutClick}>ABOUT US</li>
+        </ul>
+      </nav>
+
       {/* Navigation Bar */}
       <nav className="citizen-navbar">
         <div className="citizen-navbar-title">DPAR VOLUNTEER COALITION</div>
+        
+        {/* Hamburger Menu for Mobile */}
+        <button className="citizen-hamburger-btn" onClick={toggleSidebar}>
+          <FontAwesomeIcon icon={faBars} />
+        </button>
+        
+        {/* Desktop Navigation */}
         <ul className="citizen-navbar-list">
           <li style={{ background: '#a52a1a' }}>HOME</li>
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
@@ -241,7 +318,7 @@ function CitizenPage() {
         </ul>
       </nav>
       {/* Main Content: Dynamic Organization Logos */}
-      <div className="citizen-logos-container" style={{ opacity: fade ? 0 : 1 }}>
+      <div className="citizen-logos-container" style={logosBgStyle}>
         {groupsLoading ? (
           <div className="citizen-loading-message">Loading organizations...</div>
         ) : groupsError ? (
@@ -330,6 +407,28 @@ function CitizenPage() {
             })}
           </div>
         )}
+      </div>
+      {/* Phases Section: 4 Cards */}
+      <div className="citizen-phases-section">
+        <h2 className="citizen-phases-header">DPAR CATEGORIES</h2>
+        <div className="citizen-phases-grid">
+          <div className="citizen-phase-card" onClick={() => navigate('/citizen/mitigation')} tabIndex={0} role="button" aria-label="Mitigation">
+            <FaShieldAlt className="citizen-phase-icon" />
+            <div className="citizen-phase-label">MITIGATION</div>
+          </div>
+          <div className="citizen-phase-card" onClick={() => navigate('/citizen/preparedness')} tabIndex={0} role="button" aria-label="Preparedness">
+            <FaClipboardList className="citizen-phase-icon" />
+            <div className="citizen-phase-label">PREPAREDNESS</div>
+          </div>
+          <div className="citizen-phase-card" onClick={() => navigate('/citizen/response')} tabIndex={0} role="button" aria-label="Response">
+            <FaHandsHelping className="citizen-phase-icon" />
+            <div className="citizen-phase-label">RESPONSE</div>
+          </div>
+          <div className="citizen-phase-card" onClick={() => navigate('/citizen/recovery')} tabIndex={0} role="button" aria-label="Recovery">
+            <FaRedo className="citizen-phase-icon" />
+            <div className="citizen-phase-label">RECOVERY</div>
+          </div>
+        </div>
       </div>
       {/* Training Programs as Posts */}
       <div className="citizen-training-section">

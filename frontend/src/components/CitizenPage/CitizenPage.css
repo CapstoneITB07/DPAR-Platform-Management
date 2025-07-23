@@ -1,12 +1,172 @@
 /* CitizenPage.css */
 
+/* Hamburger Menu Button */
+.citizen-hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 20px;
+  z-index: 1001;
+}
+
+/* Sidebar Overlay */
+.citizen-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* Mobile Sidebar */
+.citizen-sidebar {
+  position: fixed;
+  top: 0;
+  right: -280px;
+  width: 280px;
+  height: 100vh;
+  background: #8B1409;
+  color: white;
+  z-index: 1000;
+  transition: right 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.citizen-sidebar.open {
+  right: 0;
+}
+
+.citizen-sidebar-close {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.citizen-sidebar-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.citizen-sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 20px;
+}
+
+.citizen-sidebar-title {
+  font-weight: bold;
+  font-size: 18px;
+  text-align: center;
+}
+
+.citizen-sidebar-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+  padding-top: 48px; /* Add space for the close button */
+}
+
+.citizen-sidebar-nav li {
+  padding: 15px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+}
+
+.citizen-sidebar-nav li:hover {
+  background-color: #a52a1a;
+}
+
+.citizen-sidebar-nav li:active {
+  background-color: #7a1f1a;
+}
+
+/* Sidebar Dropdown Styles */
+.citizen-sidebar-dropdown {
+  position: relative;
+}
+
+.citizen-sidebar-dropdown-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  padding: 15px 20px;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+  position: relative;
+}
+
+.citizen-sidebar-dropdown-header:hover {
+  background-color: #a52a1a;
+}
+
+.citizen-sidebar-dropdown-arrow {
+  position: absolute;
+  right: 20px;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.citizen-sidebar-dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Hide hamburger button when sidebar is open */
+.citizen-sidebar.open ~ .citizen-navbar .citizen-hamburger-btn {
+  display: none;
+}
+
+.citizen-sidebar-dropdown-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.citizen-sidebar-dropdown-list li {
+  padding: 12px 20px 12px 40px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.citizen-sidebar-dropdown-list li:hover {
+  background-color: #a52a1a;
+}
+
+.citizen-sidebar-dropdown-list li:active {
+  background-color: #7a1f1a;
+}
+
 .citizen-navbar {
   background: #8B1409;
   color: #fff;
   padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   height: 60px;
   position: relative;
 }
@@ -79,6 +239,24 @@
   padding: 0 0 32px 0;
   opacity: 1;
   transition: opacity 0.35s;
+  position: relative;
+  overflow: hidden;
+  /* background: url('/Assets/compiled_activities.jpg') no-repeat center center; */
+  /* background-size: cover; */
+}
+.citizen-logos-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.7); /* Adjust opacity as needed */
+  z-index: 0;
+}
+.citizen-logos-row, .citizen-logos-row-scroll {
+  position: relative;
+  z-index: 1;
 }
 .citizen-logos-row {
   display: grid;
@@ -121,11 +299,13 @@
 }
 .citizen-announcements-title {
   text-align: center;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 1px;
   margin-bottom: 28px;
-  font-size: 28px;
-  color: #222;
+  font-size: clamp(2rem, 4vw, 3rem); /* Fluid typography */
+  color: #8B1409;
+  padding-top: 32px;
+  text-transform: uppercase;
 }
 .citizen-announcements-grid {
   display: grid;
@@ -401,20 +581,23 @@
 }
 
 .citizen-training-section {
-  background: #f7f8fa;
+  background: #fff;
   max-width: 1200px;
   margin: 40px auto 0 auto;
   padding: 0 10px 60px 10px;
   min-height: 400px;
-  /* Remove flex, align-items, and display styles to match announcements section */
+  display: flex;
+  flex-direction: column;
 }
 .citizen-training-title {
   text-align: center;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 1px;
-  margin-bottom: 36px;
-  font-size: 28px;
-  color: #222;
+  margin-bottom: 28px;
+  font-size: clamp(2rem, 4vw, 3rem); /* Fluid typography */
+  color: #8B1409;
+  padding-top: 32px;
+  text-transform: uppercase;
 }
 .citizen-training-grid {
   width: 100%;
@@ -428,6 +611,17 @@
   margin: 0 auto;
   min-height: 420px;
   justify-items: center;
+  /* Center empty state */
+  place-items: center;
+}
+.citizen-training-grid .citizen-no-data-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #a52a1a;
+  font-size: 1.35rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-top: 60px;
 }
 .citizen-training-card {
   background: #fff;
@@ -1796,5 +1990,139 @@
   
   .citizen-group-modal-description {
     padding: 12px;
+  }
+} 
+
+.citizen-phases-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 32px auto 0 auto;
+  padding: 0 10px 24px 10px;
+}
+.citizen-phases-header {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 28px;
+  font-size: clamp(2rem, 4vw, 3rem); /* Fluid typography */
+  color: #8B1409;
+  padding-top: 32px;
+  text-transform: uppercase;
+}
+.citizen-phases-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  justify-content: center;
+  align-items: stretch;
+}
+.citizen-phase-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.10);
+  padding: 32px 12px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  border: 2px solid #f3f3f3;
+  min-height: 180px;
+  text-align: center;
+}
+.citizen-phase-card:hover {
+  box-shadow: 0 8px 32px rgba(165,42,26,0.22);
+  transform: translateY(-2px) scale(1.03);
+  border-color: #a52a1a;
+  background: #f7f8fa;
+}
+.citizen-phase-icon {
+  font-size: 3rem;
+  color: #a52a1a;
+  margin-bottom: 18px;
+}
+.citizen-phase-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #8B1409;
+  letter-spacing: 1px;
+}
+@media (max-width: 900px) {
+  .citizen-phases-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+@media (max-width: 600px) {
+  .citizen-phases-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .citizen-phase-card {
+    padding: 24px 8px 18px 8px;
+    min-height: 120px;
+  }
+  .citizen-phase-icon {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+  }
+  .citizen-phase-label {
+    font-size: 1rem;
+  }
+} 
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .citizen-hamburger-btn {
+    display: block;
+  }
+  
+  .citizen-navbar-list {
+    display: none;
+  }
+  
+  .citizen-navbar-title {
+    margin-left: 20px;
+    margin-right: auto;
+  }
+  
+  .citizen-sidebar {
+    width: 85vw;
+    right: -85vw;
+  }
+  
+  .citizen-sidebar.open {
+    right: 0;
+  }
+  
+  .citizen-sidebar-nav li {
+    padding: 18px 20px;
+    font-size: 16px;
+  }
+  
+  .citizen-sidebar-title {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .citizen-sidebar {
+    width: 90vw;
+    right: -90vw;
+  }
+  
+  .citizen-sidebar-nav li {
+    padding: 20px 20px;
+    font-size: 15px;
+  }
+  
+  .citizen-sidebar-title {
+    font-size: 15px;
+  }
+  
+  .citizen-hamburger-btn {
+    font-size: 20px;
+    margin-right: 15px;
   }
 } 

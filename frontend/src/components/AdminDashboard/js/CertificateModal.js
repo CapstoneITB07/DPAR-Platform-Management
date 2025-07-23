@@ -22,6 +22,34 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     onCertificateDataChange(updated);
   };
 
+  const handleSignatoryChange = (index, field, value) => {
+    const updatedSignatories = [...(localData.signatories || [{ name: '', title: '' }])];
+    updatedSignatories[index] = { ...updatedSignatories[index], [field]: value };
+    const updated = { ...localData, signatories: updatedSignatories };
+    setLocalData(updated);
+    onCertificateDataChange(updated);
+  };
+
+  const addSignatory = () => {
+    const currentSignatories = localData.signatories || [{ name: '', title: '' }];
+    if (currentSignatories.length < 5) {
+      const updatedSignatories = [...currentSignatories, { name: '', title: '' }];
+      const updated = { ...localData, signatories: updatedSignatories };
+      setLocalData(updated);
+      onCertificateDataChange(updated);
+    }
+  };
+
+  const removeSignatory = (index) => {
+    const currentSignatories = localData.signatories || [{ name: '', title: '' }];
+    if (currentSignatories.length > 1) {
+      const updatedSignatories = currentSignatories.filter((_, i) => i !== index);
+      const updated = { ...localData, signatories: updatedSignatories };
+      setLocalData(updated);
+      onCertificateDataChange(updated);
+    }
+  };
+
   const handleDownload = async () => {
     setDownloading(true);
     try {
@@ -41,9 +69,9 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
       const response = await axios.post(
         `${backendBaseUrl}/api/certificates`,
         {
-          associate: localData.associate,
+          name: localData.name,
           date: localData.date,
-          signature: localData.signature,
+          signatories: localData.signatories || [{ name: '', title: '' }],
           message: localData.message,
           logoUrl: logoUrl, // Always full URL
           swirlTopUrl: swirlTopUrl,
@@ -106,26 +134,98 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
           <div className="enhanced-modal-flex">
             {/* Form Section */}
             <div className="enhanced-form-card">
-              <h3 className="enhanced-form-title">Certificate Details</h3>
               <form className="certificate-form">
                 <div className="certificate-form-group">
-                  <label htmlFor="associate">Select Associate:</label>
-                  <select id="associate" name="associate" value={localData.associate} onChange={handleChange}>
-                    <option value="">Select...</option>
-                    {associates.map(a => (
-                      <option key={a.id} value={a.name}>{a.name}</option>
-                    ))}
-                  </select>
+                  <label htmlFor="name">Recipient Name:</label>
+                  <input type="text" id="name" name="name" placeholder="Enter recipient name" value={localData.name || ''} onChange={handleChange} />
                 </div>
                 <div className="certificate-form-group">
                   <label htmlFor="date">Date:</label>
                   <input type="date" id="date" name="date" value={localData.date} onChange={handleChange} />
                 </div>
+                
+                {/* Signatories Section */}
                 <div className="certificate-form-group">
-                  <label htmlFor="signature">Signature:</label>
-                  <input type="text" id="signature" name="signature" placeholder="e.g. Dr. Jane Smith" value={localData.signature} onChange={handleChange} />
-                  <small>Type your name as it should appear on the certificate.</small>
+                  <label>Signatories:</label>
+                  <small style={{ color: '#666', display: 'block', marginBottom: 8 }}>
+                    Maximum 5 signatories
+                  </small>
+                  {(localData.signatories || [{ name: '', title: '' }]).map((signatory, index, arr) => (
+                    <div key={index} style={{ 
+                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
+                    }}>
+                      <div style={{ flex: 1, display: 'flex', gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: 'none' }}>Name:</label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter signatory name" 
+                            value={signatory.name || ''} 
+                            onChange={(e) => handleSignatoryChange(index, 'name', e.target.value)}
+                            style={{ width: '100%', padding: '5px', marginTop: '2px' }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ display: 'none' }}>Title:</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Founder, CEO, etc." 
+                            value={signatory.title || ''} 
+                            onChange={(e) => handleSignatoryChange(index, 'title', e.target.value)}
+                            style={{ width: '100%', padding: '5px', marginTop: '2px' }}
+                          />
+                        </div>
+                      </div>
+                      {/* Add button only on last row and if less than 5 signatories */}
+                      {index === arr.length - 1 && arr.length < 5 && (
+                        <button 
+                          type="button" 
+                          onClick={addSignatory}
+                          style={{
+                            background: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          +
+                        </button>
+                      )}
+                      {/* Remove button always shown if more than 1 signatory */}
+                      {arr.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => removeSignatory(index)}
+                          style={{
+                            background: '#f44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
+                
                 <div className="certificate-form-group">
                   <label htmlFor="message">Appreciation Message:</label>
                   <textarea id="message" name="message" value={localData.message} onChange={handleChange} />

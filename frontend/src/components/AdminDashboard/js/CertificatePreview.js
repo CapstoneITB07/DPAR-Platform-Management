@@ -7,12 +7,10 @@ const MAX_WIDTH = 1000; // px
 const GOLD = '#bfa22a';
 
 const CertificatePreview = ({ data, logoUrl }) => {
-  const { associate, date, signature, message } = data;
+  const { name, associate, date, signatories, message } = data;
   const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
-  const logoSrc = logoUrl ? logoUrl : backendBaseUrl + '/Assets/disaster_logo.png';
-  const swirlTop = "/Assets/swirl_top_left.png";
-  const swirlBottom = "/Assets/swirl_bottom_right.png";
-  const medal = "/Assets/star.png";
+  // Always use disaster_logo.png as the main logo
+  const logoSrc = backendBaseUrl + '/Assets/disaster_logo.png';
 
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
@@ -39,8 +37,86 @@ const CertificatePreview = ({ data, logoUrl }) => {
     }
   }
 
+  // Use name if available, otherwise fall back to associate, then default
+  const recipientName = name || associate || 'Certificate Recipient';
+
   const displayMessage = message ||
-    `This certificate is proudly presented to ${associate || '[Associate Name]'} in recognition of their exemplary performance and unwavering dedication to volunteer disaster response activities.`;
+    `This certificate is proudly presented to ${recipientName} in recognition of their exemplary performance and unwavering dedication to volunteer disaster response activities.`;
+
+  // Get signatories with fallback
+  const signatoriesList = signatories || [{ name: 'MICHAEL G. CAPARAS', title: 'Founder' }];
+  const signatoryCount = signatoriesList.length;
+
+  // Generate signature layout based on count
+  const getSignatureLayout = () => {
+    const baseStyle = {
+      textAlign: 'center',
+      fontSize: '1.1rem',
+      color: '#222',
+      fontWeight: 500,
+      flex: 1,
+      maxWidth: '200px',
+    };
+
+    const lineStyle = {
+      width: '100%',
+      borderBottom: '1px solid #000',
+      margin: '0 auto 0.3rem auto',
+    };
+
+    const titleStyle = {
+      textAlign: 'center',
+      fontSize: '1rem',
+      color: '#222',
+      fontWeight: 400,
+      marginTop: '0.5rem',
+    };
+
+    return signatoriesList.map((signatory, index) => {
+      let itemStyle = { ...baseStyle };
+      
+      // Special positioning for 4th and 5th signatories
+      if (signatoryCount === 4 && index === 3) {
+        // 4th signatory: below leftmost
+        itemStyle = {
+          ...baseStyle,
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          marginTop: '2rem',
+          width: '200px',
+        };
+      } else if (signatoryCount === 5 && index === 3) {
+        // 4th signatory: below leftmost
+        itemStyle = {
+          ...baseStyle,
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          marginTop: '2rem',
+          width: '200px',
+        };
+      } else if (signatoryCount === 5 && index === 4) {
+        // 5th signatory: below rightmost
+        itemStyle = {
+          ...baseStyle,
+          position: 'absolute',
+          top: '100%',
+          right: 0,
+          marginTop: '2rem',
+          width: '200px',
+        };
+      }
+
+      return (
+        <div key={index} style={itemStyle}>
+          <div style={lineStyle} />
+          {signatory.name || 'MICHAEL G. CAPARAS'}
+          <div style={titleStyle}>{signatory.title || 'Founder'}</div>
+        </div>
+      );
+    });
+  };
 
   return (
     <div
@@ -67,7 +143,7 @@ const CertificatePreview = ({ data, logoUrl }) => {
           background: '#fff',
           borderRadius: 18,
           boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
-          padding: '48px 60px 0 60px',
+          padding: '48px 32px 0 32px',
           margin: '0 auto',
           fontFamily: 'Montserrat, Playfair Display, serif',
           position: 'relative',
@@ -83,13 +159,90 @@ const CertificatePreview = ({ data, logoUrl }) => {
           transition: 'transform 0.2s',
         }}
       >
-        {/* Swirls */}
-        <img src={swirlTop} alt="Swirl" style={{ position: 'absolute', left: 0, top: 0, width: 140, opacity: 0.18 }} />
-        <img src={swirlBottom} alt="Swirl" style={{ position: 'absolute', right: 0, bottom: 0, width: 140, opacity: 0.18, transform: 'scaleX(-1)' }} />
-        {/* Logo */}
-        <img src={logoSrc} alt="Logo" style={{ position: 'absolute', top: 32, right: 60, width: 70, height: 'auto' }} />
-        {/* Certificate Title Block */}
-        <div style={{ textAlign: 'center', marginBottom: '0.5rem', marginTop: '1.2rem' }}>
+        {/* Border with gradient */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          border: '8px solid #4a90e2',
+          borderRadius: 18,
+          background: 'linear-gradient(135deg, #4a90e2 0%, #f39c12 50%, #e74c3c 100%)',
+          zIndex: -2,
+        }}></div>
+        
+        {/* Background watermark images */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: -1,
+          opacity: 0.1,
+        }}>
+          <div style={{
+            position: 'absolute',
+            width: 150,
+            height: 100,
+            opacity: 0.3,
+            top: 50,
+            left: 50,
+            transform: 'rotate(-15deg)',
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 150,
+            height: 100,
+            opacity: 0.3,
+            top: 100,
+            right: 80,
+            transform: 'rotate(10deg)',
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 150,
+            height: 100,
+            opacity: 0.3,
+            bottom: 120,
+            left: 60,
+            transform: 'rotate(-5deg)',
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 150,
+            height: 100,
+            opacity: 0.3,
+            bottom: 80,
+            right: 100,
+            transform: 'rotate(20deg)',
+          }}></div>
+        </div>
+        
+        {/* Main logo at top center */}
+        <img 
+          src={logoSrc} 
+          alt="Main Logo" 
+          style={{
+            position: 'absolute',
+            top: 40,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 120,
+            height: 'auto',
+            zIndex: 10,
+          }}
+        />
+        
+        {/* Main content */}
+        <div style={{
+          width: '100%',
+          maxWidth: 800,
+          textAlign: 'center',
+          marginTop: 180,
+          zIndex: 5,
+        }}>
           <div style={{ 
             fontFamily: 'Playfair Display, serif', 
             fontSize: '2.7rem', 
@@ -98,39 +251,30 @@ const CertificatePreview = ({ data, logoUrl }) => {
             color: '#2d3142',
             marginBottom: '0.2rem',
           }}>
-            CERTIFICATE
+            CERTIFICATE OF APPRECIATION
           </div>
           <div style={{ 
-            fontSize: '1.35rem', 
-            color: GOLD, 
-            fontWeight: 700,
-            letterSpacing: '2px',
-            marginBottom: '0.7rem',
-            textTransform: 'uppercase',
-          }}>
-            OF APPRECIATION
-          </div>
-          <div style={{ 
-            fontSize: '1.13rem', 
+            fontSize: '1.1rem', 
             color: '#444', 
-            fontWeight: 700,
-            letterSpacing: '1px',
+            fontWeight: 400,
             marginBottom: '1.2rem',
-            textTransform: 'uppercase',
           }}>
-            THE FOLLOWING AWARD IS GIVEN TO
+            This certificate is proudly presented to
           </div>
           <div style={{ 
             fontSize: '2rem', 
             fontWeight: 700,
             color: '#2d3142',
             marginBottom: '0.5rem',
+            fontFamily: 'Playfair Display, serif',
           }}>
-            {associate || 'Associate Name'}
+            {recipientName}
           </div>
         </div>
+        
         {/* Divider */}
-        <div style={{ width: '97%', borderBottom: `2.5px solid ${GOLD}`, margin: '0.5rem 0 1.2rem 0' }} />
+        <div style={{ width: '60%', borderBottom: '1px solid #000', margin: '0.5rem auto 1.2rem auto' }} />
+        
         {/* Message */}
         <div style={{ 
           textAlign: 'center', 
@@ -148,54 +292,24 @@ const CertificatePreview = ({ data, logoUrl }) => {
             </span>
           ))}
         </div>
+        
+        {/* Divider */}
+        <div style={{ width: '60%', borderBottom: '1px solid #000', margin: '0.5rem auto 1.2rem auto' }} />
+        
         {/* Footer */}
         <div style={{ 
           display: 'flex', 
-          justifyContent: 'space-between', 
+          justifyContent: signatoryCount === 1 ? 'center' : 'space-between',
           alignItems: 'flex-end',
-          marginTop: '2.2rem',
-          padding: '0 40px',
+          marginTop: '4rem',
+          padding: '0 20px',
           width: '100%',
           boxSizing: 'border-box',
+          gap: '2rem',
+          position: signatoryCount >= 4 ? 'relative' : 'static',
         }}>
-          <div style={{ textAlign: 'center', minWidth: 180 }}>
-            <div style={{ fontSize: '1.15rem', color: '#2d3142', fontWeight: 500, marginBottom: 2 }}>
-              {formattedDate}
-            </div>
-            <div style={{ borderBottom: `2.5px solid ${GOLD}`, width: 120, margin: '0 auto 6px auto' }} />
-            <div style={{ 
-              color: GOLD, 
-              fontWeight: 700, 
-              marginTop: '0.5rem',
-              fontSize: '1.08rem',
-              letterSpacing: '1px',
-              textTransform: 'capitalize',
-            }}>
-              Date
-            </div>
-          </div>
-          <div style={{ textAlign: 'center', minWidth: 100 }}>
-            <img src={medal} alt="Medal" style={{ width: '54px', height: '54px' }} />
-          </div>
-          <div style={{ textAlign: 'center', minWidth: 180 }}>
-            <div style={{ fontSize: '1.15rem', color: '#2d3142', fontWeight: 500, marginBottom: 2 }}>
-              {signature || 'Signature'}
-            </div>
-            <div style={{ borderBottom: `2.5px solid ${GOLD}`, width: 120, margin: '0 auto 6px auto' }} />
-            <div style={{ 
-              color: GOLD, 
-              fontWeight: 700, 
-              marginTop: '0.5rem',
-              fontSize: '1.08rem',
-              letterSpacing: '1px',
-              textTransform: 'capitalize',
-            }}>
-              Signature
-            </div>
-          </div>
+          {getSignatureLayout()}
         </div>
-        {/* Bottom-right swirl for extra accent */}
-        <img src={swirlBottom} alt="Swirl" style={{ position: 'absolute', right: 18, bottom: 18, width: 120, opacity: 0.18, transform: 'scaleX(-1)' }} />
       </div>
     </div>
   );

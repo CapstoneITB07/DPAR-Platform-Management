@@ -261,7 +261,7 @@ function ApprovalAOR() {
         setSelectedReport(report);
       } else {
         // For other errors, still use the existing report data
-        setSelectedReport(report);
+      setSelectedReport(report);
       }
     }
     setShowPreviewModal(true);
@@ -442,28 +442,28 @@ function ApprovalAOR() {
                     console.log('Approved reports:', approvedReports);
                     
                     return approvedReports.map(report => (
-                      <div key={report.id} className="history-item">
-                        <img 
-                          src={getOrganizationLogo(report)}
-                          alt={report.user?.organization || 'Organization Logo'} 
-                          className="history-logo"
-                        />
-                        <div className="history-info">
-                          <h4 className="history-title">{report.title}</h4>
-                          <p className="history-date">
-                            {new Date(report.created_at).toLocaleDateString()}
-                          </p>
+                    <div key={report.id} className="history-item">
+                      <img 
+                        src={getOrganizationLogo(report)}
+                        alt={report.user?.organization || 'Organization Logo'} 
+                        className="history-logo"
+                      />
+                      <div className="history-info">
+                        <h4 className="history-title">{report.title}</h4>
+                        <p className="history-date">
+                          {new Date(report.created_at).toLocaleDateString()}
+                        </p>
                           <p className="history-status approved">
                             Approved on {new Date(report.approved_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <button 
-                          className="generate-btn"
-                          onClick={() => handleGenerateAOR(report.id)}
-                        >
-                          <FontAwesomeIcon icon={faDownload} /> Generate AOR
-                        </button>
+                        </p>
                       </div>
+                      <button 
+                        className="generate-btn"
+                        onClick={() => handleGenerateAOR(report.id)}
+                      >
+                        <FontAwesomeIcon icon={faDownload} /> Generate AOR
+                      </button>
+                    </div>
                     ));
                   })()}
                   {allReports.filter(report => report.status === 'approved').length === 0 && (
@@ -563,18 +563,18 @@ function ApprovalAOR() {
                   <div className="preview-actions">
                     {selectedReport.status === 'sent' && (
                       <>
-                        <button 
-                          className="preview-btn approve"
+                    <button 
+                      className="preview-btn approve"
                           onClick={() => handleConfirmApprove(selectedReport.id)}
-                        >
-                          <FontAwesomeIcon icon={faCheck} /> Approve
-                        </button>
-                        <button 
-                          className="preview-btn reject"
+                    >
+                      <FontAwesomeIcon icon={faCheck} /> Approve
+                    </button>
+                    <button 
+                      className="preview-btn reject"
                           onClick={() => handleConfirmReject(selectedReport.id)}
-                        >
-                          <FontAwesomeIcon icon={faBan} /> Reject
-                        </button>
+                    >
+                      <FontAwesomeIcon icon={faBan} /> Reject
+                    </button>
                       </>
                     )}
                     
@@ -592,13 +592,13 @@ function ApprovalAOR() {
                     
                     {selectedReport.status === 'rejected' && (
                       <>
-                        <button 
+                    <button 
                           className="preview-btn reject disabled"
                           disabled
                           title="Already rejected"
-                        >
+                    >
                           <FontAwesomeIcon icon={faBan} /> Rejected
-                        </button>
+                    </button>
                       </>
                     )}
                   </div>

@@ -20,9 +20,12 @@ class CertificateController extends Controller
 
         try {
             $validated = $request->validate([
-                'associate' => 'required|string',
+                'name' => 'nullable|string',
+                'associate' => 'nullable|string',
                 'date' => 'required|string',
-                'signature' => 'required|string',
+                'signatories' => 'required|array|min:1|max:5',
+                'signatories.*.name' => 'required|string',
+                'signatories.*.title' => 'required|string',
                 'message' => 'required|string',
                 'format' => 'required|in:pdf',
                 'logoUrl' => 'nullable|string',
@@ -34,10 +37,11 @@ class CertificateController extends Controller
             // Ensure logoUrl uses 127.0.0.1 instead of localhost
             $logoUrl = str_replace('localhost', '127.0.0.1', $logoUrl);
             $data = array_merge($validated, [
+                'associate' => $validated['name'] ?? $validated['associate'] ?? 'Certificate Recipient',
                 'logoUrl' => $logoUrl,
                 'swirlTopUrl' => $baseUrl . '/Assets/swirl_top_left.png',
                 'swirlBottomUrl' => $baseUrl . '/Assets/swirl_bottom_right.png',
-                'medalUrl' => $baseUrl . '/Assets/star.png',
+                'baseUrl' => $baseUrl,
             ]);
             $filename = 'certificate_' . Str::random(8);
 

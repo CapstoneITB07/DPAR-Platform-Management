@@ -290,20 +290,59 @@ function AssociateLayout({ children }) {
 
   useEffect(() => {
     fetchNotifications();
+    
+    // Set up periodic refresh of unread count
+    const interval = setInterval(() => {
+      const calculateUnreadCount = async () => {
+        try {
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+          const response = await axios.get('http://localhost:8000/api/notifications', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (Array.isArray(response.data)) {
+            const readIds = JSON.parse(localStorage.getItem(NOTIF_READ_KEY) || '[]');
+            const unreadNotifications = response.data.filter(notification => !readIds.includes(notification.id));
+            setUnreadCount(unreadNotifications.length);
+          }
+        } catch (error) {
+          console.error('Failed to refresh unread count:', error);
+        }
+      };
+      
+      calculateUnreadCount();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (location.pathname === '/associate/notification') {
-      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } })
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            const readIds = data.map(n => n.id);
-            localStorage.setItem(NOTIF_READ_KEY, JSON.stringify(readIds));
+    const calculateUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await axios.get('http://localhost:8000/api/notifications', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (Array.isArray(response.data)) {
+          const readIds = JSON.parse(localStorage.getItem(NOTIF_READ_KEY) || '[]');
+          const unreadNotifications = response.data.filter(notification => !readIds.includes(notification.id));
+          setUnreadCount(unreadNotifications.length);
+          
+          // If we're on the notification page, mark all as read
+          if (location.pathname === '/associate/notification') {
+            const allIds = response.data.map(n => n.id);
+            localStorage.setItem(NOTIF_READ_KEY, JSON.stringify(allIds));
             setUnreadCount(0);
           }
-        });
-    }
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications for unread count:', error);
+        setUnreadCount(0);
+      }
+    };
+
+    calculateUnreadCount();
   }, [location.pathname, NOTIF_READ_KEY]);
 
   useEffect(() => {
@@ -413,7 +452,32 @@ function AssociateLayout({ children }) {
             <ul>
               <li className={isActive('/associate/announcements') ? 'active' : ''} onClick={() => { navigate('/associate/announcements'); closeSidebar(); }}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENTS</li>
               <li className={isActive('/associate/volunteer-list') ? 'active' : ''} onClick={() => { navigate('/associate/volunteer-list'); closeSidebar(); }}><FontAwesomeIcon icon={faUsers} /> VOLUNTEER LIST</li>
-              <li className={isActive('/associate/notification') ? 'active' : ''} onClick={() => { navigate('/associate/notification'); closeSidebar(); }}><FontAwesomeIcon icon={faEnvelope} /> NOTIFICATION</li>
+              <li className={isActive('/associate/notification') ? 'active' : ''} onClick={() => { navigate('/associate/notification'); closeSidebar(); }} style={{ position: 'relative' }}>
+                <span><FontAwesomeIcon icon={faEnvelope} /> NOTIFICATION</span>
+                {unreadCount > 0 && (
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: 2, 
+                    right: 0, 
+                    background: '#ff0000', 
+                    color: 'white', 
+                    borderRadius: '50%', 
+                    padding: '4px 8px', 
+                    fontSize: 12, 
+                    fontWeight: '900',
+                    minWidth: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 3px 8px rgba(255,0,0,0.5), 0 0 0 3px rgba(255,255,255,0.8)',
+                    border: '2px solid #ffffff',
+                    zIndex: 10,
+                    animation: 'pulse 1.5s infinite',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                  }}>{unreadCount}</span>
+                )}
+              </li>
               <li className={isActive('/associate/reports') ? 'active' : ''} onClick={() => { navigate('/associate/reports'); closeSidebar(); }}><FontAwesomeIcon icon={faChartBar} /> REPORTS</li>
             </ul>
           </nav>
@@ -435,7 +499,27 @@ function AssociateLayout({ children }) {
           <div className="notification-icon" onClick={() => navigate('/associate/notification')} style={{ cursor: 'pointer', position: 'relative' }}>
             <FontAwesomeIcon icon={faEnvelope} />
             {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: -6, right: -6, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+              <span style={{ 
+                position: 'absolute', 
+                top: 6, 
+                right: -20, 
+                background: '#ff0000', 
+                color: 'white', 
+                borderRadius: '50%', 
+                padding: '4px 8px', 
+                fontSize: 12, 
+                fontWeight: '900',
+                minWidth: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 3px 8px rgba(255,0,0,0.5), 0 0 0 3px rgba(255,255,255,0.8)',
+                border: '2px solid #ffffff',
+                zIndex: 10,
+                animation: 'pulse 1.5s infinite',
+                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+              }}>{unreadCount}</span>
             )}
           </div>
         </div>

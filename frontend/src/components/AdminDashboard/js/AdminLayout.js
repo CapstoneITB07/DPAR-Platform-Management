@@ -384,7 +384,27 @@ function AdminLayout({ children }) {
               <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => { navigate('/admin/notifications'); closeSidebar(); }} style={{ position: 'relative' }}>
                 <span><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</span>
                     {unreadCount > 0 && (
-                      <span style={{ position: 'absolute', top: 2, right: 0, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+                      <span style={{ 
+                        position: 'absolute', 
+                        top: 2, 
+                        right: 0, 
+                        background: '#ff0000', 
+                        color: 'white', 
+                        borderRadius: '50%', 
+                        padding: '4px 8px', 
+                        fontSize: 12, 
+                        fontWeight: '900',
+                        minWidth: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 3px 8px rgba(255,0,0,0.5), 0 0 0 3px rgba(255,255,255,0.8)',
+                        border: '2px solid #ffffff',
+                        zIndex: 10,
+                        animation: 'pulse 1.5s infinite',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                      }}>{unreadCount}</span>
                     )}
                   </li>
               <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => { navigate('/admin/approval-aor'); closeSidebar(); }}><FontAwesomeIcon icon={faCheckCircle} /> APPROVAL/AOR</li>
@@ -412,7 +432,27 @@ function AdminLayout({ children }) {
           <div className="notification-icon" onClick={() => navigate('/admin/notifications')} style={{ cursor: 'pointer', position: 'relative' }}>
             <FontAwesomeIcon icon={faBell} />
             {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: -6, right: -6, background: 'red', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: 12, fontWeight: 'bold' }}>{unreadCount}</span>
+              <span style={{ 
+                position: 'absolute', 
+                top: 6, 
+                right: -20, 
+                background: '#ff0000', 
+                color: 'white', 
+                borderRadius: '50%', 
+                padding: '4px 8px', 
+                fontSize: 12, 
+                fontWeight: '900',
+                minWidth: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 3px 8px rgba(255,0,0,0.5), 0 0 0 3px rgba(255,255,255,0.8)',
+                border: '2px solid #ffffff',
+                zIndex: 10,
+                animation: 'pulse 1.5s infinite',
+                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+              }}>{unreadCount}</span>
             )}
           </div>
         </div>

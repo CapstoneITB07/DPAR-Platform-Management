@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('created_by');
             $table->integer('volunteers_needed')->nullable();
             $table->json('expertise_requirements')->nullable(); // Store expertise-based requirements
-            $table->enum('status', ['active', 'paused'])->default('active');
+            $table->enum('status', ['active', 'on_hold'])->default('active');
             $table->timestamps();
 
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

@@ -140,6 +140,22 @@ function Notification() {
     };
   }, [liveUpdateIntervals]);
 
+  // Clear available capacity data for notifications that go on hold
+  useEffect(() => {
+    const onHoldNotifications = notifications.filter(n => n.status === 'on_hold');
+    onHoldNotifications.forEach(notification => {
+      // Clear available capacity data
+      setAvailableCapacity(prev => {
+        const newState = { ...prev };
+        delete newState[notification.id];
+        return newState;
+      });
+      
+      // Stop live updates
+      stopLiveUpdates(notification.id);
+    });
+  }, [notifications]);
+
   const handleRespond = async (id, response, selections = null) => {
     setLoading(true);
     setError('');
@@ -207,6 +223,13 @@ function Notification() {
 
   const fetchAvailableCapacity = async (notificationId) => {
     try {
+      // Check if the notification is on hold before fetching
+      const notification = notifications.find(n => n.id === notificationId);
+      if (notification && notification.status === 'on_hold') {
+        // Don't fetch capacity for notifications on hold
+        return;
+      }
+
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await fetch(`http://localhost:8000/api/notifications/${notificationId}/available-capacity`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -250,6 +273,13 @@ function Notification() {
   };
 
   const startLiveUpdates = (notificationId) => {
+    // Check if the notification is on hold before starting live updates
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification && notification.status === 'on_hold') {
+      // Don't start live updates for notifications on hold
+      return;
+    }
+
     // Clear any existing interval for this notification
     if (liveUpdateIntervals[notificationId]) {
       clearInterval(liveUpdateIntervals[notificationId]);
@@ -425,7 +455,7 @@ function Notification() {
                           <NotificationProgress notification={n} />
                           
                           {/* Show hold message to ALL associates when notification is on hold */}
-                          {(n.status === 'on_hold' || n.status === 'paused') && (
+                          {(n.status === 'on_hold') && (
                             <div className="notification-on-hold">
                               <div className="notification-on-hold-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -443,7 +473,7 @@ function Notification() {
                           )}
                           
                           {/* Only show response options if notification is active and user hasn't responded */}
-                          {myRecipient && !myRecipient.response && n.status !== 'on_hold' && n.status !== 'paused' && (
+                          {myRecipient && !myRecipient.response && n.status !== 'on_hold' && (
                             <>
                               {/* Check if all volunteers have been met */}
                               {(() => {
@@ -522,11 +552,11 @@ function Notification() {
                                               }} 
                                               disabled={loading || !canAccept(n)}
                                             >
-                                              {canAccept(n) ? 'CONFIRM VOLUNTEERS' : 'SELECT AT LEAST ONE EXPERTISE'}
+                                              {canAccept(n) ? 'CONFIRM' : 'SELECT AT LEAST ONE EXPERTISE'}
                                             </button>
                                             <button 
                                               className="notification-item-action decline" 
-                                              onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); }} 
+                                              onClick={e => { e.stopPropagation(); handleRespond(n.id, 'decline'); } } 
                                               disabled={loading}
                                             >
                                               DECLINE
@@ -542,7 +572,7 @@ function Notification() {
                           )}
                           
                           {/* Only show response status if notification is not on hold */}
-                          {myRecipient && myRecipient.response && n.status !== 'on_hold' && n.status !== 'paused' && (
+                          {myRecipient && myRecipient.response && n.status !== 'on_hold' && (
                             <div className={`volunteer-commitments-hover-container ${myRecipient.response}`}>
                               <div className="volunteer-commitments-trigger">
                                 <div className={`response-status ${myRecipient.response}`}>

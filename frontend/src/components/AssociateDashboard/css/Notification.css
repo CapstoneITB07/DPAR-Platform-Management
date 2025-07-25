@@ -687,6 +687,7 @@
   margin-top: 0;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
+  width: 100%;
 }
 
 .notification-item-action {
@@ -704,6 +705,8 @@
   letter-spacing: 0.5px;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 /* Mobile responsive improvements for action buttons */
@@ -718,14 +721,15 @@
   }
   
   .notification-item-action-buttons {
-    flex-direction: column;
+    flex-direction: row;
     gap: 12px;
     width: 100%;
+    justify-content: center;
   }
   
   .notification-item-action-buttons .notification-item-action {
-    width: 100%;
-    max-width: 280px;
+    flex: 0 0 auto;
+    min-width: fit-content;
   }
 }
 
@@ -741,10 +745,14 @@
   
   .notification-item-action-buttons {
     gap: 8px;
+    flex-direction: column;
+    align-items: center;
   }
   
   .notification-item-action-buttons .notification-item-action {
-    max-width: 240px;
+    width: auto;
+    min-width: fit-content;
+    flex: none;
   }
 }
 
@@ -922,6 +930,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .volunteer-selection-form::before {
@@ -947,10 +956,12 @@
 
 .volunteer-selection-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 16px;
   justify-content: center;
   align-items: flex-start;
+  width: 100%;
+  overflow-x: auto;
 }
 
 /* Mobile responsive improvements for volunteer selection */
@@ -967,13 +978,15 @@
   
   .volunteer-selection-row {
     gap: 12px;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
   }
   
   .volunteer-selection-item {
-    width: 100%;
-    max-width: 200px;
+    flex: 0 0 auto;
+    min-width: 140px;
+    max-width: 180px;
   }
 }
 
@@ -989,10 +1002,15 @@
   
   .volunteer-selection-row {
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
   }
   
   .volunteer-selection-item {
-    max-width: 180px;
+    flex: 0 0 auto;
+    min-width: 120px;
+    max-width: 160px;
   }
 }
 
@@ -1068,6 +1086,8 @@
   align-items: center;
   gap: 6px;
   min-width: 110px;
+  flex: 1;
+  max-width: 200px;
   padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
@@ -1123,6 +1143,8 @@
   justify-content: center;
   align-items: center;
   gap: 18px;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
 /* Volunteer Requirements Display */

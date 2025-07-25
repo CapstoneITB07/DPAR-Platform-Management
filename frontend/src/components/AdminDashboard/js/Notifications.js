@@ -30,6 +30,7 @@ function Notifications() {
   const [filterValue, setFilterValue] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
   const [notification, setNotification] = useState('');
+  const [toggleLoading, setToggleLoading] = useState({}); // Track loading state for each toggle
 
   // Fetch notifications
   useEffect(() => {
@@ -201,6 +202,9 @@ function Notifications() {
   };
 
   const handleToggleHold = async id => {
+    // Set loading state for this specific toggle
+    setToggleLoading(prev => ({ ...prev, [id]: true }));
+    
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     try {
       const response = await fetch(`http://localhost:8000/api/notifications/${id}/toggle-hold`, {
@@ -220,6 +224,9 @@ function Notifications() {
       }
     } catch (err) {
       setError('Failed to toggle hold status');
+    } finally {
+      // Clear loading state for this toggle
+      setToggleLoading(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -307,7 +314,13 @@ function Notifications() {
         <div className="notification-empty">No notifications yet.</div>
       )}
       {filterNotifications(notifications).map(n => (
-        <NotificationDropdown key={n.id} notification={n} onRemove={handleRemove} onToggleHold={handleToggleHold} />
+        <NotificationDropdown 
+          key={n.id} 
+          notification={n} 
+          onRemove={handleRemove} 
+          onToggleHold={handleToggleHold}
+          isLoading={toggleLoading[n.id] || false}
+        />
       ))}
       {showModal && (
         <div className="notification-modal-overlay">
@@ -712,37 +725,55 @@ function getSegmentColor(index) {
   return colors[index % colors.length];
 }
 
-function NotificationDropdown({ notification, onRemove, onToggleHold }) {
+function NotificationDropdown({ notification, onRemove, onToggleHold, isLoading = false }) {
   const [open, setOpen] = useState(false);
   const [hoveredStatus, setHoveredStatus] = useState(null);
   const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
   const declined = notification.recipients ? notification.recipients.filter(r => r.response === 'decline').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
 
   // Toggle switch component with icons and color, icon on opposite side of circle
-  const ToggleSwitch = ({ checked, onChange }) => (
-    <label className="notification-toggle-switch">
-      <input type="checkbox" checked={checked} onChange={onChange} />
+  const ToggleSwitch = ({ checked, onChange, disabled = false }) => (
+    <label className={`notification-toggle-switch ${disabled ? 'disabled' : ''}`}>
+      <input 
+        type="checkbox" 
+        checked={checked} 
+        onChange={onChange} 
+        disabled={disabled}
+      />
       <span
         className="slider"
         style={{
-          background: checked ? '#bdbdbd' : '#dc2626', // grey for paused, red for active
+          background: checked ? '#bdbdbd' : '#dc2626', // grey for on hold, red for active
+          opacity: disabled ? 0.6 : 1,
         }}
       >
-        {/* Icon on opposite side of the toggle circle */}
-        {checked ? (
-          // Paused: icon left, circle right
-          <>
-            <svg className="toggle-icon left" width="16" height="16" viewBox="0 0 20 20" fill="none">
-              <rect x="4" y="4" width="4" height="12" rx="1.5" fill="#fff"/>
-              <rect x="12" y="4" width="4" height="12" rx="1.5" fill="#fff"/>
+        {/* Loading spinner when disabled */}
+        {disabled ? (
+          <div className="toggle-loading-spinner">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
+              <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="spinner-path"/>
             </svg>
-          </>
+          </div>
         ) : (
-          // Active: icon right, circle left
           <>
-            <svg className="toggle-icon right" width="16" height="16" viewBox="0 0 20 20" fill="none">
-              <path d="M5 10.5L9 14.5L15 7.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            {/* Icon on opposite side of the toggle circle */}
+            {checked ? (
+              // On Hold: icon left, circle right
+              <>
+                <svg className="toggle-icon left" width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <rect x="4" y="4" width="4" height="12" rx="1.5" fill="#fff"/>
+                  <rect x="12" y="4" width="4" height="12" rx="1.5" fill="#fff"/>
+                </svg>
+              </>
+            ) : (
+              // Active: icon right, circle left
+              <>
+                <svg className="toggle-icon right" width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 10.5L9 14.5L15 7.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </>
+            )}
           </>
         )}
       </span>
@@ -753,21 +784,21 @@ function NotificationDropdown({ notification, onRemove, onToggleHold }) {
     <div className={`notification-dropdown${open ? ' open' : ''}`}>
       <div
         className="notification-dropdown-header"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', cursor: 'pointer' }}
         onClick={() => setOpen(o => !o)}
       >
-        <div style={{ textAlign: 'left' }}>
-          <div className="notification-dropdown-title" style={{ textAlign: 'left' }}>
+        <div className="notification-dropdown-left">
+          <div className="notification-dropdown-title">
             {notification.title}
           </div>
-          <div className="notification-dropdown-date" style={{ textAlign: 'left' }}>{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
+          <div className="notification-dropdown-date">{dayjs(notification.created_at).format('MMM D, YYYY h:mm A')}</div>
         </div>
         {/* Right side: toggle and arrow */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="notification-dropdown-right">
           <span onClick={e => e.stopPropagation()}>
             <ToggleSwitch
-              checked={notification.status === 'paused'}
+              checked={notification.status === 'on_hold'}
               onChange={e => onToggleHold(notification.id)}
+              disabled={isLoading}
             />
           </span>
           <div className="notification-dropdown-arrow">{open ? '▲' : '▼'}</div>

@@ -45,16 +45,6 @@ function Announcement() {
     }
   };
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    setPhoto(file);
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    } else {
-      setPreview(null);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);

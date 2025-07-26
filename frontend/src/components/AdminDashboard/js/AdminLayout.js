@@ -482,8 +482,35 @@ function AdminLayout({ children }) {
             background: 'linear-gradient(135deg, #A11C22 0%, #C62828 100%)',
             color: 'white',
             padding: window.innerWidth <= 480 ? '15px 20px' : '20px 30px',
-            textAlign: 'center'
+            textAlign: 'center',
+            position: 'relative'
           }}>
+            <button 
+              onClick={() => setShowProfileModal(false)}
+              style={{
+                position: 'absolute',
+                top: window.innerWidth <= 480 ? '10px' : '15px',
+                right: window.innerWidth <= 480 ? '15px' : '20px',
+                background: 'transparent',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: window.innerWidth <= 480 ? '20px' : '24px',
+                fontWeight: 'bold',
+                padding: '5px',
+                borderRadius: '50%',
+                width: window.innerWidth <= 480 ? '30px' : '35px',
+                height: window.innerWidth <= 480 ? '30px' : '35px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
             <h2 style={{ 
               margin: 0, 
               fontSize: window.innerWidth <= 480 ? '20px' : '24px', 
@@ -504,7 +531,7 @@ function AdminLayout({ children }) {
             maxHeight: 'calc(90vh - 120px)'
           }}>
             {/* Error and Success Messages */}
-            {error && (
+            {error && !error.includes('password') && (
               <div style={{
                 background: '#ffebee',
                 color: '#c62828',
@@ -855,6 +882,21 @@ function AdminLayout({ children }) {
                   {isLoading ? 'Changing...' : 'Change Password'}
                 </button>
               </form>
+              
+              {/* Password Error Message - moved below password fields */}
+              {error && error.includes('password') && (
+                <div style={{
+                  background: '#ffebee',
+                  color: '#c62828',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  marginTop: '15px',
+                  border: '1px solid #ffcdd2',
+                  fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                }}>
+                  {error}
+                </div>
+              )}
             </div>
           </div>
 
@@ -862,25 +904,8 @@ function AdminLayout({ children }) {
           <div style={{
             padding: window.innerWidth <= 480 ? '15px 20px' : '20px 30px',
             background: '#f8f9fa',
-            borderTop: '1px solid #dee2e6',
-            textAlign: 'right'
+            borderTop: '1px solid #dee2e6'
           }}>
-            <button 
-              onClick={() => setShowProfileModal(false)}
-              style={{
-                background: '#6c757d',
-                color: 'white',
-                border: 'none',
-                padding: window.innerWidth <= 480 ? '8px 16px' : '10px 20px',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                fontWeight: '500',
-                width: window.innerWidth <= 480 ? '100%' : 'auto'
-              }}
-            >
-              Close
-            </button>
           </div>
         </div>
       </Modal>

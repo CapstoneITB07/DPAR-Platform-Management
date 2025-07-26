@@ -123,8 +123,7 @@ function Evaluation() {
     const initialData = {};
     Object.keys(KPI_CRITERIA).forEach(category => {
       initialData[category] = {
-        scores: {},
-        comments: ''
+        scores: {}
       };
       Object.keys(KPI_CRITERIA[category]).forEach(section => {
         KPI_CRITERIA[category][section].forEach((_, index) => {
@@ -144,16 +143,6 @@ function Evaluation() {
           ...prev[category].scores,
           [`${section}_${index}`]: parseInt(value)
         }
-      }
-    }));
-  };
-
-  const handleCommentChange = (category, value) => {
-    setEvaluationData(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        comments: value
       }
     }));
   };
@@ -291,14 +280,6 @@ function Evaluation() {
                         ))}
                       </div>
                     ))}
-                    <div className="comments-section">
-                      <label>Comments:</label>
-                      <textarea
-                        value={evaluationData[category]?.comments || ''}
-                        onChange={(e) => handleCommentChange(category, e.target.value)}
-                        placeholder="Add comments..."
-                      />
-                    </div>
                     <div className="category-score">
                       Category Score: {calculateCategoryScore(category).toFixed(2)}
                     </div>

@@ -3,7 +3,7 @@ import AdminLayout from './AdminLayout';
 import axios from 'axios';
 import '../css/ApprovalAOR.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faTimes, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faTimes, faCheck, faBan, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 // Notification component
 function Notification({ message, type, onClose }) {
@@ -83,6 +83,8 @@ function ApprovalAOR() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmReportId, setConfirmReportId] = useState(null);
+  const [selectedHistoryItems, setSelectedHistoryItems] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   // Create a wrapper for setNotification to add debugging
   const setNotificationWithDebug = (message, type = 'success') => {
@@ -351,6 +353,48 @@ function ApprovalAOR() {
     setConfirmReportId(null);
   };
 
+  const handleSelectHistoryItem = (reportId) => {
+    setSelectedHistoryItems(prev => {
+      if (prev.includes(reportId)) {
+        return prev.filter(id => id !== reportId);
+      } else {
+        return [...prev, reportId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    const approvedReports = allReports.filter(report => report.status === 'approved');
+    if (selectAll) {
+      setSelectedHistoryItems([]);
+    } else {
+      setSelectedHistoryItems(approvedReports.map(report => report.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedHistoryItems.length === 0) return;
+    
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      await Promise.all(
+        selectedHistoryItems.map(id => 
+          axios.delete(`${API_BASE}/api/reports/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        )
+      );
+      
+      setNotificationWithDebug(`${selectedHistoryItems.length} report(s) deleted successfully`);
+      setSelectedHistoryItems([]);
+      setSelectAll(false);
+      fetchReports();
+    } catch (error) {
+      setError('Failed to delete selected reports');
+    }
+  };
+
   const formatValue = (value) => {
     if (value === null || value === undefined) {
       return '';
@@ -435,6 +479,26 @@ function ApprovalAOR() {
                 </button>
               </div>
               <div className="modal-body">
+                <div className="history-controls">
+                  <div className="history-selection-controls">
+                    <label className="select-all-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectAll}
+                        onChange={handleSelectAll}
+                      />
+                      <span>Select All</span>
+                    </label>
+                    {selectedHistoryItems.length > 0 && (
+                      <button 
+                        className="delete-selected-btn"
+                        onClick={handleDeleteSelected}
+                      >
+                        <FontAwesomeIcon icon={faTrash} /> Delete Selected ({selectedHistoryItems.length})
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="history-list">
                   {(() => {
                     const approvedReports = allReports.filter(report => report.status === 'approved');
@@ -443,6 +507,13 @@ function ApprovalAOR() {
                     
                     return approvedReports.map(report => (
                     <div key={report.id} className="history-item">
+                      <div className="history-item-selection">
+                        <input
+                          type="checkbox"
+                          checked={selectedHistoryItems.includes(report.id)}
+                          onChange={() => handleSelectHistoryItem(report.id)}
+                        />
+                      </div>
                       <img 
                         src={getOrganizationLogo(report)}
                         alt={report.user?.organization || 'Organization Logo'} 

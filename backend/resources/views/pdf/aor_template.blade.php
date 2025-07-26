@@ -32,40 +32,40 @@
             align-items: center;
             margin-bottom: 15px;
             width: 100%;
-            gap: 20px;
-            padding: 0 20px;
-            min-height: 100px;
+            gap: 0px;
+            padding: 0 0px;
+            min-height: 50px;
             position: relative;
+            margin-top: 10px;
         }
 
         .header-logos img {
-            width: 80px !important;
-            height: 80px !important;
+            width: 100px !important;
+            height: 100px !important;
             flex-shrink: 0;
             object-fit: contain;
             display: block;
-            max-width: 80px !important;
-            max-height: 80px !important;
-            min-width: 80px !important;
-            min-height: 80px !important;
+            max-width: 100px !important;
+            max-height: 100px !important;
+            min-width: 100px !important;
+            min-height: 100px !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
             box-sizing: border-box !important;
             position: absolute;
-            top: 15px;
+            top: 0px;
             transform: translateY(0);
-            vertical-align: top !important;
             line-height: 1 !important;
             font-size: 0 !important;
         }
 
         .header-logos img:first-child {
-            left: 20px;
+            left: 65px;
         }
 
         .header-logos img:last-child {
-            right: 20px;
+            right: 65px;
         }
 
         .header-text {
@@ -76,12 +76,13 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            max-width: 60%;
+            max-width: 99%;
             position: relative;
             z-index: 1;
             left: 50%;
             transform: translateX(-50%);
             width: auto;
+            margin-top: 5px;
         }
 
         .header-text h1 {
@@ -275,7 +276,7 @@
         }
 
         .signature-line {
-            border-top: 1px solid #000;
+            border-top: none;
             margin-top: 40px;
             padding-top: 5px;
         }
@@ -372,99 +373,99 @@
 
     <div class="two-column">
         <div class="left-column">
-    <div class="section">
+            <div class="section">
                 <div class="section-title"><strong>I. AUTHORITY</strong></div>
-        <div class="content">
-            @if(isset($report->data['authority']) && is_array($report->data['authority']))
+                <div class="content">
+                    @if(isset($report->data['authority']) && is_array($report->data['authority']))
                     @foreach($report->data['authority'] as $index => $authority)
                     <p>{{ $index + 1 }}. {{ $authority }}</p>
-            @endforeach
-            @endif
-        </div>
-    </div>
+                    @endforeach
+                    @endif
+                </div>
+            </div>
 
-    <div class="section">
+            <div class="section">
                 <div class="section-title"><strong>II. DATE, TIME, AND PLACE OF ACTIVITY</strong></div>
-        <div class="content">
-            <p><strong>Date and Time:</strong> {{ $report->data['dateTime'] ?? '' }}</p>
-            <p><strong>Type of Activity:</strong> {{ $report->data['activityType'] ?? '' }}</p>
-            <p><strong>Location:</strong> {{ $report->data['location'] ?? '' }}</p>
-        </div>
-    </div>
+                <div class="content">
+                    <p><strong>Date and Time:</strong> {{ $report->data['dateTime'] ?? '' }}</p>
+                    <p><strong>Type of Activity:</strong> {{ $report->data['activityType'] ?? '' }}</p>
+                    <p><strong>Location:</strong> {{ $report->data['location'] ?? '' }}</p>
+                </div>
+            </div>
 
-    <div class="section">
+            <div class="section">
                 <div class="section-title"><strong>III. PERSONNEL INVOLVED</strong></div>
-        <div class="content">
-            @if(isset($report->data['auxiliaryPersonnel']) && !empty($report->data['auxiliaryPersonnel']))
-            <p><strong>Auxiliary Personnel:</strong></p>
+                <div class="content">
+                    @if(isset($report->data['auxiliaryPersonnel']) && !empty($report->data['auxiliaryPersonnel']))
+                    <p><strong>Auxiliary Personnel:</strong></p>
                     <div class="personnel-list">
-                    @foreach($report->data['auxiliaryPersonnel'] as $person)
+                        @foreach($report->data['auxiliaryPersonnel'] as $person)
                         <p>{{ $person }}</p>
-                    @endforeach
+                        @endforeach
                     </div>
-            @endif
+                    @endif
 
-            @if(isset($report->data['pcgPersonnel']) && !empty($report->data['pcgPersonnel']))
-            <p><strong>PCG Personnel:</strong></p>
+                    @if(isset($report->data['pcgPersonnel']) && !empty($report->data['pcgPersonnel']))
+                    <p><strong>PCG Personnel:</strong></p>
                     <div class="personnel-list">
-                    @foreach($report->data['pcgPersonnel'] as $person)
+                        @foreach($report->data['pcgPersonnel'] as $person)
                         <p>{{ $person }}</p>
-                    @endforeach
+                        @endforeach
                     </div>
-            @endif
-        </div>
-    </div>
+                    @endif
+                </div>
+            </div>
 
-    <div class="section">
+            <div class="section">
                 <div class="section-title"><strong>IV. NARRATION OF EVENTS</strong></div>
-        <div class="content">
-            <p><strong>Objective:</strong></p>
-            <p>{{ $report->data['objective'] ?? '' }}</p>
+                <div class="content">
+                    <p><strong>Objective:</strong></p>
+                    <p>{{ $report->data['objective'] ?? '' }}</p>
 
-            <p><strong>Summary:</strong></p>
-            <p>{{ $report->data['summary'] ?? '' }}</p>
+                    <p><strong>Summary:</strong></p>
+                    <p>{{ $report->data['summary'] ?? '' }}</p>
 
-            @if(isset($report->data['activities']) && !empty($report->data['activities']))
-            <p><strong>Activities:</strong></p>
+                    @if(isset($report->data['activities']) && !empty($report->data['activities']))
+                    <p><strong>Activities:</strong></p>
                     <div class="activities-list">
-            @foreach($report->data['activities'] as $activity)
+                        @foreach($report->data['activities'] as $activity)
                         <div class="activity-item">
                             <p class="activity-title">{{ $activity['title'] }}</p>
-            <p>{{ $activity['description'] }}</p>
+                            <p>{{ $activity['description'] }}</p>
                         </div>
-            @endforeach
+                        @endforeach
                     </div>
-            @endif
+                    @endif
 
-            <p><strong>Conclusion:</strong></p>
-            <p>{{ $report->data['conclusion'] ?? '' }}</p>
+                    <p><strong>Conclusion:</strong></p>
+                    <p>{{ $report->data['conclusion'] ?? '' }}</p>
                 </div>
+            </div>
         </div>
-    </div>
 
         <div class="right-column">
-    <div class="section">
+            <div class="section">
                 <div class="section-title"><strong>V. RECOMMENDATIONS</strong></div>
-        <div class="content">
-            @if(isset($report->data['recommendations']) && is_array($report->data['recommendations']))
+                <div class="content">
+                    @if(isset($report->data['recommendations']) && is_array($report->data['recommendations']))
                     <div class="recommendations-list">
-            @foreach($report->data['recommendations'] as $recommendation)
+                        @foreach($report->data['recommendations'] as $recommendation)
                         <div class="recommendation-item">
-            <p>{{ $recommendation }}</p>
+                            <p>{{ $recommendation }}</p>
                         </div>
-            @endforeach
+                        @endforeach
                     </div>
-            @endif
-        </div>
-    </div>
+                    @endif
+                </div>
+            </div>
 
-    @if(isset($report->data['photos']) && !empty($report->data['photos']))
-    <div class="section">
+            @if(isset($report->data['photos']) && !empty($report->data['photos']))
+            <div class="section">
                 <div class="section-title"><strong>VI. ATTACHMENTS</strong></div>
-        <div class="photo-section">
-            <div class="photo-grid">
-                @foreach($report->data['photos'] as $index => $photo)
-                <div class="photo-item">
+                <div class="photo-section">
+                    <div class="photo-grid">
+                        @foreach($report->data['photos'] as $index => $photo)
+                        <div class="photo-item">
                             @php
                             $photoPath = realpath(base_path('storage/app/public/' . $photo));
                             $photoExists = file_exists($photoPath);
@@ -485,12 +486,12 @@
                                 Photo data: {{ $photo }}
                             </div>
                             @endif
-                    <div class="photo-caption">Photo {{ $index + 1 }}</div>
+                            <div class="photo-caption">Photo {{ $index + 1 }}</div>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
-                @endforeach
             </div>
-        </div>
-    </div>
             @else
             <div class="section">
                 <div class="section-title"><strong>VI. ATTACHMENTS</strong></div>
@@ -519,11 +520,11 @@
             @if($signatureExists)
             <div style="text-align: center; margin: 5px 0; position: relative;">
                 <p style="position: relative; z-index: 2; margin: 0; font-weight: bold; color: #2c3e50;">AUX CAPT GERALD GALZA PCGA</p>
-                <img src="{{ $signatureBase64 }}" alt="Signature" style="max-width: 120px; height: auto; opacity: 0.4; position: absolute; top: -25px; left: 50%; transform: translateX(-50%); z-index: 1;">
+                <img src="{{ $signatureBase64 }}" alt="Signature" style="max-width: 120px; height: auto; opacity: 0.7; position: absolute; top: -25px; left: 50%; transform: translateX(-50%); z-index: 1;">
             </div>
             @else
             <p>AUX CAPT GERALD GALZA PCGA</p>
-    @endif
+            @endif
             <p>Director 107TH Auxiliary Squadron</p>
             <div class="signature-line"></div>
         </div>

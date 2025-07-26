@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +13,7 @@ class UserController extends Controller
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
+        /** @var \App\Models\User $user */
 
         $request->validate([
             'name' => 'nullable|string|max:255',
@@ -50,6 +50,7 @@ class UserController extends Controller
     public function changePassword(Request $request)
     {
         $user = Auth::user();
+        /** @var \App\Models\User $user */
 
         $validator = Validator::make($request->all(), [
             'current_password' => 'required|string',

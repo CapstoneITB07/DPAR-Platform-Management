@@ -273,21 +273,37 @@
 
 .comments-section {
   margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
 }
 
 .comments-section label {
   display: block;
   margin-bottom: 8px;
   color: #555;
+  font-weight: 600;
+  font-size: 14px;
 }
 
 .comments-section textarea {
   width: 100%;
   min-height: 100px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
   resize: vertical;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.comments-section textarea:focus {
+  outline: none;
+  border-color: #A11C22;
+  box-shadow: 0 0 0 3px rgba(161,28,34,0.1);
 }
 
 .category-score {

@@ -18,6 +18,7 @@ class PasswordController extends Controller
         ]);
 
         $user = Auth::user();
+        /** @var \App\Models\User $user */
 
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['message' => 'Current password is incorrect'], 422);

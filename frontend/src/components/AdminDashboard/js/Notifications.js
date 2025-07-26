@@ -336,7 +336,6 @@ function Notifications() {
               <button className="notification-close-icon enhanced-close-icon" onClick={closeModal} aria-label="Close">&times;</button>
             </div>
             <form className="add-edit-form notification-modal-content enhanced-notification-content" onSubmit={handleSubmit}>
-              <div className="enhanced-section-label">Notification Details</div>
               <div className="notification-form-grid enhanced-form-grid">
                 <div className="notification-form-group full-width">
                   <label>Title *</label>
@@ -708,28 +707,8 @@ function VolunteerProgress({ notification }) {
   );
 }
 
-// Helper function to generate colors for segments
-function getSegmentColor(index) {
-  const colors = [
-    '#3498db', // Blue
-    '#e74c3c', // Red
-    '#2ecc71', // Green
-    '#f39c12', // Orange
-    '#9b59b6', // Purple
-    '#1abc9c', // Teal
-    '#e67e22', // Dark Orange
-    '#34495e', // Dark Blue
-    '#f1c40f', // Yellow
-    '#e91e63'  // Pink
-  ];
-  return colors[index % colors.length];
-}
-
 function NotificationDropdown({ notification, onRemove, onToggleHold, isLoading = false }) {
   const [open, setOpen] = useState(false);
-  const [hoveredStatus, setHoveredStatus] = useState(null);
-  const accepted = notification.recipients ? notification.recipients.filter(r => r.response === 'accept').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
-  const declined = notification.recipients ? notification.recipients.filter(r => r.response === 'decline').map(r => r.user && r.user.name ? r.user.name : `User ${r.user_id}`) : [];
 
   // Toggle switch component with icons and color, icon on opposite side of circle
   const ToggleSwitch = ({ checked, onChange, disabled = false }) => (

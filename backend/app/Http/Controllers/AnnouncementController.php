@@ -50,10 +50,6 @@ class AnnouncementController extends Controller
         return response()->json($announcement, 201);
     }
 
-    public function show(string $id)
-    { /* TODO */
-    }
-
     public function update(Request $request, string $id)
     {
         $announcement = Announcement::findOrFail($id);
@@ -65,8 +61,8 @@ class AnnouncementController extends Controller
 
         if ($request->hasFile('photo')) {
             // Delete old photo if exists
-            if ($announcement->photo_path && \Storage::disk('public')->exists($announcement->photo_path)) {
-                \Storage::disk('public')->delete($announcement->photo_path);
+            if ($announcement->photo_path && Storage::disk('public')->exists($announcement->photo_path)) {
+                Storage::disk('public')->delete($announcement->photo_path);
             }
             $announcement->photo_path = $request->file('photo')->store('announcements', 'public');
         }
@@ -82,8 +78,8 @@ class AnnouncementController extends Controller
     {
         $announcement = Announcement::findOrFail($id);
         // Delete photo if exists
-        if ($announcement->photo_path && \Storage::disk('public')->exists($announcement->photo_path)) {
-            \Storage::disk('public')->delete($announcement->photo_path);
+        if ($announcement->photo_path && Storage::disk('public')->exists($announcement->photo_path)) {
+            Storage::disk('public')->delete($announcement->photo_path);
         }
         $announcement->delete();
         return response()->json(['message' => 'Announcement deleted.']);

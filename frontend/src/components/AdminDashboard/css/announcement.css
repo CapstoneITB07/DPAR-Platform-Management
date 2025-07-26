@@ -24,11 +24,13 @@
 }
 .announcement-modal-header {
   background: #A11C22;
-  padding: 8px 32px 10px 32px;
+  padding: 20px 32px 25px 32px;
   border-radius: 18px 18px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin: 0;
+  border: none;
 }
 .announcement-modal-title {
   color: #fff;
@@ -576,19 +578,23 @@
   .announcement-modal-card, .announcement-desc-modal-card {
     min-width: 0;
     max-width: 90vw;
-    padding: 18px 8px;
+    padding: 0;
     border-radius: 14px;
+    overflow: hidden;
   }
   .announcement-modal-header {
-    padding: 18px 12px 10px 12px;
+    padding: 25px 20px 30px 20px;
     border-radius: 14px 14px 0 0;
+    margin: 0;
+    border: none;
   }
   .announcement-modal-title {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    font-weight: 700;
   }
   .announcement-modal-form {
-    padding: 18px 12px 10px 12px;
-    gap: 14px;
+    padding: 20px 20px 25px 20px;
+    gap: 16px;
   }
   .announcement-form-label {
     font-size: 15px;
@@ -630,6 +636,57 @@
     margin-bottom: 0;
   }
 } 
+
+/* Desktop styles (1025px and above) */
+@media (min-width: 1025px) {
+  .announcement-modal-card, .announcement-desc-modal-card {
+    min-width: 0;
+    max-width: 500px;
+    padding: 0;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .announcement-modal-header {
+    padding: 30px 35px 35px 35px;
+    border-radius: 20px 20px 0 0;
+    margin: 0;
+    border: none;
+  }
+  .announcement-modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .announcement-modal-form {
+    padding: 25px 35px 30px 35px;
+    gap: 20px;
+  }
+  .announcement-form-label {
+    font-size: 16px;
+  }
+  .announcement-form-input, .announcement-form-textarea {
+    font-size: 16px;
+    padding: 12px 10px;
+    width: 100%;
+  }
+  .announcement-upload-row {
+    flex-direction: row;
+    gap: 15px;
+  }
+  .announcement-upload-img, .announcement-upload-placeholder {
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
+  }
+  .announcement-modal-actions {
+    flex-direction: row;
+    gap: 15px;
+  }
+  .announcement-cancel-btn, .announcement-submit-btn {
+    width: 48%;
+    font-size: 16px;
+    padding: 12px 0;
+  }
+}
 
 .main-header {
   font-size: clamp(1.2rem, 3vw, 2.2rem);

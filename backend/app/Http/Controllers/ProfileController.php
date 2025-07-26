@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
 use App\Models\AssociateGroup;
 
 class ProfileController extends Controller
@@ -32,6 +31,7 @@ class ProfileController extends Controller
 
         try {
             $user = Auth::user();
+            /** @var \App\Models\User $user */
 
             if ($request->hasFile('profile_picture')) {
                 // Delete old profile picture if exists
@@ -76,6 +76,7 @@ class ProfileController extends Controller
 
         try {
             $user = Auth::user();
+            /** @var \App\Models\User $user */
             $user->name = $request->name;
             $user->email = $request->email;
             $user->save();

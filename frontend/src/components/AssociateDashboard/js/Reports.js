@@ -723,18 +723,18 @@ function Reports() {
                             {report.status === 'draft' && (
                               <>
                                 <button
-                                  className="action-btn delete-btn"
-                                  onClick={() => handleDelete(report.id)}
-                                  title="Delete"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
-                                <button
                                   className="action-btn edit-btn"
                                   onClick={() => handleEdit(report)}
                                   title="Edit"
                                 >
                                   <FontAwesomeIcon icon={faEdit} />
+                                </button>
+                                <button
+                                  className="action-btn delete-btn"
+                                  onClick={() => handleDelete(report.id)}
+                                  title="Delete"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
                                 </button>
                                 <button
                                   className="action-btn send-btn"

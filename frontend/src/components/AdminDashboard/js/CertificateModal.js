@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import CertificatePreview from './CertificatePreview';
 import Modal from 'react-modal';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import axios from 'axios';
 import '../css/CertificateModal.css';
 
 const CertificateModal = ({ show, onClose, associates, certificateData, onCertificateDataChange }) => {
   const [localData, setLocalData] = useState(certificateData);
   const [downloading, setDownloading] = useState(false);
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [recipients, setRecipients] = useState([{ name: '', controlNumber: '' }]);
+  const [bulkInput, setBulkInput] = useState('');
 
   useEffect(() => {
     setLocalData(certificateData);
@@ -49,18 +50,63 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     }
   };
 
+  const addRecipient = () => {
+    setRecipients([...recipients, { name: '', controlNumber: '' }]);
+  };
+
+  const removeRecipient = (index) => {
+    if (recipients.length > 1) {
+      setRecipients(recipients.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateRecipient = (index, field, value) => {
+    const updatedRecipients = [...recipients];
+    updatedRecipients[index] = { ...updatedRecipients[index], [field]: value };
+    setRecipients(updatedRecipients);
+  };
+
+  const parseBulkInput = () => {
+    const lines = bulkInput.split('\n').filter(line => line.trim());
+    const parsedRecipients = lines.map(line => {
+      const parts = line.split('\t');
+      if (parts.length >= 2) {
+        return { name: parts[0].trim(), controlNumber: parts[1].trim() };
+      } else {
+        const commaParts = line.split(',');
+        if (commaParts.length >= 2) {
+          return { name: commaParts[0].trim(), controlNumber: commaParts[1].trim() };
+        }
+      }
+      return { name: line.trim(), controlNumber: '' };
+    }).filter(recipient => recipient.name);
+    
+    setRecipients(parsedRecipients.length > 0 ? parsedRecipients : [{ name: '', controlNumber: '' }]);
+  };
+
   const isFormValid = () => {
-    if (!localData.name || !localData.message) return false;
+    if (!localData.message) return false;
     const signatories = localData.signatories || [];
     for (const signatory of signatories) {
       if (!signatory.name || !signatory.title) return false;
+    }
+    
+    if (isBulkMode) {
+      for (const recipient of recipients) {
+        if (!recipient.name || !recipient.controlNumber) return false;
+      }
+    } else {
+      if (!localData.name) return false;
     }
     return true;
   };
 
   const handleDownload = async () => {
     if (!isFormValid()) {
-      alert('Please fill out all required fields: recipient name, message, and each signatory\'s name and title.');
+      const message = isBulkMode 
+        ? 'Please fill out all required fields: message, each signatory\'s name and title, and all recipient names and control numbers.'
+        : 'Please fill out all required fields: recipient name, message, and each signatory\'s name and title.';
+      alert(message);
       return;
     }
 
@@ -79,40 +125,75 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
       const swirlBottomUrl = `${assetBaseUrl}/swirl_bottom_right.png`;
       const medalUrl = `${assetBaseUrl}/star.png`;
 
-      const response = await axios.post(
-        `${backendBaseUrl}/api/certificates`,
-        {
-          name: localData.name,
-          date: localData.date,
-          signatories: localData.signatories || [{ name: '', title: '' }],
-          message: localData.message,
-          logoUrl: logoUrl,
-          swirlTopUrl: swirlTopUrl,
-          swirlBottomUrl: swirlBottomUrl,
-          medalUrl: medalUrl,
-          format: 'pdf',
-          timestamp: Date.now(),
-        },
-        {
-          responseType: 'blob',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/pdf',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
+      if (isBulkMode) {
+        // Bulk generation
+        const response = await axios.post(
+          `${backendBaseUrl}/api/certificates/bulk`,
+          {
+            recipients: recipients,
+            signatories: localData.signatories || [{ name: '', title: '' }],
+            message: localData.message,
+            logoUrl: logoUrl,
+            format: 'pdf',
+            timestamp: Date.now(),
           },
-        }
-      );
+          {
+            responseType: 'blob',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/pdf',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            },
+          }
+        );
 
-      const blob = new Blob([response.data], { type: response.headers['content-type'] });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `certificate_${Date.now()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `bulk_certificates_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // Single generation
+        const response = await axios.post(
+          `${backendBaseUrl}/api/certificates`,
+          {
+            name: localData.name,
+            date: localData.date,
+            signatories: localData.signatories || [{ name: '', title: '' }],
+            message: localData.message,
+            logoUrl: logoUrl,
+            swirlTopUrl: swirlTopUrl,
+            swirlBottomUrl: swirlBottomUrl,
+            medalUrl: medalUrl,
+            format: 'pdf',
+            timestamp: Date.now(),
+          },
+          {
+            responseType: 'blob',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/pdf',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            },
+          }
+        );
+
+        const blob = new Blob([response.data], { type: response.headers['content-type'] });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificate_${Date.now()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
     } catch (err) {
       console.error('Certificate generation error:', err);
       alert('Failed to generate certificate. Please try again.');
@@ -143,18 +224,132 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
         <div className="certificate-modal-content enhanced-modal-content">
           <div className="enhanced-modal-flex">
             <div className="enhanced-form-card">
+              <div className="certificate-mode-toggle">
+                <button
+                  className={`mode-btn ${!isBulkMode ? 'active' : ''}`}
+                  onClick={() => setIsBulkMode(false)}
+                >
+                  Single Certificate
+                </button>
+                <button
+                  className={`mode-btn ${isBulkMode ? 'active' : ''}`}
+                  onClick={() => setIsBulkMode(true)}
+                >
+                  Bulk Certificates
+                </button>
+              </div>
+
               <form className="certificate-form">
-                <div className="certificate-form-group">
-                  <label htmlFor="name">Recipient Name:</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Enter recipient name"
-                    value={localData.name || ''}
-                    onChange={handleChange}
-                  />
-                </div>
+                {!isBulkMode ? (
+                  <div className="certificate-form-group">
+                    <label htmlFor="name">Recipient Name:</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      placeholder="Enter recipient name"
+                      value={localData.name || ''}
+                      onChange={handleChange}
+                    />
+                  </div>
+                ) : (
+                  <div className="bulk-section">
+                    <div className="bulk-input-section">
+                      <h3>Bulk Input</h3>
+                      <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '10px' }}>
+                        Paste names and control numbers from Excel (tab-separated or comma-separated):
+                      </p>
+                      <textarea
+                        value={bulkInput}
+                        onChange={(e) => setBulkInput(e.target.value)}
+                        placeholder="John Doe&#9;CN001&#10;Jane Smith&#9;CN002&#10;Mike Johnson&#9;CN003"
+                        style={{
+                          width: '100%',
+                          height: '120px',
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={parseBulkInput}
+                        style={{
+                          background: '#4CAF50',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '8px 16px',
+                          marginTop: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Parse Input
+                      </button>
+                    </div>
+
+                    <div className="recipients-table-section">
+                      <h3>Recipients ({recipients.length})</h3>
+                      <div className="recipients-table-container">
+                        <div className="recipients-table">
+                          <div className="recipients-header">
+                            <div className="recipient-name-header">Name</div>
+                            <div className="recipient-cn-header">Control Number</div>
+                            <div className="recipient-actions-header">Actions</div>
+                          </div>
+                          <div className="recipients-body">
+                            {recipients.map((recipient, index) => (
+                              <div key={index} className="recipient-row">
+                                <input
+                                  type="text"
+                                  placeholder="Enter name"
+                                  value={recipient.name}
+                                  onChange={(e) => updateRecipient(index, 'name', e.target.value)}
+                                  className="recipient-name-input"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Enter control number"
+                                  value={recipient.controlNumber}
+                                  onChange={(e) => updateRecipient(index, 'controlNumber', e.target.value)}
+                                  className="recipient-cn-input"
+                                />
+                                <div className="recipient-actions">
+                                  {recipients.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeRecipient(index)}
+                                      className="remove-recipient-btn"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addRecipient}
+                        style={{
+                          background: '#2196F3',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '8px 16px',
+                          marginTop: '8px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Add Recipient
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="certificate-form-group">
                   <label>Signatories:</label>
@@ -275,7 +470,17 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                   disabled={downloading}
                   type="button"
                 >
-                  <i className="fa fa-file-pdf-o" style={{ marginRight: 8, fontSize: 16 }} /> Download PDF
+                  {downloading ? (
+                    <>
+                      <div className="spinner" style={{ marginRight: 8 }}></div>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa fa-file-pdf-o" style={{ marginRight: 8, fontSize: 16 }} />
+                      {isBulkMode ? `Generate Bulk PDF (${recipients.length} certificates)` : 'Download PDF'}
+                    </>
+                  )}
                 </button>
               </div>
             </div>

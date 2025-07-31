@@ -755,6 +755,36 @@
   color: #fff;
 }
 
+.certificate-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.generate-bulk-certificate-btn {
+  background: transparent;
+  color: #A11C22;
+  font-weight: 700;
+  font-size: 0.97rem;
+  border: none;
+  border-radius: 7px;
+  padding: 5px 14px;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.18s, color 0.18s;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.generate-bulk-certificate-btn:hover {
+  background: #A11C22;
+  color: #fff;
+}
+
 .evaluations-list {
   margin-top: 15px;
 }

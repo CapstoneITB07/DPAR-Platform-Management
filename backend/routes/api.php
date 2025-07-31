@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/reports', ReportController::class);
 
     Route::apiResource('/certificates', CertificateController::class);
+    Route::post('/certificates/bulk', [CertificateController::class, 'storeBulk']);
     Route::apiResource('/members', MemberController::class);
     Route::get('/evaluations/statistics', [EvaluationController::class, 'statistics']);
     Route::apiResource('/evaluations', EvaluationController::class);

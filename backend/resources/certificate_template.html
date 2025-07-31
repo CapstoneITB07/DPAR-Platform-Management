@@ -102,12 +102,25 @@
     
     .cert-name {
       text-align: center;
-      font-size: 1.7rem;
+      font-size: 2.2rem; /* Increased from 1.7rem to 2.2rem */
       font-weight: bold;
       margin-bottom: 0.5rem;
       color: #222;
       font-family: 'Playfair Display', serif;
-      margin-top: 2.2rem;
+      margin-top: 0.8rem; /* Reduced from 2.2rem to 0.8rem to move name closer */
+      transition: font-size 0.3s ease;
+      word-wrap: break-word;
+      max-width: 90%;
+      line-height: 1.2;
+    }
+    
+    .cert-control-number {
+      text-align: center;
+      font-size: 0.9rem; /* Slightly increased from 0.8rem */
+      color: #666;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+      font-family: 'Montserrat', Arial, sans-serif;
     }
     
     .cert-divider {
@@ -131,7 +144,7 @@
       display: flex;
       justify-content: center;
       align-items: flex-end;
-      margin-top: 2.2rem;
+      margin-top: 1.5rem; /* Reduced from 2.2rem to 1.5rem to move signatories up */
       padding: 0 20px;
       width: 100%;
       box-sizing: border-box;
@@ -234,6 +247,41 @@
       justify-content: center;
     }
   </style>
+  <script>
+    // Function to adjust font size based on text length
+    function adjustFontSize() {
+      const nameElement = document.querySelector('.cert-name');
+      if (nameElement) {
+        const text = nameElement.textContent || nameElement.innerText;
+        const charCount = text.length;
+        
+        // Reset to base size first
+        nameElement.style.fontSize = '2.2rem';
+        
+        // If text exceeds 15 characters, reduce font size
+        if (charCount > 15) {
+          let fontSize = 2.2; // Base font size in rem
+          
+          // Calculate reduction based on character count
+          if (charCount > 25) {
+            fontSize = 1.4; // Very long names
+          } else if (charCount > 20) {
+            fontSize = 1.6; // Long names
+          } else if (charCount > 15) {
+            fontSize = 1.8; // Medium long names
+          }
+          
+          nameElement.style.fontSize = fontSize + 'rem';
+        }
+      }
+    }
+    
+    // Run on page load
+    window.addEventListener('load', adjustFontSize);
+    
+    // Also run when DOM is ready
+    document.addEventListener('DOMContentLoaded', adjustFontSize);
+  </script>
 </head>
 <body>
   <div class="certificate-container">
@@ -245,6 +293,7 @@
           <div class="cert-title">CERTIFICATE OF APPRECIATION</div>
           <div class="cert-presentation">This certificate is proudly presented to</div>
           <div class="cert-name">{{associate}}</div>
+          <div class="cert-control-number">{{controlNumber}}</div>
           <hr class="cert-divider" />
           <div class="cert-body">
             {{message}}

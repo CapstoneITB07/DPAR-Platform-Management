@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faUser, faChartBar, faBalanceScaleLeft, faTrendingUp, faChartArea, faChevronLeft, faChevronRight, faBars, faTimes, faEdit, faTachometerAlt, faBell, faCheckCircle, faBullhorn, faCertificate, faSignOutAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faCertificate, faPlus, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -50,24 +50,6 @@ const getPerformanceColor = (score) => {
   if (score >= 2.5) return '#17a2b8';
   if (score >= 1.5) return '#ffc107';
   return '#dc3545';
-};
-
-// Associate logos mapping
-const associateLogos = {
-  'Associate Leader 1': '/Assets/AKLMV.png',
-  'Associate Leader 2': '/Assets/ALERT.png',
-  'Associate Leader 3': '/Assets/CCVOL.png',
-  'Associate Leader 4': '/Assets/CRRG.png',
-  'Associate Leader 5': '/Assets/DRRM - Y.png',
-  'Associate Leader 6': '/Assets/FRONTLINER.png',
-  'Associate Leader 7': '/Assets/JKM.png',
-  'Associate Leader 8': '/Assets/KAIC.png',
-  'Associate Leader 9': '/Assets/MRAP.png',
-  'Associate Leader 10': '/Assets/MSG - ERU.png',
-  'Associate Leader 11': '/Assets/PCGA 107th.png',
-  'Associate Leader 12': '/Assets/RMFB.png',
-  'Associate Leader 13': '/Assets/SPAG.png',
-  'Associate Leader 14': '/Assets/SRG.png'
 };
 
 // Custom Calendar Toolbar
@@ -143,7 +125,6 @@ function AdminDashboard() {
   const [evaluations, setEvaluations] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const [selectedAssociateData, setSelectedAssociateData] = useState(null);
-  const [userHasSelected, setUserHasSelected] = useState(false);
   const [refreshNow, setRefreshNow] = useState(false);
   const [statisticsData, setStatisticsData] = useState(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -294,12 +275,6 @@ function AdminDashboard() {
     return result;
   };
 
-  // Get selected associate's evaluations
-  const selectedAssociateEvaluations = useMemo(() => {
-    if (!selectedAssociate || !evaluations) return [];
-    return evaluations.filter(ev => ev.user_id === selectedAssociate);
-  }, [selectedAssociate, evaluations]);
-
   // Individual performance chart data - now using selectedAssociateData
   const associateBarData = useMemo(() => {
     console.log('Generating chart data for:', selectedAssociateData);
@@ -415,94 +390,15 @@ function AdminDashboard() {
     };
   }, [selectedAssociateData, evaluations]);
 
-  // Line chart data for overall performance trends (monthly averages)
-  const overallTrendData = useMemo(() => {
-    if (statisticsData && statisticsData.monthly_trends && statisticsData.monthly_trends.length > 0) {
-      const labels = statisticsData.monthly_trends.map(item => item.month);
-      const averages = statisticsData.monthly_trends.map(item => item.average_score);
-
-      return {
-        labels,
-        datasets: [{
-          label: 'Overall Performance Trend (Monthly Average)',
-          data: averages,
-          borderColor: '#28a745',
-          backgroundColor: 'rgba(40, 167, 69, 0.1)',
-          borderWidth: 3,
-          pointBackgroundColor: '#28a745',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          tension: 0.4,
-          fill: true
-        }]
-      };
-    }
-
-    if (!evaluations || evaluations.length === 0) {
-      return {
-        labels: [],
-        datasets: [{
-          label: 'No Data Available',
-          data: [],
-          borderColor: '#28a745',
-          backgroundColor: 'rgba(40, 167, 69, 0.1)',
-          tension: 0.4
-        }]
-      };
-    }
-
-    // Fallback to client-side calculation if statistics data is not available
-    const monthlyData = {};
-    evaluations.forEach(ev => {
-      const monthKey = format(parseISO(ev.created_at), 'yyyy-MM');
-      const monthLabel = format(parseISO(ev.created_at), 'MMM yyyy');
-      
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = {
-          label: monthLabel,
-          scores: []
-        };
-      }
-      monthlyData[monthKey].scores.push(ev.total_score);
-    });
-
-    // Calculate averages and sort by date
-    const sortedMonths = Object.keys(monthlyData).sort();
-    const labels = sortedMonths.map(key => monthlyData[key].label);
-    const averages = sortedMonths.map(key => {
-      const scores = monthlyData[key].scores;
-      return Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
-    });
-
-    return {
-      labels,
-      datasets: [{
-        label: 'Overall Performance Trend (Monthly Average)',
-        data: averages,
-        borderColor: '#28a745',
-        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-        borderWidth: 3,
-        pointBackgroundColor: '#28a745',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        tension: 0.4,
-        fill: true
-      }]
-    };
-  }, [statisticsData, evaluations]);
-
   // Line chart data for KPI trends over time
-  const kpiCategories = [
+  const kpiCategories = useMemo(() => [
     'Volunteer Participation',
     'Task Accommodation and Completion',
     'Communication Effectiveness',
     'Team Objective Above Self'
-  ];
-  const kpiColors = ['#007bff', '#28a745', '#ffc107', '#dc3545'];
+  ], []);
+
+  const kpiColors = useMemo(() => ['#007bff', '#28a745', '#ffc107', '#dc3545'], []);
 
   const kpiTrendData = useMemo(() => {
     if (statisticsData && statisticsData.kpi_trends) {
@@ -561,7 +457,7 @@ function AdminDashboard() {
         spanGaps: true
       }))
     };
-  }, [statisticsData, evaluations]);
+  }, [statisticsData, kpiCategories, kpiColors]);
 
   const chartOptions = {
     responsive: true,
@@ -638,8 +534,71 @@ function AdminDashboard() {
   const handleAssociateChange = (event) => {
     const newSelectedId = event.target.value;
     setSelectedAssociate(newSelectedId);
-    setUserHasSelected(true);
   };
+
+  // Fetch dashboard data with optional associate ID
+  const fetchDashboardData = useCallback(async (specificAssociateId = null, isPolling = false) => {
+    if (!isPolling) setLoading(true);
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const [evaluationsRes, associatesRes, statisticsRes] = await Promise.all([
+        axios.get('http://localhost:8000/api/evaluations', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://localhost:8000/api/associate-groups', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('http://localhost:8000/api/evaluations/statistics', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      const allEvaluations = evaluationsRes.data;
+      const allAssociates = associatesRes.data;
+      const statsData = statisticsRes.data;
+
+      setEvaluations(allEvaluations);
+      setStatisticsData(statsData);
+
+      const performanceData = processAssociatePerformance(allEvaluations, allAssociates);
+      setAssociatesPerformance(performanceData);
+      
+      const groupPerf = calculateGroupPerformance(allEvaluations);
+      setGroupPerformance(groupPerf);
+
+      const sortedAllEvaluations = [...allEvaluations].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setRecentEvaluations(sortedAllEvaluations.slice(0, 5));
+
+      // Automatically select the first associate if none is selected
+      if (!selectedAssociate && allAssociates.length > 0) {
+        const firstAssociateId = allAssociates[0].id;
+        setSelectedAssociate(firstAssociateId);
+        const firstAssociateData = performanceData.find(p => p.id === firstAssociateId);
+        setSelectedAssociateData(firstAssociateData);
+      }
+
+      // Only update calendar events if not polling and if a specific associate was requested
+      // This prevents the live polling from overwriting manually added events
+      if (!isPolling && specificAssociateId) {
+        const targetAssociate = performanceData.find(a => String(a.id) === String(specificAssociateId));
+        if (targetAssociate) {
+          setSelectedAssociateData(targetAssociate);
+          const associateEvals = allEvaluations.filter(ev => String(ev.user_id) === String(specificAssociateId));
+          setCalendarEvents(
+            associateEvals.map(ev => ({
+              title: `Evaluation: ${targetAssociate.name}`,
+              start: parseISO(ev.created_at),
+              end: parseISO(ev.created_at),
+              allDay: true
+            }))
+          );
+        } else {
+          setCalendarEvents([]);
+        }
+      }
+
+      setLastUpdate(Date.now());
+    } catch (err) {
+      console.error('Error in fetchDashboardData:', err);
+      setError('Failed to fetch dashboard data: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedAssociate]);
 
   // Update selected associate data whenever selectedAssociate or associatesPerformance changes
   useEffect(() => {
@@ -662,13 +621,13 @@ function AdminDashboard() {
       }
     }
     }
-  }, [selectedAssociate, associatesPerformance, evaluations, preserveCalendarEvents]);
+  }, [selectedAssociate, associatesPerformance, preserveCalendarEvents, calendarEvents.length, evaluations]);
 
   // Initial data fetch
   useEffect(() => {
     fetchDashboardData();
     fetchCalendarEventsOnly();
-  }, []);
+  }, [fetchDashboardData]);
 
   // Separate function to fetch calendar events without interfering with live polling
   const fetchCalendarEventsOnly = async () => {
@@ -740,7 +699,7 @@ function AdminDashboard() {
       }
     }, 10000); // Poll every 10 seconds (more efficient than 3 seconds)
     return () => clearInterval(pollInterval);
-  }, [selectedAssociate, loading, refreshNow]);
+  }, [selectedAssociate, loading, refreshNow, fetchDashboardData]);
 
   // Listen for refreshNow flag (set by Evaluation.js after evaluation)
   useEffect(() => {
@@ -754,7 +713,7 @@ function AdminDashboard() {
     if (refreshNow) {
       fetchDashboardData(selectedAssociate, false).then(() => setRefreshNow(false));
     }
-  }, [refreshNow, selectedAssociate]);
+  }, [refreshNow, selectedAssociate, fetchDashboardData]);
 
   // Add event listener for dashboard refresh trigger
   useEffect(() => {
@@ -763,71 +722,7 @@ function AdminDashboard() {
     };
     window.addEventListener('refreshDashboardData', refreshListener);
     return () => window.removeEventListener('refreshDashboardData', refreshListener);
-  }, [selectedAssociate]);
-
-  // Fetch dashboard data with optional associate ID
-  const fetchDashboardData = async (specificAssociateId = null, isPolling = false) => {
-    if (!isPolling) setLoading(true);
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const [evaluationsRes, associatesRes, statisticsRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/evaluations', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:8000/api/associate-groups', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:8000/api/evaluations/statistics', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-
-      const allEvaluations = evaluationsRes.data;
-      const allAssociates = associatesRes.data;
-      const statsData = statisticsRes.data;
-
-      setEvaluations(allEvaluations);
-      setStatisticsData(statsData);
-
-      const performanceData = processAssociatePerformance(allEvaluations, allAssociates);
-      setAssociatesPerformance(performanceData);
-      
-      const groupPerf = calculateGroupPerformance(allEvaluations);
-      setGroupPerformance(groupPerf);
-
-      const sortedAllEvaluations = [...allEvaluations].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      setRecentEvaluations(sortedAllEvaluations.slice(0, 5));
-
-      // Automatically select the first associate if none is selected
-      if (!selectedAssociate && allAssociates.length > 0) {
-        const firstAssociateId = allAssociates[0].id;
-        setSelectedAssociate(firstAssociateId);
-        const firstAssociateData = performanceData.find(p => p.id === firstAssociateId);
-        setSelectedAssociateData(firstAssociateData);
-      }
-
-      // Only update calendar events if not polling and if a specific associate was requested
-      // This prevents the live polling from overwriting manually added events
-      if (!isPolling && specificAssociateId) {
-        const targetAssociate = performanceData.find(a => String(a.id) === String(specificAssociateId));
-        if (targetAssociate) {
-          setSelectedAssociateData(targetAssociate);
-          const associateEvals = allEvaluations.filter(ev => String(ev.user_id) === String(specificAssociateId));
-          setCalendarEvents(
-            associateEvals.map(ev => ({
-              title: `Evaluation: ${targetAssociate.name}`,
-              start: parseISO(ev.created_at),
-              end: parseISO(ev.created_at),
-              allDay: true
-            }))
-          );
-        } else {
-          setCalendarEvents([]);
-        }
-      }
-
-      setLastUpdate(Date.now());
-    } catch (err) {
-      console.error('Error in fetchDashboardData:', err);
-      setError('Failed to fetch dashboard data: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedAssociate, fetchDashboardData]);
 
   // Add useEffect to force refresh when switching associates
   useEffect(() => {
@@ -843,11 +738,6 @@ function AdminDashboard() {
       Last updated: {format(lastUpdate, 'PPpp')}
     </div>
   );
-
-  // Get associate logo helper
-  const getAssociateLogo = (associateName) => {
-    return associateLogos[associateName] || '/Assets/disaster_logo.png';
-  };
 
   // Modify the Recent Evaluations section in the JSX
   const renderRecentEvaluations = () => (

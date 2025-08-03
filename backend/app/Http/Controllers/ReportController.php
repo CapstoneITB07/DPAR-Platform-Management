@@ -27,7 +27,7 @@ class ReportController extends Controller
             $reportData = $report->data;
             if (isset($reportData['photos']) && !empty($reportData['photos'])) {
                 $report->photo_urls = array_map(function ($path) {
-                    return asset('storage/' . $path);
+                    return 'http://localhost:8000/storage/' . $path;
                 }, $reportData['photos']);
             }
         });
@@ -46,7 +46,9 @@ class ReportController extends Controller
                 'description' => 'required|string',
                 'status' => 'required|in:draft,sent',
                 'data' => 'required',
-                'photo.*' => 'nullable|file|image|max:5120'
+                'photo.*' => 'nullable|file|image|max:5120',
+                'associateLogo' => 'nullable|file|image|max:2048',
+                'preparedBySignature' => 'nullable|file|image|max:2048'
             ]);
 
             // Parse the data if it's a string
@@ -164,10 +166,27 @@ class ReportController extends Controller
             }
             $reportData['photos'] = $photoPaths;
 
+            // Handle logo and signature uploads
+            if ($request->hasFile('associateLogo')) {
+                $associateLogoPath = $request->file('associateLogo')->store('reports/logos', 'public');
+                $reportData['associateLogo'] = $associateLogoPath;
+            }
+
+
+
+            if ($request->hasFile('preparedBySignature')) {
+                $preparedBySignaturePath = $request->file('preparedBySignature')->store('reports/signatures', 'public');
+                $reportData['preparedBySignature'] = $preparedBySignaturePath;
+            }
+
+
+
             Log::info('Final report data', [
                 'has_photos' => isset($reportData['photos']),
                 'photo_count' => count($reportData['photos']),
-                'photos' => $reportData['photos']
+                'photos' => $reportData['photos'],
+                'has_associate_logo' => isset($reportData['associateLogo']),
+                'has_prepared_signature' => isset($reportData['preparedBySignature'])
             ]);
 
             // Create the report data
@@ -185,7 +204,7 @@ class ReportController extends Controller
             // Add photo URLs to response
             if (!empty($photoPaths)) {
                 $report->photo_urls = array_map(function ($path) {
-                    return asset('storage/' . $path);
+                    return 'http://localhost:8000/storage/' . $path;
                 }, $photoPaths);
             }
 
@@ -236,7 +255,7 @@ class ReportController extends Controller
         $reportData = $report->data;
         if (isset($reportData['photos']) && !empty($reportData['photos'])) {
             $report->photo_urls = array_map(function ($path) {
-                return asset('storage/' . $path);
+                return 'http://localhost:8000/storage/' . $path;
             }, $reportData['photos']);
         }
 
@@ -276,7 +295,9 @@ class ReportController extends Controller
                 'description' => 'required|string',
                 'status' => 'required|in:draft,sent',
                 'data' => 'required',
-                'photo.*' => 'nullable|file|image|max:5120'
+                'photo.*' => 'nullable|file|image|max:5120',
+                'associateLogo' => 'nullable|file|image|max:2048',
+                'preparedBySignature' => 'nullable|file|image|max:2048'
             ]);
 
             // Parse the data if it's a string
@@ -368,10 +389,35 @@ class ReportController extends Controller
             }
             $reportData['photos'] = $photoPaths;
 
+            // Handle logo and signature uploads for updates
+            if ($request->hasFile('associateLogo')) {
+                // Delete old logo if it exists
+                if (isset($reportData['associateLogo']) && Storage::disk('public')->exists($reportData['associateLogo'])) {
+                    Storage::disk('public')->delete($reportData['associateLogo']);
+                }
+                $associateLogoPath = $request->file('associateLogo')->store('reports/logos', 'public');
+                $reportData['associateLogo'] = $associateLogoPath;
+            }
+
+
+
+            if ($request->hasFile('preparedBySignature')) {
+                // Delete old signature if it exists
+                if (isset($reportData['preparedBySignature']) && Storage::disk('public')->exists($reportData['preparedBySignature'])) {
+                    Storage::disk('public')->delete($reportData['preparedBySignature']);
+                }
+                $preparedBySignaturePath = $request->file('preparedBySignature')->store('reports/signatures', 'public');
+                $reportData['preparedBySignature'] = $preparedBySignaturePath;
+            }
+
+
+
             Log::info('Final report data for update', [
                 'has_photos' => isset($reportData['photos']),
                 'photo_count' => count($reportData['photos']),
-                'photos' => $reportData['photos']
+                'photos' => $reportData['photos'],
+                'has_associate_logo' => isset($reportData['associateLogo']),
+                'has_prepared_signature' => isset($reportData['preparedBySignature'])
             ]);
 
             // Update the report data

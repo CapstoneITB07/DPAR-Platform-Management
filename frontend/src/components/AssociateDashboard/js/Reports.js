@@ -7,6 +7,41 @@ import '../css/Reports.css';
 import imageCompression from 'browser-image-compression';
 import '../css/VolunteerList.css'; // Import confirm modal styles
 
+// Helper function to format dates as "Mon xx, XXXX"
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  
+  return `${month} ${day}, ${year}`;
+};
+
+// Helper function to format datetime as "Mon XX, XXXX HH:MM AM/PM" (12-hour format)
+const formatDateTime = (dateTimeString) => {
+  if (!dateTimeString) return 'N/A';
+  const date = new Date(dateTimeString);
+  if (isNaN(date.getTime())) return 'N/A';
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const day = date.getDate().toString().padStart(2, '0');
+  const year = date.getFullYear();
+  
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const formattedHours = hours.toString().padStart(2, '0');
+  
+  return `${month} ${day}, ${year} ${formattedHours}:${minutes} ${ampm}`;
+};
+
 // Reusable ConfirmModal (copied from VolunteerList.js)
 function ConfirmModal({ open, message, onConfirm, onCancel }) {
   if (!open) return null;
@@ -39,40 +74,50 @@ function Reports() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
-    // Header Information
-    for: '',
-    forPosition: [''], // Array for multiple positions
+    // I. REPORT HEADER
+    institutionName: '',
+    associateName: '',
+    address: '',
+    associateLogo: null,
+
+    // II. HEADING
+    forName: '',
+    forPosition: '',
     date: '',
     subject: '',
 
-    // Authority Section
-    authority: ['', ''], // Array for multiple authority entries
-
-    // Date, Time, and Place Section
+    // III. EVENT DETAILS
+    authorities: [''],
     dateTime: '',
-    activityType: '',
-    location: '',
+    place: '',
+    personnelInvolved: [''],
 
-    // Personnel Section
-    auxiliaryPersonnel: [''], // Array for auxiliary personnel
-    pcgPersonnel: [''], // Array for PCG personnel
+    // IV. NARRATION OF EVENTS I
+    eventName: '',
+    eventLocation: '',
+    eventDate: '',
+    startTime: '',
+    endTime: '',
+    organizers: [''],
 
-    // Narration Section
-    objective: '',
-    summary: '',
-    activities: [
-      {
-        title: '',
-        description: ''
-      }
-    ],
+    // V. NARRATION OF EVENTS II
+    eventOverview: '',
+    participants: [''],
+    trainingAgenda: '',
+    keyOutcomes: [''],
+    challenges: [''],
+    recommendations: [''],
     conclusion: '',
 
-    // Recommendations Section
-    recommendations: [''],
+    // VI. ATTACHMENTS
+    photos: [],
 
-    // Attachments Section
-    photos: []
+    // VII. SIGNATORIES
+    preparedBy: '',
+    preparedByPosition: '',
+    preparedBySignature: null,
+    approvedBy: '',
+    approvedByPosition: ''
   });
 
   const [completedSteps, setCompletedSteps] = useState(new Set());
@@ -82,42 +127,60 @@ function Reports() {
   const [selectedReports, setSelectedReports] = useState([]);
   const [approvalNotification, setApprovalNotification] = useState('');
   const [rejectionNotification, setRejectionNotification] = useState('');
+  const [focusedFields, setFocusedFields] = useState(new Set());
+  const [selectedReportDetails, setSelectedReportDetails] = useState(null);
+  const [showReportDetails, setShowReportDetails] = useState(false);
 
   const steps = [
-    'Header',
-    'Authority',
-    'Date, Time, and Place',
-    'Personnel Involved',
-    'Narrations of Events',
-    'Recommendations',
-    'Attachments'
+    'Report Header',
+    'Heading',
+    'Event Details',
+    'Narration of Events I',
+    'Narration of Events II',
+    'Attachments',
+    'Signatories'
   ];
 
   const isStepComplete = useCallback((stepIndex) => {
     switch (stepIndex) {
-      case 0: // Header
-        return !!formData.for?.trim() && 
-               formData.forPosition.some(pos => pos.trim()) && 
-               !!formData.date && 
+      case 0: // Report Header
+        return !!formData.institutionName?.trim() && 
+               !!formData.associateName?.trim() && 
+               !!formData.address?.trim() && 
+               formData.associateLogo;
+      case 1: // Heading
+        return !!formData.forName?.trim() && 
+               !!formData.forPosition?.trim() && 
+               !!formData.date?.trim() && 
                !!formData.subject?.trim();
-      case 1: // Authority
-        return formData.authority.some(auth => auth.trim());
-      case 2: // Date, Time, and Place of Activity
-        return !!formData.dateTime && 
-               !!formData.activityType?.trim() && 
-               !!formData.location?.trim();
-      case 3: // Personnel Involved
-        return formData.auxiliaryPersonnel.some(p => p.trim()) || 
-               formData.pcgPersonnel.some(p => p.trim());
-      case 4: // Narration of Events
-        return !!formData.objective?.trim() && 
-               !!formData.summary?.trim() && 
-               formData.activities.some(a => a.title.trim() || a.description.trim()) && 
+      case 2: // Event Details
+        return formData.authorities.some(auth => auth.trim()) && 
+               !!formData.dateTime?.trim() &&
+               !!formData.place?.trim() &&
+               formData.personnelInvolved.some(p => p.trim());
+      case 3: // Narration of Events I
+        return !!formData.eventName?.trim() && 
+               !!formData.eventLocation?.trim() && 
+               !!formData.eventDate?.trim() && 
+               !!formData.startTime?.trim() && 
+               !!formData.endTime?.trim() && 
+               formData.organizers.some(org => org.trim());
+      case 4: // Narration of Events II
+        return !!formData.eventOverview?.trim() && 
+               formData.participants.some(p => p.name.trim()) && 
+               !!formData.trainingAgenda?.trim() && 
+               formData.keyOutcomes.some(ko => ko.trim()) && 
+               formData.challenges.some(c => c.trim()) && 
+               formData.recommendations.some(r => r.trim()) && 
                !!formData.conclusion?.trim();
-      case 5: // Recommendations
-        return formData.recommendations.some(r => r.trim());
-      case 6: // Attachments
+      case 5: // Attachments
         return true; // Optional
+      case 6: // Signatories
+        return !!formData.preparedBy?.trim() && 
+               !!formData.preparedByPosition?.trim() &&
+               formData.preparedBySignature && 
+               !!formData.approvedBy?.trim() && 
+               !!formData.approvedByPosition?.trim();
       default:
         return false;
     }
@@ -188,13 +251,9 @@ function Reports() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Add photo_url to each report if it has a photo_path
-      const reportsWithUrls = res.data.map(report => ({
-        ...report,
-        photo_url: report.photo_path ? `http://localhost:8000/storage/${report.photo_path}` : null
-      }));
+      console.log('Fetched reports:', res.data);
       
-      setReports(reportsWithUrls);
+      setReports(res.data);
     } catch (err) {
       setError('Failed to load reports');
     }
@@ -220,10 +279,41 @@ function Reports() {
     });
   };
 
+  const handleFieldFocus = (fieldName, index = null) => {
+    const fieldKey = index !== null ? `${fieldName}_${index}` : fieldName;
+    setFocusedFields(prev => new Set([...prev, fieldKey]));
+  };
+
+  const handleFieldBlur = (fieldName, index = null) => {
+    // Keep the field in focusedFields even after blur so validation errors persist
+    // This ensures the red border stays visible after the user has interacted with the field
+  };
+
+  const shouldShowValidationError = (fieldName, index = null, value) => {
+    const fieldKey = index !== null ? `${fieldName}_${index}` : fieldName;
+    const isFocused = focusedFields.has(fieldKey);
+    const isEmpty = typeof value === 'string' ? !value?.trim() : !value;
+    
+    return isFocused && isEmpty;
+  };
+
+  const handleFileUpload = (e, field) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: file
+      }));
+    }
+  };
+
   const addField = (field) => {
     setFormData(prev => ({
       ...prev,
-      [field]: [...prev[field], field === 'activities' ? { title: '', description: '' } : '']
+      [field]: [...prev[field], 
+        field === 'participants' ? {name: '', position: ''} : 
+        field === 'authorities' || field === 'organizers' || field === 'keyOutcomes' || field === 'challenges' || field === 'recommendations' ? '' : ''
+      ]
     }));
   };
 
@@ -273,14 +363,26 @@ function Reports() {
   const openCreateModal = () => {
     setEditingReport(null);
     setFormData({
-      for: '', forPosition: [''], date: '', subject: '',
-      authority: ['', ''], dateTime: '', activityType: '', location: '', auxiliaryPersonnel: [''], pcgPersonnel: [''],
-      objective: '', summary: '', activities: [{ title: '', description: '' }], conclusion: '', recommendations: [''], photos: []
+      // I. REPORT HEADER
+      institutionName: '', associateName: '', address: '', associateLogo: null,
+      // II. HEADING
+      forName: '', forPosition: '', date: '', subject: '',
+      // III. EVENT DETAILS
+      authorities: [''], dateTime: '', place: '', personnelInvolved: [''],
+      // IV. NARRATION OF EVENTS I
+      eventName: '', eventLocation: '', eventDate: '', startTime: '', endTime: '', organizers: [''],
+      // V. NARRATION OF EVENTS II
+      eventOverview: '', participants: [{name: '', position: ''}], trainingAgenda: '', keyOutcomes: [''], challenges: [''], recommendations: [''], conclusion: '',
+      // VI. ATTACHMENTS
+      photos: [],
+      // VII. SIGNATORIES
+      preparedBy: '', preparedByPosition: '', preparedBySignature: null, approvedBy: '', approvedByPosition: ''
     });
     setCurrentStep(0);
     setCompletedSteps(new Set());
     setSuccessMessage('');
     setError('');
+    setFocusedFields(new Set());
     setShowCreateModal(true);
   };
 
@@ -332,28 +434,61 @@ function Reports() {
         const formDataToSend = new FormData();
         // Prepare the report data
         const reportData = {
-          for: formData.for || '',
-          forPosition: formData.forPosition.filter(pos => pos.trim()),
+          // I. REPORT HEADER
+          institutionName: formData.institutionName || '',
+          associateName: formData.associateName || '',
+          address: formData.address || '',
+          associateLogo: formData.associateLogo,
+          // II. HEADING
+          forName: formData.forName || '',
+          forPosition: formData.forPosition || '',
           date: formData.date || '',
           subject: formData.subject || '',
-          authority: formData.authority.filter(auth => auth.trim()),
+          // III. EVENT DETAILS
+          authorities: formData.authorities.filter(auth => auth.trim()),
           dateTime: formData.dateTime || '',
-          activityType: formData.activityType || '',
-          location: formData.location || '',
-          auxiliaryPersonnel: formData.auxiliaryPersonnel.filter(p => p.trim()),
-          pcgPersonnel: formData.pcgPersonnel.filter(p => p.trim()),
-          objective: formData.objective || '',
-          summary: formData.summary || '',
-          activities: formData.activities.filter(a => a.title.trim() || a.description.trim()),
-          conclusion: formData.conclusion || '',
+          place: formData.place || '',
+          personnelInvolved: formData.personnelInvolved.filter(p => p.trim()),
+          // IV. NARRATION OF EVENTS I
+          eventName: formData.eventName || '',
+          eventLocation: formData.eventLocation || '',
+          eventDate: formData.eventDate || '',
+          startTime: formData.startTime || '',
+          endTime: formData.endTime || '',
+          organizers: formData.organizers.filter(org => org.trim()),
+          // V. NARRATION OF EVENTS II
+          eventOverview: formData.eventOverview || '',
+          participants: formData.participants.filter(p => p.name.trim()),
+          trainingAgenda: formData.trainingAgenda || '',
+          keyOutcomes: formData.keyOutcomes.filter(ko => ko.trim()),
+          challenges: formData.challenges.filter(c => c.trim()),
           recommendations: formData.recommendations.filter(r => r.trim()),
-          photos: [] // Initialize empty photos array
+          conclusion: formData.conclusion || '',
+          // VI. ATTACHMENTS
+          photos: [], // Initialize empty photos array
+          // VII. SIGNATORIES
+          preparedBy: formData.preparedBy || '',
+          preparedByPosition: formData.preparedByPosition || '',
+          preparedBySignature: formData.preparedBySignature,
+          approvedBy: formData.approvedBy || '',
+          approvedByPosition: formData.approvedByPosition || ''
         };
 
         formDataToSend.append('title', formData.subject || 'Untitled Report');
-        formDataToSend.append('description', formData.summary || 'No summary provided');
+        formDataToSend.append('description', formData.eventOverview || 'No summary provided');
         formDataToSend.append('status', shouldSubmit ? 'sent' : 'draft');
         formDataToSend.append('data', JSON.stringify(reportData));
+
+        // Append logos and signatures
+        if (formData.associateLogo) {
+          formDataToSend.append('associateLogo', formData.associateLogo);
+        }
+        if (formData.preparedBySignature) {
+          formDataToSend.append('preparedBySignature', formData.preparedBySignature);
+        }
+        if (formData.approvedBySignature) {
+          formDataToSend.append('approvedBySignature', formData.approvedBySignature);
+        }
 
         // Compress and append photos
         if (formData.photos && formData.photos.length > 0) {
@@ -427,38 +562,50 @@ function Reports() {
     }
 
     setFormData({
-      // Header Information
-      for: reportData.for || report.for || '',
-      forPosition: reportData.forPosition || (report.forPosition ? report.forPosition.split(',') : ['']),
+      // I. REPORT HEADER
+      institutionName: reportData.institutionName || report.institutionName || '',
+      associateName: reportData.associateName || report.associateName || '',
+      address: reportData.address || report.address || '',
+      associateLogo: reportData.associateLogo || report.associateLogo,
+
+      // II. HEADING
+      forName: reportData.forName || report.forName || '',
+      forPosition: reportData.forPosition || report.forPosition || '',
       date: reportData.date || report.date || '',
       subject: reportData.subject || report.subject || '',
 
-      // Authority Section
-      authority: reportData.authority || (report.authority ? report.authority.split(',') : ['', '']),
-
-      // Date, Time, and Place Section
+      // III. EVENT DETAILS
+      authorities: reportData.authorities || (report.authorities ? report.authorities.split(',') : ['']),
       dateTime: reportData.dateTime || report.dateTime || '',
-      activityType: reportData.activityType || report.activityType || '',
-      location: reportData.location || report.location || '',
+      place: reportData.place || report.place || '',
+      personnelInvolved: reportData.personnelInvolved || (report.personnelInvolved ? report.personnelInvolved.split(',') : ['']),
 
-      // Personnel Section
-      auxiliaryPersonnel: reportData.auxiliaryPersonnel || (report.auxiliaryPersonnel ? report.auxiliaryPersonnel.split(',') : ['']),
-      pcgPersonnel: reportData.pcgPersonnel || (report.pcgPersonnel ? report.pcgPersonnel.split(',') : ['']),
+      // IV. NARRATION OF EVENTS I
+      eventName: reportData.eventName || report.eventName || '',
+      eventLocation: reportData.eventLocation || report.eventLocation || '',
+      eventDate: reportData.eventDate || report.eventDate || '',
+      startTime: reportData.startTime || report.startTime || '',
+      endTime: reportData.endTime || report.endTime || '',
+      organizers: reportData.organizers || (report.organizers ? report.organizers.split(',') : ['']),
 
-      // Narration Section
-      objective: reportData.objective || report.objective || '',
-      summary: reportData.summary || report.summary || '',
-      activities: reportData.activities || (report.activities ? report.activities.map(activity => ({
-        title: activity.title || '',
-        description: activity.description || ''
-      })) : [{ title: '', description: '' }]),
+      // V. NARRATION OF EVENTS II
+      eventOverview: reportData.eventOverview || report.eventOverview || '',
+      participants: reportData.participants || (report.participants ? report.participants.split(',').map(p => ({name: p.trim(), position: ''})) : [{name: '', position: ''}]),
+      trainingAgenda: reportData.trainingAgenda || report.trainingAgenda || '',
+      keyOutcomes: reportData.keyOutcomes || (report.keyOutcomes ? report.keyOutcomes.split(',') : ['']),
+      challenges: reportData.challenges || (report.challenges ? report.challenges.split(',') : ['']),
+      recommendations: reportData.recommendations || (report.recommendations ? report.recommendations.split(',') : ['']),
       conclusion: reportData.conclusion || report.conclusion || '',
 
-      // Recommendations Section
-      recommendations: reportData.recommendations || (report.recommendations ? report.recommendations.split(',') : ['']),
+      // VI. ATTACHMENTS
+      photos: [],
 
-      // Attachments Section
-      photos: []
+      // VII. SIGNATORIES
+      preparedBy: reportData.preparedBy || report.preparedBy || '',
+      preparedByPosition: reportData.preparedByPosition || report.preparedByPosition || '',
+      preparedBySignature: reportData.preparedBySignature || report.preparedBySignature,
+      approvedBy: reportData.approvedBy || report.approvedBy || '',
+      approvedByPosition: reportData.approvedByPosition || report.approvedByPosition || ''
     });
     setCurrentStep(0);
     setCompletedSteps(new Set());
@@ -495,6 +642,7 @@ function Reports() {
         setShowCreateModal(false);
         setCurrentStep(0);
         setCompletedSteps(new Set());
+        setFocusedFields(new Set());
       }
     });
   };
@@ -587,6 +735,41 @@ function Reports() {
     );
   };
 
+  const handleRowClick = (report) => {
+    console.log('Report data structure:', report);
+    console.log('Report.data:', report.data);
+    
+    // Parse data if it's a string
+    let parsedData = report.data;
+    if (typeof report.data === 'string') {
+      try {
+        parsedData = JSON.parse(report.data);
+        console.log('Parsed data:', parsedData);
+      } catch (error) {
+        console.error('Error parsing report data:', error);
+      }
+    }
+    
+    console.log('Report.data.photos:', parsedData?.photos);
+    console.log('Report.photo_urls:', report.photo_urls);
+    console.log('Report.data.associateLogo:', parsedData?.associateLogo);
+    console.log('Report.data.preparedBySignature:', parsedData?.preparedBySignature);
+    
+    // Update the report with parsed data
+    const reportWithParsedData = {
+      ...report,
+      data: parsedData
+    };
+    
+    setSelectedReportDetails(reportWithParsedData);
+    setShowReportDetails(true);
+  };
+
+  const closeReportDetails = () => {
+    setSelectedReportDetails(null);
+    setShowReportDetails(false);
+  };
+
   return (
     <AssociateLayout>
       <div className="reports-container">
@@ -676,8 +859,8 @@ function Reports() {
                         onChange={handleSelectAll}
                       />
                     </th>
-                    <th className="title-col">TITLE</th>
-                    <th className="description-col">DESCRIPTION</th>
+                    <th className="subject-col">SUBJECT</th>
+                    <th className="date-col">DATE CREATED</th>
                     <th className="status-col">STATUS</th>
                     <th className="actions-col">ACTIONS</th>
                   </tr>
@@ -685,11 +868,16 @@ function Reports() {
                 <tbody>
                   {reports
                     .filter(report => 
-                      report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      report.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                      report.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      report.title?.toLowerCase().includes(searchTerm.toLowerCase())
                     )
                     .map(report => (
-                      <tr key={report.id} className={selectedReports.includes(report.id) ? 'selected' : ''}>
+                      <tr 
+                        key={report.id} 
+                        className={selectedReports.includes(report.id) ? 'selected' : ''}
+                        onClick={() => handleRowClick(report)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <td className="checkbox-col">
                           <input
                             type="checkbox"
@@ -698,8 +886,10 @@ function Reports() {
                             onClick={e => e.stopPropagation()}
                           />
                         </td>
-                        <td className="title-cell title-col">{report.title}</td>
-                        <td className="description-cell description-col">{report.description}</td>
+                        <td className="subject-cell subject-col">{report.subject || report.title}</td>
+                        <td className="date-cell date-col">
+                          {formatDate(report.created_at)}
+                        </td>
                         <td className="status-cell status-col">
                           <span className={`status-badge ${report.status}`}>
                             {report.status === 'sent' ? 'PENDING APPROVAL' : 
@@ -709,12 +899,12 @@ function Reports() {
                           </span>
                           {report.status === 'approved' && report.approved_at && (
                             <div className="status-detail">
-                              Approved on {new Date(report.approved_at).toLocaleDateString()}
+                              Approved on {formatDate(report.approved_at)}
                             </div>
                           )}
                           {report.status === 'rejected' && report.rejected_at && (
                             <div className="status-detail rejected">
-                              Rejected on {new Date(report.rejected_at).toLocaleDateString()}
+                              Rejected on {formatDate(report.rejected_at)}
                             </div>
                           )}
                         </td>
@@ -723,22 +913,31 @@ function Reports() {
                             {report.status === 'draft' && (
                               <>
                                 <button
-                                  className="action-btn edit-btn"
-                                  onClick={() => handleEdit(report)}
-                                  title="Edit"
-                                >
-                                  <FontAwesomeIcon icon={faEdit} />
-                                </button>
-                                <button
                                   className="action-btn delete-btn"
-                                  onClick={() => handleDelete(report.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(report.id);
+                                  }}
                                   title="Delete"
                                 >
                                   <FontAwesomeIcon icon={faTrash} />
                                 </button>
                                 <button
+                                  className="action-btn edit-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEdit(report);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <FontAwesomeIcon icon={faEdit} />
+                                </button>
+                                <button
                                   className="action-btn send-btn"
-                                  onClick={() => handleSubmit(true, report)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSubmit(true, report);
+                                  }}
                                   title="Send"
                                 >
                                   <FontAwesomeIcon icon={faPaperPlane} />
@@ -748,7 +947,10 @@ function Reports() {
                             {report.status !== 'draft' && (
                               <button
                                 className="action-btn delete-btn"
-                                onClick={() => handleDelete(report.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(report.id);
+                                }}
                                 title="Delete"
                               >
                                 <FontAwesomeIcon icon={faTrash} />
@@ -792,13 +994,13 @@ function Reports() {
                 ))}
                 </div>
                 {/* Section Header Card */}
-                {currentStep === 0 && <div className="section-gradient-card-red">I. HEADER</div>}
-                {currentStep === 1 && <div className="section-gradient-card-red">II. AUTHORITY</div>}
-                {currentStep === 2 && <div className="section-gradient-card-red">III. DATE, TIME, AND PLACE</div>}
-                {currentStep === 3 && <div className="section-gradient-card-red">IV. PERSONNEL INVOLVED</div>}
-                {currentStep === 4 && <div className="section-gradient-card-red">V. NARRATIONS OF EVENTS</div>}
-                {currentStep === 5 && <div className="section-gradient-card-red">VI. RECOMMENDATIONS</div>}
-                {currentStep === 6 && <div className="section-gradient-card-red">VII. ATTACHMENTS</div>}
+                {currentStep === 0 && <div className="section-gradient-card-red">I. REPORT HEADER</div>}
+                {currentStep === 1 && <div className="section-gradient-card-red">II. HEADING</div>}
+                {currentStep === 2 && <div className="section-gradient-card-red">III. EVENT DETAILS</div>}
+                {currentStep === 3 && <div className="section-gradient-card-red">IV. NARRATION OF EVENTS I</div>}
+                {currentStep === 4 && <div className="section-gradient-card-red">V. NARRATION OF EVENTS II</div>}
+                {currentStep === 5 && <div className="section-gradient-card-red">VI. ATTACHMENTS</div>}
+                {currentStep === 6 && <div className="section-gradient-card-red">VII. SIGNATORIES</div>}
               </div>
               {/* Modal Body */}
               <div className="report-modal-body">
@@ -807,21 +1009,402 @@ function Reports() {
                   {currentStep === 0 && (
                     <>
                       <div className="report-form-row">
-                        <div className="report-form-group">
-                          <label>FOR: <span style={{color: '#ef4444'}}>*</span></label>
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Institution Name:</label>
                           <input 
                             type="text" 
-                            value={formData.for} 
-                            onChange={e => handleInputChange(e, 'for')} 
-                            placeholder="Recipient Name" 
+                            value={formData.institutionName} 
+                            onChange={e => handleInputChange(e, 'institutionName')} 
+                            onFocus={() => handleFieldFocus('institutionName')}
+                            onBlur={() => handleFieldBlur('institutionName')}
+                            placeholder="Institution Name" 
                             style={{
-                              borderColor: !formData.for?.trim() ? '#ef4444' : '#e2e8f0'
+                              borderColor: shouldShowValidationError('institutionName', null, formData.institutionName) ? '#ef4444' : '#e2e8f0'
                             }}
                           />
                         </div>
-                        <div className="report-form-group">
-                          <label>POSITION: <span style={{color: '#ef4444'}}>*</span></label>
-                          {formData.forPosition.map((position, index) => (
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Address:</label>
+                          <input 
+                            type="text" 
+                            value={formData.address} 
+                            onChange={e => handleInputChange(e, 'address')} 
+                            onFocus={() => handleFieldFocus('address')}
+                            onBlur={() => handleFieldBlur('address')}
+                            placeholder="Address" 
+                            style={{
+                              borderColor: shouldShowValidationError('address', null, formData.address) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 3'}}>
+                          <label>Associate Name:</label>
+                          <input 
+                            type="text" 
+                            value={formData.associateName} 
+                            onChange={e => handleInputChange(e, 'associateName')} 
+                            onFocus={() => handleFieldFocus('associateName')}
+                            onBlur={() => handleFieldBlur('associateName')}
+                            placeholder="Associate Name" 
+                            style={{
+                              borderColor: shouldShowValidationError('associateName', null, formData.associateName) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '4 / span 1'}}>
+                          <label>Associate Logo:</label>
+                          <input 
+                            id="associateLogoInput"
+                            type="file" 
+                            accept="image/*" 
+                            onChange={e => handleFileUpload(e, 'associateLogo')} 
+                            style={{ display: 'none' }} 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => document.getElementById('associateLogoInput').click()}
+                            style={{
+                              background: formData.associateLogo ? 'linear-gradient(to right, #10b981, #3b82f6)' : '#e2e8f0',
+                              color: formData.associateLogo ? 'white' : '#666',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              border: 'none',
+                              width: '100%',
+                              textAlign: 'left',
+                              boxShadow: formData.associateLogo ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faUpload} style={{marginRight: '8px'}} />
+                            {formData.associateLogo ? `Selected: ${formData.associateLogo.name}` : 'No Uploaded Image'}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 2: Heading */}
+                  {currentStep === 1 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>RECIPIENT/FOR: <span style={{color: '#ef4444'}}>*</span></label>
+                          <div style={{
+                            display: 'flex', 
+                            gap: '0.5rem', 
+                            alignItems: 'center', 
+                            width: '100%',
+                            minWidth: 0
+                          }}>
+                          <input 
+                            type="text" 
+                            value={formData.forName} 
+                            onChange={e => handleInputChange(e, 'forName')} 
+                              onFocus={() => handleFieldFocus('forName')}
+                              onBlur={() => handleFieldBlur('forName')}
+                            placeholder="Recipient Name" 
+                            style={{
+                                flex: 2,
+                                minWidth: 0,
+                                borderColor: shouldShowValidationError('forName', null, formData.forName) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                          <input 
+                            type="text" 
+                            value={formData.forPosition} 
+                            onChange={e => handleInputChange(e, 'forPosition')} 
+                              onFocus={() => handleFieldFocus('forPosition')}
+                              onBlur={() => handleFieldBlur('forPosition')}
+                            placeholder="Position" 
+                            style={{
+                                flex: 1,
+                                minWidth: 0,
+                                borderColor: shouldShowValidationError('forPosition', null, formData.forPosition) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
+                          <label>DATE: <span style={{color: '#ef4444'}}>*</span></label>
+                          <input 
+                            type="date" 
+                            value={formData.date} 
+                            onChange={e => handleInputChange(e, 'date')} 
+                            onFocus={() => handleFieldFocus('date')}
+                            onBlur={() => handleFieldBlur('date')}
+                            style={{
+                              borderColor: shouldShowValidationError('date', null, formData.date) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '2 / span 3'}}>
+                          <label>SUBJECT: <span style={{color: '#ef4444'}}>*</span></label>
+                          <input 
+                            type="text" 
+                            value={formData.subject} 
+                            onChange={e => handleInputChange(e, 'subject')} 
+                            onFocus={() => handleFieldFocus('subject')}
+                            onBlur={() => handleFieldBlur('subject')}
+                            placeholder="Report Subject" 
+                            style={{
+                              borderColor: shouldShowValidationError('subject', null, formData.subject) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 3: Event Details */}
+                  {currentStep === 2 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
+                          <label>Date and Time:</label>
+                          <input type="datetime-local" value={formData.dateTime} onChange={e => handleInputChange(e, 'dateTime')} />
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '2 / span 3'}}>
+                          <label>Place:</label>
+                          <input type="text" value={formData.place} onChange={e => handleInputChange(e, 'place')} placeholder="Place of Activity" />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>Authority:</label>
+                          {formData.authorities.map((auth, index) => (
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input type="text" value={auth} onChange={e => handleInputChange(e, 'authorities', index)} placeholder={`Authority ${index + 1}`} style={{flex: 1, minWidth: 0}} />
+                              {index === formData.authorities.length - 1 && (
+                                <button type="button" onClick={() => addField('authorities')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
+                              )}
+                              {formData.authorities.length > 1 && (
+                                <button type="button" onClick={() => removeField('authorities', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '3 / span 2'}}>
+                          <label>Personnel Involved:</label>
+                          {formData.personnelInvolved.map((person, index) => (
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input type="text" value={person} onChange={e => handleInputChange(e, 'personnelInvolved', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1, minWidth: 0}} />
+                              {index === formData.personnelInvolved.length - 1 && (
+                                <button type="button" onClick={() => addField('personnelInvolved')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
+                              )}
+                              {formData.personnelInvolved.length > 1 && (
+                                <button type="button" onClick={() => removeField('personnelInvolved', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 4: Narration of Events I */}
+                  {currentStep === 3 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                          <label>Event Name:</label>
+                          <input type="text" value={formData.eventName} onChange={e => handleInputChange(e, 'eventName')} placeholder="Event Name" />
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '3 / span 2'}}>
+                          <label>Location:</label>
+                          <input type="text" value={formData.eventLocation} onChange={e => handleInputChange(e, 'eventLocation')} placeholder="Location" />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
+                          <label>Date:</label>
+                          <input type="date" value={formData.eventDate} onChange={e => handleInputChange(e, 'eventDate')} />
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '2 / span 1'}}>
+                          <label>Start Time:</label>
+                          <input type="time" value={formData.startTime} onChange={e => handleInputChange(e, 'startTime')} />
+                        </div>
+                        <div className="report-form-group" style={{gridColumn: '3 / span 1'}}>
+                          <label>End Time:</label>
+                          <input type="time" value={formData.endTime} onChange={e => handleInputChange(e, 'endTime')} />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Organizers:</label>
+                          {formData.organizers.map((org, index) => (
+                            <div key={index} style={{
+                              display: 'flex', 
+                              gap: '0.5rem', 
+                              alignItems: 'center', 
+                              marginBottom: 8,
+                              width: '100%',
+                              minWidth: 0
+                            }}>
+                              <input type="text" value={org} onChange={e => handleInputChange(e, 'organizers', index)} placeholder={`Organizer ${index + 1}`} style={{flex: 1, minWidth: 0}} />
+                              {index === formData.organizers.length - 1 && (
+                                <button type="button" onClick={() => addField('organizers')} style={{
+                                  background: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>+</button>
+                              )}
+                              {formData.organizers.length > 1 && (
+                                <button type="button" onClick={() => removeField('organizers', index)} style={{
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '32px',
+                                  height: '32px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+                                  transition: 'all 0.2s',
+                                  flexShrink: 0
+                                }}>×</button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  {/* Step 5: Narration of Events II */}
+                  {currentStep === 4 && (
+                    <>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Event Overview:</label>
+                          <textarea 
+                            value={formData.eventOverview} 
+                            onChange={e => handleInputChange(e, 'eventOverview')} 
+                            onFocus={() => handleFieldFocus('eventOverview')}
+                            onBlur={() => handleFieldBlur('eventOverview')}
+                            placeholder="Provide an overview of the event" 
+                            style={{
+                              minHeight: '120px',
+                              borderColor: shouldShowValidationError('eventOverview', null, formData.eventOverview) ? '#ef4444' : '#e2e8f0'
+                            }} 
+                          />
+                        </div>
+                        </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Training Agenda:</label>
+                          <textarea 
+                            value={formData.trainingAgenda} 
+                            onChange={e => handleInputChange(e, 'trainingAgenda')} 
+                            onFocus={() => handleFieldFocus('trainingAgenda')}
+                            onBlur={() => handleFieldBlur('trainingAgenda')}
+                            placeholder="Outline of the training agenda" 
+                            style={{
+                              minHeight: '120px',
+                              borderColor: shouldShowValidationError('trainingAgenda', null, formData.trainingAgenda) ? '#ef4444' : '#e2e8f0'
+                            }} 
+                          />
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Participants:</label>
+                          {formData.participants.map((part, index) => (
                             <div key={index} style={{
                               display: 'flex', 
                               gap: '0.5rem', 
@@ -832,13 +1415,29 @@ function Reports() {
                             }}>
                               <input 
                                 type="text" 
-                                value={position} 
-                                onChange={e => handleInputChange(e, 'forPosition', index)} 
-                                placeholder={`Position ${index + 1}`} 
-                                style={{flex: 1, minWidth: 0}} 
+                                value={part.name || ''} 
+                                onChange={e => handleInputChange(e, 'participants', index, 'name')} 
+                                onFocus={() => handleFieldFocus('participants', index)}
+                                onBlur={() => handleFieldBlur('participants', index)}
+                                placeholder={`Participant ${index + 1} Name`} 
+                                style={{
+                                  flex: 2, 
+                                  minWidth: 0,
+                                  borderColor: shouldShowValidationError('participants', index, part.name) ? '#ef4444' : '#e2e8f0'
+                                }} 
                               />
-                              {index === formData.forPosition.length - 1 && position.trim() && (
-                                <button type="button" onClick={() => addField('forPosition')} style={{
+                              <input 
+                                type="text" 
+                                value={part.position || ''} 
+                                onChange={e => handleInputChange(e, 'participants', index, 'position')} 
+                                placeholder={`Position (Optional)`} 
+                                style={{
+                                  flex: 1, 
+                                  minWidth: 0
+                                }} 
+                              />
+                              {index === formData.participants.length - 1 && (
+                                <button type="button" onClick={() => addField('participants')} style={{
                                   background: '#10b981',
                                   color: 'white',
                                   border: 'none',
@@ -856,93 +1455,8 @@ function Reports() {
                                   flexShrink: 0
                                 }}>+</button>
                               )}
-                              {formData.forPosition.length > 1 && (
-                                <button type="button" onClick={() => removeField('forPosition', index)} style={{
-                                  background: '#ef4444',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '32px',
-                                  height: '32px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
-                                  transition: 'all 0.2s',
-                                  flexShrink: 0
-                                }}>×</button>
-                              )}
-                        </div>
-                          ))}
-                      </div>
-                        <div className="report-form-group">
-                          <label>DATE: <span style={{color: '#ef4444'}}>*</span></label>
-                          <input 
-                            type="date" 
-                            value={formData.date} 
-                            onChange={e => handleInputChange(e, 'date')} 
-                            style={{
-                              borderColor: !formData.date ? '#ef4444' : '#e2e8f0'
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
-                          <label>SUBJECT: <span style={{color: '#ef4444'}}>*</span></label>
-                          <input 
-                            type="text" 
-                            value={formData.subject} 
-                            onChange={e => handleInputChange(e, 'subject')} 
-                            placeholder="Report Subject" 
-                            style={{
-                              borderColor: !formData.subject?.trim() ? '#ef4444' : '#e2e8f0'
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Step 2: Authority */}
-                  {currentStep === 1 && (
-                    <>
-                      <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
-                          <label>Authority:</label>
-                  {formData.authority.map((auth, index) => (
-                            <div key={index} style={{
-                              display: 'flex', 
-                              gap: '0.5rem', 
-                              alignItems: 'center', 
-                              marginBottom: 8,
-                              width: '100%',
-                              minWidth: 0
-                            }}>
-                              <input type="text" value={auth} onChange={e => handleInputChange(e, 'authority', index)} placeholder={`Authority ${index + 1}`} style={{flex: 1, minWidth: 0}} />
-                              {index === formData.authority.length - 1 && auth.trim() && (
-                                <button type="button" onClick={() => addField('authority')} style={{
-                                  background: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '32px',
-                                  height: '32px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  cursor: 'pointer',
-                                  fontSize: '16px',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                                  transition: 'all 0.2s',
-                                  flexShrink: 0
-                                }}>+</button>
-                              )}
-                              {formData.authority.length > 1 && (
-                                <button type="button" onClick={() => removeField('authority', index)} style={{
+                              {formData.participants.length > 1 && (
+                                <button type="button" onClick={() => removeField('participants', index)} style={{
                                   background: '#ef4444',
                                   color: 'white',
                                   border: 'none',
@@ -963,37 +1477,11 @@ function Reports() {
                             </div>
                           ))}
                         </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Step 3: Date, Time, and Place of Activity */}
-                  {currentStep === 2 && (
-                    <>
-                      <div className="report-form-row">
-                        <div className="report-form-group">
-                          <label>Date and Time:</label>
-                          <input type="datetime-local" value={formData.dateTime} onChange={e => handleInputChange(e, 'dateTime')} />
-                        </div>
-                        <div className="report-form-group">
-                          <label>Type of Activity:</label>
-                          <input type="text" value={formData.activityType} onChange={e => handleInputChange(e, 'activityType')} placeholder="Activity Type" />
-                        </div>
-                      </div>
+                      </div>                      
                       <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
-                          <label>Areas/Location:</label>
-                          <input type="text" value={formData.location} onChange={e => handleInputChange(e, 'location')} placeholder="Location" />
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Step 4: Personnel Involved */}
-                  {currentStep === 3 && (
-                    <>
-                      <div className="report-form-row">
-                        <div className="report-form-group">
-                          <label>Auxiliary Personnel:</label>
-                          {formData.auxiliaryPersonnel.map((person, index) => (
+                          <label>Key Outcomes:</label>
+                          {formData.keyOutcomes.map((ko, index) => (
                             <div key={index} style={{
                               display: 'flex', 
                               gap: '0.5rem', 
@@ -1002,28 +1490,10 @@ function Reports() {
                               width: '100%',
                               minWidth: 0
                             }}>
-                              <input type="text" value={person} onChange={e => handleInputChange(e, 'auxiliaryPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1, minWidth: 0}} />
-                              {index === formData.auxiliaryPersonnel.length - 1 && person.trim() && (
-                                <button type="button" onClick={() => addField('auxiliaryPersonnel')} style={{
-                                  background: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '32px',
-                                  height: '32px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  cursor: 'pointer',
-                                  fontSize: '16px',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                                  transition: 'all 0.2s',
-                                  flexShrink: 0
-                                }}>+</button>
-                              )}
-                              {formData.auxiliaryPersonnel.length > 1 && (
-                                <button type="button" onClick={() => removeField('auxiliaryPersonnel', index)} style={{
+                              <textarea value={ko} onChange={e => handleInputChange(e, 'keyOutcomes', index)} placeholder={`Outcome ${index + 1}`} style={{flex: 1, minWidth: 0, minHeight: '120px'}} />
+
+                              {formData.keyOutcomes.length > 1 && (
+                                <button type="button" onClick={() => removeField('keyOutcomes', index)} style={{
                                   background: '#ef4444',
                                   color: 'white',
                                   border: 'none',
@@ -1041,12 +1511,12 @@ function Reports() {
                                   flexShrink: 0
                                 }}>×</button>
                               )}
-                            </div>
+                        </div>
                           ))}
                         </div>
-                        <div className="report-form-group">
-                          <label>PCG Personnel:</label>
-                          {formData.pcgPersonnel.map((person, index) => (
+                        <div className="report-form-group" style={{gridColumn: '3 / span 2'}}>
+                          <label>Challenges:</label>
+                          {formData.challenges.map((challenge, index) => (
                             <div key={index} style={{
                               display: 'flex', 
                               gap: '0.5rem', 
@@ -1055,28 +1525,10 @@ function Reports() {
                               width: '100%',
                               minWidth: 0
                             }}>
-                              <input type="text" value={person} onChange={e => handleInputChange(e, 'pcgPersonnel', index)} placeholder={`Personnel ${index + 1}`} style={{flex: 1, minWidth: 0}} />
-                              {index === formData.pcgPersonnel.length - 1 && person.trim() && (
-                                <button type="button" onClick={() => addField('pcgPersonnel')} style={{
-                                  background: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '32px',
-                                  height: '32px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  cursor: 'pointer',
-                                  fontSize: '16px',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                                  transition: 'all 0.2s',
-                                  flexShrink: 0
-                                }}>+</button>
-                              )}
-                              {formData.pcgPersonnel.length > 1 && (
-                                <button type="button" onClick={() => removeField('pcgPersonnel', index)} style={{
+                              <textarea value={challenge} onChange={e => handleInputChange(e, 'challenges', index)} placeholder={`Challenge ${index + 1}`} style={{flex: 1, minWidth: 0, minHeight: '120px'}} />
+
+                              {formData.challenges.length > 1 && (
+                                <button type="button" onClick={() => removeField('challenges', index)} style={{
                                   background: '#ef4444',
                                   color: 'white',
                                   border: 'none',
@@ -1094,74 +1546,12 @@ function Reports() {
                                   flexShrink: 0
                                 }}>×</button>
                               )}
-                    </div>
-                  ))}
                         </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Step 5: Narration of Events */}
-                  {currentStep === 4 && (
-                    <>
-                      <div className="report-form-row">
-                        <div className="report-form-group">
-                          <label>Objective:</label>
-                          <textarea value={formData.objective} onChange={e => handleInputChange(e, 'objective')} placeholder="State the objective" />
-                        </div>
-                        <div className="report-form-group">
-                          <label>Summary:</label>
-                          <textarea value={formData.summary} onChange={e => handleInputChange(e, 'summary')} placeholder="Provide a summary" />
-                        </div>
-              </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group activities-panel" style={{gridColumn: '1 / span 2'}}>
-                          <label>Activities:</label>
-                          {formData.activities.map((activity, index) => (
-                            <div key={index} className="activity-row">
-                              <input
-                                type="text"
-                                value={activity.title}
-                                onChange={e => handleInputChange(e, 'activities', index, 'title')}
-                                placeholder="Activity Title"
-                              />
-                              <textarea
-                                value={activity.description}
-                                onChange={e => handleInputChange(e, 'activities', index, 'description')}
-                                placeholder="Activity Description"
-                              />
-                              {formData.activities.length > 1 && (
-                <button
-                                  type="button"
-                                  className="activity-remove-btn"
-                                  onClick={() => removeField('activities', index)}
-                                >
-                                  Remove
-                </button>
-                              )}
-                            </div>
                           ))}
-                    <button
-                            type="button"
-                            className="add-activity-btn"
-                            onClick={() => addField('activities')}
-                          >
-                            Add Activity
-                    </button>
                         </div>
-                      </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
-                          <label>Conclusion:</label>
-                          <textarea value={formData.conclusion} onChange={e => handleInputChange(e, 'conclusion')} placeholder="State the conclusion" />
                         </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Step 6: Recommendations */}
-                  {currentStep === 5 && (
-                    <>
                       <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
                           <label>Recommendations:</label>
                           {formData.recommendations.map((rec, index) => (
                             <div key={index} style={{
@@ -1172,27 +1562,8 @@ function Reports() {
                               width: '100%',
                               minWidth: 0
                             }}>
-                              <textarea value={rec} onChange={e => handleInputChange(e, 'recommendations', index)} placeholder={`Recommendation ${index + 1}`} style={{flex: 1, minWidth: 0, minHeight: '60px'}} />
-                              {index === formData.recommendations.length - 1 && rec.trim() && (
-                                <button type="button" onClick={() => addField('recommendations')} style={{
-                                  background: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '32px',
-                                  height: '32px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  cursor: 'pointer',
-                                  fontSize: '16px',
-                                  fontWeight: 'bold',
-                                  boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
-                                  transition: 'all 0.2s',
-                                  flexShrink: 0,
-                                  marginTop: '8px'
-                                }}>+</button>
-                              )}
+                              <textarea value={rec} onChange={e => handleInputChange(e, 'recommendations', index)} placeholder={`Recommendation ${index + 1}`} style={{flex: 1, minWidth: 0, minHeight: '120px'}} />
+
                               {formData.recommendations.length > 1 && (
                                 <button type="button" onClick={() => removeField('recommendations', index)} style={{
                                   background: '#ef4444',
@@ -1217,14 +1588,31 @@ function Reports() {
                           ))}
                         </div>
                       </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>Conclusion:</label>
+                          <textarea 
+                            value={formData.conclusion} 
+                            onChange={e => handleInputChange(e, 'conclusion')} 
+                            onFocus={() => handleFieldFocus('conclusion')}
+                            onBlur={() => handleFieldBlur('conclusion')}
+                            placeholder="State the conclusion" 
+                            style={{
+                              minHeight: '120px',
+                              borderColor: shouldShowValidationError('conclusion', null, formData.conclusion) ? '#ef4444' : '#e2e8f0'
+                            }} 
+                          />
+                        </div>
+                      </div>
                     </>
                   )}
-                  {/* Step 7: Attachments */}
-                  {currentStep === 6 && (
+
+                  {/* Step 6: Attachments */}
+                  {currentStep === 5 && (
                     <>
                       <div className="report-form-row">
-                        <div className="report-form-group" style={{ gridColumn: '1 / span 2' }}>
-                          <label>Attachments:</label>
+                        <div className="report-form-group" style={{ gridColumn: '1 / span 4' }}>
+                          <label>Attach photos of the event</label>
                           <div className="photo-upload-section">
                             <label className="photo-upload-label">
                               <FontAwesomeIcon icon={faUpload} /> Upload Photos
@@ -1243,7 +1631,6 @@ function Reports() {
                             <div style={{marginTop: '10px', fontSize: '12px', color: '#666'}}>
                               Selected: {formData.photos.length} photo(s)
                               {formData.photos.length > 0 && (
-                                <>
                                   <button 
                                     type="button" 
                                     onClick={() => setFormData(prev => ({ ...prev, photos: [] }))}
@@ -1260,29 +1647,6 @@ function Reports() {
                                   >
                                     Clear All
                                   </button>
-                                  <div style={{marginTop: '5px'}}>
-                                    {formData.photos.map((photo, index) => (
-                                      <div key={index} style={{fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px'}}>
-                                        <span>• {photo.name} ({(photo.size / 1024).toFixed(1)} KB)</span>
-                                        <button 
-                                          type="button" 
-                                          onClick={() => removeField('photos', index)}
-                                          style={{
-                                            padding: '1px 4px',
-                                            fontSize: '8px',
-                                            backgroundColor: '#dc3545',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '2px',
-                                            cursor: 'pointer'
-                                          }}
-                                        >
-                                          Remove
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </>
                               )}
                             </div>
                             <div className="photo-preview">
@@ -1296,6 +1660,117 @@ function Reports() {
                           </div>
                     </div>
                   </div>
+                    </>
+                  )}
+                  {/* Step 7: Signatories */}
+                  {currentStep === 6 && (
+                    <>
+                      <div className="report-form-row" style={{display: 'flex', gap: '1rem'}}>
+                        <div className="report-form-group" style={{flex: 3, minWidth: 0}}>
+                          <label>PREPARED BY:</label>
+                          <div style={{
+                            display: 'flex', 
+                            gap: '0.5rem', 
+                            alignItems: 'center', 
+                            width: '100%',
+                            minWidth: 0
+                          }}>
+                          <input 
+                            type="text" 
+                            value={formData.preparedBy} 
+                            onChange={e => handleInputChange(e, 'preparedBy')} 
+                              onFocus={() => handleFieldFocus('preparedBy')}
+                              onBlur={() => handleFieldBlur('preparedBy')}
+                            placeholder="Name of person who prepared the report" 
+                            style={{
+                                flex: 2,
+                                minWidth: 0,
+                                borderColor: shouldShowValidationError('preparedBy', null, formData.preparedBy) ? '#ef4444' : '#e2e8f0'
+                              }}
+                            />
+                            <input 
+                              type="text" 
+                              value={formData.preparedByPosition} 
+                              onChange={e => handleInputChange(e, 'preparedByPosition')} 
+                              onFocus={() => handleFieldFocus('preparedByPosition')}
+                              onBlur={() => handleFieldBlur('preparedByPosition')}
+                              placeholder="Position" 
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                borderColor: shouldShowValidationError('preparedByPosition', null, formData.preparedByPosition) ? '#ef4444' : '#e2e8f0'
+                            }}
+                          />
+                        </div>
+                        </div>
+                        <div className="report-form-group" style={{flex: 1, minWidth: 0}}>
+                          <label>E-SIGNATURE:</label>
+                          <input 
+                            id="preparedBySignatureInput"
+                            type="file" 
+                            accept="image/*" 
+                            onChange={e => handleFileUpload(e, 'preparedBySignature')} 
+                            style={{ display: 'none' }} 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => document.getElementById('preparedBySignatureInput').click()}
+                            style={{
+                              background: formData.preparedBySignature ? 'linear-gradient(to right, #10b981, #3b82f6)' : '#e2e8f0',
+                              color: formData.preparedBySignature ? 'white' : '#666',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              border: 'none',
+                              width: '100%',
+                              textAlign: 'left',
+                              boxShadow: formData.preparedBySignature ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
+                            }}
+                          >
+                            {formData.preparedBySignature ? '✓' : 'Upload'}
+                            <FontAwesomeIcon icon={faUpload} style={{marginLeft: '4px'}} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="report-form-row">
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
+                          <label>APPROVED BY:</label>
+                          <div style={{
+                            display: 'flex', 
+                            gap: '0.5rem', 
+                            alignItems: 'center', 
+                            width: '100%',
+                            minWidth: 0
+                          }}>
+                          <input 
+                            type="text" 
+                            value={formData.approvedBy} 
+                            onChange={e => handleInputChange(e, 'approvedBy')} 
+                              onFocus={() => handleFieldFocus('approvedBy')}
+                              onBlur={() => handleFieldBlur('approvedBy')}
+                            placeholder="Name of person who approved the report" 
+                            style={{
+                                flex: 1,
+                                minWidth: 0,
+                                borderColor: shouldShowValidationError('approvedBy', null, formData.approvedBy) ? '#ef4444' : '#e2e8f0'
+                              }}
+                            />
+                            <input 
+                              type="text" 
+                              value={formData.approvedByPosition} 
+                              onChange={e => handleInputChange(e, 'approvedByPosition')} 
+                              onFocus={() => handleFieldFocus('approvedByPosition')}
+                              onBlur={() => handleFieldBlur('approvedByPosition')}
+                              placeholder="Position" 
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                borderColor: shouldShowValidationError('approvedByPosition', null, formData.approvedByPosition) ? '#ef4444' : '#e2e8f0'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </>
                   )}
                   <div className="report-modal-actions" style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, gap: 8 }}>
@@ -1332,6 +1807,299 @@ function Reports() {
                     </div>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Report Details Modal */}
+        {selectedReportDetails && (
+          <div className="modal-overlay">
+            <div className="modal-content report-modal-card">
+              <div className="report-modal-header">
+                <h2>Report Details</h2>
+                <button className="modal-close" onClick={closeReportDetails}>
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+              </div>
+              <div className="report-modal-body">
+                <div className="report-details">
+                  {selectedReportDetails.data && (
+                    <>
+                      {/* Report Header */}
+                      <div className="detail-section">
+                        <h3>Report Header</h3>
+                        <div className="detail-row">
+                          <strong>Institution Name:</strong> {selectedReportDetails.data.institutionName}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Address:</strong> {selectedReportDetails.data.address}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Associate Name:</strong> {selectedReportDetails.data.associateName}
+                        </div>
+                        {selectedReportDetails.data.associateLogo && (
+                          <div className="detail-row">
+                            <strong>Associate's Logo:</strong> 
+                            <img 
+                              src={`${process.env.REACT_APP_API_URL}/storage/${selectedReportDetails.data.associateLogo}`} 
+                              alt="Associate Logo" 
+                              className="detail-image"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Heading */}
+                      <div className="detail-section">
+                        <h3>Heading</h3>
+                        <div className="detail-row">
+                          <strong>Recipient:</strong> {selectedReportDetails.data.forName} - {selectedReportDetails.data.forPosition}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Date Created:</strong> {selectedReportDetails.data.date ? formatDate(selectedReportDetails.data.date) : 'N/A'}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Report Subject:</strong> {selectedReportDetails.data.subject}
+                        </div>
+                      </div>
+
+                      {/* Event Details */}
+                      <div className="detail-section">
+                        <h3>Event Details</h3>
+                        <div className="detail-row">
+                          <strong>Date and Time:</strong> {formatDateTime(selectedReportDetails.data.dateTime)}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Place:</strong> {selectedReportDetails.data.place}
+                        </div>
+                        {selectedReportDetails.data.authorities && selectedReportDetails.data.authorities.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Authorities:</strong>
+                            <ul className="detail-list">
+                              {selectedReportDetails.data.authorities.map((authority, index) => (
+                                <li key={index}>{authority}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.personnel && selectedReportDetails.data.personnel.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Personnel Involved:</strong>
+                            <ul className="detail-list">
+                              {selectedReportDetails.data.personnel.map((person, index) => (
+                                <li key={index}>{person}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Narration of Events */}
+                      <div className="detail-section">
+                        <h3>Narration of Events</h3>
+                        <div className="detail-row">
+                          <strong>Event Name:</strong> {selectedReportDetails.data.eventName}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Location:</strong> {selectedReportDetails.data.location}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Date and Time:</strong> {selectedReportDetails.data.eventDate ? formatDate(selectedReportDetails.data.eventDate) : 'N/A'} - {selectedReportDetails.data.startTime} to {selectedReportDetails.data.endTime}
+                        </div>
+                        {selectedReportDetails.data.organizers && selectedReportDetails.data.organizers.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Organizers:</strong>
+                            <ul className="detail-list">
+                              {selectedReportDetails.data.organizers.map((organizer, index) => (
+                                <li key={index}>{organizer}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.eventOverview && (
+                          <div className="detail-row">
+                            <strong>Event Overview:</strong>
+                            <div className="detail-textarea">{selectedReportDetails.data.eventOverview}</div>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.trainingAgenda && (
+                          <div className="detail-row">
+                            <strong>Agenda/Objectives:</strong>
+                            <div className="detail-textarea">{selectedReportDetails.data.trainingAgenda}</div>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.participants && selectedReportDetails.data.participants.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Participants:</strong>
+                            <ul className="detail-list">
+                              {selectedReportDetails.data.participants.map((participant, index) => (
+                                <li key={index}>
+                                  {participant.name}
+                                  {participant.position && ` - ${participant.position}`}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.keyOutcomes && (
+                          <div className="detail-row">
+                            <strong>Key outcomes:</strong>
+                            <div className="detail-textarea">{selectedReportDetails.data.keyOutcomes}</div>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.challenges && (
+                          <div className="detail-row">
+                            <strong>Challenges:</strong>
+                            <div className="detail-textarea">{selectedReportDetails.data.challenges}</div>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.recommendations && (
+                          <div className="detail-row">
+                            <strong>Recommendations:</strong>
+                            <div className="detail-textarea">{selectedReportDetails.data.recommendations}</div>
+                          </div>
+                        )}
+                        {selectedReportDetails.data.conclusion && (
+                          <div className="detail-row">
+                            <strong>Conclusion:</strong>
+                            <div className="detail-textarea">{selectedReportDetails.data.conclusion}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Attachments */}
+                      {(() => {
+                        const photos = selectedReportDetails.data?.photos || [];
+                        const photoUrls = selectedReportDetails.photo_urls || [];
+                        const hasPhotos = photos.length > 0 || photoUrls.length > 0;
+                        
+                        console.log('Photos from data:', photos);
+                        console.log('Photo URLs:', photoUrls);
+                        console.log('Has photos:', hasPhotos);
+                        
+                        return hasPhotos && (
+                          <div className="detail-section">
+                            <h3>Attachments</h3>
+                            <div className="detail-row">
+                              <strong>Uploaded event photos:</strong>
+                              <div className="detail-images">
+                                {(photos.length > 0 ? photos : photoUrls).map((attachment, index) => {
+                                  const imageSrc = photoUrls.length > 0 ? 
+                                    attachment : // photo_urls already contain full URLs
+                                    `${process.env.REACT_APP_API_URL}/storage/${attachment}`; // photos contain paths
+                                  
+                                  console.log(`Image ${index + 1} src:`, imageSrc);
+                                  
+                                  return (
+                                    <img 
+                                      key={index}
+                                      src={imageSrc}
+                                      alt={`Attachment ${index + 1}`} 
+                                      className="detail-image"
+                                      onError={(e) => {
+                                        console.error('Image failed to load:', imageSrc);
+                                        e.target.style.display = 'none';
+                                      }}
+                                      onLoad={() => {
+                                        console.log('Image loaded successfully:', imageSrc);
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Signatories */}
+                      <div className="detail-section">
+                        <h3>Signatories</h3>
+                        <div className="detail-row signatories-row">
+                                                      <div className="signatory-column">
+                              {selectedReportDetails.data.preparedBySignature && (
+                                <div className="signature-image">
+                                  <img 
+                                    src={`${process.env.REACT_APP_API_URL}/storage/${selectedReportDetails.data.preparedBySignature}`} 
+                                    alt="Prepared By Signature" 
+                                    className="detail-image"
+                                  />
+                                </div>
+                              )}
+                              <div className="signatory-info">
+                                <div className="signatory-name">{selectedReportDetails.data.preparedBy}</div>
+                                <div className="signatory-position">{selectedReportDetails.data.preparedByPosition}</div>
+                              </div>
+                            </div>
+                            <div className="signatory-column">
+                              <div className="signatory-info">
+                                <div className="signatory-name">{selectedReportDetails.data.approvedBy}</div>
+                                <div className="signatory-position">{selectedReportDetails.data.approvedByPosition}</div>
+                              </div>
+                            </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer Section - Outside modal body */}
+              <div className="report-footer">
+                <div className="footer-info">
+                  <div className="footer-status">
+                    <strong>Status:</strong> 
+                    <span className={`status-badge ${selectedReportDetails.status}`}>
+                      {selectedReportDetails.status === 'sent' ? 'PENDING APPROVAL' : 
+                       selectedReportDetails.status === 'approved' ? 'APPROVED' :
+                       selectedReportDetails.status === 'rejected' ? 'REJECTED' :
+                       selectedReportDetails.status?.toUpperCase() || 'DRAFT'}
+                    </span>
+                  </div>
+                  <div className="footer-dates">
+                    <span className="footer-date">
+                      <strong>Created:</strong> {formatDate(selectedReportDetails.created_at)}
+                    </span>
+                    {selectedReportDetails.updated_at && (
+                      <span className="footer-date">
+                        <strong>Updated:</strong> {formatDate(selectedReportDetails.updated_at)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="footer-actions">
+                  <button
+                    className="action-btn edit-btn"
+                    onClick={() => {
+                      closeReportDetails();
+                      handleEdit(selectedReportDetails);
+                    }}
+                    title="Edit"
+                  >
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button
+                    className="action-btn delete-btn"
+                    onClick={() => {
+                      closeReportDetails();
+                      handleDelete(selectedReportDetails.id);
+                    }}
+                    title="Delete"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                  <button
+                    className="action-btn send-btn"
+                    onClick={() => {
+                      closeReportDetails();
+                      handleSubmit(true, selectedReportDetails);
+                    }}
+                    title="Send"
+                  >
+                    <FontAwesomeIcon icon={faPaperPlane} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

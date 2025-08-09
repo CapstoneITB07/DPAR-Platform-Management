@@ -62,8 +62,23 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
 
   const updateRecipient = (index, field, value) => {
     const updatedRecipients = [...recipients];
+    
+    // If updating control number, extract only numbers
+    if (field === 'controlNumber') {
+      value = value.replace(/[^0-9]/g, '');
+    }
+    
     updatedRecipients[index] = { ...updatedRecipients[index], [field]: value };
     setRecipients(updatedRecipients);
+  };
+
+  const handleControlNumberChange = (e) => {
+    const { name, value } = e.target;
+    // Extract only numbers from control number input
+    const numbersOnly = value.replace(/[^0-9]/g, '');
+    const updated = { ...localData, [name]: numbersOnly };
+    setLocalData(updated);
+    onCertificateDataChange(updated);
   };
 
   const parseBulkInput = () => {
@@ -71,11 +86,15 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     const parsedRecipients = lines.map(line => {
       const parts = line.split('\t');
       if (parts.length >= 2) {
-        return { name: parts[0].trim(), controlNumber: parts[1].trim() };
+        // Extract only numbers from control number
+        const controlNumber = parts[1].trim().replace(/[^0-9]/g, '');
+        return { name: parts[0].trim(), controlNumber: controlNumber };
       } else {
         const commaParts = line.split(',');
         if (commaParts.length >= 2) {
-          return { name: commaParts[0].trim(), controlNumber: commaParts[1].trim() };
+          // Extract only numbers from control number, ignoring any letters after comma
+          const controlNumber = commaParts[1].trim().replace(/[^0-9]/g, '');
+          return { name: commaParts[0].trim(), controlNumber: controlNumber };
         }
       }
       return { name: line.trim(), controlNumber: '' };
@@ -163,6 +182,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
           `${backendBaseUrl}/api/certificates`,
           {
             name: localData.name,
+            controlNumber: localData.controlNumber || 'N/A',
             date: localData.date,
             signatories: localData.signatories || [{ name: '', title: '' }],
             message: localData.message,
@@ -241,6 +261,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
 
               <form className="certificate-form">
                 {!isBulkMode ? (
+                  <>
                   <div className="certificate-form-group">
                     <label htmlFor="name">Recipient Name:</label>
                     <input
@@ -252,17 +273,30 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                       onChange={handleChange}
                     />
                   </div>
+                  <div className="certificate-form-group">
+                    <label htmlFor="controlNumber">Control Number:</label>
+                    <input
+                      type="text"
+                      id="controlNumber"
+                      name="controlNumber"
+                      placeholder="Enter numbers only (e.g., 123 → CN-00123)"
+                      value={localData.controlNumber || ''}
+                      onChange={handleControlNumberChange}
+                    />
+                  </div>
+                </>
                 ) : (
                   <div className="bulk-section">
                     <div className="bulk-input-section">
                       <h3>Bulk Input</h3>
                       <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '10px' }}>
-                        Paste names and control numbers from Excel (tab-separated or comma-separated):
+                        Paste names and control numbers from Excel (tab-separated or comma-separated).
+                        Numbers only needed for CN (e.g., 123 → CN-00123):
                       </p>
                       <textarea
                         value={bulkInput}
                         onChange={(e) => setBulkInput(e.target.value)}
-                        placeholder="John Doe&#9;CN001&#10;Jane Smith&#9;CN002&#10;Mike Johnson&#9;CN003"
+                        placeholder="John Doe&#9;123&#10;Jane Smith&#9;456&#10;Mike Johnson&#9;789abc"
                         style={{
                           width: '100%',
                           height: '120px',
@@ -311,7 +345,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                                 />
                                 <input
                                   type="text"
-                                  placeholder="Enter control number"
+                                  placeholder="Numbers only (e.g., 123)"
                                   value={recipient.controlNumber}
                                   onChange={(e) => updateRecipient(index, 'controlNumber', e.target.value)}
                                   className="recipient-cn-input"

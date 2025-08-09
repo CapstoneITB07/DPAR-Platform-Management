@@ -250,6 +250,7 @@
   <script>
     // Function to adjust font size based on text length
     function adjustFontSize() {
+      // Adjust name font size
       const nameElement = document.querySelector('.cert-name');
       if (nameElement) {
         const text = nameElement.textContent || nameElement.innerText;
@@ -274,6 +275,64 @@
           nameElement.style.fontSize = fontSize + 'rem';
         }
       }
+
+      // Adjust message body font size based on line count
+      const messageElement = document.querySelector('.cert-body');
+      if (messageElement) {
+        // Reset to base size first
+        messageElement.style.fontSize = '1.08rem';
+        messageElement.style.lineHeight = '1.5';
+        
+        // Force a layout update
+        messageElement.offsetHeight;
+        
+        // Calculate approximate line count based on text length and container width
+        const text = messageElement.textContent || messageElement.innerText;
+        const textLength = text.length;
+        
+        // Estimate characters per line (approximately 90-100 chars per line at base font size)
+        const baseCharsPerLine = 95;
+        const estimatedLines = Math.ceil(textLength / baseCharsPerLine);
+        
+        // If estimated lines exceed 3, reduce font size
+        if (estimatedLines > 3) {
+          let fontSize = 1.08; // Base font size in rem
+          let lineHeight = 1.5; // Base line height
+          
+          if (estimatedLines > 6) {
+            fontSize = 0.85; // Very long messages
+            lineHeight = 1.3;
+          } else if (estimatedLines > 5) {
+            fontSize = 0.9; // Long messages
+            lineHeight = 1.35;
+          } else if (estimatedLines > 4) {
+            fontSize = 0.95; // Medium long messages
+            lineHeight = 1.4;
+          } else if (estimatedLines > 3) {
+            fontSize = 1.0; // Slightly long messages
+            lineHeight = 1.45;
+          }
+          
+          messageElement.style.fontSize = fontSize + 'rem';
+          messageElement.style.lineHeight = lineHeight;
+        }
+        
+        // Secondary check: Measure actual height and adjust if needed
+        setTimeout(() => {
+          const containerHeight = messageElement.offsetHeight;
+          const lineHeightPx = parseFloat(getComputedStyle(messageElement).lineHeight);
+          const actualLines = Math.round(containerHeight / lineHeightPx);
+          
+          if (actualLines > 3) {
+            const currentFontSize = parseFloat(getComputedStyle(messageElement).fontSize);
+            const reductionFactor = 3 / actualLines;
+            const newFontSize = Math.max(0.8, currentFontSize * reductionFactor);
+            
+            messageElement.style.fontSize = newFontSize + 'px';
+            messageElement.style.lineHeight = Math.max(1.2, 1.5 * reductionFactor);
+          }
+        }, 50);
+      }
     }
     
     // Run on page load
@@ -281,6 +340,9 @@
     
     // Also run when DOM is ready
     document.addEventListener('DOMContentLoaded', adjustFontSize);
+    
+    // Run again after a short delay to ensure proper rendering
+    setTimeout(adjustFontSize, 100);
   </script>
 </head>
 <body>

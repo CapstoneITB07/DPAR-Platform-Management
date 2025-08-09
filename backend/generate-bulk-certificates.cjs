@@ -110,6 +110,12 @@ async function generateBulkCertificates(data) {
         html = html.replace(/src="[^"]*disaster_logo\.png[^"]*"/g, `src="${logoDataUrl}"`);
       }
 
+      // Extract only the body content to avoid duplicate head sections and conflicting JavaScript
+      const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+      if (bodyMatch) {
+        html = bodyMatch[1]; // Get content between <body> tags
+      }
+
       // Add page break between certificates (except for the last one)
       if (i < data.recipients.length - 1) {
         html += '<div style="page-break-after: always;"></div>';
@@ -125,14 +131,232 @@ async function generateBulkCertificates(data) {
       <head>
         <meta charset="UTF-8">
         <title>Bulk Certificates</title>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
         <style>
           @page {
             size: A4 landscape;
             margin: 0;
           }
           body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: #fff;
             margin: 0;
             padding: 0;
+          }
+          .certificate-container {
+            width: 1123px;   /* A4 landscape */
+            height: 794px;   /* A4 landscape */
+            margin: 0 auto;
+            box-sizing: border-box;
+            position: relative;
+            background-image:
+            url('data:image/svg+xml;utf8,<svg width="1123" height="794" xmlns="http://www.w3.org/2000/svg"><g transform="translate(823,494)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(0,494)"><g transform="rotate(90,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></g><g transform="rotate(180,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(823,0) rotate(270,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></svg>');
+            background-size: cover, cover;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .certificate-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            right: 18px;
+            bottom: 18px;
+            width: auto;
+            height: auto;
+            background: rgba(255,255,255,0.78);
+            border-radius: 25px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+            z-index: 2;
+            padding: 0;
+            max-width: 1000px;
+            min-height: 540px;
+            margin: auto;
+          }
+          .main-logo {
+            position: static;
+            display: block;
+            margin: 0 auto 8px auto;
+            width: 120px;
+            height: auto;
+            z-index: 5;
+          }
+          .main-content {
+            width: 100%;
+            max-width: none;
+            text-align: center;
+            margin: 0;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 0;
+          }
+          .cert-title {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #2d3142;
+            margin-bottom: 0.2rem;
+            padding-top: 0px;
+            margin-top: 0.3rem;
+          }
+          .cert-subtitle {
+            text-align: center;
+            font-size: 1.3rem;
+            color: #bfa22a;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 0.7rem;
+            text-transform: uppercase;
+          }
+          .cert-presentation {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #444;
+            font-weight: 400;
+            margin-bottom: 1.2rem;
+            margin-top: 0.2rem;
+          }
+          .cert-name {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #222;
+            font-family: 'Playfair Display', serif;
+            margin-top: 0.8rem;
+            transition: font-size 0.3s ease;
+            word-wrap: break-word;
+            max-width: 90%;
+            line-height: 1.2;
+          }
+          .cert-control-number {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            font-family: 'Montserrat', Arial, sans-serif;
+          }
+          .cert-divider {
+            border: none;
+            border-top: 1px solid #000;
+            margin: 0.5rem auto 1.2rem auto;
+            width: 60%;
+          }
+          .cert-body {
+            text-align: center;
+            font-size: 1.08rem;
+            color: #444;
+            margin: 0 auto 2.2rem auto;
+            max-width: 80%;
+            line-height: 1.5;
+            margin-top: 1.2rem;
+          }
+          .cert-footer {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 1.5rem;
+            padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .signatures-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+            width: 100%;
+            gap: 2rem;
+          }
+          .signature-item {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #222;
+            font-weight: 500;
+            flex: 1 1 180px;
+            max-width: 200px;
+          }
+          .signature-item .name {
+            font-weight: bold;
+          }
+          .signature-item hr {
+            margin-bottom: 0.3rem;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+          }
+          .cert-title-small {
+            text-align: center;
+            font-size: 1rem;
+            color: #222;
+            font-weight: 400;
+            margin-top: 0.5rem;
+          }
+          .signatures-1 { justify-content: center; }
+          .signatures-2 { justify-content: space-between; }
+          .signatures-3 { justify-content: space-between; }
+          .signatures-4 { 
+            position: relative;
+            justify-content: space-between;
+            align-items: flex-end;
+          }
+          .signatures-5 { 
+            position: relative;
+            justify-content: space-between;
+            align-items: flex-end;
+          }
+          .signatures-4 .signature-item:nth-child(4) {
+            position: static;
+            top: auto;
+            left: auto;
+            right: auto;
+            margin-top: 0;
+            width: auto;
+          }
+          .signatures-5 .signature-item:nth-child(4) {
+            position: static;
+            top: auto;
+            left: auto;
+            right: auto;
+            margin-top: 0;
+            width: auto;
+          }
+          .signatures-5 .signature-item:nth-child(5) {
+            position: static;
+            top: auto;
+            left: auto;
+            right: auto;
+            margin-top: 0;
+            width: auto;
+          }
+          .content-box {
+            background: rgba(255,255,255,0.05);
+            border: 6px solid #2563b6;
+            border-radius: 20px;
+            padding: 36px 40px;
+            margin: 0;
+            max-width: 900px;
+            width: 80%;
+            min-height: 540px;
+            position: relative;
+            z-index: 4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
           }
           .certificate-page {
             width: 100%;
@@ -140,6 +364,103 @@ async function generateBulkCertificates(data) {
             position: relative;
           }
         </style>
+        <script>
+          // Function to adjust font size for all certificates in bulk generation
+          function adjustFontSizeForAll() {
+            // Adjust all name elements
+            const nameElements = document.querySelectorAll('.cert-name');
+            nameElements.forEach(nameElement => {
+              const text = nameElement.textContent || nameElement.innerText;
+              const charCount = text.length;
+              
+              // Reset to base size first
+              nameElement.style.fontSize = '2.2rem';
+              
+              // If text exceeds 15 characters, reduce font size
+              if (charCount > 15) {
+                let fontSize = 2.2; // Base font size in rem
+                
+                // Calculate reduction based on character count
+                if (charCount > 25) {
+                  fontSize = 1.4; // Very long names
+                } else if (charCount > 20) {
+                  fontSize = 1.6; // Long names
+                } else if (charCount > 15) {
+                  fontSize = 1.8; // Medium long names
+                }
+                
+                nameElement.style.fontSize = fontSize + 'rem';
+              }
+            });
+
+            // Adjust all message body elements
+            const messageElements = document.querySelectorAll('.cert-body');
+            messageElements.forEach(messageElement => {
+              // Reset to base size first
+              messageElement.style.fontSize = '1.08rem';
+              messageElement.style.lineHeight = '1.5';
+              
+              // Force a layout update
+              messageElement.offsetHeight;
+              
+              // Calculate approximate line count based on text length and container width
+              const text = messageElement.textContent || messageElement.innerText;
+              const textLength = text.length;
+              
+              // Estimate characters per line (approximately 90-100 chars per line at base font size)
+              const baseCharsPerLine = 95;
+              const estimatedLines = Math.ceil(textLength / baseCharsPerLine);
+              
+              // If estimated lines exceed 3, reduce font size
+              if (estimatedLines > 3) {
+                let fontSize = 1.08; // Base font size in rem
+                let lineHeight = 1.5; // Base line height
+                
+                if (estimatedLines > 6) {
+                  fontSize = 0.85; // Very long messages
+                  lineHeight = 1.3;
+                } else if (estimatedLines > 5) {
+                  fontSize = 0.9; // Long messages
+                  lineHeight = 1.35;
+                } else if (estimatedLines > 4) {
+                  fontSize = 0.95; // Medium long messages
+                  lineHeight = 1.4;
+                } else if (estimatedLines > 3) {
+                  fontSize = 1.0; // Slightly long messages
+                  lineHeight = 1.45;
+                }
+                
+                messageElement.style.fontSize = fontSize + 'rem';
+                messageElement.style.lineHeight = lineHeight;
+              }
+              
+              // Secondary check: Measure actual height and adjust if needed
+              setTimeout(() => {
+                const containerHeight = messageElement.offsetHeight;
+                const lineHeightPx = parseFloat(getComputedStyle(messageElement).lineHeight);
+                const actualLines = Math.round(containerHeight / lineHeightPx);
+                
+                if (actualLines > 3) {
+                  const currentFontSize = parseFloat(getComputedStyle(messageElement).fontSize);
+                  const reductionFactor = 3 / actualLines;
+                  const newFontSize = Math.max(0.8, currentFontSize * reductionFactor);
+                  
+                  messageElement.style.fontSize = newFontSize + 'px';
+                  messageElement.style.lineHeight = Math.max(1.2, 1.5 * reductionFactor);
+                }
+              }, 50);
+            });
+          }
+          
+          // Run on page load
+          window.addEventListener('load', adjustFontSizeForAll);
+          
+          // Also run when DOM is ready
+          document.addEventListener('DOMContentLoaded', adjustFontSizeForAll);
+          
+          // Run again after a short delay to ensure proper rendering
+          setTimeout(adjustFontSizeForAll, 100);
+        </script>
       </head>
       <body>
         ${allCertificatesHTML}

@@ -1614,11 +1614,12 @@ button[type="button"]:last-child:hover {
 
 .action-buttons-row {
   display: flex;
-  gap: 6px;
+  flex-direction: row;
+  gap: 6px; /* Reduced gap for consistency */
   align-items: center;
-  justify-content: center;
-  flex-wrap: nowrap;
-  width: 100%;
+  justify-content: flex-start; /* Keep flex-start to align buttons to the left */
+  width: auto; /* Add width auto for content fitting */
+  min-width: fit-content; /* Ensure it fits content properly */
 }
 
 .action-btn {
@@ -2299,9 +2300,11 @@ button.report-modal-draft-btn:hover {
 .action-buttons-row {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 6px; /* Reduced gap for consistency */
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-start; /* Keep flex-start to align buttons to the left */
+  width: auto; /* Add width auto for content fitting */
+  min-width: fit-content; /* Ensure it fits content properly */
 }
 
 .reports-table th:last-child {

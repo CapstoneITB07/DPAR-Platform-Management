@@ -6,24 +6,25 @@
     <title>After Operation Report</title>
     <style>
         @page {
-            margin: 1cm 1cm;
+            margin: 1cm 1.5cm;
             size: legal;
+            /* Legal paper size (8.5" x 14") */
         }
 
         body {
             font-family: Arial, sans-serif;
-            line-height: 1.2;
-            color: #2c3e50;
+            line-height: 1.4;
+            color: #000;
             margin: 0;
             padding: 0;
-            font-size: 12px;
+            font-size: 13px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 8px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
         }
 
         .header-logos {
@@ -32,194 +33,155 @@
             align-items: center;
             margin-bottom: 15px;
             width: 100%;
-            gap: 0px;
-            padding: 0 0px;
-            min-height: 50px;
+            min-height: 80px;
             position: relative;
-            margin-top: 10px;
         }
 
         .header-logos img {
-            width: 100px !important;
-            height: 100px !important;
-            flex-shrink: 0;
+            width: 80px !important;
+            height: 80px !important;
             object-fit: contain;
-            display: block;
-            max-width: 100px !important;
-            max-height: 100px !important;
-            min-width: 100px !important;
-            min-height: 100px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-            box-sizing: border-box !important;
             position: absolute;
-            top: 0px;
-            transform: translateY(0);
-            line-height: 1 !important;
-            font-size: 0 !important;
+            top: 0;
         }
 
         .header-logos img:first-child {
-            left: 65px;
+            left: 50px;
         }
 
         .header-logos img:last-child {
-            right: 65px;
+            right: 50px;
         }
 
         .header-text {
             text-align: center;
             flex: 1;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            max-width: 99%;
-            position: relative;
-            z-index: 1;
-            left: 50%;
-            transform: translateX(-50%);
-            width: auto;
-            margin-top: 5px;
+            margin: 0 auto;
         }
 
         .header-text h1 {
             font-size: 16px;
             margin: 2px 0;
-            color: #2c3e50;
             font-weight: bold;
+            text-transform: uppercase;
         }
 
         .header-text h2 {
             font-size: 14px;
             margin: 2px 0;
-            color: #2c3e50;
             font-weight: bold;
+            text-transform: uppercase;
         }
 
         .header-text h3 {
-            font-size: 12px;
+            font-size: 13px;
             margin: 2px 0;
-            color: #2c3e50;
             font-weight: bold;
+            text-transform: uppercase;
         }
 
         .header-text p {
-            font-size: 10px;
+            font-size: 11px;
             margin: 1px 0;
-            color: #6c757d;
+            color: #333;
         }
 
         .report-header {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
         }
 
         .report-header table {
             width: 100%;
             border: none;
-            margin-bottom: 8px;
-            font-size: 12px;
+            margin-bottom: 10px;
         }
 
         .report-header td {
-            padding: 3px 0;
+            padding: 2px 0;
             border: none;
             vertical-align: top;
         }
 
         .report-header .label {
             font-weight: bold;
-            width: 60px;
+            width: 80px;
             vertical-align: top;
         }
 
-        .title {
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            margin: 12px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .two-column {
-            display: flex;
-            gap: 12px;
-            margin: 12px 0;
-        }
-
-        .left-column {
-            flex: 1;
-        }
-
-        .right-column {
-            flex: 1;
-        }
-
         .section {
-            margin: 8px 0;
+            margin: 15px 0;
             page-break-inside: avoid;
         }
 
         .section-title {
             font-weight: bold;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #2c3e50;
-            border-bottom: 1px solid #e9ecef;
-            padding-bottom: 2px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #000;
+            text-transform: uppercase;
+        }
+
+        .section p {
+            text-align: justify;
+            line-height: 1.4;
+            margin: 4px 0;
+            text-indent: 0;
         }
 
         .content {
-            margin-left: 15px;
-            font-size: 11px;
+            margin-left: 20px;
+            font-size: 13px;
             text-align: justify;
         }
 
         .content p {
-            margin: 5px 0;
+            margin: 4px 0;
+            text-indent: 0;
+            text-align: justify;
+            line-height: 1.4;
+            margin-left: 15px;
         }
 
         .content strong {
             font-weight: bold;
         }
 
-        .personnel-list {
-            margin: 8px 0;
-        }
-
-        .personnel-list p {
-            margin: 3px 0;
-            padding-left: 10px;
-        }
-
-        .activities-list {
-            margin: 8px 0;
-        }
-
-        .activity-item {
-            margin: 8px 0;
-            padding-left: 10px;
-        }
-
-        .activity-title {
+        .date-time-highlight {
             font-weight: bold;
-            text-decoration: underline;
+            color: #000;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            padding: 3px 6px;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
         }
 
-        .recommendations-list {
+        .numbered-list {
             margin: 8px 0;
+            padding-left: 0;
         }
 
-        .recommendation-item {
-            margin: 5px 0;
-            padding-left: 10px;
+        .numbered-list p {
+            margin: 3px 0;
+            text-indent: 20px;
+        }
+
+        .sub-content {
+            margin-left: 15px;
+            margin-top: 5px;
+        }
+
+        .sub-content p {
+            margin: 3px 0;
+            text-align: justify;
+            line-height: 1.4;
+            text-indent: 0;
+            margin-left: 15px;
         }
 
         .photo-section {
-            margin: 15px 0;
+            margin: 20px 0;
             text-align: center;
             page-break-inside: avoid;
         }
@@ -238,36 +200,21 @@
         .photo-item img {
             max-width: 100%;
             height: auto;
-            border: 1px solid #e9ecef;
+            border: 1px solid #ccc;
             padding: 3px;
         }
 
         .photo-caption {
-            font-size: 9px;
-            color: #6c757d;
+            font-size: 11px;
+            color: #666;
             margin-top: 3px;
         }
 
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            font-size: 9px;
-            text-align: center;
-            color: #6c757d;
-            padding: 8px 0;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .page-break {
-            page-break-before: always;
-        }
-
         .signature-section {
-            margin-top: 30px;
+            margin-top: 40px;
             display: flex;
             justify-content: space-between;
+            page-break-inside: avoid;
         }
 
         .signature-box {
@@ -277,8 +224,21 @@
 
         .signature-line {
             border-top: none;
-            margin-top: 40px;
+            margin-top: 50px;
             padding-top: 5px;
+            font-size: 13px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            font-size: 11px;
+            text-align: center;
+            color: #666;
+            padding: 8px 0;
+            border-top: 1px solid #ccc;
         }
     </style>
 </head>
@@ -288,49 +248,43 @@
         <div class="header-logos">
             @php
             $pcgLogoPath = public_path('Assets/PCG.png');
-            $pcgaLogoPath = public_path('Assets/PCGA 107th.png');
             $pcgExists = file_exists($pcgLogoPath);
-            $pcgaExists = file_exists($pcgaLogoPath);
-
             $pcgBase64 = $pcgExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($pcgLogoPath)) : '';
+
+            $pcgaLogoPath = public_path('Assets/PCGA 107th.png');
+            $pcgaExists = file_exists($pcgaLogoPath);
             $pcgaBase64 = $pcgaExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($pcgaLogoPath)) : '';
 
-            // Debug info
-            Log::info('Logo loading debug', [
-            'pcg_path' => $pcgLogoPath,
-            'pcg_exists' => $pcgExists,
-            'pcga_path' => $pcgaLogoPath,
-            'pcga_exists' => $pcgaExists,
-            'pcg_size' => $pcgExists ? filesize($pcgLogoPath) : 0,
-            'pcga_size' => $pcgaExists ? filesize($pcgaLogoPath) : 0,
-            'pcg_base64_length' => strlen($pcgBase64),
-            'pcga_base64_length' => strlen($pcgaBase64),
-            'pcg_dimensions' => $pcgExists ? getimagesize($pcgLogoPath) : null,
-            'pcga_dimensions' => $pcgaExists ? getimagesize($pcgaLogoPath) : null,
-            'pcg_base64_preview' => substr($pcgBase64, 0, 50),
-            'pcga_base64_preview' => substr($pcgaBase64, 0, 50)
-            ]);
+            // Get associate logo
+            $associateLogoBase64 = '';
+            if (!empty($report->data['associateLogo'])) {
+            $associateLogoPath = storage_path('app/public/' . $report->data['associateLogo']);
+            $associateLogoExists = file_exists($associateLogoPath);
+            if ($associateLogoExists) {
+            $associateLogoContent = file_get_contents($associateLogoPath);
+            $associateLogoInfo = getimagesizefromstring($associateLogoContent);
+            $mimeType = $associateLogoInfo ? $associateLogoInfo['mime'] : 'image/png';
+            $associateLogoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($associateLogoContent);
+            }
+            }
             @endphp
+
+            <!-- Left Logo - PCG Logo -->
             @if($pcgExists)
-            <img src="{{ $pcgBase64 }}" alt="PCG Logo" class="header-logo">
-            @else
-            <div style="width: 80px; height: 80px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 10px;">
-                PCG Logo not found: {{ $pcgLogoPath }}
-            </div>
+            <img src="{{ $pcgBase64 }}" alt="PCG Logo">
             @endif
+
             <div class="header-text">
-                <h1>HEADQUARTERS</h1>
-                <h2>Philippine Coast Guard</h2>
-                <h3>PHILIPPINE COAST GUARD AUXILIARY</h3>
-                <h3>107th AUXILIARY SQUADRON, CGAD NCRC-CL</h3>
-                <p>Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City</p>
+                <h1>{{ $report->data['institutionName'] ?? 'HEADQUARTERS' }}</h1>
+                <h2>{{ $report->data['associateName'] ?? 'PHILIPPINE COAST GUARD' }}</h2>
+                <p>{{ $report->data['address'] ?? 'Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City' }}</p>
             </div>
-            @if($pcgaExists)
-            <img src="{{ $pcgaBase64 }}" alt="PCGA 107th Logo" class="header-logo">
+
+            <!-- Right Logo - Associate Logo or PCGA 107th Logo -->
+            @if(!empty($associateLogoBase64))
+            <img src="{{ $associateLogoBase64 }}" alt="Associate Logo">
             @else
-            <div style="width: 80px; height: 80px; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; color: #666; font-size: 10px;">
-                PCGA Logo not found: {{ $pcgaLogoPath }}
-            </div>
+            <img src="{{ $pcgaBase64 }}" alt="PCGA 107th Logo">
             @endif
         </div>
     </div>
@@ -339,30 +293,15 @@
         <table>
             <tr>
                 <td class="label"><strong>FOR:</strong></td>
-                <td>{{ $report->data['for'] ?? '' }}</td>
+                <td>{{ $report->data['for'] ?? 'AUX RADM FREDERICK GOMEZ PCGA' }}</td>
             </tr>
-            @if(isset($report->data['forPosition']) && is_array($report->data['forPosition']))
-            @foreach($report->data['forPosition'] as $position)
-            @if(!empty($position))
-            <tr>
-                <td></td>
-                <td>{{ $position }}</td>
-            </tr>
-            @endif
-            @endforeach
-            @else
             <tr>
                 <td></td>
                 <td>{{ $report->data['forPosition'] ?? 'District Auxiliary Director' }}</td>
             </tr>
             <tr>
-                <td></td>
-                <td>CGAD NCR-CL</td>
-            </tr>
-            @endif
-            <tr>
                 <td class="label"><strong>DATE:</strong></td>
-                <td>{{ date('d F Y', strtotime($report->data['date'])) }}</td>
+                <td>{{ isset($report->data['date']) ? date('d F Y', strtotime($report->data['date'])) : date('d F Y') }}</td>
             </tr>
             <tr>
                 <td class="label"><strong>SUBJECT:</strong></td>
@@ -371,167 +310,276 @@
         </table>
     </div>
 
-    <div class="two-column">
-        <div class="left-column">
-            <div class="section">
-                <div class="section-title"><strong>I. AUTHORITY</strong></div>
-                <div class="content">
-                    @if(isset($report->data['authority']) && is_array($report->data['authority']))
-                    @foreach($report->data['authority'] as $index => $authority)
-                    <p>{{ $index + 1 }}. {{ $authority }}</p>
-                    @endforeach
-                    @endif
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title"><strong>II. DATE, TIME, AND PLACE OF ACTIVITY</strong></div>
-                <div class="content">
-                    <p><strong>Date and Time:</strong> {{ $report->data['dateTime'] ?? '' }}</p>
-                    <p><strong>Type of Activity:</strong> {{ $report->data['activityType'] ?? '' }}</p>
-                    <p><strong>Location:</strong> {{ $report->data['location'] ?? '' }}</p>
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title"><strong>III. PERSONNEL INVOLVED</strong></div>
-                <div class="content">
-                    @if(isset($report->data['auxiliaryPersonnel']) && !empty($report->data['auxiliaryPersonnel']))
-                    <p><strong>Auxiliary Personnel:</strong></p>
-                    <div class="personnel-list">
-                        @foreach($report->data['auxiliaryPersonnel'] as $person)
-                        <p>{{ $person }}</p>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    @if(isset($report->data['pcgPersonnel']) && !empty($report->data['pcgPersonnel']))
-                    <p><strong>PCG Personnel:</strong></p>
-                    <div class="personnel-list">
-                        @foreach($report->data['pcgPersonnel'] as $person)
-                        <p>{{ $person }}</p>
-                        @endforeach
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title"><strong>IV. NARRATION OF EVENTS</strong></div>
-                <div class="content">
-                    <p><strong>Objective:</strong></p>
-                    <p>{{ $report->data['objective'] ?? '' }}</p>
-
-                    <p><strong>Summary:</strong></p>
-                    <p>{{ $report->data['summary'] ?? '' }}</p>
-
-                    @if(isset($report->data['activities']) && !empty($report->data['activities']))
-                    <p><strong>Activities:</strong></p>
-                    <div class="activities-list">
-                        @foreach($report->data['activities'] as $activity)
-                        <div class="activity-item">
-                            <p class="activity-title">{{ $activity['title'] }}</p>
-                            <p>{{ $activity['description'] }}</p>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-
-                    <p><strong>Conclusion:</strong></p>
-                    <p>{{ $report->data['conclusion'] ?? '' }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="right-column">
-            <div class="section">
-                <div class="section-title"><strong>V. RECOMMENDATIONS</strong></div>
-                <div class="content">
-                    @if(isset($report->data['recommendations']) && is_array($report->data['recommendations']))
-                    <div class="recommendations-list">
-                        @foreach($report->data['recommendations'] as $recommendation)
-                        <div class="recommendation-item">
-                            <p>{{ $recommendation }}</p>
-                        </div>
-                        @endforeach
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            @if(isset($report->data['photos']) && !empty($report->data['photos']))
-            <div class="section">
-                <div class="section-title"><strong>VI. ATTACHMENTS</strong></div>
-                <div class="photo-section">
-                    <div class="photo-grid">
-                        @foreach($report->data['photos'] as $index => $photo)
-                        <div class="photo-item">
-                            @php
-                            $photoPath = realpath(base_path('storage/app/public/' . $photo));
-                            $photoExists = file_exists($photoPath);
-                            $photoBase64 = '';
-                            if ($photoExists) {
-                            $photoContent = file_get_contents($photoPath);
-                            $photoInfo = getimagesizefromstring($photoContent);
-                            $mimeType = $photoInfo ? $photoInfo['mime'] : 'image/jpeg';
-                            $photoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($photoContent);
-                            }
-                            @endphp
-                            @if($photoExists)
-                            <img src="{{ $photoBase64 }}" alt="Operation Photo {{ $index + 1 }}">
-                            @else
-                            <div style="border: 1px solid #ccc; padding: 20px; text-align: center; color: #666;">
-                                Photo {{ $index + 1 }} not found<br>
-                                Expected path: {{ $photoPath }}<br>
-                                Photo data: {{ $photo }}
-                            </div>
-                            @endif
-                            <div class="photo-caption">Photo {{ $index + 1 }}</div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+    <!-- Single Column Layout -->
+    <div class="section">
+        <div class="section-title">I. AUTHORITY</div>
+        <div class="content">
+            @if(isset($report->data['authority']) && is_array($report->data['authority']) && count($report->data['authority']) > 0)
+            @foreach($report->data['authority'] as $authority)
+            @if(!empty(trim($authority)))
+            <p>{{ $authority }}</p>
+            @endif
+            @endforeach
             @else
-            <div class="section">
-                <div class="section-title"><strong>VI. ATTACHMENTS</strong></div>
-                <div class="content">
-                    <p>No photos uploaded for this report.</p>
-                </div>
+            <p>Philippine Coast Guard</p>
+            <p>CGADNCR-CL</p>
+            @endif
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">II. DATE, TIME, AND PLACE OF ACTIVITY</div>
+        <div class="content">
+            @if(!empty($report->data['dateTime']))
+            <p><strong>Date and Time:</strong>
+                @php
+                $dateTime = $report->data['dateTime'];
+                if (strpos($dateTime, 'T') !== false) {
+                // Convert ISO format (2025-08-08T01:12) to readable format
+                $date = \DateTime::createFromFormat('Y-m-d\TH:i', $dateTime);
+                if ($date) {
+                echo '<span class="date-time-highlight">' . $date->format('d F Y \a\t g:i A') . '</span>'; // e.g., "08 August 2025 at 1:12 AM"
+                } else {
+                echo '<span class="date-time-highlight">' . $dateTime . '</span>'; // Fallback to original if parsing fails
+                }
+                } else {
+                // If it's already in a readable format, just display it
+                echo '<span class="date-time-highlight">' . $dateTime . '</span>';
+                }
+                @endphp
+            </p>
+            @else
+            <p><strong>Date and Time:</strong> <span class="date-time-highlight">Not specified</span></p>
+            @endif
+
+            @if(!empty($report->data['location']))
+            <p><strong>Place:</strong> {{ $report->data['location'] }}</p>
+            @else
+            <p><strong>Place:</strong> Not specified</p>
+            @endif
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">III. PERSONNEL INVOLVED</div>
+        <div class="content">
+            @if(isset($report->data['auxiliaryPersonnel']) && is_array($report->data['auxiliaryPersonnel']) && count($report->data['auxiliaryPersonnel']) > 0)
+            @foreach($report->data['auxiliaryPersonnel'] as $person)
+            @if(!empty(trim($person)))
+            <p>{{ $person }}</p>
+            @endif
+            @endforeach
+            @endif
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">IV. NARRATION OF EVENTS</div>
+        <div class="content">
+            <!-- First Part: Event Details (from form inputs) -->
+            @if(!empty($report->data['eventName']) || !empty($report->data['activityType']))
+            <p><strong>{{ $report->data['eventName'] ?? $report->data['activityType'] ?? 'Event Name' }}</strong></p>
+            <p style="margin-top: 15px;"></p>
+            @endif
+
+            @if(!empty($report->data['eventDate']) || !empty($report->data['startTime']) || !empty($report->data['endTime']))
+            <p><strong>Date and Time:</strong>
+                @if(!empty($report->data['eventDate']))
+                @php
+                $eventDate = $report->data['eventDate'];
+                if (strpos($eventDate, 'T') !== false) {
+                // Convert ISO format to readable format
+                $date = \DateTime::createFromFormat('Y-m-d\TH:i', $eventDate);
+                if ($date) {
+                echo '<span class="date-time-highlight">' . $date->format('d F Y') . '</span>';
+                } else {
+                echo '<span class="date-time-highlight">' . $eventDate . '</span>';
+                }
+                } else {
+                echo '<span class="date-time-highlight">' . $eventDate . '</span>';
+                }
+                @endphp
+                @endif
+                @if(!empty($report->data['startTime']) || !empty($report->data['endTime']))
+                @if(!empty($report->data['eventDate']))
+                <span> | </span>
+                @endif
+                <span class="date-time-highlight">
+                    @if(!empty($report->data['startTime']))
+                    {{ $report->data['startTime'] }}
+                    @endif
+                    @if(!empty($report->data['startTime']) && !empty($report->data['endTime']))
+                    -
+                    @endif
+                    @if(!empty($report->data['endTime']))
+                    {{ $report->data['endTime'] }}
+                    @endif
+                </span>
+                @endif
+            </p>
+            @endif
+
+            @if(!empty($report->data['eventLocation']))
+            <p><strong>Location:</strong> {{ $report->data['eventLocation'] }}</p>
+            @endif
+
+            @if(isset($report->data['organizers']) && is_array($report->data['organizers']) && count($report->data['organizers']) > 0)
+            <p><strong>Organizers:</strong> {{ implode(', ', array_filter(array_map('trim', $report->data['organizers']))) }}</p>
+            @endif
+
+            <!-- Second Part: Event Details -->
+            @if(!empty($report->data['summary']) || !empty($report->data['eventOverview']))
+            <p><strong>Event Overview:</strong></p>
+            <div class="sub-content">
+                <p>{{ $report->data['summary'] ?? $report->data['eventOverview'] ?? 'Not provided' }}</p>
+            </div>
+            @endif
+
+            @if(!empty($report->data['objective']) || !empty($report->data['trainingAgenda']))
+            <p><strong>Training Agenda:</strong></p>
+            <div class="sub-content">
+                <p>{{ $report->data['objective'] ?? $report->data['trainingAgenda'] ?? 'Not provided' }}</p>
+            </div>
+            @endif
+
+            @if(isset($report->data['participants']) && is_array($report->data['participants']) && count($report->data['participants']) > 0)
+            <p><strong>Participants:</strong></p>
+            <div class="sub-content">
+                @foreach($report->data['participants'] as $participant)
+                @if(is_array($participant) && !empty($participant['name']))
+                <p>{{ $participant['name'] }}{{ !empty($participant['position']) ? ' - ' . $participant['position'] : '' }}</p>
+                @elseif(is_string($participant) && !empty(trim($participant)))
+                <p>{{ $participant }}</p>
+                @endif
+                @endforeach
+            </div>
+            @endif
+
+            @if(isset($report->data['keyOutcomes']) && is_array($report->data['keyOutcomes']) && count($report->data['keyOutcomes']) > 0)
+            <p><strong>Key Outcomes:</strong></p>
+            <div class="sub-content">
+                @foreach($report->data['keyOutcomes'] as $outcome)
+                @if(!empty(trim($outcome)))
+                <p>{{ $outcome }}</p>
+                @endif
+                @endforeach
+            </div>
+            @endif
+
+            @if(isset($report->data['challenges']) && is_array($report->data['challenges']) && count($report->data['challenges']) > 0)
+            <p><strong>Challenges:</strong></p>
+            <div class="sub-content">
+                @foreach($report->data['challenges'] as $challenge)
+                @if(!empty(trim($challenge)))
+                <p>{{ $challenge }}</p>
+                @endif
+                @endforeach
+            </div>
+            @endif
+
+            @if(!empty($report->data['conclusion']))
+            <p><strong>Conclusion:</strong></p>
+            <div class="sub-content">
+                <p>{{ $report->data['conclusion'] }}</p>
             </div>
             @endif
         </div>
     </div>
+
+    <div class="section">
+        <div class="section-title">V. RECOMMENDATIONS</div>
+        <div class="content">
+            @if(isset($report->data['recommendations']) && is_array($report->data['recommendations']) && count($report->data['recommendations']) > 0)
+            @foreach($report->data['recommendations'] as $recommendation)
+            @if(!empty(trim($recommendation)))
+            <p>{{ $recommendation }}</p>
+            @endif
+            @endforeach
+            @else
+            <p>Continue with similar training activities</p>
+            <p>Improve coordination with partner agencies</p>
+            @endif
+        </div>
+    </div>
+
+    @if(isset($report->data['photos']) && !empty($report->data['photos']))
+    <div class="section">
+        <div class="section-title">VI. ATTACHMENTS</div>
+        <div class="photo-section">
+            <div class="photo-grid">
+                @foreach($report->data['photos'] as $index => $photo)
+                <div class="photo-item">
+                    @php
+                    $photoPath = storage_path('app/public/' . $photo);
+                    $photoExists = file_exists($photoPath);
+                    $photoBase64 = '';
+                    if ($photoExists) {
+                    $photoContent = file_get_contents($photoPath);
+                    $photoInfo = getimagesizefromstring($photoContent);
+                    $mimeType = $photoInfo ? $photoInfo['mime'] : 'image/jpeg';
+                    $photoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($photoContent);
+                    }
+                    @endphp
+                    @if($photoExists)
+                    <img src="{{ $photoBase64 }}" alt="Activity Photo {{ $index + 1 }}">
+                    @else
+                    <div style="border: 1px solid #ccc; padding: 20px; text-align: center; color: #666;">
+                        Photo {{ $index + 1 }} not found
+                    </div>
+                    @endif
+                    <div class="photo-caption">Photo {{ $index + 1 }}</div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="section">
+        <div class="section-title">VI. ATTACHMENTS</div>
+        <div class="content">
+            <p>1. Activity Photos</p>
+        </div>
+    </div>
+    @endif
 
     <div class="signature-section">
         <div class="signature-box">
             <p><strong>Prepared by:</strong></p>
+            @if(!empty($report->data['preparedBy']))
+            <div style="text-align: center; margin: 5px 0; position: relative;">
+                @if(!empty($report->data['preparedBySignature']))
+                @php
+                $preparedSignaturePath = storage_path('app/public/' . $report->data['preparedBySignature']);
+                $preparedSignatureExists = file_exists($preparedSignaturePath);
+                $preparedSignatureBase64 = '';
+                if ($preparedSignatureExists) {
+                $preparedSignatureContent = file_get_contents($preparedSignaturePath);
+                $preparedSignatureInfo = getimagesizefromstring($preparedSignatureContent);
+                $mimeType = $preparedSignatureInfo ? $preparedSignatureInfo['mime'] : 'image/png';
+                $preparedSignatureBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($preparedSignatureContent);
+                }
+                @endphp
+                @if($preparedSignatureExists)
+                <div style="text-align: center; margin: 15px 0 5px 0; position: relative;">
+                    <img src="{{ $preparedSignatureBase64 }}" alt="Prepared By Signature" style="max-width: 120px; height: auto; opacity: 0.8; border-bottom: 1px solid #000;">
+                </div>
+                @endif
+                @endif
+                <p style="position: relative; z-index: 2; margin: 0; font-weight: bold;">{{ $report->data['preparedBy'] }}</p>
+            </div>
+            <p>{{ $report->data['preparedByPosition'] ?? 'Task Force Commander' }}</p>
+            @else
             <p>Task Force Commander</p>
-            <p>AUX CAPT GERALD GALZA PCGA</p>
+            <p>AUX LT MICHAEL G CAPARAS</p>
+            @endif
             <div class="signature-line"></div>
         </div>
         <div class="signature-box">
             <p><strong>Approved by:</strong></p>
-            @php
-            $signaturePath = public_path('Assets/Signature.png');
-            $signatureExists = file_exists($signaturePath);
-            $signatureBase64 = $signatureExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath)) : '';
-            @endphp
-            @if($signatureExists)
-            <div style="text-align: center; margin: 5px 0; position: relative;">
-                <p style="position: relative; z-index: 2; margin: 0; font-weight: bold; color: #2c3e50;">AUX CAPT GERALD GALZA PCGA</p>
-                <img src="{{ $signatureBase64 }}" alt="Signature" style="max-width: 120px; height: auto; opacity: 0.7; position: absolute; top: -25px; left: 50%; transform: translateX(-50%); z-index: 1;">
-            </div>
-            @else
-            <p>AUX CAPT GERALD GALZA PCGA</p>
-            @endif
-            <p>Director 107TH Auxiliary Squadron</p>
+            <p>{{ $report->data['approvedBy'] ?? 'AUX CAPT GERALD GALZA PCGA' }}</p>
+            <p>{{ $report->data['approvedByPosition'] ?? 'Director 107TH Auxiliary Squadron' }}</p>
             <div class="signature-line"></div>
         </div>
-    </div>
-
-    <div class="footer">
-        Generated on {{ date('d F Y') }} | Philippine Coast Guard Auxiliary
     </div>
 </body>
 

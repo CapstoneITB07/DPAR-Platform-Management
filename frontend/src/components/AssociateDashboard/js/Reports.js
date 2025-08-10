@@ -128,8 +128,6 @@ function Reports() {
   const [approvalNotification, setApprovalNotification] = useState('');
   const [rejectionNotification, setRejectionNotification] = useState('');
   const [focusedFields, setFocusedFields] = useState(new Set());
-  const [selectedReportDetails, setSelectedReportDetails] = useState(null);
-  const [showReportDetails, setShowReportDetails] = useState(false);
 
   const steps = [
     'Report Header',
@@ -440,15 +438,17 @@ function Reports() {
           address: formData.address || '',
           associateLogo: formData.associateLogo,
           // II. HEADING
-          forName: formData.forName || '',
+          for: formData.forName || '', // Fixed: template expects 'for' not 'forName'
           forPosition: formData.forPosition || '',
           date: formData.date || '',
           subject: formData.subject || '',
           // III. EVENT DETAILS
-          authorities: formData.authorities.filter(auth => auth.trim()),
+          authority: formData.authorities.filter(auth => auth.trim()), // Fixed: template expects 'authority' not 'authorities'
           dateTime: formData.dateTime || '',
-          place: formData.place || '',
-          personnelInvolved: formData.personnelInvolved.filter(p => p.trim()),
+          location: formData.place || '', // Fixed: template expects 'location' not 'place'
+          activityType: formData.eventName || '', // Added: map eventName to activityType
+          auxiliaryPersonnel: formData.personnelInvolved.filter(p => p.trim()), // Fixed: template expects 'auxiliaryPersonnel'
+          pcgPersonnel: [], // Added: template expects this array (form doesn't collect PCG personnel separately)
           // IV. NARRATION OF EVENTS I
           eventName: formData.eventName || '',
           eventLocation: formData.eventLocation || '',
@@ -456,14 +456,20 @@ function Reports() {
           startTime: formData.startTime || '',
           endTime: formData.endTime || '',
           organizers: formData.organizers.filter(org => org.trim()),
+          // IV. NARRATION OF EVENTS (Template expectations)
+          objective: formData.trainingAgenda || '', // Map trainingAgenda to objective
+          summary: formData.eventOverview || '', // Map eventOverview to summary
+          activities: formData.keyOutcomes.filter(ko => ko.trim()).map(outcome => ({
+            title: 'Key Outcome',
+            description: outcome
+          })), // Convert keyOutcomes to activities structure
+          conclusion: formData.conclusion || '',
           // V. NARRATION OF EVENTS II
-          eventOverview: formData.eventOverview || '',
           participants: formData.participants.filter(p => p.name.trim()),
           trainingAgenda: formData.trainingAgenda || '',
           keyOutcomes: formData.keyOutcomes.filter(ko => ko.trim()),
           challenges: formData.challenges.filter(c => c.trim()),
           recommendations: formData.recommendations.filter(r => r.trim()),
-          conclusion: formData.conclusion || '',
           // VI. ATTACHMENTS
           photos: [], // Initialize empty photos array
           // VII. SIGNATORIES
@@ -735,41 +741,6 @@ function Reports() {
     );
   };
 
-  const handleRowClick = (report) => {
-    console.log('Report data structure:', report);
-    console.log('Report.data:', report.data);
-    
-    // Parse data if it's a string
-    let parsedData = report.data;
-    if (typeof report.data === 'string') {
-      try {
-        parsedData = JSON.parse(report.data);
-        console.log('Parsed data:', parsedData);
-      } catch (error) {
-        console.error('Error parsing report data:', error);
-      }
-    }
-    
-    console.log('Report.data.photos:', parsedData?.photos);
-    console.log('Report.photo_urls:', report.photo_urls);
-    console.log('Report.data.associateLogo:', parsedData?.associateLogo);
-    console.log('Report.data.preparedBySignature:', parsedData?.preparedBySignature);
-    
-    // Update the report with parsed data
-    const reportWithParsedData = {
-      ...report,
-      data: parsedData
-    };
-    
-    setSelectedReportDetails(reportWithParsedData);
-    setShowReportDetails(true);
-  };
-
-  const closeReportDetails = () => {
-    setSelectedReportDetails(null);
-    setShowReportDetails(false);
-  };
-
   return (
     <AssociateLayout>
       <div className="reports-container">
@@ -875,8 +846,6 @@ function Reports() {
                       <tr 
                         key={report.id} 
                         className={selectedReports.includes(report.id) ? 'selected' : ''}
-                        onClick={() => handleRowClick(report)}
-                        style={{ cursor: 'pointer' }}
                       >
                         <td className="checkbox-col">
                           <input
@@ -1004,7 +973,7 @@ function Reports() {
               </div>
               {/* Modal Body */}
               <div className="report-modal-body">
-                <form className="report-form-grid" onSubmit={e => { e.preventDefault(); handleSubmit(editingReport ? true : false); }}>
+                <form className="report-form-grid" onSubmit={e => { e.preventDefault(); handleSubmit(true); }}>
                   {/* Step 1: Header */}
                   {currentStep === 0 && (
                     <>
@@ -1807,299 +1776,6 @@ function Reports() {
                     </div>
                   </div>
                 </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Report Details Modal */}
-        {selectedReportDetails && (
-          <div className="modal-overlay">
-            <div className="modal-content report-modal-card">
-              <div className="report-modal-header">
-                <h2>Report Details</h2>
-                <button className="modal-close" onClick={closeReportDetails}>
-                  <FontAwesomeIcon icon={faXmark} />
-                </button>
-              </div>
-              <div className="report-modal-body">
-                <div className="report-details">
-                  {selectedReportDetails.data && (
-                    <>
-                      {/* Report Header */}
-                      <div className="detail-section">
-                        <h3>Report Header</h3>
-                        <div className="detail-row">
-                          <strong>Institution Name:</strong> {selectedReportDetails.data.institutionName}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Address:</strong> {selectedReportDetails.data.address}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Associate Name:</strong> {selectedReportDetails.data.associateName}
-                        </div>
-                        {selectedReportDetails.data.associateLogo && (
-                          <div className="detail-row">
-                            <strong>Associate's Logo:</strong> 
-                            <img 
-                              src={`${process.env.REACT_APP_API_URL}/storage/${selectedReportDetails.data.associateLogo}`} 
-                              alt="Associate Logo" 
-                              className="detail-image"
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Heading */}
-                      <div className="detail-section">
-                        <h3>Heading</h3>
-                        <div className="detail-row">
-                          <strong>Recipient:</strong> {selectedReportDetails.data.forName} - {selectedReportDetails.data.forPosition}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Date Created:</strong> {selectedReportDetails.data.date ? formatDate(selectedReportDetails.data.date) : 'N/A'}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Report Subject:</strong> {selectedReportDetails.data.subject}
-                        </div>
-                      </div>
-
-                      {/* Event Details */}
-                      <div className="detail-section">
-                        <h3>Event Details</h3>
-                        <div className="detail-row">
-                          <strong>Date and Time:</strong> {formatDateTime(selectedReportDetails.data.dateTime)}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Place:</strong> {selectedReportDetails.data.place}
-                        </div>
-                        {selectedReportDetails.data.authorities && selectedReportDetails.data.authorities.length > 0 && (
-                          <div className="detail-row">
-                            <strong>Authorities:</strong>
-                            <ul className="detail-list">
-                              {selectedReportDetails.data.authorities.map((authority, index) => (
-                                <li key={index}>{authority}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.personnel && selectedReportDetails.data.personnel.length > 0 && (
-                          <div className="detail-row">
-                            <strong>Personnel Involved:</strong>
-                            <ul className="detail-list">
-                              {selectedReportDetails.data.personnel.map((person, index) => (
-                                <li key={index}>{person}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Narration of Events */}
-                      <div className="detail-section">
-                        <h3>Narration of Events</h3>
-                        <div className="detail-row">
-                          <strong>Event Name:</strong> {selectedReportDetails.data.eventName}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Location:</strong> {selectedReportDetails.data.location}
-                        </div>
-                        <div className="detail-row">
-                          <strong>Date and Time:</strong> {selectedReportDetails.data.eventDate ? formatDate(selectedReportDetails.data.eventDate) : 'N/A'} - {selectedReportDetails.data.startTime} to {selectedReportDetails.data.endTime}
-                        </div>
-                        {selectedReportDetails.data.organizers && selectedReportDetails.data.organizers.length > 0 && (
-                          <div className="detail-row">
-                            <strong>Organizers:</strong>
-                            <ul className="detail-list">
-                              {selectedReportDetails.data.organizers.map((organizer, index) => (
-                                <li key={index}>{organizer}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.eventOverview && (
-                          <div className="detail-row">
-                            <strong>Event Overview:</strong>
-                            <div className="detail-textarea">{selectedReportDetails.data.eventOverview}</div>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.trainingAgenda && (
-                          <div className="detail-row">
-                            <strong>Agenda/Objectives:</strong>
-                            <div className="detail-textarea">{selectedReportDetails.data.trainingAgenda}</div>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.participants && selectedReportDetails.data.participants.length > 0 && (
-                          <div className="detail-row">
-                            <strong>Participants:</strong>
-                            <ul className="detail-list">
-                              {selectedReportDetails.data.participants.map((participant, index) => (
-                                <li key={index}>
-                                  {participant.name}
-                                  {participant.position && ` - ${participant.position}`}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.keyOutcomes && (
-                          <div className="detail-row">
-                            <strong>Key outcomes:</strong>
-                            <div className="detail-textarea">{selectedReportDetails.data.keyOutcomes}</div>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.challenges && (
-                          <div className="detail-row">
-                            <strong>Challenges:</strong>
-                            <div className="detail-textarea">{selectedReportDetails.data.challenges}</div>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.recommendations && (
-                          <div className="detail-row">
-                            <strong>Recommendations:</strong>
-                            <div className="detail-textarea">{selectedReportDetails.data.recommendations}</div>
-                          </div>
-                        )}
-                        {selectedReportDetails.data.conclusion && (
-                          <div className="detail-row">
-                            <strong>Conclusion:</strong>
-                            <div className="detail-textarea">{selectedReportDetails.data.conclusion}</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Attachments */}
-                      {(() => {
-                        const photos = selectedReportDetails.data?.photos || [];
-                        const photoUrls = selectedReportDetails.photo_urls || [];
-                        const hasPhotos = photos.length > 0 || photoUrls.length > 0;
-                        
-                        console.log('Photos from data:', photos);
-                        console.log('Photo URLs:', photoUrls);
-                        console.log('Has photos:', hasPhotos);
-                        
-                        return hasPhotos && (
-                          <div className="detail-section">
-                            <h3>Attachments</h3>
-                            <div className="detail-row">
-                              <strong>Uploaded event photos:</strong>
-                              <div className="detail-images">
-                                {(photos.length > 0 ? photos : photoUrls).map((attachment, index) => {
-                                  const imageSrc = photoUrls.length > 0 ? 
-                                    attachment : // photo_urls already contain full URLs
-                                    `${process.env.REACT_APP_API_URL}/storage/${attachment}`; // photos contain paths
-                                  
-                                  console.log(`Image ${index + 1} src:`, imageSrc);
-                                  
-                                  return (
-                                    <img 
-                                      key={index}
-                                      src={imageSrc}
-                                      alt={`Attachment ${index + 1}`} 
-                                      className="detail-image"
-                                      onError={(e) => {
-                                        console.error('Image failed to load:', imageSrc);
-                                        e.target.style.display = 'none';
-                                      }}
-                                      onLoad={() => {
-                                        console.log('Image loaded successfully:', imageSrc);
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Signatories */}
-                      <div className="detail-section">
-                        <h3>Signatories</h3>
-                        <div className="detail-row signatories-row">
-                                                      <div className="signatory-column">
-                              {selectedReportDetails.data.preparedBySignature && (
-                                <div className="signature-image">
-                                  <img 
-                                    src={`${process.env.REACT_APP_API_URL}/storage/${selectedReportDetails.data.preparedBySignature}`} 
-                                    alt="Prepared By Signature" 
-                                    className="detail-image"
-                                  />
-                                </div>
-                              )}
-                              <div className="signatory-info">
-                                <div className="signatory-name">{selectedReportDetails.data.preparedBy}</div>
-                                <div className="signatory-position">{selectedReportDetails.data.preparedByPosition}</div>
-                              </div>
-                            </div>
-                            <div className="signatory-column">
-                              <div className="signatory-info">
-                                <div className="signatory-name">{selectedReportDetails.data.approvedBy}</div>
-                                <div className="signatory-position">{selectedReportDetails.data.approvedByPosition}</div>
-                              </div>
-                            </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Footer Section - Outside modal body */}
-              <div className="report-footer">
-                <div className="footer-info">
-                  <div className="footer-status">
-                    <strong>Status:</strong> 
-                    <span className={`status-badge ${selectedReportDetails.status}`}>
-                      {selectedReportDetails.status === 'sent' ? 'PENDING APPROVAL' : 
-                       selectedReportDetails.status === 'approved' ? 'APPROVED' :
-                       selectedReportDetails.status === 'rejected' ? 'REJECTED' :
-                       selectedReportDetails.status?.toUpperCase() || 'DRAFT'}
-                    </span>
-                  </div>
-                  <div className="footer-dates">
-                    <span className="footer-date">
-                      <strong>Created:</strong> {formatDate(selectedReportDetails.created_at)}
-                    </span>
-                    {selectedReportDetails.updated_at && (
-                      <span className="footer-date">
-                        <strong>Updated:</strong> {formatDate(selectedReportDetails.updated_at)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="footer-actions">
-                  <button
-                    className="action-btn edit-btn"
-                    onClick={() => {
-                      closeReportDetails();
-                      handleEdit(selectedReportDetails);
-                    }}
-                    title="Edit"
-                  >
-                    <FontAwesomeIcon icon={faEdit} />
-                  </button>
-                  <button
-                    className="action-btn delete-btn"
-                    onClick={() => {
-                      closeReportDetails();
-                      handleDelete(selectedReportDetails.id);
-                    }}
-                    title="Delete"
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                  <button
-                    className="action-btn send-btn"
-                    onClick={() => {
-                      closeReportDetails();
-                      handleSubmit(true, selectedReportDetails);
-                    }}
-                    title="Send"
-                  >
-                    <FontAwesomeIcon icon={faPaperPlane} />
-                  </button>
-                </div>
               </div>
             </div>
           </div>

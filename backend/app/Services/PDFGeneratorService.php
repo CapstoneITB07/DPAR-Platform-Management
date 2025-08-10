@@ -17,7 +17,7 @@ class PDFGeneratorService
         $options->set('defaultFont', 'Arial');
         $options->set('isFontSubsettingEnabled', true);
         $options->set('defaultMediaType', 'print');
-        $options->set('defaultPaperSize', 'A4');
+        $options->set('defaultPaperSize', 'legal'); // Changed from A4 to legal
         $options->set('defaultPaperOrientation', 'portrait');
         $options->set('isRemoteEnabled', true);
         $options->set('chroot', base_path());
@@ -48,8 +48,8 @@ class PDFGeneratorService
         // Load HTML into Dompdf
         $dompdf->loadHtml($html);
 
-        // Set paper size and orientation
-        $dompdf->setPaper('A4', 'portrait');
+        // Set paper size and orientation to legal
+        $dompdf->setPaper('legal', 'portrait');
 
         // Render the PDF
         $dompdf->render();

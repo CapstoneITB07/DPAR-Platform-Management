@@ -154,10 +154,73 @@ backend/
 -   Certificates are generated in A4 landscape format
 -   Template supports 1-5 signatories with automatic layout adjustment
 -   Font size auto-adjusts based on recipient name length
--   **NEW**: Message body font auto-adjusts to fit within 3 lines
+-   Message body font auto-adjusts to fit within 3 lines
 -   **NEW**: Control numbers automatically formatted as CN-XXXXX
 -   **NEW**: Smart parsing extracts numbers from mixed input formats
 -   **FIXED**: Bulk generation now ensures consistent message formatting across all certificates
+-   **FIXED**: AOR Submit button now properly submits reports instead of saving as drafts
+-   **FIXED**: AOR data mapping now correctly matches template expectations
 -   Background images are converted to base64 for offline generation
 -   Dynamic font sizing ensures professional appearance regardless of content length
 -   Frontend input validation prevents invalid control number formats
+
+## AOR Template Format
+
+The After Operation Report (AOR) template has been completely redesigned to match official format requirements:
+
+### Paper Format
+
+-   **Paper Size**: Legal (8.5" x 14") for official compliance
+-   **Layout**: Single column format for better readability
+-   **Margins**: 1cm top/bottom, 1.5cm left/right
+
+### Section Structure
+
+The template follows the standard AOR format with these sections:
+
+1. **Header** - Associate's institution logo (left), institution name, associate name (once), and address (center), PCGA logo (right)
+2. **Report Header** - FOR, DATE, SUBJECT information
+3. **Authority** - Listed as numbered items
+4. **Date, Time, and Place of Activity** - Event details
+5. **Personnel Involved** - Participants and organizers
+6. **Narrations of Events** - Comprehensive event description
+    - Event Overview
+    - Training Agenda
+    - Participants (with positions)
+    - Key Outcomes (numbered)
+    - Challenges (numbered)
+    - Conclusion
+7. **Recommendations** - Numbered list of recommendations
+8. **Attachments** - Photos in 2-column grid layout
+9. **Signatures** - Prepared by and Approved by with digital signatures
+
+### Data Display Features
+
+-   **Dynamic Header**: Institution name replaces "HEADQUARTERS", associate name appears once, associate logo replaces left logo, address at bottom
+-   **Smart Data Mapping**: Associate input automatically maps to correct template sections
+-   **Numbered Lists**: Recommendations, outcomes, and challenges display as numbered items
+-   **Photo Grid**: Uploaded photos display in professional 2-column layout
+-   **Digital Signatures**: Both prepared by and approved by signatures display properly
+-   **Fallback Content**: Default values display when associate input is empty
+
+## AOR Data Mapping
+
+The AOR template expects specific field names that differ from the frontend form field names. The system now correctly maps:
+
+### Form Field → Template Field Mapping
+
+| Frontend Form Field | Template Expected Field | Description                       |
+| ------------------- | ----------------------- | --------------------------------- |
+| `forName`           | `for`                   | Recipient name                    |
+| `authorities`       | `authority`             | Authority array                   |
+| `place`             | `location`              | Event location                    |
+| `personnelInvolved` | `auxiliaryPersonnel`    | Personnel involved                |
+| `trainingAgenda`    | `objective`             | Training objectives               |
+| `eventOverview`     | `summary`               | Event summary                     |
+| `keyOutcomes`       | `activities`            | Converted to activities structure |
+
+### Additional Template Fields
+
+-   `activityType` - Mapped from `eventName`
+-   `pcgPersonnel` - Empty array (form doesn't collect PCG personnel separately)
+-   `activities` - Complex structure created from `keyOutcomes`

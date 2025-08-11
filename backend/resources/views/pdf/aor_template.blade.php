@@ -247,9 +247,9 @@
     <div class="header">
         <div class="header-logos">
             @php
-            $pcgLogoPath = public_path('Assets/PCG.png');
-            $pcgExists = file_exists($pcgLogoPath);
-            $pcgBase64 = $pcgExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($pcgLogoPath)) : '';
+            $dparLogoPath = public_path('Assets/disaster_logo.png');
+            $dparExists = file_exists($dparLogoPath);
+            $dparBase64 = $dparExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($dparLogoPath)) : '';
 
             $pcgaLogoPath = public_path('Assets/PCGA 107th.png');
             $pcgaExists = file_exists($pcgaLogoPath);
@@ -269,9 +269,9 @@
             }
             @endphp
 
-            <!-- Left Logo - PCG Logo -->
-            @if($pcgExists)
-            <img src="{{ $pcgBase64 }}" alt="PCG Logo">
+            <!-- Left Logo - DPAR Logo -->
+            @if($dparExists)
+            <img src="{{ $dparBase64 }}" alt="DPAR Logo">
             @endif
 
             <div class="header-text">

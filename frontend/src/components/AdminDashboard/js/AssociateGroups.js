@@ -59,6 +59,7 @@ function AssociateGroups() {
       const response = await axios.get(`${API_BASE}/api/associate-groups`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       setAssociates(response.data);
     } catch (error) {
       console.error('Error fetching associate groups:', error);
@@ -127,13 +128,30 @@ function AssociateGroups() {
   };
 
   const handleEditAssociate = (associate) => {
-    setForm(associate);
+    // Directly set the form with the associate data
+    const formData = {
+      id: associate.id,
+      name: associate.name || '',
+      type: associate.type || '',
+      director: associate.director || '',
+      description: associate.description || '',
+      logo: associate.logo || '',
+      email: associate.email || '',
+      phone: associate.phone || '',
+      password: '',
+      password_confirmation: ''
+    };
+    
+    setForm(formData);
     setLogoFile(null);
+    setEditMode(true);
+    setError('');
     setShowEditModal(true);
   };
 
   const closeEditModal = () => {
     setShowEditModal(false);
+    setEditMode(false); // Reset edit mode when closing
     setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
     setLogoFile(null);
     setError('');
@@ -197,11 +215,17 @@ function AssociateGroups() {
     // Validate phone number (must start with 09, 11 digits, only numbers)
     const phoneRegex = /^09[0-9]{9}$/;
     if (!phoneRegex.test(form.phone)) {
-      setError('Phone number must start with 09 and be exactly 11 digits');
+      if (!form.phone.startsWith('09')) {
+        setError('Phone number must start with 09');
+      } else if (form.phone.length !== 11) {
+        setError('Phone number must be exactly 11 digits');
+      } else {
+        setError('Phone number must contain only numbers and start with 09');
+      }
       return false;
     }
 
-    // Validate logo for new associates
+    // Validate logo for new associates (not for editing)
     if (!editMode && !logoFile) {
       setError('Please upload a logo');
       return false;
@@ -301,10 +325,20 @@ function AssociateGroups() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Check if form has required data
+    if (!form.name || !form.type || !form.director || !form.description || !form.email || !form.phone) {
+      setError('Please ensure all required fields are filled before submitting.');
+      return;
+    }
+    
     if (!validateStep1()) return;
+    
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      
       const formData = new FormData();
+      formData.append('_method', 'PUT'); // Laravel method spoofing
       formData.append('name', form.name);
       formData.append('type', form.type);
       formData.append('director', form.director);
@@ -312,20 +346,27 @@ function AssociateGroups() {
       formData.append('email', form.email);
       formData.append('phone', form.phone);
       if (logoFile) formData.append('logo', logoFile);
-      const response = await axios.put(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
+      
+      const response = await axios.post(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
+      
       if (response.status === 200) {
         setNotification('Associate group updated successfully!');
         setShowEditModal(false);
-        setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
         setLogoFile(null);
         setError('');
         fetchAssociates();
         setTimeout(() => setNotification(''), 2000);
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update associate. Please try again.');
+      if (error.response?.data?.errors) {
+        // Handle validation errors from backend
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        setError(errorMessages.join(', '));
+      } else {
+        setError(error.response?.data?.message || 'Failed to update associate. Please try again.');
+      }
     }
   };
 
@@ -380,20 +421,26 @@ function AssociateGroups() {
       setError('Please enter a valid email address');
       return false;
     }
-
+    
     // Validate phone number (must start with 09, 11 digits, only numbers)
     const phoneRegex = /^09[0-9]{9}$/;
     if (!phoneRegex.test(form.phone)) {
-      setError('Phone number must start with 09 and be exactly 11 digits');
+      if (!form.phone.startsWith('09')) {
+        setError('Phone number must start with 09');
+      } else if (form.phone.length !== 11) {
+        setError('Phone number must be exactly 11 digits');
+      } else {
+        setError('Phone number must contain only numbers and start with 09');
+      }
       return false;
     }
-
-    // Validate logo for new associates
+    
+    // Validate logo only for new associates (not for editing)
     if (!editMode && !logoFile) {
       setError('Please upload a logo');
       return false;
     }
-
+    
     return true;
   };
 
@@ -629,7 +676,7 @@ function AssociateGroups() {
                         onChange={handleFormChange} 
                         placeholder="Enter email address"
                         required 
-                        pattern="[^@\s]+@[^@\s]+\.[^@\s]+" 
+                        pattern="[^@\s]+@[^\s@]+\.[^\s@]+" 
                       />
                     </div>
                     
@@ -644,12 +691,14 @@ function AssociateGroups() {
                           if (val.length === 1 && val !== '0') val = '';
                           if (val.length === 2 && val !== '09') val = val[0] === '0' ? '0' : '';
                           e.target.value = val;
+                          // Update form state with the validated value
+                          setForm(prev => ({ ...prev, phone: val }));
                         }}
                         placeholder="Enter 11-digit phone number" 
                         required 
-                        pattern="09[0-9]{9}" 
+                        pattern="[0-9]{11}" 
                         title="Phone number must start with 09 and be exactly 11 digits" 
-                        maxLength="11" 
+                        maxLength="11"
                         inputMode="numeric"
                       />
                     </div>
@@ -772,7 +821,7 @@ function AssociateGroups() {
                     <label>Organization Name *</label>
                     <input 
                       name="name" 
-                      value={form.name} 
+                      value={form.name || ''} 
                       onChange={handleFormChange} 
                       placeholder="Enter organization name"
                       required 
@@ -783,7 +832,7 @@ function AssociateGroups() {
                     <label>Organization Type *</label>
                     <input 
                       name="type" 
-                      value={form.type} 
+                      value={form.type || ''} 
                       onChange={handleFormChange} 
                       placeholder="e.g., Emergency Response, Medical, etc."
                       required 
@@ -794,7 +843,7 @@ function AssociateGroups() {
                     <label>Director Name *</label>
                     <input 
                       name="director" 
-                      value={form.director} 
+                      value={form.director || ''} 
                       onChange={handleFormChange} 
                       placeholder="Enter director's full name"
                       required 
@@ -806,11 +855,11 @@ function AssociateGroups() {
                     <input 
                       name="email" 
                       type="email" 
-                      value={form.email} 
+                      value={form.email || ''} 
                       onChange={handleFormChange} 
                       placeholder="Enter email address"
                       required 
-                      pattern="[^@\s]+@[^@\s]+\.[^@\s]+" 
+                      pattern="[^@\s]+@[^\s@]+\.[^\s@]+" 
                     />
                   </div>
                   
@@ -818,18 +867,20 @@ function AssociateGroups() {
                     <label>Phone Number *</label>
                     <input 
                       name="phone" 
-                      value={form.phone} 
+                      value={form.phone || ''} 
                       onChange={handleFormChange} 
                       onInput={e => {
                         let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
                         if (val.length === 1 && val !== '0') val = '';
                         if (val.length === 2 && val !== '09') val = val[0] === '0' ? '0' : '';
                         e.target.value = val;
+                        // Update form state with the validated value
+                        setForm(prev => ({ ...prev, phone: val }));
                       }}
                       placeholder="Enter 11-digit phone number"
                       required 
                       pattern="[0-9]{11}" 
-                      title="Phone number must be exactly 11 digits"
+                      title="Phone number must start with 09 and be exactly 11 digits"
                       maxLength="11"
                       inputMode="numeric"
                     />
@@ -839,7 +890,7 @@ function AssociateGroups() {
                     <label>Description *</label>
                     <textarea 
                       name="description" 
-                      value={form.description} 
+                      value={form.description || ''} 
                       onChange={handleFormChange} 
                       placeholder="Describe the organization's mission and activities"
                       required 
@@ -848,7 +899,7 @@ function AssociateGroups() {
                   </div>
                   
                   <div className="form-group full-width">
-                    <label>Organization Logo *</label>
+                    <label>Organization Logo {!editMode ? '*' : '(Optional)'}</label>
                     {/* Logo Preview */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '10px' }}>
                       {logoFile ? (
@@ -878,6 +929,11 @@ function AssociateGroups() {
                       </label>
                     </div>
                     <small>Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
+                    {editMode && (
+                      <small style={{ display: 'block', marginTop: '4px', color: '#666', fontStyle: 'italic' }}>
+                        Logo upload is optional when editing. Leave unchanged to keep the current logo.
+                      </small>
+                    )}
                   </div>
                 </div>
               </div>
@@ -919,4 +975,4 @@ function AssociateGroups() {
   );
 }
 
-export default AssociateGroups; 
+export default AssociateGroups;

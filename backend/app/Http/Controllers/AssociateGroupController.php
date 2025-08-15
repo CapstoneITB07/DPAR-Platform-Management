@@ -34,7 +34,7 @@ class AssociateGroupController extends Controller
         try {
             $groups = AssociateGroup::select('id', 'name', 'type', 'director', 'description', 'logo', 'email', 'phone')
                 ->get();
-            
+
             // Add full URLs for logos
             foreach ($groups as $group) {
                 if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
@@ -77,7 +77,20 @@ class AssociateGroupController extends Controller
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
                 'password' => 'required|string|min:8|confirmed',
             ], [
+                'name.required' => 'Organization name is required.',
+                'email.required' => 'Email address is required.',
+                'email.email' => 'Please enter a valid email address.',
                 'email.unique' => 'This email is already used by another associate group.',
+                'phone.required' => 'Phone number is required.',
+                'phone.size' => 'Phone number must be exactly 11 digits.',
+                'phone.regex' => 'Phone number must start with 09 and contain only numbers.',
+                'logo.required' => 'Logo is required for new associate groups.',
+                'logo.image' => 'Logo must be a valid image file.',
+                'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
+                'logo.max' => 'Logo file size must not exceed 2MB.',
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 8 characters long.',
+                'password.confirmed' => 'Password confirmation does not match.',
             ]);
 
             // Create user account
@@ -141,22 +154,46 @@ class AssociateGroupController extends Controller
                 'director' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'email' => 'required|email|unique:users,email,' . $group->user_id,
-                'phone' => 'required|string|size:11|regex:/^[0-9]+$/',
+                'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
+            ];
+
+            $customMessages = [
+                'name.required' => 'Organization name is required.',
+                'email.required' => 'Email address is required.',
+                'email.email' => 'Please enter a valid email address.',
+                'email.unique' => 'This email is already used by another associate group.',
+                'phone.required' => 'Phone number is required.',
+                'phone.size' => 'Phone number must be exactly 11 digits.',
+                'phone.regex' => 'Phone number must start with 09 and contain only numbers.',
             ];
 
             // Add logo validation only if a file is being uploaded
             if ($request->hasFile('logo')) {
                 $validationRules['logo'] = 'image|mimes:jpeg,png,jpg,gif|max:2048';
+                $customMessages['logo.image'] = 'Logo must be a valid image file.';
+                $customMessages['logo.mimes'] = 'Logo must be in JPEG, PNG, JPG, or GIF format.';
+                $customMessages['logo.max'] = 'Logo file size must not exceed 2MB.';
             }
 
-            $validated = $request->validate($validationRules);
+            // Use explicit field access instead of $request->all() for PUT requests
+            $validated = $request->validate($validationRules, $customMessages);
+
+            // Explicitly get the validated data
+            $validatedData = [
+                'name' => $request->input('name'),
+                'type' => $request->input('type'),
+                'director' => $request->input('director'),
+                'description' => $request->input('description'),
+                'email' => $request->input('email'),
+                'phone' => $request->input('phone')
+            ];
 
             // Update user account if it exists
             if ($group->user) {
                 $group->user->update([
-                    'name' => $validated['name'],
-                    'email' => $validated['email'],
-                    'organization' => $validated['name'],
+                    'name' => $validatedData['name'],
+                    'email' => $validatedData['email'],
+                    'organization' => $validatedData['name'],
                 ]);
             }
 
@@ -183,12 +220,12 @@ class AssociateGroupController extends Controller
 
             // Update group details
             $updateData = [
-                'name' => $validated['name'],
-                'type' => $validated['type'] ?? $group->type,
-                'director' => $validated['director'] ?? $group->director,
-                'description' => $validated['description'] ?? $group->description,
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
+                'name' => $validatedData['name'],
+                'type' => $validatedData['type'] ?? $group->type,
+                'director' => $validatedData['director'] ?? $group->director,
+                'description' => $validatedData['description'] ?? $group->description,
+                'email' => $validatedData['email'],
+                'phone' => $validatedData['phone'],
             ];
 
             $group->update($updateData);

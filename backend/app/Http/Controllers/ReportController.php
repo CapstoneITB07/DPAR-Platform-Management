@@ -47,6 +47,11 @@ class ReportController extends Controller
                 'status' => 'required|in:draft,sent',
                 'data' => 'required',
                 'photo.*' => 'nullable|file|image|max:5120',
+                'photo[0]' => 'nullable|file|image|max:5120',
+                'photo[1]' => 'nullable|file|image|max:5120',
+                'photo[2]' => 'nullable|file|image|max:5120',
+                'photo[3]' => 'nullable|file|image|max:5120',
+                'photo[4]' => 'nullable|file|image|max:5120',
                 'associateLogo' => 'nullable|file|image|max:2048',
                 'preparedBySignature' => 'nullable|file|image|max:2048'
             ]);
@@ -67,6 +72,34 @@ class ReportController extends Controller
 
             // Add user's organization to the data
             $reportData['organization'] = $user->organization;
+
+            // Log the report data for debugging
+            Log::info('Processing report creation', [
+                'user_id' => $user->id,
+                'user_organization' => $user->organization,
+                'report_data_keys' => array_keys($reportData),
+                'report_data_sample' => array_slice($reportData, 0, 5), // Log first 5 items
+                'data_size' => strlen(json_encode($reportData))
+            ]);
+
+            // Validate that required fields exist in the report data
+            $requiredFields = ['institutionName', 'address', 'for', 'subject'];
+            $missingFields = [];
+
+            foreach ($requiredFields as $field) {
+                if (empty($reportData[$field])) {
+                    $missingFields[] = $field;
+                }
+            }
+
+            if (!empty($missingFields)) {
+                return response()->json([
+                    'message' => 'Missing required fields in report data',
+                    'errors' => [
+                        'data' => ['The following fields are required: ' . implode(', ', $missingFields)]
+                    ]
+                ], 422);
+            }
 
             // Handle multiple photo uploads
             $photoPaths = [];
@@ -210,10 +243,22 @@ class ReportController extends Controller
 
             return response()->json($report, 201);
         } catch (\Exception $e) {
-            Log::error('Report creation failed: ' . $e->getMessage());
+            Log::error('Report creation failed: ' . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+                'report_data' => $reportData ?? 'No report data',
+                'user_id' => $user->id ?? 'No user'
+            ]);
             return response()->json([
                 'message' => 'Failed to create report',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
             ], 422);
         }
     }
@@ -246,9 +291,9 @@ class ReportController extends Controller
 
         // Admin can view any report, regular users can only view their own
         if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
-            $report = Report::findOrFail($id);
+            $report = Report::with('user')->findOrFail($id);
         } else {
-            $report = Report::where('user_id', $user->id)->findOrFail($id);
+            $report = Report::with('user')->where('user_id', $user->id)->findOrFail($id);
         }
 
         // Add photo URLs to response
@@ -274,7 +319,7 @@ class ReportController extends Controller
     {
         try {
             $user = Auth::user();
-            $report = Report::where('user_id', $user->id)->findOrFail($id);
+            $report = Report::with('user')->where('user_id', $user->id)->findOrFail($id);
 
             Log::info('Updating report', [
                 'report_id' => $id,
@@ -296,6 +341,11 @@ class ReportController extends Controller
                 'status' => 'required|in:draft,sent',
                 'data' => 'required',
                 'photo.*' => 'nullable|file|image|max:5120',
+                'photo[0]' => 'nullable|file|image|max:5120',
+                'photo[1]' => 'nullable|file|image|max:5120',
+                'photo[2]' => 'nullable|file|image|max:5120',
+                'photo[3]' => 'nullable|file|image|max:5120',
+                'photo[4]' => 'nullable|file|image|max:5120',
                 'associateLogo' => 'nullable|file|image|max:2048',
                 'preparedBySignature' => 'nullable|file|image|max:2048'
             ]);
@@ -457,7 +507,7 @@ class ReportController extends Controller
     public function destroy(string $id)
     {
         $user = Auth::user();
-        $report = Report::where('user_id', $user->id)->findOrFail($id);
+        $report = Report::with('user')->where('user_id', $user->id)->findOrFail($id);
 
         // Delete photos if they exist
         $reportData = $report->data;
@@ -475,7 +525,7 @@ class ReportController extends Controller
 
     public function download(string $id)
     {
-        $report = Report::findOrFail($id);
+        $report = Report::with('user')->findOrFail($id);
 
         // Only allow download for approved reports
         if ($report->status !== 'approved') {
@@ -534,7 +584,7 @@ class ReportController extends Controller
                 return response()->json(['message' => 'Unauthorized. Only head admin can approve reports.'], 403);
             }
 
-            $report = Report::findOrFail($id);
+            $report = Report::with('user')->findOrFail($id);
 
             if ($report->status !== 'sent') {
                 return response()->json(['message' => 'Only sent reports can be approved.'], 400);
@@ -575,7 +625,7 @@ class ReportController extends Controller
                 return response()->json(['message' => 'Unauthorized. Only head admin can reject reports.'], 403);
             }
 
-            $report = Report::findOrFail($id);
+            $report = Report::with('user')->findOrFail($id);
 
             if ($report->status !== 'sent') {
                 return response()->json(['message' => 'Only sent reports can be rejected.'], 400);

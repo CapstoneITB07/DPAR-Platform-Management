@@ -30,7 +30,7 @@
         .header-logos {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 15px;
             width: 100%;
             min-height: 80px;
@@ -41,22 +41,31 @@
             width: 80px !important;
             height: 80px !important;
             object-fit: contain;
-            position: absolute;
-            top: 0;
+            flex-shrink: 0;
         }
 
         .header-logos img:first-child {
-            left: 50px;
+            position: absolute;
+            left: 0;
+            top: 0;
         }
 
         .header-logos img:last-child {
-            right: 50px;
+            position: absolute;
+            right: 0;
+            top: 0;
         }
 
         .header-text {
             text-align: center;
             flex: 1;
             margin: 0 auto;
+            max-width: 500px;
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            width: 100%;
         }
 
         .header-text h1 {
@@ -64,6 +73,10 @@
             margin: 2px 0;
             font-weight: bold;
             text-transform: uppercase;
+            /* Make text size adjustable based on length */
+            word-wrap: break-word;
+            max-width: 500px;
+            line-height: 1.2;
         }
 
         .header-text h2 {
@@ -71,6 +84,36 @@
             margin: 2px 0;
             font-weight: bold;
             text-transform: uppercase;
+            /* Make text size adjustable based on length */
+            word-wrap: break-word;
+            max-width: 500px;
+            line-height: 1.2;
+        }
+
+        /* Dynamic font sizing for institution name */
+        .header-text h1.long-name {
+            font-size: 14px;
+        }
+
+        .header-text h1.very-long-name {
+            font-size: 13px;
+        }
+
+        .header-text h1.extremely-long-name {
+            font-size: 12px;
+        }
+
+        /* Dynamic font sizing for associate names */
+        .header-text h2.long-name {
+            font-size: 12px;
+        }
+
+        .header-text h2.very-long-name {
+            font-size: 11px;
+        }
+
+        .header-text h2.extremely-long-name {
+            font-size: 10px;
         }
 
         .header-text h3 {
@@ -247,25 +290,165 @@
     <div class="header">
         <div class="header-logos">
             @php
+            use Illuminate\Support\Facades\Log;
+
             $dparLogoPath = public_path('Assets/disaster_logo.png');
             $dparExists = file_exists($dparLogoPath);
             $dparBase64 = $dparExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($dparLogoPath)) : '';
 
-            $pcgaLogoPath = public_path('Assets/PCGA 107th.png');
-            $pcgaExists = file_exists($pcgaLogoPath);
-            $pcgaBase64 = $pcgaExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($pcgaLogoPath)) : '';
+            // Automatically determine associate logo based on user's organization
+            $associateName = $report->user->organization ?? $report->data['associateName'] ?? '';
 
-            // Get associate logo
+            // Clean and normalize the associate name for better matching
+            $cleanAssociateName = trim(strtoupper($associateName));
+
+            // Debug: Show the actual paths being checked
+            Log::info('Logo Path Debug', [
+            'public_path' => public_path(),
+            'frontend_assets_path' => base_path('../frontend/public/Assets'),
+            'frontend_assets_exists' => is_dir(base_path('../frontend/public/Assets')),
+            'aklmv_path' => base_path('../frontend/public/Assets/AKLMV.png'),
+            'aklmv_exists' => file_exists(base_path('../frontend/public/Assets/AKLMV.png')),
+            'pcga_path' => base_path('../frontend/public/Assets/PCGA 107th.png'),
+            'pcga_exists' => file_exists(base_path('../frontend/public/Assets/PCGA 107th.png'))
+            ]);
+
             $associateLogoBase64 = '';
-            if (!empty($report->data['associateLogo'])) {
-            $associateLogoPath = storage_path('app/public/' . $report->data['associateLogo']);
-            $associateLogoExists = file_exists($associateLogoPath);
-            if ($associateLogoExists) {
-            $associateLogoContent = file_get_contents($associateLogoPath);
-            $associateLogoInfo = getimagesizefromstring($associateLogoContent);
-            $mimeType = $associateLogoInfo ? $associateLogoInfo['mime'] : 'image/png';
-            $associateLogoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($associateLogoContent);
+            $associateLogoPath = '';
+
+            // Map associate names to their logo files and full names
+            $associateLogoMap = [
+            'AKLMV' => ['logo' => 'AKLMV.png', 'fullName' => 'Angat Kabataan Laguna Medical Volunteers'],
+            'ALERT' => ['logo' => 'ALERT.png', 'fullName' => 'Aksyong Leif - Emergency Response Team'],
+            'CCVOL' => ['logo' => 'CCVOL.png', 'fullName' => 'Cabuyao Civilian Volunteers'],
+            'CCRG' => ['logo' => 'CRRG.png', 'fullName' => 'Cabuyao Radio and Response Group, Inc.'],
+            'DRRM' => ['logo' => 'DRRM - Y.png', 'fullName' => 'Disaster Risk Reduction and Management for Youth'],
+            'FRONTLINER' => ['logo' => 'FRONTLINER.png', 'fullName' => 'The Frontliners'],
+            'JKM' => ['logo' => 'JKM.png', 'fullName' => 'Juan Kabuyaw Movement'],
+            'KAIC' => ['logo' => 'KAIC.png', 'fullName' => 'King\'s Ambassador International Church'],
+            'MRAP' => ['logo' => 'MRAP.png', 'fullName' => 'Muslim Reverts Association of the Philippines Inc.'],
+            'MSG' => ['logo' => 'MSG - ERU.png', 'fullName' => 'Marshall Support Group'],
+            'PCG' => ['logo' => 'PCG.png', 'fullName' => 'Philippine Coast Guard'],
+            'PCG 107th' => ['logo' => 'PCGA 107th.png', 'fullName' => '107th Squadron PCGA'],
+            'RMFB' => ['logo' => 'RMFB.png', 'fullName' => 'RMFB4A'],
+            'SPAG' => ['logo' => 'SPAG.png', 'fullName' => 'Salaam Police Advocacy Group'],
+            'SRG' => ['logo' => 'SRG.png', 'fullName' => 'Sole Riders Group'],
+            'TF' => ['logo' => 'TF.png', 'fullName' => 'Tooth Family Civic Action']
+            ];
+
+            // Debug: Show the mapping being used
+            Log::info('Logo Mapping Debug', [
+            'associate_name_received' => $associateName,
+            'clean_associate_name' => $cleanAssociateName,
+            'available_keys' => array_keys($associateLogoMap),
+            'exact_match_found' => isset($associateLogoMap[$cleanAssociateName]),
+            'matching_key' => isset($associateLogoMap[$cleanAssociateName]) ? $cleanAssociateName : 'No exact match'
+            ]);
+
+            // Debug logging
+            Log::info('PDF Generation Debug', [
+            'user_id' => $report->user->id ?? 'No user',
+            'user_name' => $report->user->name ?? 'No name',
+            'user_email' => $report->user->email ?? 'No email',
+            'user_organization' => $report->user->organization ?? 'No organization',
+            'report_data_associate' => $report->data['associateName'] ?? 'No associate in data',
+            'final_associate_name' => $associateName,
+            'report_id' => $report->id ?? 'No report ID',
+            'report_title' => $report->title ?? 'No title',
+            'all_user_data' => $report->user ? $report->user->toArray() : 'No user data',
+            'user_organization_type' => gettype($report->user->organization ?? 'null'),
+            'user_organization_length' => strlen($report->user->organization ?? ''),
+            'user_organization_trimmed' => trim($report->user->organization ?? ''),
+            'user_organization_upper' => strtoupper(trim($report->user->organization ?? ''))
+            ]);
+
+            // Find the matching logo and full name
+            $selectedLogo = null;
+            $selectedFullName = '';
+
+            // Try exact match first
+            if (isset($associateLogoMap[$cleanAssociateName])) {
+            $selectedLogo = $associateLogoMap[$cleanAssociateName]['logo'];
+            $selectedFullName = $associateLogoMap[$cleanAssociateName]['fullName'];
+            Log::info('Exact match found', [
+            'clean_associate_name' => $cleanAssociateName,
+            'selected_logo' => $selectedLogo,
+            'selected_full_name' => $selectedFullName
+            ]);
+            } else {
+            // Try partial match with better logic
+            foreach ($associateLogoMap as $name => $info) {
+            $cleanName = trim(strtoupper($name));
+
+            // Check if the associate name contains the key name or vice versa
+            if (strpos($cleanAssociateName, $cleanName) !== false ||
+            strpos($cleanName, $cleanAssociateName) !== false ||
+            $cleanAssociateName === $cleanName) {
+            $selectedLogo = $info['logo'];
+            $selectedFullName = $info['fullName'];
+            Log::info('Partial match found', [
+            'clean_associate_name' => $cleanAssociateName,
+            'matched_name' => $name,
+            'selected_logo' => $selectedLogo,
+            'selected_full_name' => $selectedFullName
+            ]);
+            break;
             }
+            }
+            }
+
+            // Debug logging for logo selection
+            Log::info('Logo Selection Debug', [
+            'original_associate_name' => $associateName,
+            'clean_associate_name' => $cleanAssociateName,
+            'selected_logo' => $selectedLogo,
+            'selected_full_name' => $selectedFullName,
+            'logo_exists' => $selectedLogo ? file_exists(base_path('../frontend/public/Assets/' . $selectedLogo)) : false,
+            'logo_path' => $selectedLogo ? base_path('../frontend/public/Assets/' . $selectedLogo) : 'No logo',
+            'aklmv_exists' => file_exists(base_path('../frontend/public/Assets/AKLMV.png')),
+            'aklmv_path' => base_path('../frontend/public/Assets/AKLMV.png')
+            ]);
+
+            // If no specific logo found, use PCGA 107th as default
+            if (empty($selectedLogo) || !file_exists(base_path('../frontend/public/Assets/' . $selectedLogo))) {
+            Log::info('Logo file not found, using default', [
+            'selected_logo' => $selectedLogo,
+            'file_exists' => $selectedLogo ? file_exists(base_path('../frontend/public/Assets/' . $selectedLogo)) : false,
+            'falling_back_to_default' => true
+            ]);
+
+            $selectedLogo = 'PCGA 107th.png';
+            $selectedFullName = '107th Squadron PCGA';
+            }
+
+            $associateLogoPath = base_path('../frontend/public/Assets/' . $selectedLogo);
+            $associateLogoExists = file_exists($associateLogoPath);
+            $associateLogoBase64 = $associateLogoExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($associateLogoPath)) : '';
+
+            // Use the full name for display
+            $displayAssociateName = $selectedFullName ?: $associateName;
+
+            // Determine text size class based on associate name length
+            $nameLength = strlen($displayAssociateName);
+            $textSizeClass = '';
+            if ($nameLength > 50) {
+            $textSizeClass = 'extremely-long-name';
+            } elseif ($nameLength > 35) {
+            $textSizeClass = 'very-long-name';
+            } elseif ($nameLength > 25) {
+            $textSizeClass = 'long-name';
+            }
+
+            // Determine institution name size class
+            $institutionName = 'Disaster Preparedness And Response Volunteers Coalition of Laguna';
+            $institutionLength = strlen($institutionName);
+            $institutionSizeClass = '';
+            if ($institutionLength > 50) {
+            $institutionSizeClass = 'extremely-long-name';
+            } elseif ($institutionLength > 35) {
+            $institutionSizeClass = 'very-long-name';
+            } elseif ($institutionLength > 25) {
+            $institutionSizeClass = 'long-name';
             }
             @endphp
 
@@ -275,16 +458,14 @@
             @endif
 
             <div class="header-text">
-                <h1>{{ $report->data['institutionName'] ?? 'HEADQUARTERS' }}</h1>
-                <h2>{{ $report->data['associateName'] ?? 'PHILIPPINE COAST GUARD' }}</h2>
+                <h1 class="{{ $institutionSizeClass }}">{{ $report->data['institutionName'] ?? 'Disaster Preparedness And Response Volunteers Coalition of Laguna' }}</h1>
+                <h2 class="{{ $textSizeClass }}">{{ $displayAssociateName }}</h2>
                 <p>{{ $report->data['address'] ?? 'Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City' }}</p>
             </div>
 
-            <!-- Right Logo - Associate Logo or PCGA 107th Logo -->
-            @if(!empty($associateLogoBase64))
+            <!-- Right Logo - Automatically determined Associate Logo -->
+            @if($associateLogoExists)
             <img src="{{ $associateLogoBase64 }}" alt="Associate Logo">
-            @else
-            <img src="{{ $pcgaBase64 }}" alt="PCGA 107th Logo">
             @endif
         </div>
     </div>

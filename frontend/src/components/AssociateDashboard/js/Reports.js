@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import '../css/Reports.css';
 import imageCompression from 'browser-image-compression';
 import '../css/VolunteerList.css'; // Import confirm modal styles
@@ -74,45 +74,28 @@ function Reports() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
-    // I. REPORT HEADER
-    institutionName: '',
-    associateName: '',
-    address: '',
-    associateLogo: null,
-
-    // II. HEADING
     forName: '',
     forPosition: '',
     date: '',
     subject: '',
-
-    // III. EVENT DETAILS
     authorities: [''],
     dateTime: '',
     place: '',
     personnelInvolved: [''],
-
-    // IV. NARRATION OF EVENTS I
     eventName: '',
     eventLocation: '',
     eventDate: '',
     startTime: '',
     endTime: '',
     organizers: [''],
-
-    // V. NARRATION OF EVENTS II
     eventOverview: '',
-    participants: [''],
+    participants: [{name: '', position: ''}],
     trainingAgenda: '',
     keyOutcomes: [''],
     challenges: [''],
     recommendations: [''],
     conclusion: '',
-
-    // VI. ATTACHMENTS
     photos: [],
-
-    // VII. SIGNATORIES
     preparedBy: '',
     preparedByPosition: '',
     preparedBySignature: null,
@@ -130,7 +113,6 @@ function Reports() {
   const [focusedFields, setFocusedFields] = useState(new Set());
 
   const steps = [
-    'Report Header',
     'Heading',
     'Event Details',
     'Narration of Events I',
@@ -141,44 +123,33 @@ function Reports() {
 
   const isStepComplete = useCallback((stepIndex) => {
     switch (stepIndex) {
-      case 0: // Report Header
-        return !!formData.institutionName?.trim() && 
-               !!formData.associateName?.trim() && 
-               !!formData.address?.trim() && 
-               formData.associateLogo;
-      case 1: // Heading
+      case 0: // Heading
         return !!formData.forName?.trim() && 
                !!formData.forPosition?.trim() && 
                !!formData.date?.trim() && 
                !!formData.subject?.trim();
-      case 2: // Event Details
+      case 1: // Event Details
         return formData.authorities.some(auth => auth.trim()) && 
                !!formData.dateTime?.trim() &&
-               !!formData.place?.trim() &&
-               formData.personnelInvolved.some(p => p.trim());
-      case 3: // Narration of Events I
+               !!formData.place?.trim();
+      case 2: // Narration of Events I
         return !!formData.eventName?.trim() && 
                !!formData.eventLocation?.trim() && 
                !!formData.eventDate?.trim() && 
                !!formData.startTime?.trim() && 
                !!formData.endTime?.trim() && 
                formData.organizers.some(org => org.trim());
-      case 4: // Narration of Events II
+      case 3: // Narration of Events II
         return !!formData.eventOverview?.trim() && 
                formData.participants.some(p => p.name.trim()) && 
                !!formData.trainingAgenda?.trim() && 
                formData.keyOutcomes.some(ko => ko.trim()) && 
                formData.challenges.some(c => c.trim()) && 
-               formData.recommendations.some(r => r.trim()) && 
                !!formData.conclusion?.trim();
-      case 5: // Attachments
+      case 4: // Attachments
         return true; // Optional
-      case 6: // Signatories
-        return !!formData.preparedBy?.trim() && 
-               !!formData.preparedByPosition?.trim() &&
-               formData.preparedBySignature && 
-               !!formData.approvedBy?.trim() && 
-               !!formData.approvedByPosition?.trim();
+      case 5: // Signatories
+        return formData.preparedBy?.trim() && formData.preparedByPosition?.trim() && formData.preparedBySignature;
       default:
         return false;
     }
@@ -259,7 +230,14 @@ function Reports() {
   };
 
   const handleInputChange = (e, field, index = null, subfield = null) => {
-    const value = e.target.value;
+    // Handle file inputs differently
+    let value;
+    if (e.target.type === 'file') {
+      value = e.target.files[0] || null; // Get the actual file object, not the path
+    } else {
+      value = e.target.value;
+    }
+    
     setFormData(prev => {
       const newData = { ...prev };
       
@@ -293,16 +271,6 @@ function Reports() {
     const isEmpty = typeof value === 'string' ? !value?.trim() : !value;
     
     return isFocused && isEmpty;
-  };
-
-  const handleFileUpload = (e, field) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        [field]: file
-      }));
-    }
   };
 
   const addField = (field) => {
@@ -361,19 +329,11 @@ function Reports() {
   const openCreateModal = () => {
     setEditingReport(null);
     setFormData({
-      // I. REPORT HEADER
-      institutionName: '', associateName: '', address: '', associateLogo: null,
-      // II. HEADING
       forName: '', forPosition: '', date: '', subject: '',
-      // III. EVENT DETAILS
       authorities: [''], dateTime: '', place: '', personnelInvolved: [''],
-      // IV. NARRATION OF EVENTS I
       eventName: '', eventLocation: '', eventDate: '', startTime: '', endTime: '', organizers: [''],
-      // V. NARRATION OF EVENTS II
       eventOverview: '', participants: [{name: '', position: ''}], trainingAgenda: '', keyOutcomes: [''], challenges: [''], recommendations: [''], conclusion: '',
-      // VI. ATTACHMENTS
       photos: [],
-      // VII. SIGNATORIES
       preparedBy: '', preparedByPosition: '', preparedBySignature: null, approvedBy: '', approvedByPosition: ''
     });
     setCurrentStep(0);
@@ -387,6 +347,10 @@ function Reports() {
   const handleSubmit = async (shouldSubmit = false, existingReport = null) => {
     setSubmitting(true);
     setSuccessMessage('');
+    
+    // Declare reportData at the top so it's available throughout the function
+    let reportData = {};
+    
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
@@ -394,6 +358,12 @@ function Reports() {
         setSubmitting(false);
         return;
       }
+
+      // Debug: Show current user organization
+      const currentUserOrg = localStorage.getItem('userOrganization');
+      console.log('Current user organization:', currentUserOrg);
+      console.log('User ID:', localStorage.getItem('userId'));
+      console.log('User role:', localStorage.getItem('userRole'));
 
       if (existingReport) {
         // Simple status update for draft submission
@@ -431,51 +401,45 @@ function Reports() {
 
         const formDataToSend = new FormData();
         // Prepare the report data
-        const reportData = {
-          // I. REPORT HEADER
-          institutionName: formData.institutionName || '',
-          associateName: formData.associateName || '',
-          address: formData.address || '',
-          associateLogo: formData.associateLogo,
-          // II. HEADING
-          for: formData.forName || '', // Fixed: template expects 'for' not 'forName'
+        reportData = {
+          // Fixed header information - automatically set
+          institutionName: 'Disaster Preparedness And Response Volunteers Coalition of Laguna',
+          address: 'Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City',
+          // Associate name will be automatically determined from user's organization in backend
+          
+          // Form data
+          for: formData.forName || '',
           forPosition: formData.forPosition || '',
           date: formData.date || '',
           subject: formData.subject || '',
-          // III. EVENT DETAILS
-          authority: formData.authorities.filter(auth => auth.trim()), // Fixed: template expects 'authority' not 'authorities'
+          authority: formData.authorities.filter(auth => auth.trim()),
           dateTime: formData.dateTime || '',
-          location: formData.place || '', // Fixed: template expects 'location' not 'place'
-          activityType: formData.eventName || '', // Added: map eventName to activityType
-          auxiliaryPersonnel: formData.personnelInvolved.filter(p => p.trim()), // Fixed: template expects 'auxiliaryPersonnel'
-          pcgPersonnel: [], // Added: template expects this array (form doesn't collect PCG personnel separately)
-          // IV. NARRATION OF EVENTS I
+          location: formData.place || '',
+          activityType: formData.eventName || '',
+          auxiliaryPersonnel: formData.personnelInvolved.filter(p => p.trim()),
+          pcgPersonnel: [],
           eventName: formData.eventName || '',
           eventLocation: formData.eventLocation || '',
           eventDate: formData.eventDate || '',
           startTime: formData.startTime || '',
           endTime: formData.endTime || '',
           organizers: formData.organizers.filter(org => org.trim()),
-          // IV. NARRATION OF EVENTS (Template expectations)
-          objective: formData.trainingAgenda || '', // Map trainingAgenda to objective
-          summary: formData.eventOverview || '', // Map eventOverview to summary
+          objective: formData.trainingAgenda || '',
+          summary: formData.eventOverview || '',
           activities: formData.keyOutcomes.filter(ko => ko.trim()).map(outcome => ({
             title: 'Key Outcome',
             description: outcome
-          })), // Convert keyOutcomes to activities structure
+          })),
           conclusion: formData.conclusion || '',
-          // V. NARRATION OF EVENTS II
           participants: formData.participants.filter(p => p.name.trim()),
           trainingAgenda: formData.trainingAgenda || '',
           keyOutcomes: formData.keyOutcomes.filter(ko => ko.trim()),
           challenges: formData.challenges.filter(c => c.trim()),
           recommendations: formData.recommendations.filter(r => r.trim()),
-          // VI. ATTACHMENTS
-          photos: [], // Initialize empty photos array
-          // VII. SIGNATORIES
+          photos: [],
           preparedBy: formData.preparedBy || '',
           preparedByPosition: formData.preparedByPosition || '',
-          preparedBySignature: formData.preparedBySignature,
+          // Remove preparedBySignature from reportData - it's handled separately in FormData
           approvedBy: formData.approvedBy || '',
           approvedByPosition: formData.approvedByPosition || ''
         };
@@ -485,15 +449,9 @@ function Reports() {
         formDataToSend.append('status', shouldSubmit ? 'sent' : 'draft');
         formDataToSend.append('data', JSON.stringify(reportData));
 
-        // Append logos and signatures
-        if (formData.associateLogo) {
-          formDataToSend.append('associateLogo', formData.associateLogo);
-        }
+        // Append signatures
         if (formData.preparedBySignature) {
           formDataToSend.append('preparedBySignature', formData.preparedBySignature);
-        }
-        if (formData.approvedBySignature) {
-          formDataToSend.append('approvedBySignature', formData.approvedBySignature);
         }
 
         // Compress and append photos
@@ -540,7 +498,17 @@ function Reports() {
       if (err.response) {
         console.error('Response data:', err.response.data);
         console.error('Response status:', err.response.status);
-        setError(err.response.data.message || 'Server error: ' + err.response.status);
+        console.error('Response headers:', err.response.headers);
+        
+        // Show more detailed error message
+        const errorMessage = err.response.data?.message || err.response.data?.error || 'Server error: ' + err.response.status;
+        setError(`Failed to create report: ${errorMessage}`);
+        
+        // Log the request data for debugging
+        console.error('Request data that failed:', {
+          formData,
+          reportData: reportData || 'No report data available'
+        });
       } else if (err.request) {
         console.error('No response received:', err.request);
         setError('No response from server. Please check your connection.');
@@ -568,54 +536,69 @@ function Reports() {
     }
 
     setFormData({
-      // I. REPORT HEADER
-      institutionName: reportData.institutionName || report.institutionName || '',
-      associateName: reportData.associateName || report.associateName || '',
-      address: reportData.address || report.address || '',
-      associateLogo: reportData.associateLogo || report.associateLogo,
-
-      // II. HEADING
-      forName: reportData.forName || report.forName || '',
+      forName: reportData.for || report.forName || '',
       forPosition: reportData.forPosition || report.forPosition || '',
       date: reportData.date || report.date || '',
       subject: reportData.subject || report.subject || '',
-
-      // III. EVENT DETAILS
-      authorities: reportData.authorities || (report.authorities ? report.authorities.split(',') : ['']),
+      authorities: reportData.authority || (report.authority ? report.authority.split(',') : ['']),
       dateTime: reportData.dateTime || report.dateTime || '',
       place: reportData.place || report.place || '',
-      personnelInvolved: reportData.personnelInvolved || (report.personnelInvolved ? report.personnelInvolved.split(',') : ['']),
-
-      // IV. NARRATION OF EVENTS I
+      personnelInvolved: reportData.auxiliaryPersonnel || (report.auxiliaryPersonnel ? report.auxiliaryPersonnel.split(',') : ['']),
       eventName: reportData.eventName || report.eventName || '',
       eventLocation: reportData.eventLocation || report.eventLocation || '',
       eventDate: reportData.eventDate || report.eventDate || '',
       startTime: reportData.startTime || report.startTime || '',
       endTime: reportData.endTime || report.endTime || '',
       organizers: reportData.organizers || (report.organizers ? report.organizers.split(',') : ['']),
-
-      // V. NARRATION OF EVENTS II
-      eventOverview: reportData.eventOverview || report.eventOverview || '',
-      participants: reportData.participants || (report.participants ? report.participants.split(',').map(p => ({name: p.trim(), position: ''})) : [{name: '', position: ''}]),
-      trainingAgenda: reportData.trainingAgenda || report.trainingAgenda || '',
-      keyOutcomes: reportData.keyOutcomes || (report.keyOutcomes ? report.keyOutcomes.split(',') : ['']),
+      eventOverview: reportData.summary || report.eventOverview || '',
+      participants: reportData.participants || (report.participants ? report.participants.map(p => ({name: p.name, position: p.position})) : [{name: '', position: ''}]),
+      trainingAgenda: reportData.objective || report.trainingAgenda || '',
+      keyOutcomes: reportData.activities.map(act => act.description) || (report.activities ? report.activities.map(act => act.description) : ['']),
       challenges: reportData.challenges || (report.challenges ? report.challenges.split(',') : ['']),
       recommendations: reportData.recommendations || (report.recommendations ? report.recommendations.split(',') : ['']),
       conclusion: reportData.conclusion || report.conclusion || '',
-
-      // VI. ATTACHMENTS
       photos: [],
-
-      // VII. SIGNATORIES
       preparedBy: reportData.preparedBy || report.preparedBy || '',
       preparedByPosition: reportData.preparedByPosition || report.preparedByPosition || '',
-      preparedBySignature: reportData.preparedBySignature || report.preparedBySignature,
       approvedBy: reportData.approvedBy || report.approvedBy || '',
       approvedByPosition: reportData.approvedByPosition || report.approvedByPosition || ''
     });
     setCurrentStep(0);
     setCompletedSteps(new Set());
     setShowCreateModal(true);
+  };
+
+  const resetFormData = () => {
+    setEditingReport(null);
+    setFormData({
+      forName: '', 
+      forPosition: '', 
+      date: '', 
+      subject: '', 
+      authorities: [''], 
+      dateTime: '', 
+      place: '', 
+      personnelInvolved: [''],
+      eventName: '',
+      eventLocation: '',
+      eventDate: '',
+      startTime: '',
+      endTime: '',
+      organizers: [''],
+      eventOverview: '',
+      participants: [{name: '', position: ''}],
+      trainingAgenda: '',
+      keyOutcomes: [''],
+      challenges: [''],
+      recommendations: [''],
+      conclusion: '',
+      photos: [],
+      preparedBy: '',
+      preparedByPosition: '',
+      preparedBySignature: null,
+      approvedBy: '',
+      approvedByPosition: ''
+    });
   };
 
   const [confirm, setConfirm] = useState({ open: false, onConfirm: null, message: '' });
@@ -963,100 +946,18 @@ function Reports() {
                 ))}
                 </div>
                 {/* Section Header Card */}
-                {currentStep === 0 && <div className="section-gradient-card-red">I. REPORT HEADER</div>}
-                {currentStep === 1 && <div className="section-gradient-card-red">II. HEADING</div>}
-                {currentStep === 2 && <div className="section-gradient-card-red">III. EVENT DETAILS</div>}
-                {currentStep === 3 && <div className="section-gradient-card-red">IV. NARRATION OF EVENTS I</div>}
-                {currentStep === 4 && <div className="section-gradient-card-red">V. NARRATION OF EVENTS II</div>}
-                {currentStep === 5 && <div className="section-gradient-card-red">VI. ATTACHMENTS</div>}
-                {currentStep === 6 && <div className="section-gradient-card-red">VII. SIGNATORIES</div>}
+                {currentStep === 0 && <div className="section-gradient-card-red">I. HEADING</div>}
+                {currentStep === 1 && <div className="section-gradient-card-red">II. EVENT DETAILS</div>}
+                {currentStep === 2 && <div className="section-gradient-card-red">III. NARRATION OF EVENTS I</div>}
+                {currentStep === 3 && <div className="section-gradient-card-red">IV. NARRATION OF EVENTS II</div>}
+                {currentStep === 4 && <div className="section-gradient-card-red">V. ATTACHMENTS</div>}
+                {currentStep === 5 && <div className="section-gradient-card-red">VI. SIGNATORIES</div>}
               </div>
               {/* Modal Body */}
               <div className="report-modal-body">
                 <form className="report-form-grid" onSubmit={e => { e.preventDefault(); handleSubmit(true); }}>
-                  {/* Step 1: Header */}
+                  {/* Step 1: Heading (was previously Step 2) */}
                   {currentStep === 0 && (
-                    <>
-                      <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
-                          <label>Institution Name:</label>
-                          <input 
-                            type="text" 
-                            value={formData.institutionName} 
-                            onChange={e => handleInputChange(e, 'institutionName')} 
-                            onFocus={() => handleFieldFocus('institutionName')}
-                            onBlur={() => handleFieldBlur('institutionName')}
-                            placeholder="Institution Name" 
-                            style={{
-                              borderColor: shouldShowValidationError('institutionName', null, formData.institutionName) ? '#ef4444' : '#e2e8f0'
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
-                          <label>Address:</label>
-                          <input 
-                            type="text" 
-                            value={formData.address} 
-                            onChange={e => handleInputChange(e, 'address')} 
-                            onFocus={() => handleFieldFocus('address')}
-                            onBlur={() => handleFieldBlur('address')}
-                            placeholder="Address" 
-                            style={{
-                              borderColor: shouldShowValidationError('address', null, formData.address) ? '#ef4444' : '#e2e8f0'
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 3'}}>
-                          <label>Associate Name:</label>
-                          <input 
-                            type="text" 
-                            value={formData.associateName} 
-                            onChange={e => handleInputChange(e, 'associateName')} 
-                            onFocus={() => handleFieldFocus('associateName')}
-                            onBlur={() => handleFieldBlur('associateName')}
-                            placeholder="Associate Name" 
-                            style={{
-                              borderColor: shouldShowValidationError('associateName', null, formData.associateName) ? '#ef4444' : '#e2e8f0'
-                            }}
-                          />
-                        </div>
-                        <div className="report-form-group" style={{gridColumn: '4 / span 1'}}>
-                          <label>Associate Logo:</label>
-                          <input 
-                            id="associateLogoInput"
-                            type="file" 
-                            accept="image/*" 
-                            onChange={e => handleFileUpload(e, 'associateLogo')} 
-                            style={{ display: 'none' }} 
-                          />
-                          <button 
-                            type="button" 
-                            onClick={() => document.getElementById('associateLogoInput').click()}
-                            style={{
-                              background: formData.associateLogo ? 'linear-gradient(to right, #10b981, #3b82f6)' : '#e2e8f0',
-                              color: formData.associateLogo ? 'white' : '#666',
-                              padding: '8px 12px',
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              border: 'none',
-                              width: '100%',
-                              textAlign: 'left',
-                              boxShadow: formData.associateLogo ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
-                            }}
-                          >
-                            <FontAwesomeIcon icon={faUpload} style={{marginRight: '8px'}} />
-                            {formData.associateLogo ? `Selected: ${formData.associateLogo.name}` : 'No Uploaded Image'}
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {/* Step 2: Heading */}
-                  {currentStep === 1 && (
                     <>
                       <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
@@ -1128,8 +1029,8 @@ function Reports() {
                       </div>
                     </>
                   )}
-                  {/* Step 3: Event Details */}
-                  {currentStep === 2 && (
+                  {/* Step 2: Event Details (was previously Step 3) */}
+                  {currentStep === 1 && (
                     <>
                       <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
@@ -1251,8 +1152,8 @@ function Reports() {
                       </div>
                     </>
                   )}
-                  {/* Step 4: Narration of Events I */}
-                  {currentStep === 3 && (
+                  {/* Step 3: Narration of Events I (was previously Step 4) */}
+                  {currentStep === 2 && (
                     <>
                       <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 2'}}>
@@ -1335,8 +1236,8 @@ function Reports() {
                       </div>
                     </>
                   )}
-                  {/* Step 5: Narration of Events II */}
-                  {currentStep === 4 && (
+                  {/* Step 4: Narration of Events II (was previously Step 5) */}
+                  {currentStep === 3 && (
                     <>
                       <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
@@ -1577,14 +1478,14 @@ function Reports() {
                   )}
 
                   {/* Step 6: Attachments */}
-                  {currentStep === 5 && (
+                  {currentStep === 4 && (
                     <>
                       <div className="report-form-row">
                         <div className="report-form-group" style={{ gridColumn: '1 / span 4' }}>
                           <label>Attach photos of the event</label>
                           <div className="photo-upload-section">
                             <label className="photo-upload-label">
-                              <FontAwesomeIcon icon={faUpload} /> Upload Photos
+                              📷 Upload Photos
                               <input 
                                 key={`photo-input-${Date.now()}`}
                                 type="file" 
@@ -1632,7 +1533,7 @@ function Reports() {
                     </>
                   )}
                   {/* Step 7: Signatories */}
-                  {currentStep === 6 && (
+                  {currentStep === 5 && (
                     <>
                       <div className="report-form-row" style={{display: 'flex', gap: '1rem'}}>
                         <div className="report-form-group" style={{flex: 3, minWidth: 0}}>
@@ -1678,7 +1579,7 @@ function Reports() {
                             id="preparedBySignatureInput"
                             type="file" 
                             accept="image/*" 
-                            onChange={e => handleFileUpload(e, 'preparedBySignature')} 
+                            onChange={e => handleInputChange(e, 'preparedBySignature')} 
                             style={{ display: 'none' }} 
                           />
                           <button 
@@ -1697,7 +1598,7 @@ function Reports() {
                             }}
                           >
                             {formData.preparedBySignature ? '✓' : 'Upload'}
-                            <FontAwesomeIcon icon={faUpload} style={{marginLeft: '4px'}} />
+                            📝
                           </button>
                         </div>
                       </div>

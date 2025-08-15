@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->enum('status', ['draft', 'sent', 'reviewed', 'approved', 'cancelled', 'rejected'])->default('draft');
             $table->string('photo_path')->nullable();
-            $table->json('data')->nullable(); // for storing report details, photos, etc.
+            $table->longText('data')->nullable(); // Changed from json to longText for larger data storage
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
@@ -33,4 +33,3 @@ return new class extends Migration
         Schema::dropIfExists('reports');
     }
 };
- 

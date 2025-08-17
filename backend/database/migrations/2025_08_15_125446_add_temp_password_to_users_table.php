@@ -12,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->after('password')->default('associate_group_leader');
-            $table->string('organization')->after('role')->nullable();
-            $table->string('temp_password')->after('organization')->nullable(); // Temporary field for admin viewing
+            $table->string('temp_password')->after('organization')->nullable();
         });
     }
 
@@ -24,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['role', 'organization', 'temp_password']);
+            $table->dropColumn('temp_password');
         });
     }
 };

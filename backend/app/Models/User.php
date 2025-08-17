@@ -6,17 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Model;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -24,31 +20,33 @@ class User extends Authenticatable
         'role',
         'organization',
         'profile_picture',
+        'temp_password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
+        'temp_password', // Hide temp_password from API responses
     ];
 
     protected $appends = ['photo_url'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
+    protected $casts = [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+
+    protected static function booted()
+    {
+        // When user is updated, sync changes to associate group if applicable
+        static::updated(function ($user) {
+            if ($user->wasChanged('name') && $user->role === 'associate_group_leader') {
+                $associateGroup = \App\Models\AssociateGroup::where('user_id', $user->id)->first();
+                if ($associateGroup) {
+                    $associateGroup->update(['name' => $user->name]);
+                }
+            }
+        });
     }
 
     public function getPhotoUrlAttribute()

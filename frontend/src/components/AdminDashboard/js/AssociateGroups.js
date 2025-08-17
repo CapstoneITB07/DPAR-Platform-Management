@@ -32,7 +32,6 @@ function AssociateGroups() {
   const [associates, setAssociates] = useState([]);
   const [memberCount, setMemberCount] = useState(0);
   const [message, setMessage] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
   const [form, setForm] = useState({ 
     name: '', 
     type: '', 
@@ -40,9 +39,7 @@ function AssociateGroups() {
     description: '', 
     logo: '', 
     email: '', 
-    phone: '',
-    password: '',
-    password_confirmation: ''
+    phone: ''
   });
   const [logoFile, setLogoFile] = useState(null);
   const [error, setError] = useState('');
@@ -52,6 +49,17 @@ function AssociateGroups() {
   const [popupError, setPopupError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState('');
+  const [showDirectorManagementModal, setShowDirectorManagementModal] = useState(false);
+  const [showAddDirectorModal, setShowAddDirectorModal] = useState(false);
+  const [newDirectorForm, setNewDirectorForm] = useState({
+    director_name: '',
+    director_email: '',
+    contributions: '',
+    volunteers_recruited: 0,
+    events_organized: 0,
+    start_date: new Date().toISOString().split('T')[0],
+    reason_for_leaving: ''
+  });
 
   const fetchAssociates = async () => {
     try {
@@ -101,9 +109,8 @@ function AssociateGroups() {
 
   // --- 1. Reset error modal state when opening/closing add modal and after successful submission ---
   const openAddModal = () => {
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
     setLogoFile(null);
-    setCurrentStep(1);
     setShowAddModal(true);
     setShowPopup(false); // Reset error modal
     setPopupError('');
@@ -111,8 +118,7 @@ function AssociateGroups() {
 
   const closeAddModal = () => {
     setShowAddModal(false);
-    setCurrentStep(1);
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
     setLogoFile(null);
     setError('');
     setShowPopup(false); // Reset error modal
@@ -137,9 +143,7 @@ function AssociateGroups() {
       description: associate.description || '',
       logo: associate.logo || '',
       email: associate.email || '',
-      phone: associate.phone || '',
-      password: '',
-      password_confirmation: ''
+      phone: associate.phone || ''
     };
     
     setForm(formData);
@@ -152,7 +156,7 @@ function AssociateGroups() {
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditMode(false); // Reset edit mode when closing
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
     setLogoFile(null);
     setError('');
   };
@@ -183,24 +187,8 @@ function AssociateGroups() {
     }
   };
 
-  const handlePasswordChange = async (userId) => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/admin/change-password`, {
-        user_id: userId,
-        new_password: form.password,
-        new_password_confirmation: form.password_confirmation
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setMessage('Password changed successfully');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to change password');
-    }
-  };
-
   const validateForm = () => {
-    if (!form.name || !form.email || !form.phone) {
+    if (!form.name || !form.type || !form.director || !form.description || !form.email || !form.phone) {
       setError('Please fill in all required fields');
       return false;
     }
@@ -231,38 +219,6 @@ function AssociateGroups() {
       return false;
     }
 
-    // Validate password for new associates
-    if (!editMode) {
-      if (!form.password || !form.password_confirmation) {
-        setError('Please enter a password and confirmation');
-        return false;
-      }
-      if (form.password !== form.password_confirmation) {
-        setError('Passwords do not match');
-        return false;
-      }
-      if (form.password.length < 8) {
-        setError('Password must be at least 8 characters long');
-        return false;
-      }
-    }
-
-    // Validate password change if provided in edit mode
-    if (editMode && (form.password || form.password_confirmation)) {
-      if (!form.password || !form.password_confirmation) {
-        setError('Please enter both password and confirmation');
-        return false;
-      }
-      if (form.password !== form.password_confirmation) {
-        setError('Passwords do not match');
-        return false;
-      }
-      if (form.password.length < 8) {
-        setError('Password must be at least 8 characters long');
-        return false;
-      }
-    }
-
     setError('');
     return true;
   };
@@ -270,14 +226,9 @@ function AssociateGroups() {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (currentStep === 1) {
-      if (!validateStep1()) return;
-      setCurrentStep(2);
-      return;
-    }
-    if (currentStep === 2) {
-      if (!validateStep2()) return;
-    }
+    
+    if (!validateForm()) return;
+    
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const formData = new FormData();
@@ -288,25 +239,26 @@ function AssociateGroups() {
       formData.append('email', form.email);
       formData.append('phone', form.phone);
       if (logoFile) formData.append('logo', logoFile);
-      if (form.password) {
-        formData.append('password', form.password);
-        formData.append('password_confirmation', form.password_confirmation);
-      }
+      
       const response = await axios.post(`${API_BASE}/api/associate-groups`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      // --- 4. After successful submission, reset error modal state ---
+      
       if (response.status === 201 || response.status === 200) {
-        setNotification('Associate group added successfully!');
+        // Show success message with generated password
+        const generatedPassword = response.data.generated_password;
+        setNotification(`Associate group added successfully! Generated password: ${generatedPassword}`);
+        
+        // Show password in a modal for admin to copy
+        setPopupError(`Associate created successfully!\n\nGenerated Password: ${generatedPassword}\n\nPlease copy this password and provide it to the associate group leader.`);
+        setShowPopup(true);
+        
         setShowAddModal(false);
-        setCurrentStep(1);
-        setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', password: '', password_confirmation: '' });
+        setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
         setLogoFile(null);
         setError('');
-        setShowPopup(false); // Reset error modal
-        setPopupError('');
         fetchAssociates();
-        setTimeout(() => setNotification(''), 2000);
+        setTimeout(() => setNotification(''), 5000); // Show notification longer for password
       }
     } catch (error) {
       const backendMsg = error.response?.data?.errors?.email?.[0] || error.response?.data?.message || 'Failed to add associate. Please try again.';
@@ -332,7 +284,7 @@ function AssociateGroups() {
       return;
     }
     
-    if (!validateStep1()) return;
+    if (!validateForm()) return;
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -397,84 +349,6 @@ function AssociateGroups() {
     navigate('/');
   };
 
-  const nextStep = () => {
-    if (validateStep1()) {
-      setCurrentStep(2);
-      setError('');
-    }
-  };
-
-  const prevStep = () => {
-    setCurrentStep(1);
-    setError('');
-  };
-
-  const validateStep1 = () => {
-    if (!form.name || !form.type || !form.director || !form.description || !form.email || !form.phone) {
-      setError('Please fill in all required fields in Step 1');
-      return false;
-    }
-    
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
-      setError('Please enter a valid email address');
-      return false;
-    }
-    
-    // Validate phone number (must start with 09, 11 digits, only numbers)
-    const phoneRegex = /^09[0-9]{9}$/;
-    if (!phoneRegex.test(form.phone)) {
-      if (!form.phone.startsWith('09')) {
-        setError('Phone number must start with 09');
-      } else if (form.phone.length !== 11) {
-        setError('Phone number must be exactly 11 digits');
-      } else {
-        setError('Phone number must contain only numbers and start with 09');
-      }
-      return false;
-    }
-    
-    // Validate logo only for new associates (not for editing)
-    if (!editMode && !logoFile) {
-      setError('Please upload a logo');
-      return false;
-    }
-    
-    return true;
-  };
-
-  const validateStep2 = () => {
-    if (!editMode) {
-      if (!form.password || !form.password_confirmation) {
-        setError('Please enter a password and confirmation');
-        return false;
-      }
-      if (form.password !== form.password_confirmation) {
-        setError('Passwords do not match');
-        return false;
-      }
-      if (form.password.length < 8) {
-        setError('Password must be at least 8 characters long');
-        return false;
-      }
-    } else if (form.password || form.password_confirmation) {
-      if (!form.password || !form.password_confirmation) {
-        setError('Please enter both password and confirmation');
-        return false;
-      }
-      if (form.password !== form.password_confirmation) {
-        setError('Passwords do not match');
-        return false;
-      }
-      if (form.password.length < 8) {
-        setError('Password must be at least 8 characters long');
-        return false;
-      }
-    }
-    return true;
-  };
-
   const getLogoUrl = (logoPath) => {
     if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
     
@@ -520,6 +394,77 @@ function AssociateGroups() {
     }
   };
 
+  const handleViewPassword = async (associateId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/associate-groups/${associateId}/password`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPopupError(`Associate Password: ${response.data.password}`);
+      setShowPopup(true);
+    } catch (error) {
+      setError('Failed to fetch password.');
+    }
+  };
+
+  const handleManageDirectors = async (groupId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/associate-groups/${groupId}/director-history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Set the director history data and show the director management modal
+      setSelectedGroup({ id: groupId, director_histories: response.data });
+      setShowDirectorManagementModal(true);
+    } catch (error) {
+      console.error('Error fetching director history:', error);
+      setError('Failed to fetch director history data.');
+    }
+  };
+
+  const handleAddNewDirector = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.post(`${API_BASE}/api/associate-groups/${selectedGroup.id}/director-history`, {
+        ...newDirectorForm,
+        is_new_director: true
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Refresh director history
+      const historyResponse = await axios.get(`${API_BASE}/api/associate-groups/${selectedGroup.id}/director-history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setSelectedGroup(prev => ({ ...prev, director_histories: historyResponse.data }));
+      setShowAddDirectorModal(false);
+      setNewDirectorForm({
+        director_name: '',
+        director_email: '',
+        contributions: '',
+        volunteers_recruited: 0,
+        events_organized: 0,
+        start_date: new Date().toISOString().split('T')[0],
+        reason_for_leaving: ''
+      });
+      
+      setNotification('New director added successfully!');
+      setTimeout(() => setNotification(''), 3000);
+    } catch (error) {
+      console.error('Error adding new director:', error);
+      setError('Failed to add new director. Please try again.');
+    }
+  };
+
+  const handleNewDirectorFormChange = (e) => {
+    const { name, value } = e.target;
+    setNewDirectorForm(prev => ({ ...prev, [name]: value }));
+  };
+
   return (
     <AdminLayout>
       <Notification message={notification} onClose={() => setNotification('')} />
@@ -561,6 +506,16 @@ function AssociateGroups() {
                     e.stopPropagation();
                     handleEditAssociate(associate);
                   }}
+                />
+                <FontAwesomeIcon
+                  icon={faLock}
+                  className="password-icon"
+                  style={{ position: 'absolute', top: 8, left: 40, color: '#007bff', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewPassword(associate.id);
+                  }}
+                  title="View Password"
                 />
                 <FontAwesomeIcon
                   icon={faTrash}
@@ -607,6 +562,56 @@ function AssociateGroups() {
               <div className="enhanced-profile-stat"><span className="enhanced-profile-stat-label">Members</span><span className="enhanced-profile-stat-pill">{selectedGroup.members_count || 0}</span></div>
               <div className="enhanced-profile-stat"><span className="enhanced-profile-stat-label">Type</span><span className="enhanced-profile-stat-pill">{selectedGroup.type}</span></div>
             </div>
+            
+            {/* Director History Section */}
+            <div className="director-history-section">
+              <h4 className="director-history-title">
+                <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />
+                Director History
+              </h4>
+              {selectedGroup.director_histories && selectedGroup.director_histories.length > 0 ? (
+                <div className="director-history-list">
+                  {selectedGroup.director_histories.map((history, index) => (
+                    <div key={history.id} className={`director-history-item ${history.is_current ? 'current' : 'former'}`}>
+                      <div className="director-history-header">
+                        <span className="director-name">{history.director_name}</span>
+                        <span className={`director-status ${history.is_current ? 'current' : 'former'}`}>
+                          {history.is_current ? 'Current Director' : 'Former Director'}
+                        </span>
+                      </div>
+                      <div className="director-history-details">
+                        <div className="director-period">
+                          <strong>Period:</strong> {new Date(history.start_date).toLocaleDateString()} 
+                          {history.end_date && ` - ${new Date(history.end_date).toLocaleDateString()}`}
+                        </div>
+                        {history.contributions && (
+                          <div className="director-contributions">
+                            <strong>Contributions:</strong> {history.contributions}
+                          </div>
+                        )}
+                        <div className="director-stats">
+                          <span className="stat-item">
+                            <FontAwesomeIcon icon={faUsers} /> {history.volunteers_recruited} Volunteers
+                          </span>
+                          <span className="stat-item">
+                            <FontAwesomeIcon icon={faBullhorn} /> {history.events_organized} Events
+                          </span>
+                        </div>
+                        {history.reason_for_leaving && !history.is_current && (
+                          <div className="reason-for-leaving">
+                            <strong>Reason for leaving:</strong> {history.reason_for_leaving}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-director-history">
+                  <p>No director history available.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
@@ -618,20 +623,13 @@ function AssociateGroups() {
               <h3>Add Associate</h3>
               <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeAddModal} />
             </div>
-            {/* Progress Steps */}
-            <div className="step-progress">
-              <div className={`step ${currentStep >= 1 ? 'active' : ''}`}> <div className="step-number">1</div> <div className="step-label">Basic Information</div> </div>
-              <div className="step-connector"></div>
-              <div className={`step ${currentStep >= 2 ? 'active' : ''}`}> <div className="step-number">2</div> <div className="step-label">Password Setup</div> </div>
-            </div>
             <form className="add-edit-form enhanced-form" onSubmit={handleAddSubmit}>
-              {currentStep === 1 && (
-                <div className="step-content">
-                  <div className="step-header">
-                    <FontAwesomeIcon icon={faUser} className="step-icon" />
-                    <h4>Basic Information</h4>
-                    <p>Please provide the basic details for the associate organization.</p>
-                  </div>
+              <div className="step-content">
+                <div className="step-header">
+                  <FontAwesomeIcon icon={faUser} className="step-icon" />
+                  <h4>Basic Information</h4>
+                  <p>Please provide the basic details for the associate organization. A secure password will be auto-generated.</p>
+                </div>
                   
                   <div className="form-grid">
                     <div className="form-group">
@@ -734,67 +732,13 @@ function AssociateGroups() {
                     </div>
                   </div>
                 </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="step-content">
-                  <div className="step-header">
-                    <FontAwesomeIcon icon={faLock} className="step-icon" />
-                    <h4>Password Setup</h4>
-                    <p>{editMode ? 'Optionally update the password for this associate.' : 'Set up the initial password for the associate account.'}</p>
-                  </div>
-                  
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>{editMode ? 'New Password' : 'Password'} *</label>
-                      <input
-                        name="password"
-                        type="password"
-                        value={form.password}
-                        onChange={handleFormChange}
-                        placeholder="Enter password"
-                        required={!editMode}
-                        minLength="8"
-                      />
-                      <small>Password must be at least 8 characters long</small>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>Confirm Password *</label>
-                      <input
-                        name="password_confirmation"
-                        type="password"
-                        value={form.password_confirmation}
-                        onChange={handleFormChange}
-                        placeholder="Confirm password"
-                        required={!editMode}
-                        minLength="8"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
               
               {error && <div className="error-message">{error}</div>}
               
               <div className="form-actions">
-                {currentStep === 1 ? (
-                  <>
-                    <div></div>
-                    <button type="button" className="btn-next" onClick={() => setCurrentStep(2)}>
-                      Next Step <FontAwesomeIcon icon={faArrowRight} />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button type="button" className="btn-prev" onClick={() => setCurrentStep(1)}>
-                      <FontAwesomeIcon icon={faArrowLeft} /> Previous Step
-                    </button>
-                    <button type="submit" className="btn-submit">
-                      <FontAwesomeIcon icon={faCheck} /> Add Associate
-                    </button>
-                  </>
-                )}
+                <button type="submit" className="btn-submit">
+                  <FontAwesomeIcon icon={faCheck} /> Add Associate
+                </button>
               </div>
             </form>
           </div>
@@ -939,6 +883,25 @@ function AssociateGroups() {
               </div>
               {error && <div className="error-message">{error}</div>}
               <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn-manage-directors"
+                  onClick={() => handleManageDirectors(form.id)}
+                  style={{
+                    background: '#17a2b8',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    marginRight: '10px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />
+                  Manage Director History
+                </button>
                 <button type="submit" className="btn-submit">
                   <FontAwesomeIcon icon={faCheck} /> Save Changes
                 </button>
@@ -956,19 +919,341 @@ function AssociateGroups() {
           shouldCloseOnOverlayClick={true}
         >
           <div className="enhanced-error-header">
-            <span className="enhanced-error-icon" role="img" aria-label="Error">⚠️</span>
-            <h2>Error</h2>
+            {popupError.includes('Generated Password:') ? (
+              <>
+                <span className="enhanced-error-icon" role="img" aria-label="Success">✅</span>
+                <h2>Associate Created Successfully!</h2>
+              </>
+            ) : popupError.includes('Associate Password:') ? (
+              <>
+                <span className="enhanced-error-icon" role="img" aria-label="Password">🔐</span>
+                <h2>Associate Password</h2>
+              </>
+            ) : (
+              <>
+                <span className="enhanced-error-icon" role="img" aria-label="Error">⚠️</span>
+                <h2>Error</h2>
+              </>
+            )}
             <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowPopup(false)} />
           </div>
           <div className="enhanced-error-body">
-            <p style={{ fontWeight: 500, color: '#b00020', marginBottom: 8 }}>
-              {popupError}
-            </p>
-            <p style={{ color: '#555', fontSize: '0.95rem' }}>
-              If you need help, please check the form fields or contact support.
-            </p>
+            {popupError.includes('Generated Password:') ? (
+              <>
+                <p style={{ color: '#28a745', marginBottom: 16, fontWeight: 500 }}>
+                  The associate group has been created successfully!
+                </p>
+                <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '2px solid #28a745' }}>
+                  <p style={{ fontWeight: 600, color: '#28a745', marginBottom: '8px' }}>Generated Password:</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <code style={{ 
+                      background: '#fff', 
+                      padding: '8px 12px', 
+                      borderRadius: '4px', 
+                      border: '1px solid #ddd',
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                      flex: 1
+                    }}>
+                      {popupError.split('Generated Password: ')[1]?.split('\n')[0]}
+                    </code>
+                    <button 
+                      onClick={(e) => {
+                        navigator.clipboard.writeText(popupError.split('Generated Password: ')[1]?.split('\n')[0]);
+                        // Show temporary feedback
+                        const btn = e.target;
+                        const originalText = btn.textContent;
+                        btn.textContent = 'Copied!';
+                        btn.style.background = '#28a745';
+                        setTimeout(() => {
+                          btn.textContent = originalText;
+                          btn.style.background = '#007bff';
+                        }, 2000);
+                      }}
+                      style={{ 
+                        background: '#007bff', 
+                        color: '#fff', 
+                        border: 'none', 
+                        padding: '8px 12px', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Copy Password
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', marginBottom: 0 }}>
+                    ⚠️ Please copy this password and provide it to the associate group leader. It will not be shown again.
+                  </p>
+                </div>
+                <p style={{ color: '#555', fontSize: '0.95rem' }}>
+                  The associate can now log in using their email and the generated password above.
+                </p>
+              </>
+            ) : popupError.includes('Associate Password:') ? (
+              <>
+                <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '2px solid #007bff' }}>
+                  <p style={{ fontWeight: 600, color: '#007bff', marginBottom: '8px' }}>Password:</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <code style={{ 
+                      background: '#fff', 
+                      padding: '8px 12px', 
+                      borderRadius: '4px', 
+                      border: '1px solid #ddd',
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                      flex: 1
+                    }}>
+                      {popupError.split('Associate Password: ')[1]}
+                    </code>
+                    <button 
+                      onClick={(e) => {
+                        navigator.clipboard.writeText(popupError.split('Associate Password: ')[1]);
+                        // Show temporary feedback
+                        const btn = e.target;
+                        const originalText = btn.textContent;
+                        btn.textContent = 'Copied!';
+                        btn.style.background = '#28a745';
+                        setTimeout(() => {
+                          btn.textContent = originalText;
+                          btn.style.background = '#007bff';
+                        }, 2000);
+                      }}
+                      style={{ 
+                        background: '#007bff', 
+                        color: '#fff', 
+                        border: 'none', 
+                        padding: '8px 12px', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Copy Password
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', marginBottom: 0 }}>
+                    ⚠️ This password is stored temporarily and may be cleared for security.
+                  </p>
+                </div>
+                <p style={{ color: '#555', fontSize: '0.95rem' }}>
+                  Copy this password to provide to the associate group leader.
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontWeight: 500, color: '#b00020', marginBottom: 8 }}>
+                  {popupError}
+                </p>
+                <p style={{ color: '#555', fontSize: '0.95rem' }}>
+                  If you need help, please check the form fields or contact support.
+                </p>
+              </>
+            )}
           </div>
           <button className="enhanced-error-btn" onClick={() => setShowPopup(false)}>Close</button>
+        </Modal>
+      )}
+
+      {/* Director Management Modal */}
+      {showDirectorManagementModal && (
+        <Modal
+          isOpen={showDirectorManagementModal}
+          onRequestClose={() => setShowDirectorManagementModal(false)}
+          className="enhanced-error-modal"
+          overlayClassName="enhanced-error-overlay"
+          shouldCloseOnOverlayClick={true}
+        >
+          <div className="enhanced-error-header">
+            <span className="enhanced-error-icon" role="img" aria-label="Directors">👥</span>
+            <h2>Manage Director History</h2>
+            <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowDirectorManagementModal(false)} />
+          </div>
+          <div className="enhanced-error-body">
+            <div className="director-management-content">
+              {selectedGroup.director_histories && selectedGroup.director_histories.length > 0 ? (
+                <div className="director-history-list">
+                  {selectedGroup.director_histories.map((history, index) => (
+                    <div key={history.id} className={`director-history-item ${history.is_current ? 'current' : 'former'}`}>
+                      <div className="director-history-header">
+                        <span className="director-name">{history.director_name}</span>
+                        <span className={`director-status ${history.is_current ? 'current' : 'former'}`}>
+                          {history.is_current ? 'Current Director' : 'Former Director'}
+                        </span>
+                      </div>
+                      <div className="director-history-details">
+                        <div className="director-period">
+                          <strong>Period:</strong> {new Date(history.start_date).toLocaleDateString()} 
+                          {history.end_date && ` - ${new Date(history.end_date).toLocaleDateString()}`}
+                        </div>
+                        {history.contributions && (
+                          <div className="director-contributions">
+                            <strong>Contributions:</strong> {history.contributions}
+                          </div>
+                        )}
+                        <div className="director-stats">
+                          <span className="stat-item">
+                            <FontAwesomeIcon icon={faUsers} /> {history.volunteers_recruited} Volunteers
+                          </span>
+                          <span className="stat-item">
+                            <FontAwesomeIcon icon={faBullhorn} /> {history.events_organized} Events
+                          </span>
+                        </div>
+                        {history.reason_for_leaving && !history.is_current && (
+                          <div className="reason-for-leaving">
+                            <strong>Reason for leaving:</strong> {history.reason_for_leaving}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-director-history">
+                  <p>No director history available.</p>
+                </div>
+              )}
+              
+              <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button 
+                  className="enhanced-error-btn" 
+                  style={{ background: '#17a2b8', marginRight: '10px' }}
+                  onClick={() => setShowAddDirectorModal(true)}
+                >
+                  Add New Director
+                </button>
+                <button className="enhanced-error-btn" onClick={() => setShowDirectorManagementModal(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Add New Director Modal */}
+      {showAddDirectorModal && (
+        <Modal
+          isOpen={showAddDirectorModal}
+          onRequestClose={() => setShowAddDirectorModal(false)}
+          className="enhanced-error-modal"
+          overlayClassName="enhanced-error-overlay"
+          shouldCloseOnOverlayClick={true}
+        >
+          <div className="enhanced-error-header">
+            <span className="enhanced-error-icon" role="img" aria-label="Add Director">➕</span>
+            <h2>Add New Director</h2>
+            <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowAddDirectorModal(false)} />
+          </div>
+          <div className="enhanced-error-body">
+            <form onSubmit={handleAddNewDirector} className="add-director-form">
+              <div className="form-group">
+                <label>Director Name *</label>
+                <input
+                  type="text"
+                  name="director_name"
+                  value={newDirectorForm.director_name}
+                  onChange={handleNewDirectorFormChange}
+                  placeholder="Enter director's full name"
+                  required
+                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Director Email</label>
+                <input
+                  type="email"
+                  name="director_email"
+                  value={newDirectorForm.director_email}
+                  onChange={handleNewDirectorFormChange}
+                  placeholder="Enter director's email"
+                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Contributions & Works *</label>
+                <textarea
+                  name="contributions"
+                  value={newDirectorForm.contributions}
+                  onChange={handleNewDirectorFormChange}
+                  placeholder="Describe the director's contributions, works, and achievements..."
+                  required
+                  rows="4"
+                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px', resize: 'vertical' }}
+                />
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Volunteers Recruited</label>
+                  <input
+                    type="number"
+                    name="volunteers_recruited"
+                    value={newDirectorForm.volunteers_recruited}
+                    onChange={handleNewDirectorFormChange}
+                    min="0"
+                    style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Events Organized</label>
+                  <input
+                    type="number"
+                    name="events_organized"
+                    value={newDirectorForm.events_organized}
+                    onChange={handleNewDirectorFormChange}
+                    min="0"
+                    style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label>Start Date *</label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={newDirectorForm.start_date}
+                  onChange={handleNewDirectorFormChange}
+                  required
+                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Reason for Previous Director Leaving</label>
+                <input
+                  type="text"
+                  name="reason_for_leaving"
+                  value={newDirectorForm.reason_for_leaving}
+                  onChange={handleNewDirectorFormChange}
+                  placeholder="e.g., Passed to new director, Resigned, etc."
+                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+              </div>
+              
+              <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button 
+                  type="submit" 
+                  className="enhanced-error-btn" 
+                  style={{ background: '#28a745', marginRight: '10px' }}
+                >
+                  Add Director
+                </button>
+                <button 
+                  type="button" 
+                  className="enhanced-error-btn" 
+                  onClick={() => setShowAddDirectorModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </Modal>
       )}
     </AdminLayout>

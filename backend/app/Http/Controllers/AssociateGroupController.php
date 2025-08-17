@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class AssociateGroupController extends Controller
 {
@@ -51,7 +52,7 @@ class AssociateGroupController extends Controller
     public function show($id)
     {
         try {
-            $group = AssociateGroup::with('user')->findOrFail($id);
+            $group = AssociateGroup::with(['user', 'directorHistories'])->findOrFail($id);
             // Add full URL for logos
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
                 $group->logo = Storage::url($group->logo);
@@ -75,7 +76,6 @@ class AssociateGroupController extends Controller
                 'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'email' => 'required|email|unique:users,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
-                'password' => 'required|string|min:8|confirmed',
             ], [
                 'name.required' => 'Organization name is required.',
                 'email.required' => 'Email address is required.',
@@ -88,16 +88,17 @@ class AssociateGroupController extends Controller
                 'logo.image' => 'Logo must be a valid image file.',
                 'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
                 'logo.max' => 'Logo file size must not exceed 2MB.',
-                'password.required' => 'Password is required.',
-                'password.min' => 'Password must be at least 8 characters long.',
-                'password.confirmed' => 'Password confirmation does not match.',
             ]);
+
+            // Auto-generate a strong password
+            $plainPassword = $this->generateStrongPassword();
 
             // Create user account
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => Hash::make($plainPassword),
+                'temp_password' => $plainPassword, // Store plain text temporarily
                 'role' => 'associate_group_leader',
                 'organization' => $request->name,
             ]);
@@ -129,8 +130,12 @@ class AssociateGroupController extends Controller
                 $group->logo = Storage::url($group->logo);
             }
 
+            // Include the generated password in the response for admin viewing
+            $responseData = $group->load('user')->toArray();
+            $responseData['generated_password'] = $plainPassword;
+
             DB::commit();
-            return response()->json($group->load('user'), 201);
+            return response()->json($responseData, 201);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error creating associate group: ' . $e->getMessage());
@@ -139,6 +144,34 @@ class AssociateGroupController extends Controller
                 'error' => $e->getMessage()
             ], 422);
         }
+    }
+
+    /**
+     * Generate a strong password for new associate accounts
+     */
+    private function generateStrongPassword($length = 12)
+    {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        $password = '';
+
+        // Ensure at least one character from each category
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $symbols[random_int(0, strlen($symbols) - 1)];
+
+        // Fill the rest with random characters
+        $allChars = $uppercase . $lowercase . $numbers . $symbols;
+        for ($i = 4; $i < $length; $i++) {
+            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+
+        // Shuffle the password to make it more random
+        return str_shuffle($password);
     }
 
     public function update(Request $request, $id)
@@ -285,6 +318,64 @@ class AssociateGroupController extends Controller
                 'message' => 'Failed to delete associate group',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Get the password for an associate group (admin only)
+     */
+    public function getPassword($id)
+    {
+        try {
+            $group = AssociateGroup::with('user')->findOrFail($id);
+
+            // Check if user is admin (you may need to adjust this based on your auth system)
+            if (!Auth::user() || Auth::user()->role !== 'head_admin') {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            // Return the temporary password if it exists
+            if ($group->user && $group->user->temp_password) {
+                return response()->json([
+                    'associate_name' => $group->name,
+                    'email' => $group->email,
+                    'password' => $group->user->temp_password
+                ]);
+            } else {
+                return response()->json([
+                    'message' => 'Password not available. It may have been cleared for security.',
+                    'associate_name' => $group->name,
+                    'email' => $group->email
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error fetching associate password: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch password'], 500);
+        }
+    }
+
+    /**
+     * Clear temporary password for security (admin only)
+     */
+    public function clearTempPassword($id)
+    {
+        try {
+            $group = AssociateGroup::with('user')->findOrFail($id);
+
+            // Check if user is admin
+            if (!Auth::user() || Auth::user()->role !== 'head_admin') {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            // Clear the temporary password
+            if ($group->user) {
+                $group->user->update(['temp_password' => null]);
+            }
+
+            return response()->json(['message' => 'Temporary password cleared successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error clearing temporary password: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to clear password'], 500);
         }
     }
 }

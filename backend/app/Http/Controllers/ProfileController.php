@@ -18,6 +18,8 @@ class ProfileController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'organization' => $associateGroup ? $associateGroup->name : $user->organization,
+            'director' => $associateGroup ? $associateGroup->director : null,
+            'type' => $associateGroup ? $associateGroup->type : null,
             'logo' => $associateGroup ? $associateGroup->logo : null,
             'profile_picture_url' => $user->profile_picture ? asset('storage/' . $user->profile_picture) : null,
         ]);
@@ -72,6 +74,8 @@ class ProfileController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . Auth::id(),
+            'director' => 'nullable|string|max:255',
+            'type' => 'nullable|string|max:255',
         ]);
 
         try {
@@ -81,9 +85,17 @@ class ProfileController extends Controller
             $user->email = $request->email;
             $user->save();
 
+            // If user is an associate group leader, automatically sync the name change to the associate group
             $associateGroup = AssociateGroup::where('user_id', $user->id)->first();
-            if ($associateGroup && $request->has('organization')) {
-                $associateGroup->name = $request->organization;
+            if ($associateGroup) {
+                // Update the associate group name, director, and type to match the user's new values
+                $associateGroup->name = $request->name;
+                if ($request->has('director')) {
+                    $associateGroup->director = $request->director;
+                }
+                if ($request->has('type')) {
+                    $associateGroup->type = $request->type;
+                }
                 $associateGroup->save();
             }
 

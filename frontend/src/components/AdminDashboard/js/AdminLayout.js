@@ -20,9 +20,7 @@ function AdminLayout({ children }) {
     new_password_confirmation: ''
   });
   const [profileForm, setProfileForm] = useState({
-    name: '',
-    email: '',
-    organization: ''
+    email: ''
   });
   const [userDisplayName, setUserDisplayName] = useState('Admin');
   const [error, setError] = useState('');
@@ -152,13 +150,13 @@ function AdminLayout({ children }) {
       await axios.post(`${API_BASE}/api/profile/update`, profileForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Profile information updated successfully');
+      setSuccess('Email address updated successfully');
       // Refresh profile data to update UI
       await fetchProfile();
       // Force a re-render by updating the profile data
       setProfileForm(prev => ({ ...prev }));
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update profile information');
+      setError(error.response?.data?.message || 'Failed to update email address');
     } finally {
       setIsLoading(false);
     }
@@ -219,13 +217,11 @@ function AdminLayout({ children }) {
       
       // Update profile form with current data
       setProfileForm({
-        name: response.data.name || '',
-        email: response.data.email || '',
-        organization: response.data.organization || ''
+        email: response.data.email || ''
       });
       
-      // Update user display name for sidebar
-      setUserDisplayName(response.data.name || 'Admin');
+      // Update user display name for sidebar (fixed for head admin)
+      setUserDisplayName('Head Admin');
       
       // Update profile image
       if (response.data.profile_picture_url) {
@@ -570,7 +566,7 @@ function AdminLayout({ children }) {
                 gap: '8px'
               }}>
                 <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
-                Profile Picture
+                Admin Profile 
               </h3>
               
               <div style={{
@@ -644,48 +640,8 @@ function AdminLayout({ children }) {
 
             {/* Profile Information Section */}
             <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>
-              <h3 style={{ 
-                margin: '0 0 15px 0', 
-                fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
-                fontWeight: '600',
-                color: '#333',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
-                Profile Information
-              </h3>
-              
+            
               <form onSubmit={handleProfileInfoUpdate}>
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={profileForm.name}
-                    onChange={handleProfileFormChange}
-                    style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
-                    }}
-                    required
-                  />
-                </div>
-
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{
                     display: 'block',
@@ -714,33 +670,6 @@ function AdminLayout({ children }) {
                   />
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '8px', color: '#666' }} />
-                    Organization
-                  </label>
-                  <input
-                    type="text"
-                    name="organization"
-                    value={profileForm.organization}
-                    onChange={handleProfileFormChange}
-                    style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
                 <button 
                   type="submit" 
                   disabled={isLoading}
@@ -758,7 +687,7 @@ function AdminLayout({ children }) {
                     width: window.innerWidth <= 480 ? '100%' : 'auto'
                   }}
                 >
-                  {isLoading ? 'Updating...' : 'Update Profile Information'}
+                  {isLoading ? 'Updating...' : 'Update Email Address'}
                 </button>
               </form>
             </div>

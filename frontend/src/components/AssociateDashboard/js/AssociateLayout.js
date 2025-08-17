@@ -14,12 +14,14 @@ function AssociateLayout({ children }) {
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
-    organization: '',
+    director: '',
+    type: '',
   });
   const [profileForm, setProfileForm] = useState({
     name: '',
     email: '',
-    organization: ''
+    director: '',
+    type: '',
   });
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
@@ -176,13 +178,13 @@ function AssociateLayout({ children }) {
       await axios.post(`${API_BASE}/api/profile/update`, profileForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Profile information updated successfully');
+      setSuccess('Profile updated successfully');
       // Refresh profile data to update UI
       await fetchProfile();
       // Force a re-render by updating the profile data
       setProfileForm(prev => ({ ...prev }));
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update profile information');
+      setError(error.response?.data?.message || 'Failed to update organization information');
     } finally {
       setIsLoading(false);
     }
@@ -199,14 +201,16 @@ function AssociateLayout({ children }) {
       setProfileForm({
         name: response.data.name || '',
         email: response.data.email || '',
-        organization: response.data.organization || ''
+        director: response.data.director || '',
+        type: response.data.type || '',
       });
       
       // Update profile data
       setProfileData({
         name: response.data.name || '',
         email: response.data.email || '',
-        organization: response.data.organization || '',
+        director: response.data.director || '',
+        type: response.data.type || '',
       });
       
       // Update user display name for sidebar
@@ -609,8 +613,8 @@ function AssociateLayout({ children }) {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
-                Profile Picture
+                <FontAwesomeIcon icon={faBuilding} style={{ color: '#A11C22' }} />
+                Organization Information
               </h3>
               
               <div style={{
@@ -683,20 +687,7 @@ function AssociateLayout({ children }) {
             </div>
 
             {/* Profile Information Section */}
-            <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>
-              <h3 style={{ 
-                margin: '0 0 15px 0', 
-                fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
-                fontWeight: '600',
-                color: '#333',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
-                Profile Information
-              </h3>
-              
+            <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>             
               <form onSubmit={handleProfileInfoUpdate}>
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{
@@ -707,13 +698,14 @@ function AssociateLayout({ children }) {
                     fontSize: window.innerWidth <= 480 ? '12px' : '14px'
                   }}>
                     <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
-                    Full Name
+                    Organization Name
                   </label>
                   <input
                     type="text"
                     name="name"
                     value={profileForm.name}
                     onChange={handleProfileFormChange}
+                    placeholder="Enter your organization name"
                     style={{
                       width: '100%',
                       padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
@@ -726,6 +718,63 @@ function AssociateLayout({ children }) {
                   />
                 </div>
 
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '5px',
+                    fontWeight: '500',
+                    color: '#333',
+                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                  }}>
+                    <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '8px', color: '#666' }} />
+                    Organization Type
+                  </label>
+                  <input
+                    type="text"
+                    name="type"
+                    value={profileForm.type}
+                    onChange={handleProfileFormChange}
+                    placeholder="e.g., Emergency Response, Medical, etc."
+                    style={{
+                      width: '100%',
+                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '5px',
+                    fontWeight: '500',
+                    color: '#333',
+                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                  }}>
+                    <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
+                    Director Name
+                  </label>
+                  <input
+                    type="text"
+                    name="director"
+                    value={profileForm.director}
+                    onChange={handleProfileFormChange}
+                    placeholder="Enter the director's name"
+                    style={{
+                      width: '100%',
+                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
+                      border: '1px solid #ddd',
+                      borderRadius: '6px',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                      boxSizing: 'border-box'
+                    }}
+                    required
+                  />
+                </div>
+                
                 <div style={{ marginBottom: '15px' }}>
                   <label style={{
                     display: 'block',
@@ -755,51 +804,26 @@ function AssociateLayout({ children }) {
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '8px', color: '#666' }} />
-                    Organization
-                  </label>
-                  <input
-                    type="text"
-                    name="organization"
-                    value={profileForm.organization}
-                    onChange={handleProfileFormChange}
+                  <button 
+                    type="submit" 
+                    disabled={isLoading}
                     style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
+                      background: '#A11C22',
+                      color: 'white',
+                      border: 'none',
+                      padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
                       borderRadius: '6px',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
                       fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
+                      fontWeight: '500',
+                      opacity: isLoading ? 0.6 : 1,
+                      marginRight: '10px',
+                      width: window.innerWidth <= 480 ? '100%' : 'auto'
                     }}
-                  />
+                  >
+                    {isLoading ? 'Updating...' : 'Update Profile'}
+                  </button>
                 </div>
-
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  style={{
-                    background: '#A11C22',
-                    color: 'white',
-                    border: 'none',
-                    padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
-                    borderRadius: '6px',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                    fontWeight: '500',
-                    opacity: isLoading ? 0.6 : 1,
-                    marginRight: '10px',
-                    width: window.innerWidth <= 480 ? '100%' : 'auto'
-                  }}
-                >
-                  {isLoading ? 'Updating...' : 'Update Profile Information'}
-                </button>
               </form>
             </div>
 

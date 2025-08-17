@@ -15,6 +15,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\VolunteerController;
 use App\Http\Controllers\CalendarEventController;
+use App\Http\Controllers\DirectorHistoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/evaluations/statistics', [EvaluationController::class, 'statistics']);
     Route::apiResource('/evaluations', EvaluationController::class);
     Route::apiResource('/associate-groups', AssociateGroupController::class);
+    Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');
+    Route::delete('/associate-groups/{id}/password', [AssociateGroupController::class, 'clearTempPassword'])->middleware('role:head_admin');
+
+    // Director History routes
+    Route::get('/associate-groups/{id}/director-history', [DirectorHistoryController::class, 'index']);
+    Route::post('/associate-groups/{id}/director-history', [DirectorHistoryController::class, 'store'])->middleware('role:head_admin');
+    Route::put('/director-history/{id}', [DirectorHistoryController::class, 'update'])->middleware('role:head_admin');
+    Route::delete('/director-history/{id}', [DirectorHistoryController::class, 'destroy'])->middleware('role:head_admin');
 
     // Volunteer routes
     Route::get('/volunteers', [VolunteerController::class, 'index']);

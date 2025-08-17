@@ -38,4 +38,20 @@ class AssociateGroup extends Model
     {
         return $this->hasMany(Volunteer::class);
     }
+
+    /**
+     * Get the director history for this associate group
+     */
+    public function directorHistories()
+    {
+        return $this->hasMany(DirectorHistory::class);
+    }
+
+    /**
+     * Get the current director history
+     */
+    public function currentDirector()
+    {
+        return $this->hasOne(DirectorHistory::class)->where('is_current', true);
+    }
 }

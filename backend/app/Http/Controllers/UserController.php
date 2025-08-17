@@ -16,12 +16,10 @@ class UserController extends Controller
         /** @var \App\Models\User $user */
 
         $request->validate([
-            'name' => 'nullable|string|max:255',
-            'organization' => 'nullable|string|max:255',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        $updateData = $request->only(['name', 'organization']);
+        $updateData = [];
 
         if ($request->hasFile('profile_picture')) {
             // Delete old profile picture if exists

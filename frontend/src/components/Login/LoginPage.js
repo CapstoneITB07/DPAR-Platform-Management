@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css'; // Import the CSS file
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey } from '@fortawesome/free-solid-svg-icons';
 // You might need to import useHistory or useNavigate from react-router-dom for redirection
 // import { useHistory } from 'react-router-dom'; // For react-router-dom v5
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
@@ -9,10 +9,12 @@ import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [recoveryPasscode, setRecoveryPasscode] = useState('');
   const [message, setMessage] = useState('');
   const [showRA, setShowRA] = useState(false); // State for the pop-up
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [rememberMe, setRememberMe] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false); // State for recovery mode
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
 
@@ -32,24 +34,36 @@ function LoginPage() {
     setShowPassword(!showPassword);
   };
 
+  const toggleRecoveryMode = () => {
+    setIsRecoveryMode(!isRecoveryMode);
+    setMessage(''); // Clear any existing messages
+    setPassword(''); // Clear password when switching modes
+    setRecoveryPasscode(''); // Clear recovery passcode when switching modes
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/login', {
+      const endpoint = isRecoveryMode ? 'http://localhost:8000/api/login/recovery' : 'http://localhost:8000/api/login';
+      const requestBody = isRecoveryMode 
+        ? { email, recovery_passcode: recoveryPasscode }
+        : { email, password };
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         // Handle successful login
-        setMessage('Login successful!');
+        setMessage(data.message || 'Login successful!');
         console.log('Login successful:', data);
 
         // TODO: Assuming your backend returns a token and user data with role
@@ -126,6 +140,8 @@ function LoginPage() {
                 placeholder="Enter your email"
               />
             </div>
+            
+            {!isRecoveryMode ? (
             <div className="inputGroup"> {/* Password input group */}
               <label htmlFor="password" className="label">Password:</label>
               <div className="passwordInputContainer"> {/* Container for password input and icon */}
@@ -154,6 +170,38 @@ function LoginPage() {
                 </span>
               </div>
             </div>
+            ) : (
+              <div className="inputGroup"> {/* Recovery passcode input group */}
+                <label htmlFor="recoveryPasscode" className="label">Recovery Passcode:</label>
+                <div className="passwordInputContainer"> {/* Container for recovery passcode input and icon */}
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="recoveryPasscode"
+                    value={recoveryPasscode}
+                    onChange={(e) => setRecoveryPasscode(e.target.value)}
+                    className="passwordInput"
+                    required
+                    placeholder="Enter your recovery passcode"
+                    aria-label="Recovery Passcode"
+                    maxLength="10"
+                  />
+                  <span
+                    onClick={togglePasswordVisibility}
+                    className="passwordToggleIcon"
+                    aria-label={showPassword ? 'Hide passcode' : 'Show passcode'}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    {showPassword ? (
+                      <FontAwesomeIcon icon={faEye} />
+                    ) : (
+                      <FontAwesomeIcon icon={faEyeSlash} />
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+            
             <div className="rememberMe">
               <input
                 type="checkbox"
@@ -164,7 +212,21 @@ function LoginPage() {
               />
               <label htmlFor="rememberMe" className="rememberMeLabel">Remember me?</label>
             </div>
-            <button type="submit" className="signInButton">Sign In</button>
+            
+            <button type="submit" className="signInButton">
+              {isRecoveryMode ? 'Sign In with Recovery Passcode' : 'Sign In'}
+            </button>
+            
+            <div className="recoveryToggle">
+              <button
+                type="button"
+                onClick={toggleRecoveryMode}
+                className="recoveryToggleButton"
+              >
+                <FontAwesomeIcon icon={faKey} />
+                {isRecoveryMode ? ' Use Regular Password' : ' Forgot Password? Use Recovery Passcode'}
+              </button>
+            </div>
           </form>
           {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
         </div>

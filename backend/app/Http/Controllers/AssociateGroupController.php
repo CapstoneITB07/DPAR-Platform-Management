@@ -93,6 +93,13 @@ class AssociateGroupController extends Controller
             // Auto-generate a strong password
             $plainPassword = $this->generateStrongPassword();
 
+            // Generate three recovery passcodes
+            $recoveryPasscodes = [
+                $this->generateRecoveryPasscode(),
+                $this->generateRecoveryPasscode(),
+                $this->generateRecoveryPasscode()
+            ];
+
             // Create user account
             $user = User::create([
                 'name' => $request->name,
@@ -101,6 +108,7 @@ class AssociateGroupController extends Controller
                 'temp_password' => $plainPassword, // Store plain text temporarily
                 'role' => 'associate_group_leader',
                 'organization' => $request->name,
+                'recovery_passcodes' => $recoveryPasscodes,
             ]);
 
             // Handle logo upload
@@ -130,9 +138,10 @@ class AssociateGroupController extends Controller
                 $group->logo = Storage::url($group->logo);
             }
 
-            // Include the generated password in the response for admin viewing
+            // Include the generated password and recovery passcodes in the response for admin viewing
             $responseData = $group->load('user')->toArray();
             $responseData['generated_password'] = $plainPassword;
+            $responseData['recovery_passcodes'] = $recoveryPasscodes;
 
             DB::commit();
             return response()->json($responseData, 201);
@@ -172,6 +181,67 @@ class AssociateGroupController extends Controller
 
         // Shuffle the password to make it more random
         return str_shuffle($password);
+    }
+
+    /**
+     * Generate a recovery passcode for new associate accounts
+     */
+    private function generateRecoveryPasscode()
+    {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        $passcode = '';
+
+        // Ensure at least one character from each category
+        $passcode .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $passcode .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $passcode .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $passcode .= $symbols[random_int(0, strlen($symbols) - 1)];
+
+        // Fill the rest with random characters
+        $allChars = $uppercase . $lowercase . $numbers . $symbols;
+        for ($i = 4; $i < 10; $i++) { // Recovery passcodes are 10 characters long
+            $passcode .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+
+        return str_shuffle($passcode);
+    }
+
+    /**
+     * View existing recovery passcodes for an associate group
+     */
+    public function getRecoveryPasscodes($id)
+    {
+        try {
+            $group = AssociateGroup::with('user')->findOrFail($id);
+
+            // Check if user is admin (you may need to adjust this based on your auth system)
+            if (!Auth::user() || Auth::user()->role !== 'head_admin') {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            if (!$group->user) {
+                return response()->json(['message' => 'No user account found for this associate group.'], 404);
+            }
+
+            // Return the existing recovery passcodes
+            $recoveryPasscodes = $group->user->recovery_passcodes ?? [];
+
+            return response()->json([
+                'associate_name' => $group->name,
+                'email' => $group->email,
+                'recovery_passcodes' => $recoveryPasscodes
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching recovery passcodes: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch recovery passcodes',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function update(Request $request, $id)

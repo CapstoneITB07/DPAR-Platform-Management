@@ -31,6 +31,7 @@ use App\Http\Controllers\DirectorHistoryController;
 // Authentication Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/login/recovery', [AuthController::class, 'loginWithRecoveryPasscode'])->middleware('throttle:5,1');
 
 // Public GET route for announcements
 Route::get('/announcements', [AnnouncementController::class, 'index']);
@@ -74,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/associate-groups', AssociateGroupController::class);
     Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');
     Route::delete('/associate-groups/{id}/password', [AssociateGroupController::class, 'clearTempPassword'])->middleware('role:head_admin');
+    Route::get('/associate-groups/{id}/recovery-passcodes', [AssociateGroupController::class, 'getRecoveryPasscodes'])->middleware('role:head_admin');
 
     // Director History routes
     Route::get('/associate-groups/{id}/director-history', [DirectorHistoryController::class, 'index']);

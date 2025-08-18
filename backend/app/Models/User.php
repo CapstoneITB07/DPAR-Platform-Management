@@ -21,20 +21,23 @@ class User extends Authenticatable
         'organization',
         'profile_picture',
         'temp_password',
+        'recovery_passcodes',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
         'temp_password', // Hide temp_password from API responses
+        'recovery_passcodes', // Hide recovery_passcodes from API responses
     ];
 
     protected $appends = ['photo_url'];
 
     protected $casts = [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'recovery_passcodes' => 'array',
+    ];
 
     protected static function booted()
     {

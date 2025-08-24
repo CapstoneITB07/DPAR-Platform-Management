@@ -14,10 +14,12 @@ class AnnouncementController extends Controller
     {
         $announcements = Announcement::orderBy('created_at', 'desc')->get();
         foreach ($announcements as $a) {
-            if ($a->photo_path) {
-                $a->photo_url = asset('storage/' . $a->photo_path);
+            if ($a->photos && is_array($a->photos)) {
+                $a->photo_urls = array_map(function ($photoPath) {
+                    return asset('storage/' . $photoPath);
+                }, $a->photos);
             } else {
-                $a->photo_url = null;
+                $a->photo_urls = [];
             }
         }
         return $announcements;
@@ -28,25 +30,40 @@ class AnnouncementController extends Controller
         $data = $request->validate([
             'title' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'photo' => 'nullable|image|max:5120', // max 5MB
+            'photos.*' => 'nullable|image|max:5120', // max 5MB per photo
         ]);
 
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('announcements', 'public');
+        $photoPaths = [];
+        if ($request->hasFile('photos')) {
+            $photos = $request->file('photos');
+            // Convert single file to array for consistent handling
+            if (!is_array($photos)) {
+                $photos = [$photos];
+            }
+
+            foreach ($photos as $photo) {
+                if ($photo && $photo->isValid()) {
+                    $photoPath = $photo->store('announcements', 'public');
+                    $photoPaths[] = $photoPath;
+                }
+            }
         }
 
         $announcement = Announcement::create([
             'title' => $data['title'] ?? null,
             'description' => $data['description'] ?? null,
-            'photo_path' => $photoPath,
+            'photos' => $photoPaths,
         ]);
-        // Add photo_url to response
-        if ($announcement->photo_path) {
-            $announcement->photo_url = asset('storage/' . $announcement->photo_path);
+
+        // Add photo_urls to response
+        if (!empty($photoPaths)) {
+            $announcement->photo_urls = array_map(function ($photoPath) {
+                return asset('storage/' . $photoPath);
+            }, $photoPaths);
         } else {
-            $announcement->photo_url = null;
+            $announcement->photo_urls = [];
         }
+
         return response()->json($announcement, 201);
     }
 
@@ -56,30 +73,61 @@ class AnnouncementController extends Controller
         $data = $request->validate([
             'title' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'photo' => 'nullable|image|max:5120',
+            'photos.*' => 'nullable|image|max:5120',
         ]);
 
-        if ($request->hasFile('photo')) {
-            // Delete old photo if exists
-            if ($announcement->photo_path && Storage::disk('public')->exists($announcement->photo_path)) {
-                Storage::disk('public')->delete($announcement->photo_path);
+        if ($request->hasFile('photos')) {
+            // Delete old photos if they exist
+            if ($announcement->photos && is_array($announcement->photos)) {
+                foreach ($announcement->photos as $oldPhotoPath) {
+                    if (Storage::disk('public')->exists($oldPhotoPath)) {
+                        Storage::disk('public')->delete($oldPhotoPath);
+                    }
+                }
             }
-            $announcement->photo_path = $request->file('photo')->store('announcements', 'public');
+
+            $photos = $request->file('photos');
+            // Convert single file to array for consistent handling
+            if (!is_array($photos)) {
+                $photos = [$photos];
+            }
+
+            $photoPaths = [];
+            foreach ($photos as $photo) {
+                if ($photo && $photo->isValid()) {
+                    $photoPath = $photo->store('announcements', 'public');
+                    $photoPaths[] = $photoPath;
+                }
+            }
+            $announcement->photos = $photoPaths;
         }
+
         $announcement->title = $data['title'] ?? $announcement->title;
         $announcement->description = $data['description'] ?? $announcement->description;
         $announcement->save();
-        // Add photo_url to response
-        $announcement->photo_url = $announcement->photo_path ? asset('storage/' . $announcement->photo_path) : null;
+
+        // Add photo_urls to response
+        if ($announcement->photos && is_array($announcement->photos)) {
+            $announcement->photo_urls = array_map(function ($photoPath) {
+                return asset('storage/' . $photoPath);
+            }, $announcement->photos);
+        } else {
+            $announcement->photo_urls = [];
+        }
+
         return response()->json($announcement);
     }
 
     public function destroy(string $id)
     {
         $announcement = Announcement::findOrFail($id);
-        // Delete photo if exists
-        if ($announcement->photo_path && Storage::disk('public')->exists($announcement->photo_path)) {
-            Storage::disk('public')->delete($announcement->photo_path);
+        // Delete photos if they exist
+        if ($announcement->photos && is_array($announcement->photos)) {
+            foreach ($announcement->photos as $photoPath) {
+                if (Storage::disk('public')->exists($photoPath)) {
+                    Storage::disk('public')->delete($photoPath);
+                }
+            }
         }
         $announcement->delete();
         return response()->json(['message' => 'Announcement deleted.']);

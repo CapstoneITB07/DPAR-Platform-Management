@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
 import '../css/Announcements.css';
-import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt } from 'react-icons/fa';
+import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const slides = [
   {
@@ -114,6 +114,7 @@ function Announcements() {
   const [modalImg, setModalImg] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fullAnnouncementModal, setFullAnnouncementModal] = useState(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -134,19 +135,42 @@ function Announcements() {
     }
   };
 
-  // Function to truncate text to 15 words
-  const truncateText = (text, maxWords = 15) => {
+  // Function to truncate text to 3 lines
+  const truncateText = (text, maxLines = 3) => {
     if (!text) return '';
-    const words = text.split(' ');
-    if (words.length <= maxWords) return text;
-    return words.slice(0, maxWords).join(' ') + '...';
+    const lines = text.split('\n');
+    if (lines.length <= maxLines) return text;
+    
+    // Join first 3 lines and add ellipsis
+    return lines.slice(0, maxLines).join('\n') + '...';
   };
 
   // Function to check if text needs truncation
-  const needsTruncation = (text, maxWords = 15) => {
+  const needsTruncation = (text, maxLines = 3) => {
     if (!text) return false;
-    const words = text.split(' ');
-    return words.length > maxWords;
+    const lines = text.split('\n');
+    return lines.length > maxLines || text.length > 150; // Also check character length
+  };
+
+  const openFullModal = (announcement) => {
+    setFullAnnouncementModal(announcement);
+    setCurrentPhotoIndex(0);
+  };
+
+  const nextPhoto = () => {
+    if (fullAnnouncementModal && fullAnnouncementModal.photo_urls && fullAnnouncementModal.photo_urls.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === fullAnnouncementModal.photo_urls.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevPhoto = () => {
+    if (fullAnnouncementModal && fullAnnouncementModal.photo_urls && fullAnnouncementModal.photo_urls.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === 0 ? fullAnnouncementModal.photo_urls.length - 1 : prev - 1
+      );
+    }
   };
 
   return (
@@ -158,8 +182,16 @@ function Announcements() {
           
           {/* Modal for image */}
           {modalImg && (
-            <div className="announcements-modal" onClick={() => setModalImg(null)}>
-              <img src={modalImg} alt="Announcement Large" className="announcements-modal-img" />
+            <div className="announcements-image-modal" onClick={() => setModalImg(null)}>
+              <div className="announcements-image-modal-content" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  className="announcements-image-modal-close"
+                  onClick={() => setModalImg(null)}
+                >
+                  ×
+                </button>
+                <img src={modalImg} alt="Announcement Large" className="announcements-modal-img" />
+              </div>
             </div>
           )}
 
@@ -187,13 +219,48 @@ function Announcements() {
                 <div className="announcement-full-modal-description">
                   {fullAnnouncementModal.description}
                 </div>
-                {fullAnnouncementModal.photo_url && (
-                  <div className="announcement-full-modal-image">
-                    <img
-                      src={fullAnnouncementModal.photo_url}
-                      alt="Announcement"
-                      className="announcement-full-modal-img"
-                    />
+                
+                {/* Photo Navigation (Instagram/Facebook style) */}
+                {fullAnnouncementModal.photo_urls && fullAnnouncementModal.photo_urls.length > 0 && (
+                  <div className="announcement-photo-navigation">
+                    <div className="announcement-photo-container">
+                      <img
+                        src={fullAnnouncementModal.photo_urls[currentPhotoIndex]}
+                        alt={`Photo ${currentPhotoIndex + 1}`}
+                        className="announcement-full-modal-img"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Close the announcement modal when opening image modal
+                          setFullAnnouncementModal(null);
+                          setModalImg(fullAnnouncementModal.photo_urls[currentPhotoIndex]);
+                        }}
+                      />
+                      
+                      {/* Navigation Arrows */}
+                      {fullAnnouncementModal.photo_urls.length > 1 && (
+                        <>
+                          <button 
+                            className="announcement-photo-nav-btn announcement-photo-nav-prev"
+                            onClick={prevPhoto}
+                          >
+                            <FaChevronLeft />
+                          </button>
+                          <button 
+                            className="announcement-photo-nav-btn announcement-photo-nav-next"
+                            onClick={nextPhoto}
+                          >
+                            <FaChevronRight />
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Photo Counter */}
+                      {fullAnnouncementModal.photo_urls.length > 1 && (
+                        <div className="announcement-photo-counter">
+                          {currentPhotoIndex + 1} / {fullAnnouncementModal.photo_urls.length}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -217,7 +284,7 @@ function Announcements() {
                   <div 
                     key={a.id} 
                     className="announcement-card"
-                    onClick={() => setFullAnnouncementModal(a)}
+                    onClick={() => openFullModal(a)}
                     style={{ cursor: 'pointer' }}
                   >
                     {/* Date/Time Row */}
@@ -244,7 +311,7 @@ function Announcements() {
                               className="announcement-see-more-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setFullAnnouncementModal(a);
+                                openFullModal(a);
                               }}
                             >
                               See more
@@ -252,17 +319,28 @@ function Announcements() {
                           )}
                         </div>
                       )}
-                      {a.photo_url && (
-                        <div className="announcement-img-wrapper">
-                          <img
-                            src={a.photo_url}
-                            alt="Announcement"
-                            className="announcement-img"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalImg(a.photo_url);
-                            }}
-                          />
+                      
+                      {/* Show only first photo in card */}
+                      {a.photo_urls && a.photo_urls.length > 0 && (
+                        <div className="announcement-photos-wrapper">
+                          <div className="announcement-img-wrapper" style={{ position: 'relative' }}>
+                            <img
+                              src={a.photo_urls[0]}
+                              alt="Announcement"
+                              className="announcement-img"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Close the announcement modal when opening image modal
+                                setFullAnnouncementModal(null);
+                                setModalImg(a.photo_urls[0]);
+                              }}
+                            />
+                            {a.photo_urls.length > 1 && (
+                              <div className="announcement-photos-indicator">
+                                <span className="announcement-photos-count">+{a.photo_urls.length - 1} more</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

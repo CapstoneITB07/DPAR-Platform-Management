@@ -9,6 +9,10 @@ class Announcement extends Model
     protected $fillable = [
         'title',
         'description',
-        'photo_path',
+        'photos',
+    ];
+
+    protected $casts = [
+        'photos' => 'array',
     ];
 }

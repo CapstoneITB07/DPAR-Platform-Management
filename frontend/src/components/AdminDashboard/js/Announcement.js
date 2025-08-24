@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import axios from 'axios';
-import { FaEllipsisH } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import '../css/announcement.css';
 
 // Notification component
@@ -19,15 +19,16 @@ function Announcement() {
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [photo, setPhoto] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editId, setEditId] = useState(null);
   const [showDescModal, setShowDescModal] = useState(false);
-  const [descModalContent, setDescModalContent] = useState({ title: '', description: '', photo_url: null });
+  const [descModalContent, setDescModalContent] = useState({ title: '', description: '', photo_urls: [] });
   const [notification, setNotification] = useState('');
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -52,7 +53,12 @@ function Announcement() {
     const formData = new FormData();
     if (title) formData.append('title', title);
     if (description) formData.append('description', description);
-    if (photo) formData.append('photo', photo);
+    
+    // Append multiple photos
+    photos.forEach((photo, index) => {
+      formData.append(`photos[${index}]`, photo);
+    });
+    
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (editId) {
@@ -71,8 +77,8 @@ function Announcement() {
       setShowModal(false);
       setTitle('');
       setDescription('');
-      setPhoto(null);
-      setPreview(null);
+      setPhotos([]);
+      setPreviews([]);
       setEditId(null);
       fetchAnnouncements();
       setTimeout(() => setNotification(''), 2000);
@@ -91,8 +97,8 @@ function Announcement() {
     setEditId(a.id);
     setTitle(a.title || '');
     setDescription(a.description || '');
-    setPhoto(null);
-    setPreview(a.photo_url || null);
+    setPhotos([]);
+    setPreviews(a.photo_urls || []);
     setShowModal(true);
     setMenuOpenId(null);
   };
@@ -111,6 +117,95 @@ function Announcement() {
       setError('Failed to delete announcement');
     }
     setMenuOpenId(null);
+  };
+
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = [];
+    const newPreviews = [];
+
+    files.forEach(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please upload valid image files (JPEG, PNG, JPG, or GIF)');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size should not exceed 2MB');
+        return;
+      }
+      validFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    });
+
+    setPhotos(prev => [...prev, ...validFiles]);
+    setPreviews(prev => [...prev, ...newPreviews]);
+    e.target.value = '';
+  };
+
+  const removePhoto = (index) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearForm = () => {
+    setShowModal(false);
+    setTitle('');
+    setDescription('');
+    setPhotos([]);
+    setPreviews([]);
+    setEditId(null);
+  };
+
+  const openFullModal = (announcement) => {
+    setDescModalContent({
+      title: announcement.title,
+      description: announcement.description,
+      photo_urls: announcement.photo_urls || []
+    });
+    setCurrentPhotoIndex(0);
+    setShowDescModal(true);
+  };
+
+  const nextPhoto = () => {
+    if (descModalContent.photo_urls && descModalContent.photo_urls.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === descModalContent.photo_urls.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevPhoto = () => {
+    if (descModalContent.photo_urls && descModalContent.photo_urls.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === 0 ? descModalContent.photo_urls.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Function to truncate description to 3 lines
+  const truncateDescription = (text, maxLines = 3) => {
+    if (!text) return '';
+    
+    // Split by both newlines and spaces to handle long text better
+    const words = text.split(' ');
+    const maxWords = 25; // Limit to approximately 3 lines
+    
+    if (words.length <= maxWords) return text;
+    
+    // Join first 25 words and add ellipsis
+    return words.slice(0, maxWords).join(' ') + '...';
+  };
+
+  // Function to check if description needs truncation
+  const needsTruncation = (text, maxLines = 3) => {
+    if (!text) return false;
+    
+    // Check both word count and character length for better detection
+    const words = text.split(' ');
+    const charCount = text.length;
+    
+    return words.length > 25 || charCount > 120; // More lenient limits
   };
 
   return (
@@ -132,7 +227,7 @@ function Announcement() {
           <div className="announcement-modal-card">
             <div className="announcement-modal-header">
               <h3 className="announcement-modal-title">{editId ? 'Edit Announcement' : 'Create Announcement'}</h3>
-              <button onClick={() => { setShowModal(false); setTitle(''); setDescription(''); setPhoto(null); setPreview(null); setEditId(null); }} className="announcement-modal-close">&times;</button>
+              <button onClick={clearForm} className="announcement-modal-close">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="announcement-modal-form">
               <div>
@@ -144,51 +239,42 @@ function Announcement() {
                 <textarea value={description} onChange={e => setDescription(e.target.value)} className="announcement-form-textarea" />
               </div>
               <div>
-                <label className="announcement-upload-label">Upload a Photo</label>
-                <div className="announcement-upload-row">
-                  {preview ? (
-                    <div className="announcement-upload-preview">
-                      <img src={preview} alt="Preview" className="announcement-upload-img" />
-                      <button type="button" onClick={() => { setPhoto(null); setPreview(null); }} className="announcement-upload-remove">Remove</button>
+                <label className="announcement-upload-label">Upload Photos</label>
+                <div className="announcement-upload-container">
+                  {/* Photo Previews */}
+                  <div className="announcement-photos-grid">
+                    {previews.map((preview, index) => (
+                      <div key={index} className="announcement-photo-preview">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="announcement-upload-img" />
+                        <button 
+                          type="button" 
+                          onClick={() => removePhoto(index)} 
+                          className="announcement-upload-remove"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    {/* Upload Button */}
+                    <div className="announcement-upload-placeholder">
+                      <input 
+                        id="announcement-photos-upload" 
+                        type="file" 
+                        multiple
+                        accept="image/jpeg,image/png,image/jpg,image/gif" 
+                        onChange={handlePhotoUpload}
+                        style={{ display: 'none' }} 
+                      />
+                      <label htmlFor="announcement-photos-upload" className="announcement-upload-btn">
+                        Choose Photos
+                      </label>
                     </div>
-                  ) : (
-                    <div className="announcement-upload-placeholder" style={{ width: 70, height: 70, borderRadius: '50%', border: '1.5px dashed #ccc', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 32 }}>
-                      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="3" y="7" width="18" height="12" rx="2" fill="#eee"/>
-                        <circle cx="12" cy="13" r="4" fill="#bbb"/>
-                        <rect x="8" y="4" width="8" height="3" rx="1.5" fill="#bbb"/>
-                        <circle cx="12" cy="13" r="2" fill="#fff"/>
-                      </svg>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <input id="announcement-photo-upload" type="file" accept="image/jpeg,image/png,image/jpg,image/gif" onChange={e => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
-                        if (!validTypes.includes(file.type)) {
-                          alert('Please upload a valid image file (JPEG, PNG, JPG, or GIF)');
-                          e.target.value = '';
-                          return;
-                        }
-                        if (file.size > 2 * 1024 * 1024) {
-                          alert('File size should not exceed 2MB');
-                          e.target.value = '';
-                          return;
-                        }
-                        setPhoto(file);
-                        setPreview(URL.createObjectURL(file));
-                      }
-                    }} style={{ display: 'none' }} />
-                    <label htmlFor="announcement-photo-upload" className="announcement-upload-btn">
-                      {photo ? 'Change Photo' : 'Choose Photo'}
-                    </label>
-                    <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
                   </div>
+                  <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB each)</small>
                 </div>
               </div>
               <div className="announcement-modal-actions">
-                <button type="button" onClick={() => { setShowModal(false); setTitle(''); setDescription(''); setPhoto(null); setPreview(null); setEditId(null); }} className="announcement-cancel-btn">Cancel</button>
+                <button type="button" onClick={clearForm} className="announcement-cancel-btn">Cancel</button>
                 <button type="submit" disabled={loading} className="announcement-submit-btn">{loading ? (editId ? 'Saving...' : 'Posting...') : (editId ? 'Save' : 'Post')}</button>
               </div>
             </form>
@@ -223,40 +309,83 @@ function Announcement() {
               {/* Content */}
               <div className="announcement-card-content">
                 {a.title && <div className="announcement-card-title">{a.title}</div>}
-                {a.description && (() => {
-                  const words = a.description.split(' ');
-                  const isLong = words.length > 15;
-                  const shortDesc = isLong ? words.slice(0, 15).join(' ') + '...' : a.description;
-                  return (
-                    <>
-                      <div className="announcement-card-desc">
-                        {shortDesc}
-                        {isLong && (
-                          <button
-                            className="announcement-card-see-more"
-                            onClick={() => setDescModalContent({ title: a.title, description: a.description, photo_url: a.photo_url }) || setShowDescModal(true)}
-                          >See More</button>
-                        )}
+                {a.description && (
+                  <div className="announcement-card-desc">
+                    <div className="announcement-text-content">
+                      {truncateDescription(a.description)}
+                    </div>
+                    {needsTruncation(a.description) && (
+                      <button
+                        className="announcement-card-see-more"
+                        onClick={() => openFullModal(a)}
+                      >See More</button>
+                    )}
+                  </div>
+                )}
+                {/* Show only first photo in card */}
+                {a.photo_urls && a.photo_urls.length > 0 && (
+                  <div className="announcement-photos-display">
+                    <img 
+                      src={a.photo_urls[0]} 
+                      alt="Announcement" 
+                      className="announcement-card-img" 
+                    />
+                    {a.photo_urls.length > 1 && (
+                      <div className="announcement-photos-indicator">
+                        <span className="announcement-photos-count">+{a.photo_urls.length - 1} more</span>
                       </div>
-                    </>
-                  );
-                })()}
-                {a.photo_url && (
-                  <img src={a.photo_url} alt="Announcement" className="announcement-card-img" />
+                    )}
+                  </div>
                 )}
               </div>
             </div>
           ))
         )}
       </div>
+      {/* Full Description Modal with Photo Navigation */}
       {showDescModal && (
         <div className="announcement-desc-modal-overlay">
           <div className="announcement-desc-modal-card">
             <button onClick={() => setShowDescModal(false)} className="announcement-desc-modal-close">&times;</button>
             <h3 className="announcement-desc-modal-title">{descModalContent.title}</h3>
             <div className="announcement-desc-modal-desc">{descModalContent.description}</div>
-            {descModalContent.photo_url && (
-              <img src={descModalContent.photo_url} alt="Announcement" className="announcement-desc-modal-img" />
+            
+            {/* Photo Navigation (Instagram/Facebook style) */}
+            {descModalContent.photo_urls && descModalContent.photo_urls.length > 0 && (
+              <div className="announcement-photo-navigation">
+                <div className="announcement-photo-container">
+                  <img 
+                    src={descModalContent.photo_urls[currentPhotoIndex]} 
+                    alt={`Photo ${currentPhotoIndex + 1}`} 
+                    className="announcement-desc-modal-img" 
+                  />
+                  
+                  {/* Navigation Arrows */}
+                  {descModalContent.photo_urls.length > 1 && (
+                    <>
+                      <button 
+                        className="announcement-photo-nav-btn announcement-photo-nav-prev"
+                        onClick={prevPhoto}
+                      >
+                        <FaChevronLeft />
+                      </button>
+                      <button 
+                        className="announcement-photo-nav-btn announcement-photo-nav-next"
+                        onClick={nextPhoto}
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Photo Counter */}
+                  {descModalContent.photo_urls.length > 1 && (
+                    <div className="announcement-photo-counter">
+                      {currentPhotoIndex + 1} / {descModalContent.photo_urls.length}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>

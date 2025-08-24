@@ -312,6 +312,19 @@
   color: #444;
   margin-bottom: 12px;
   line-height: 1.5;
+  /* Fix for description overflow - add proper text wrapping and truncation */
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  max-width: 100%;
+  /* Add height limit and overflow hidden to prevent vertical overflow */
+  max-height: 4.5em; /* Approximately 3 lines */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
 }
 
 .announcement-see-more-btn {
@@ -342,9 +355,10 @@
   max-width: 90vw;
   max-height: 90vh;
   width: 600px;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
   position: relative;
+  z-index: 2000; /* Lower than image modal (3000) but higher than other content */
 }
 
 .announcement-full-modal-header {
@@ -353,6 +367,7 @@
   align-items: center;
   padding: 24px 24px 16px 24px;
   border-bottom: 1px solid #e3e7ed;
+  background: #f8f9fa;
 }
 
 .announcement-full-modal-header h2 {
@@ -364,7 +379,7 @@
 }
 
 .announcement-full-modal-close {
-  background: none;
+  background: rgba(255, 255, 255, 0.9);
   border: none;
   font-size: 28px;
   color: #666;
@@ -380,8 +395,9 @@
 }
 
 .announcement-full-modal-close:hover {
-  background: #f5f5f5;
+  background: rgba(255, 255, 255, 1);
   color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .announcement-full-modal-datetime {
@@ -394,11 +410,20 @@
 }
 
 .announcement-full-modal-description {
-  padding: 24px;
+  padding: 20px 24px;
   font-size: 16px;
   line-height: 1.6;
   color: #333;
   text-align: left;
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  /* Fix for description overflow in modal */
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  max-width: 100%;
+  overflow: visible;
 }
 
 .announcement-full-modal-image {
@@ -409,8 +434,87 @@
   width: 100%;
   max-height: 400px;
   object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  margin: 0;
+  display: block;
+  cursor: pointer;
+  position: relative;
+  z-index: 1; /* Ensure proper stacking context */
+}
+
+/* Photo Navigation System (Instagram/Facebook style) */
+.announcement-photo-navigation {
+  margin: 0;
+  padding: 20px 24px 24px 24px;
+  background: #fff;
+}
+
+.announcement-photo-container {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1; /* Ensure proper stacking context */
+}
+
+/* Navigation Arrows */
+.announcement-photo-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: #333;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 10; /* Higher z-index to appear above other elements */
+}
+
+.announcement-photo-nav-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.announcement-photo-nav-prev {
+  left: 16px;
+}
+
+.announcement-photo-nav-next {
+  right: 16px;
+}
+
+/* Photo Counter */
+.announcement-photo-counter {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 10; /* Higher z-index to appear above other elements */
+  backdrop-filter: blur(4px);
+}
+
+/* Multiple Photos Wrapper */
+.announcement-photos-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .announcement-img-wrapper {
@@ -419,6 +523,25 @@
   border-radius: 10px;
   margin-top: 10px;
   margin-bottom: 10px;
+  position: relative;
+}
+
+/* Photo Indicator for Multiple Photos */
+.announcement-photos-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 2;
+}
+
+.announcement-photos-count {
+  color: white;
 }
 
 .announcement-img {
@@ -440,7 +563,53 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 2000; /* For announcement modal */
+}
+
+.announcements-image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000; /* Higher than announcement modal */
+}
+
+.announcements-image-modal-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+.announcements-image-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  font-size: 24px;
+  color: #333;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.announcements-image-modal-close:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .announcements-modal-img {
@@ -747,7 +916,8 @@
   }
   .announcement-full-modal-content {
     width: 95vw;
-    max-width: 400px;
+    max-width: 380px;
+    border-radius: 12px;
   }
   .announcement-full-modal-header {
     padding: 20px 20px 12px 20px;
@@ -760,7 +930,7 @@
   }
   .announcement-full-modal-description {
     font-size: 14px;
-    padding: 16px;
+    padding: 16px 20px;
   }
   .announcement-full-modal-image {
     padding: 0 20px 20px 20px;
@@ -771,229 +941,155 @@
   .announcement-img {
     max-height: 250px;
   }
+  .announcements-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000; /* For announcement modal */
+  }
+  
+  .announcements-image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000; /* Higher than announcement modal */
+  }
+  
+  .announcements-image-modal-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 98vw;
+    max-height: 98vh;
+  }
+  
+  .announcements-image-modal-close {
+    position: absolute;
+    top: -35px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    font-size: 20px;
+    color: #333;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+  
   .announcements-modal-img {
     max-width: 95vw;
     max-height: 85vh;
   }
-  .announcements-loading {
-    min-height: 200px;
-    padding: 30px 16px;
-  }
-  .announcements-loading-spinner {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 16px;
-  }
-  .announcements-loading-text {
-    font-size: 14px;
-  }
-  .announcements-flex {
-    margin-top: 8px;
-  }
-  .announcements-right-col {
-    margin-top: 8px;
-  }
-  .announcement-card:first-child:hover {
-    margin-top: 8px;
-  }
-}
-
-@media (max-width: 767px) and (orientation: landscape) {
-  .announcements-left-card {
-    height: 250px;
-  }
-  .announcements-content-overlay {
-    top: 12px;
-  }
-  .announcements-title {
-    font-size: 1.4rem;
-  }
-  .announcements-subtitle {
-    font-size: 0.85rem;
-  }
-  .announcements-desc {
-    font-size: 0.8rem;
-    margin: 12px 0;
-  }
-  .announcements-icon-bg {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 8px;
-  }
-  .announcements-icon-bg svg {
-    width: 32px;
-    height: 32px;
-  }
-  .announcements-gradient-bottom {
-    min-height: 150px;
-    padding: 16px 8px 8px 8px;
-  }
-} 
-
-@media (max-width: 480px) {
-  .announcements-bg {
-    padding: 12px 0;
-  }
-  .announcements-container {
-    padding: 0 8px;
-  }
-  .announcements-header {
-    font-size: 24px;
-    margin-bottom: 10px;
-  }
-  .announcements-left-card {
-    height: 350px !important;
-    border-radius: 12px;
-  }
-  .announcements-content-overlay {
-    padding: 0 50px;
-    top: 16px;
-    width: 98%;
-  }
   
-  .announcements-title {
-    font-size: 1.5rem;
-    margin-bottom: 4px;
-  }
-  .announcements-subtitle {
-    font-size: 0.9rem;
-  }
-  .announcements-desc {
-    font-size: 0.95rem;
-    margin: 30px 0;
-    padding: 0 6px;
-    padding-bottom: 10px !important;
-    margin-top: 40px !important;
-  }
-  .announcements-icon-bg {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 10px;
-  }
-  .announcements-icon-bg svg {
-    width: 36px;
-    height: 36px;
-  }
-  .announcements-arrow {
-    font-size: 1.2rem !important;
-    padding: 0 2px !important;
-  }
-  .announcements-arrow-left { left: 2px !important; }
-  .announcements-arrow-right { right: 2px !important; }
-  .announcements-gradient-bottom {
-    min-height: 28%;
-    padding: 20px 8px 8px 8px;
-  }
-  .announcements-dots,
-  .announcements-dot,
-  .announcements-dot.active {
-    gap: 4px;
-    width: 8px !important;
-    height: 8px !important;
-  }
-  .announcements-right-col {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 0 2px;
-  }
-  .announcement-card {
-    border-radius: 10px;
-    padding-bottom: 8px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-  }
-  .announcement-card:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(167,40,40,0.08);
-  }
-  .announcement-card:active {
-    transform: scale(0.97) translateY(0px);
-  }
-  .announcement-datetime-row {
-    padding: 12px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  .announcement-date-badge, .announcement-time-badge {
-    font-size: 12px;
-    padding: 1px 6px;
-    background: transparent;
-    color: #000000;
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-color: #a72828;
-    text-decoration-thickness: 1.5px;
-    text-underline-offset: 2px;
-  }
-  .announcement-content {
-    padding: 6px 12px 0 12px;
-  }
-  .announcement-title {
-    font-size: 16px;
-    margin-bottom: 3px;
-  }
-  .announcement-desc {
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-  .announcement-see-more-btn {
-    font-size: 11px;
-    margin-left: 3px;
-  }
-  .announcement-full-modal-content {
-    width: 98vw;
-    max-width: 350px;
-  }
-  .announcement-full-modal-header {
-    padding: 16px 16px 8px 16px;
-  }
-  .announcement-full-modal-header h2 {
-    font-size: 16px;
-  }
-  .announcement-full-modal-close {
-    font-size: 24px;
-    width: 32px;
-    height: 32px;
-  }
-  .announcement-full-modal-datetime {
-    padding: 8px 16px;
-  }
-  .announcement-full-modal-description {
-    font-size: 13px;
-    padding: 12px;
-  }
   .announcement-full-modal-image {
     padding: 0 16px 16px 16px;
   }
+  
   .announcement-full-modal-img {
     max-height: 250px;
   }
+  
   .announcement-img {
     max-height: 200px;
   }
+  
   .announcement-img-wrapper {
     margin-top: 8px;
     margin-bottom: 8px;
   }
+  
   .announcements-loading {
     min-height: 180px;
     padding: 24px 12px;
   }
+  
   .announcements-loading-spinner {
     width: 36px;
     height: 36px;
     margin-bottom: 12px;
   }
+  
   .announcements-loading-text {
     font-size: 13px;
   }
+  
   .announcements-shield-circle {
     width: 48px !important;
     height: 48px !important;
   }
+  
   .announcements-shield-icon {
     width: 28px !important;
     height: 28px !important;
+  }
+  
+  /* Mobile Photo Navigation Styles */
+  .announcement-photo-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    z-index: 10; /* Maintain high z-index on mobile */
+  }
+  
+  .announcement-photo-counter {
+    font-size: 11px;
+    padding: 4px 8px;
+    z-index: 10; /* Maintain high z-index on mobile */
+  }
+  
+  .announcement-photos-indicator {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  /* Mobile Modal Improvements */
+  .announcement-full-modal-content {
+    width: 95vw;
+    max-width: 380px;
+    border-radius: 12px;
+  }
+  
+  .announcement-full-modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .announcement-full-modal-description {
+    font-size: 14px;
+    padding: 16px 20px;
+  }
+  
+  .announcement-photo-navigation {
+    padding: 16px 20px 20px 20px;
+  }
+  
+  .announcements-flex {
+    margin-top: 8px;
+  }
+  
+  .announcements-right-col {
+    margin-top: 8px;
+  }
+  
+  .announcement-card:first-child:hover {
+    margin-top: 8px;
   }
 }

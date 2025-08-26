@@ -46,7 +46,7 @@
   background: #fff;
   border-radius: 18px;
   min-width: 340px;
-  max-width: 420px;
+  max-width: 500px;
   width: 100%;
   box-shadow: 0 8px 32px rgba(161,28,34,0.13);
   position: relative;
@@ -143,6 +143,42 @@
 .training-submit-btn:hover {
   background: #8b1a1f !important;
 }
+
+/* Multiple Photos Upload Styles */
+.training-upload-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.training-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 8px;
+}
+
+.training-photo-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.training-photo-preview img {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid #eee;
+  background: #f8f8f8;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
 .training-upload-section {
   display: flex;
   flex-direction: column;
@@ -192,7 +228,7 @@
 .training-upload-placeholder {
   width: 70px;
   height: 70px;
-  border-radius: 50%;
+  border-radius: 8px;
   border: 1.5px dashed #ccc;
   background: #fff;
   display: flex;
@@ -253,20 +289,12 @@
 }
 .training-card-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 8px 20px 6px 20px;
   border-bottom: 1px solid #f0f2f5;
   background: #f7f8fa;
   min-height: 32px;
-}
-.training-card-date {
-  font-size: 13px;
-  color: #888;
-  flex: 0 0 auto;
-  margin-right: 8px;
-  white-space: nowrap;
-  align-self: center;
 }
 .training-card-menu {
   position: relative;
@@ -326,6 +354,30 @@
   visibility: visible;
   transform: translateY(0);
 }
+
+/* Photos Display in Cards */
+.training-photos-display {
+  position: relative;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.training-photos-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.training-photos-count {
+  color: white;
+}
+
 .training-card-img {
   width: 100%;
   max-height: 200px;
@@ -338,30 +390,53 @@
   padding: 18px 20px 10px 20px;
   flex: 1;
 }
+.training-card-meta {
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.training-card-date-label,
+.training-card-location-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.training-card-date-label strong,
+.training-card-location-label strong {
+  color: #A11C22;
+  font-weight: 600;
+  min-width: 60px;
+}
+
 .training-card-title {
   font-weight: 700;
   font-size: 20px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   color: #222;
-}
-.training-card-meta {
-  color: #555;
-  margin-bottom: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  width: 100%;
-  word-break: break-word;
-  white-space: normal;
-  overflow-wrap: break-word;
-}
-.training-card-location {
-  color: #A11C22;
 }
 .training-card-desc {
   font-size: 16px;
   color: #444;
   margin-bottom: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
+
+.training-text-content {
+  display: block;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
 .training-card-see-more {
   background: none;
   color: #A11C22;
@@ -372,6 +447,8 @@
   text-decoration: underline;
   font-size: 15px;
 }
+
+/* Enhanced Description Modal with Photo Navigation */
 .training-desc-modal-overlay {
   position: fixed;
   top: 0;
@@ -389,7 +466,7 @@
   padding: 32px;
   border-radius: 12px;
   min-width: 350px;
-  max-width: 500px;
+  max-width: 600px;
   position: relative;
   box-shadow: 0 8px 32px rgba(161,28,34,0.13);
 }
@@ -412,7 +489,114 @@
   font-size: 17px;
   color: #333;
   margin-bottom: 16px;
-} 
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.training-desc-modal-desc strong {
+  color: #A11C22;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.training-desc-modal-desc p {
+  margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.training-desc-modal-meta {
+  margin-bottom: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.training-desc-modal-date,
+.training-desc-modal-location {
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.training-desc-modal-date strong,
+.training-desc-modal-location strong {
+  color: #A11C22;
+  font-weight: 600;
+  min-width: 60px;
+}
+
+/* Photo Navigation Styles */
+.training-photo-navigation {
+  margin-top: 20px;
+}
+
+.training-photo-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.training-desc-modal-img {
+  max-width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.training-photo-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(161, 28, 34, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 10;
+}
+
+.training-photo-nav-btn:hover {
+  background: rgba(161, 28, 34, 1);
+}
+
+.training-photo-nav-prev {
+  left: 8px;
+}
+
+.training-photo-nav-next {
+  right: 8px;
+}
+
+.training-photo-counter {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
 
 .training-success-notification {
   position: fixed;
@@ -434,7 +618,6 @@
   max-width: 90vw;
   letter-spacing: 0.2px;
 }
-
 
 @media (max-width: 700px) {
   .training-header-row {
@@ -500,6 +683,14 @@
     height: 50px;
     font-size: 22px;
   }
+  .training-photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+  }
+  .training-photo-preview img {
+    width: 50px;
+    height: 50px;
+  }
   .training-modal-actions {
     flex-direction: row;
     gap: 8px;
@@ -519,6 +710,14 @@
     display: block;
     text-align: center;
     border-radius: 10px;
+  }
+  .training-photo-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .training-photo-counter {
+    font-size: 12px;
+    padding: 4px 8px;
   }
 }
 
@@ -588,6 +787,10 @@
     width: 60px;
     height: 60px;
     font-size: 26px;
+  }
+  .training-photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 10px;
   }
   .training-modal-actions {
     flex-direction: row;

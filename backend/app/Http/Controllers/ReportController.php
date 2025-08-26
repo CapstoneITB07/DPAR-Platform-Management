@@ -53,7 +53,7 @@ class ReportController extends Controller
                 'photo[3]' => 'nullable|file|image|max:5120',
                 'photo[4]' => 'nullable|file|image|max:5120',
                 'associateLogo' => 'nullable|file|image|max:2048',
-                'preparedBySignature' => 'nullable|file|image|max:2048'
+                'preparedBySignature' => 'nullable' // Remove file validation to allow existing signature data
             ]);
 
             // Parse the data if it's a string
@@ -82,23 +82,32 @@ class ReportController extends Controller
                 'data_size' => strlen(json_encode($reportData))
             ]);
 
-            // Validate that required fields exist in the report data
-            $requiredFields = ['institutionName', 'address', 'for', 'subject'];
-            $missingFields = [];
+            // Validate that required fields exist in the report data (only for non-draft saves)
+            $isDraftSave = $validatedData['status'] === 'draft';
 
-            foreach ($requiredFields as $field) {
-                if (empty($reportData[$field])) {
-                    $missingFields[] = $field;
+            if (!$isDraftSave) {
+                $requiredFields = ['institutionName', 'address', 'for', 'subject'];
+                $missingFields = [];
+
+                foreach ($requiredFields as $field) {
+                    if (empty($reportData[$field])) {
+                        $missingFields[] = $field;
+                    }
                 }
-            }
 
-            if (!empty($missingFields)) {
-                return response()->json([
-                    'message' => 'Missing required fields in report data',
-                    'errors' => [
-                        'data' => ['The following fields are required: ' . implode(', ', $missingFields)]
-                    ]
-                ], 422);
+                // Check for place field
+                if (empty($reportData['place'])) {
+                    $missingFields[] = 'Place of Activity';
+                }
+
+                if (!empty($missingFields)) {
+                    return response()->json([
+                        'message' => 'Missing required fields in report data',
+                        'errors' => [
+                            'data' => ['The following fields are required: ' . implode(', ', $missingFields)]
+                        ]
+                    ], 422);
+                }
             }
 
             // Handle multiple photo uploads
@@ -314,7 +323,7 @@ class ReportController extends Controller
         return response()->json($report);
     }
 
-    // Update a report
+    // Update a report (handles both PUT and POST with _method=PUT)
     public function update(Request $request, string $id)
     {
         try {
@@ -324,14 +333,48 @@ class ReportController extends Controller
             Log::info('Updating report', [
                 'report_id' => $id,
                 'user_id' => $user->id,
-                'request_data' => $request->all()
+                'request_method' => $request->method(),
+                'request_is_method_override' => $request->isMethod('PUT'),
+                'request_data' => $request->all(),
+                'request_has_title' => $request->has('title'),
+                'request_has_description' => $request->has('description'),
+                'request_has_status' => $request->has('status'),
+                'request_has_data' => $request->has('data'),
+                'request_files' => array_keys($request->allFiles()),
+                'request_input_keys' => array_keys($request->input()),
+                'request_content_type' => $request->header('Content-Type'),
+                'request_has_method_override' => $request->has('_method')
             ]);
 
             // If only status is being updated (submitting a draft)
             if ($request->has('status') && count($request->all()) === 1) {
                 $report->status = $request->status;
                 $report->save();
+
+                Log::info('Report status updated', [
+                    'report_id' => $id,
+                    'new_status' => $request->status,
+                    'user_id' => $user->id
+                ]);
+
                 return response()->json($report);
+            }
+
+            // For draft saves, don't require all validation fields
+            $isDraftSave = $request->input('status') === 'draft';
+
+            // Handle FormData properly for multipart requests
+            if ($request->header('Content-Type') && str_contains($request->header('Content-Type'), 'multipart/form-data')) {
+                Log::info('Processing multipart/form-data request', [
+                    'request_all' => $request->all(),
+                    'request_input_keys' => array_keys($request->input()),
+                    'request_files' => array_keys($request->allFiles()),
+                    'is_draft_save' => $isDraftSave,
+                    'prepared_by_signature_exists' => $request->has('preparedBySignature'),
+                    'prepared_by_signature_is_file' => $request->hasFile('preparedBySignature'),
+                    'associate_logo_exists' => $request->has('associateLogo'),
+                    'associate_logo_is_file' => $request->hasFile('associateLogo')
+                ]);
             }
 
             // For full updates, validate all fields
@@ -347,7 +390,7 @@ class ReportController extends Controller
                 'photo[3]' => 'nullable|file|image|max:5120',
                 'photo[4]' => 'nullable|file|image|max:5120',
                 'associateLogo' => 'nullable|file|image|max:2048',
-                'preparedBySignature' => 'nullable|file|image|max:2048'
+                'preparedBySignature' => 'nullable' // Remove file validation to allow existing signature data
             ]);
 
             // Parse the data if it's a string
@@ -367,24 +410,83 @@ class ReportController extends Controller
             // Add user's organization to the data
             $reportData['organization'] = $user->organization;
 
-            // Validate report data structure for submission
-            if ($request->input('status') === 'sent') {
-                if (empty($reportData['location'])) {
-                    return response()->json([
-                        'message' => 'Location is required for submission',
-                        'errors' => [
-                            'data' => ['Missing required fields in report data']
-                        ]
-                    ], 422);
+            // Log the parsed report data for debugging
+            Log::info('Parsed report data for update', [
+                'report_data_keys' => array_keys($reportData),
+                'place' => $reportData['place'] ?? 'NOT_SET',
+                'for' => $reportData['for'] ?? 'NOT_SET',
+                'subject' => $reportData['subject'] ?? 'NOT_SET',
+                'eventName' => $reportData['eventName'] ?? 'NOT_SET',
+                'eventDate' => $reportData['eventDate'] ?? 'NOT_SET',
+                'startTime' => $reportData['startTime'] ?? 'NOT_SET',
+                'endTime' => $reportData['endTime'] ?? 'NOT_SET',
+                'eventOverview' => $reportData['eventOverview'] ?? 'NOT_SET',
+                'conclusion' => $reportData['conclusion'] ?? 'NOT_SET',
+                'preparedBy' => $reportData['preparedBy'] ?? 'NOT_SET',
+                'preparedByPosition' => $reportData['preparedByPosition'] ?? 'NOT_SET',
+                'photos_count' => isset($reportData['photos']) ? count($reportData['photos']) : 0
+            ]);
+
+            // Validate report data structure for submission (only for non-draft saves)
+            if ($request->input('status') === 'sent' && !$isDraftSave) {
+                $validationErrors = [];
+
+                // Check for required fields - use the exact field names from the frontend
+                if (empty($reportData['place'])) {
+                    $validationErrors[] = 'Place of Activity is required for submission';
+                }
+
+                if (empty($reportData['for'])) {
+                    $validationErrors[] = 'Recipient name is required for submission';
+                }
+
+                if (empty($reportData['subject'])) {
+                    $validationErrors[] = 'Subject is required for submission';
+                }
+
+                if (empty($reportData['eventName'])) {
+                    $validationErrors[] = 'Event name is required for submission';
+                }
+
+                if (empty($reportData['eventDate'])) {
+                    $validationErrors[] = 'Event date is required for submission';
+                }
+
+                if (empty($reportData['startTime'])) {
+                    $validationErrors[] = 'Start time is required for submission';
+                }
+
+                if (empty($reportData['endTime'])) {
+                    $validationErrors[] = 'End time is required for submission';
+                }
+
+                if (empty($reportData['eventOverview'])) {
+                    $validationErrors[] = 'Event overview is required for submission';
+                }
+
+                if (empty($reportData['conclusion'])) {
+                    $validationErrors[] = 'Conclusion is required for submission';
+                }
+
+                if (empty($reportData['preparedBy'])) {
+                    $validationErrors[] = 'Prepared by name is required for submission';
+                }
+
+                if (empty($reportData['preparedByPosition'])) {
+                    $validationErrors[] = 'Prepared by position is required for submission';
                 }
 
                 // Check for photo requirement
                 $existingPhotos = $reportData['photos'] ?? [];
                 if (empty($existingPhotos) && !$request->hasFile('photo')) {
+                    $validationErrors[] = 'At least one photo is required for submission';
+                }
+
+                if (!empty($validationErrors)) {
                     return response()->json([
-                        'message' => 'Photo is required for submission',
+                        'message' => 'Missing required fields for submission',
                         'errors' => [
-                            'photo' => ['Photo is required when submitting a report']
+                            'data' => $validationErrors
                         ]
                     ], 422);
                 }
@@ -405,19 +507,11 @@ class ReportController extends Controller
                     'photo_names' => array_map(function ($photo) {
                         return $photo->getClientOriginalName();
                     }, $photos),
-                    'request_files' => array_keys($request->allFiles())
+                    'request_files' => array_keys($request->allFiles()),
+                    'existing_photos_before' => $photoPaths
                 ]);
 
-                // Delete old photos if they exist
-                if (!empty($photoPaths)) {
-                    foreach ($photoPaths as $oldPhotoPath) {
-                        if (Storage::disk('public')->exists($oldPhotoPath)) {
-                            Storage::disk('public')->delete($oldPhotoPath);
-                        }
-                    }
-                }
-
-                // Store new photos
+                // Store new photos and add them to existing ones
                 $newPhotoPaths = [];
                 foreach ($photos as $photo) {
                     $path = $photo->store('reports', 'public');
@@ -429,7 +523,18 @@ class ReportController extends Controller
                         'mime_type' => $photo->getMimeType()
                     ]);
                 }
-                $photoPaths = $newPhotoPaths;
+
+                // Merge existing photos with new ones, filtering out placeholder entries
+                $existingPhotos = array_filter($photoPaths, function ($path) {
+                    return !str_starts_with($path, 'new_photo_');
+                });
+                $photoPaths = array_merge($existingPhotos, $newPhotoPaths);
+
+                Log::info('Photo paths after merging', [
+                    'existing_photos_filtered' => $existingPhotos,
+                    'new_photos' => $newPhotoPaths,
+                    'final_merged_photos' => $photoPaths
+                ]);
             } else {
                 Log::info('No new photos uploaded for update', [
                     'existing_photos' => $photoPaths,
@@ -485,7 +590,7 @@ class ReportController extends Controller
             // Add photo URLs to response
             if (!empty($photoPaths)) {
                 $report->photo_urls = array_map(function ($path) {
-                    return asset('storage/' . $path);
+                    return 'http://localhost:8000/storage/' . $path;
                 }, $photoPaths);
             }
 
@@ -558,7 +663,7 @@ class ReportController extends Controller
                 $reportData = $report->data;
                 if (isset($reportData['photos']) && !empty($reportData['photos'])) {
                     $report->photo_urls = array_map(function ($path) {
-                        return asset('storage/' . $path);
+                        return 'http://localhost:8000/storage/' . $path;
                     }, $reportData['photos']);
                 }
             });

@@ -111,6 +111,7 @@ function Reports() {
   const [approvalNotification, setApprovalNotification] = useState('');
   const [rejectionNotification, setRejectionNotification] = useState('');
   const [focusedFields, setFocusedFields] = useState(new Set());
+  const [existingPhotoPaths, setExistingPhotoPaths] = useState([]);
 
   const steps = [
     'Heading',
@@ -129,7 +130,7 @@ function Reports() {
                !!formData.date?.trim() && 
                !!formData.subject?.trim();
       case 1: // Event Details
-        return formData.authorities.some(auth => auth.trim()) && 
+        return (formData.authorities && formData.authorities.some(auth => auth?.trim())) && 
                !!formData.dateTime?.trim() &&
                !!formData.place?.trim();
       case 2: // Narration of Events I
@@ -138,18 +139,18 @@ function Reports() {
                !!formData.eventDate?.trim() && 
                !!formData.startTime?.trim() && 
                !!formData.endTime?.trim() && 
-               formData.organizers.some(org => org.trim());
+               (formData.organizers && formData.organizers.some(org => org?.trim()));
       case 3: // Narration of Events II
         return !!formData.eventOverview?.trim() && 
-               formData.participants.some(p => p.name.trim()) && 
+               formData.participants?.some(p => p.name?.trim()) && 
                !!formData.trainingAgenda?.trim() && 
-               formData.keyOutcomes.some(ko => ko.trim()) && 
-               formData.challenges.some(c => c.trim()) && 
+               (formData.keyOutcomes && formData.keyOutcomes.some(ko => ko?.trim())) && 
+               (formData.challenges && formData.challenges.some(c => c?.trim())) && 
                !!formData.conclusion?.trim();
       case 4: // Attachments
         return true; // Optional
       case 5: // Signatories
-        return formData.preparedBy?.trim() && formData.preparedByPosition?.trim() && formData.preparedBySignature;
+        return formData.preparedBy?.trim() && formData.preparedByPosition?.trim() && (formData.preparedBySignature instanceof File || formData.preparedBySignature);
       default:
         return false;
     }
@@ -287,7 +288,22 @@ function Reports() {
     setFormData(prev => {
       const newData = { ...prev };
       if (field === 'photos') {
-        // For photos, we need to handle File objects differently
+        // For photos, we need to handle both existing and new photos
+        const photoToRemove = prev[field][index];
+        if (photoToRemove.isExisting) {
+          // If removing an existing photo, find and remove it from existingPhotoPaths by URL
+          setExistingPhotoPaths(prevPaths => {
+            // Find the photo path that corresponds to this photo URL
+            const photoPath = prevPaths.find(path => {
+              const photoUrl = 'http://localhost:8000/storage/' + path;
+              return photoUrl === photoToRemove.url;
+            });
+            if (photoPath) {
+              return prevPaths.filter(path => path !== photoPath);
+            }
+            return prevPaths;
+          });
+        }
         newData[field] = prev[field].filter((_, i) => i !== index);
       } else {
         newData[field] = prev[field].filter((_, i) => i !== index);
@@ -328,6 +344,7 @@ function Reports() {
 
   const openCreateModal = () => {
     setEditingReport(null);
+    setExistingPhotoPaths([]);
     setFormData({
       forName: '', forPosition: '', date: '', subject: '',
       authorities: [''], dateTime: '', place: '', personnelInvolved: [''],
@@ -399,80 +416,245 @@ function Reports() {
           }
         }
 
+        // Check if FormData is supported
+        if (typeof FormData === 'undefined') {
+          setError('FormData is not supported in this browser. Please update your browser.');
+          setSubmitting(false);
+          return;
+        }
+
         const formDataToSend = new FormData();
-        // Prepare the report data
+        console.log('FormData created:', formDataToSend);
+        console.log('FormData constructor:', FormData);
+        console.log('FormData prototype:', FormData.prototype);
+        
+        // Test FormData.append
+        try {
+          formDataToSend.append('test', 'test_value');
+          console.log('FormData.append test successful');
+        } catch (error) {
+          console.error('FormData.append test failed:', error);
+          setError('FormData.append is not working. Please check browser compatibility.');
+          setSubmitting(false);
+          return;
+        }
+        
+        // Prepare the report data - ensure 1:1 mapping with creation form fields
         reportData = {
           // Fixed header information - automatically set
           institutionName: 'Disaster Preparedness And Response Volunteers Coalition of Laguna',
           address: 'Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City',
-          // Associate name will be automatically determined from user's organization in backend
           
-          // Form data
+          // Form data - exact 1:1 mapping with creation form
           for: formData.forName || '',
           forPosition: formData.forPosition || '',
           date: formData.date || '',
           subject: formData.subject || '',
-          authority: formData.authorities.filter(auth => auth.trim()),
+          authorities: formData.authorities.filter(auth => auth.trim()),
           dateTime: formData.dateTime || '',
-          location: formData.place || '',
-          activityType: formData.eventName || '',
-          auxiliaryPersonnel: formData.personnelInvolved.filter(p => p.trim()),
-          pcgPersonnel: [],
+          place: formData.place || '',
+          personnelInvolved: formData.personnelInvolved.filter(p => p.trim()),
           eventName: formData.eventName || '',
           eventLocation: formData.eventLocation || '',
           eventDate: formData.eventDate || '',
           startTime: formData.startTime || '',
           endTime: formData.endTime || '',
           organizers: formData.organizers.filter(org => org.trim()),
-          objective: formData.trainingAgenda || '',
-          summary: formData.eventOverview || '',
-          activities: formData.keyOutcomes.filter(ko => ko.trim()).map(outcome => ({
-            title: 'Key Outcome',
-            description: outcome
-          })),
-          conclusion: formData.conclusion || '',
-          participants: formData.participants.filter(p => p.name.trim()),
           trainingAgenda: formData.trainingAgenda || '',
+          eventOverview: formData.eventOverview || '',
+          participants: formData.participants.filter(p => p.name.trim()),
           keyOutcomes: formData.keyOutcomes.filter(ko => ko.trim()),
           challenges: formData.challenges.filter(c => c.trim()),
           recommendations: formData.recommendations.filter(r => r.trim()),
-          photos: [],
+          conclusion: formData.conclusion || '',
+          photos: editingReport && editingReport.data ? (editingReport.data.photos || []) : [],
           preparedBy: formData.preparedBy || '',
           preparedByPosition: formData.preparedByPosition || '',
-          // Remove preparedBySignature from reportData - it's handled separately in FormData
           approvedBy: formData.approvedBy || '',
           approvedByPosition: formData.approvedByPosition || ''
         };
 
-        formDataToSend.append('title', formData.subject || 'Untitled Report');
-        formDataToSend.append('description', formData.eventOverview || 'No summary provided');
-        formDataToSend.append('status', shouldSubmit ? 'sent' : 'draft');
+        // If editing a report, preserve existing photos and add new ones
+        if (editingReport && editingReport.data && editingReport.data.photos) {
+          const newPhotos = formData.photos.filter(photo => !photo.isExisting);
+          
+          // Keep existing photo paths and add new photo paths (will be filled by backend)
+          reportData.photos = [...existingPhotoPaths];
+          
+          console.log('Preserving existing photos:', existingPhotoPaths);
+          console.log('New photos to upload:', newPhotos.length);
+        }
+
+        // Ensure we have valid values for required fields
+        const title = formData.subject?.trim() || 'Untitled Report';
+        const description = formData.eventOverview?.trim() || 'No summary provided';
+        const status = shouldSubmit ? 'sent' : 'draft';
+        
+        // Debug: Check if required fields are empty
+        if (shouldSubmit) {
+          console.log('=== VALIDATION CHECK ===');
+          console.log('subject:', formData.subject, 'Empty:', !formData.subject?.trim());
+          console.log('place:', formData.place, 'Empty:', !formData.place?.trim());
+          console.log('eventOverview:', formData.eventOverview, 'Empty:', !formData.eventOverview?.trim());
+          console.log('preparedBy:', formData.preparedBy, 'Empty:', !formData.preparedBy?.trim());
+          console.log('preparedByPosition:', formData.preparedByPosition, 'Empty:', !formData.preparedByPosition?.trim());
+          console.log('=======================');
+        }
+
+        console.log('About to append title:', title);
+        try {
+          formDataToSend.append('title', title);
+          console.log('Title appended successfully');
+        } catch (error) {
+          console.error('Failed to append title:', error);
+          setError('Failed to append title to FormData: ' + error.message);
+          setSubmitting(false);
+          return;
+        }
+
+        console.log('About to append description:', description);
+        try {
+          formDataToSend.append('description', description);
+          console.log('Description appended successfully');
+        } catch (error) {
+          console.error('Failed to append description:', error);
+          setError('Failed to append description to FormData: ' + error.message);
+          setSubmitting(false);
+          return;
+        }
+
+        console.log('About to append status:', status);
+        try {
+          formDataToSend.append('status', status);
+          console.log('Status appended successfully');
+        } catch (error) {
+          console.error('Failed to append status:', error);
+          setError('Failed to append status to FormData: ' + error.message);
+          setSubmitting(false);
+          return;
+        }
+
+        console.log('About to append data:', JSON.stringify(reportData));
+        try {
         formDataToSend.append('data', JSON.stringify(reportData));
+          console.log('Data appended successfully');
+        } catch (error) {
+          console.error('Failed to append data:', error);
+          setError('Failed to append data to FormData: ' + error.message);
+          setSubmitting(false);
+          return;
+        }
+
+        // Debug: Log what's being sent
+        console.log('FormData being sent:');
+        console.log('Title:', title);
+        console.log('Description:', description);
+        console.log('Status:', status);
+        console.log('Form data subject:', formData.subject);
+        console.log('Form data eventOverview:', formData.eventOverview);
+        console.log('Form data place:', formData.place);
+        console.log('Form data preparedBy:', formData.preparedBy);
+        console.log('Form data preparedByPosition:', formData.preparedByPosition);
+        console.log('Report data keys:', Object.keys(reportData));
+        console.log('Report data location:', reportData.location);
+        console.log('Report data place:', reportData.place);
+        console.log('Report data eventOverview:', reportData.eventOverview);
+        console.log('Report data preparedBy:', reportData.preparedBy);
+        console.log('Report data:', reportData);
+        console.log('Is draft save:', !shouldSubmit);
+        console.log('Form data place value:', formData.place);
+        console.log('Form data place length:', formData.place?.length);
+        console.log('Form data place trimmed:', formData.place?.trim());
+        console.log('Form data place empty check:', !formData.place?.trim());
+        console.log('Report data photos before photo processing:', reportData.photos);
+
+        // Debug: Log FormData contents
+        for (let [key, value] of formDataToSend.entries()) {
+          console.log(`FormData key: ${key}, value:`, value);
+        }
 
         // Append signatures
-        if (formData.preparedBySignature) {
+        if (formData.preparedBySignature && formData.preparedBySignature instanceof File) {
           formDataToSend.append('preparedBySignature', formData.preparedBySignature);
         }
 
         // Compress and append photos
         if (formData.photos && formData.photos.length > 0) {
           console.log('Processing photos:', formData.photos.length, 'files');
-          console.log('Photo names:', formData.photos.map(f => f.name));
-          for (let i = 0; i < formData.photos.length; i++) {
-            const file = formData.photos[i];
-            console.log(`Processing photo ${i + 1}:`, file.name, 'Size:', file.size);
-            const compressed = await imageCompression(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true });
-            formDataToSend.append(`photo[${i}]`, compressed, file.name);
-            console.log('Appended photo:', file.name, 'with key:', `photo[${i}]`);
+          
+          // Separate existing and new photos
+          const existingPhotos = formData.photos.filter(photo => photo.isExisting);
+          const newPhotos = formData.photos.filter(photo => !photo.isExisting);
+          
+          console.log(`Found ${existingPhotos.length} existing photos and ${newPhotos.length} new photos`);
+          
+          // Update reportData.photos to include both existing and new photos
+          if (editingReport && editingReport.data && editingReport.data.photos) {
+            // For editing, preserve existing photos and add placeholders for new ones
+            reportData.photos = [...existingPhotoPaths];
+            // Add placeholders for new photos (will be filled by backend)
+            for (let i = 0; i < newPhotos.length; i++) {
+              reportData.photos.push(`new_photo_${i}`); // Placeholder that backend will replace
+            }
+          } else {
+            // For new reports, initialize empty array
+            reportData.photos = [];
           }
+          
+          let photoIndex = 0;
+          for (let i = 0; i < newPhotos.length; i++) {
+            const photo = newPhotos[i];
+            console.log(`Processing new photo: ${photo.name}, Size: ${photo.size}, Type: ${photo.type}`);
+            
+            try {
+              const compressed = await imageCompression(photo, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true });
+              formDataToSend.append(`photo[${photoIndex}]`, compressed, photo.name);
+              console.log('Appended new photo:', photo.name, 'with key:', `photo[${photoIndex}]`);
+              photoIndex++;
+            } catch (compressionError) {
+              console.error('Error compressing photo:', compressionError);
+              // Fallback: append original photo without compression
+              formDataToSend.append(`photo[${photoIndex}]`, photo, photo.name);
+              console.log('Appended uncompressed photo:', photo.name, 'with key:', `photo[${photoIndex}]`);
+              photoIndex++;
+            }
+          }
+          
+          if (existingPhotos.length > 0) {
+            console.log('Existing photos will be preserved in reportData.photos:', existingPhotos.map(p => p.name));
+          }
+          
+          console.log('Final reportData.photos after processing:', reportData.photos);
         } else {
           console.log('No photos to upload');
+        }
+
+        // Append associate logo
+        if (formData.associateLogo && formData.associateLogo instanceof File) {
+          formDataToSend.append('associateLogo', formData.associateLogo);
         }
 
         const url = editingReport 
           ? `http://localhost:8000/api/reports/${editingReport.id}`
           : 'http://localhost:8000/api/reports';
-        const method = editingReport ? 'put' : 'post';
+        
+        // For editing reports, use POST with _method=PUT to avoid FormData issues in PUT requests
+        const method = editingReport ? 'post' : 'post';
+        
+        // If editing, add the _method field to simulate PUT
+        if (editingReport) {
+          formDataToSend.append('_method', 'PUT');
+        }
+        
+        console.log('Making request to:', url);
+        console.log('Request method:', method);
+        console.log('_method field:', editingReport ? 'PUT' : 'N/A');
+        console.log('Request headers:', {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json'
+        });
+        
         const response = await axios({
           method,
           url,
@@ -535,31 +717,63 @@ function Reports() {
       console.error('Error parsing report data:', error);
     }
 
+    // Debug: Log what's being loaded
+    console.log('Editing report:', report);
+    console.log('Parsed report data:', reportData);
+    console.log('Report subject:', report.subject);
+    console.log('ReportData subject:', reportData.subject);
+
+    // Convert photo URLs to photo objects for display
+    let existingPhotos = [];
+    if (report.photo_urls && report.photo_urls.length > 0) {
+      existingPhotos = report.photo_urls.map((url, index) => ({
+        url: url,
+        name: `Photo ${index + 1}`,
+        isExisting: true
+      }));
+    }
+
+    // Set existing photo paths for preservation during updates
+    if (report.data && report.data.photos) {
+      setExistingPhotoPaths(report.data.photos);
+      console.log('Setting existing photo paths:', report.data.photos);
+    } else {
+      setExistingPhotoPaths([]);
+      console.log('No existing photo paths found');
+    }
+
+    const subjectValue = reportData.subject || report.subject || report.title || '';
+    console.log('Setting subject to:', subjectValue);
+    console.log('reportData.subject:', reportData.subject);
+    console.log('report.subject:', report.subject);
+    console.log('report.title:', report.title);
+
     setFormData({
       forName: reportData.for || report.forName || '',
       forPosition: reportData.forPosition || report.forPosition || '',
       date: reportData.date || report.date || '',
-      subject: reportData.subject || report.subject || '',
-      authorities: reportData.authority || (report.authority ? report.authority.split(',') : ['']),
+      subject: subjectValue,
+      authorities: reportData.authorities || (report.authorities ? report.authorities.split(',') : ['']),
       dateTime: reportData.dateTime || report.dateTime || '',
       place: reportData.place || report.place || '',
-      personnelInvolved: reportData.auxiliaryPersonnel || (report.auxiliaryPersonnel ? report.auxiliaryPersonnel.split(',') : ['']),
+      personnelInvolved: reportData.personnelInvolved || (report.personnelInvolved ? report.personnelInvolved.split(',') : ['']),
       eventName: reportData.eventName || report.eventName || '',
       eventLocation: reportData.eventLocation || report.eventLocation || '',
       eventDate: reportData.eventDate || report.eventDate || '',
       startTime: reportData.startTime || report.startTime || '',
       endTime: reportData.endTime || report.endTime || '',
       organizers: reportData.organizers || (report.organizers ? report.organizers.split(',') : ['']),
-      eventOverview: reportData.summary || report.eventOverview || '',
+      eventOverview: reportData.eventOverview || report.eventOverview || '',
       participants: reportData.participants || (report.participants ? report.participants.map(p => ({name: p.name, position: p.position})) : [{name: '', position: ''}]),
-      trainingAgenda: reportData.objective || report.trainingAgenda || '',
-      keyOutcomes: reportData.activities.map(act => act.description) || (report.activities ? report.activities.map(act => act.description) : ['']),
+      trainingAgenda: reportData.trainingAgenda || report.trainingAgenda || '',
+      keyOutcomes: reportData.keyOutcomes || (report.keyOutcomes ? report.keyOutcomes.split(',') : ['']),
       challenges: reportData.challenges || (report.challenges ? report.challenges.split(',') : ['']),
       recommendations: reportData.recommendations || (report.recommendations ? report.recommendations.split(',') : ['']),
       conclusion: reportData.conclusion || report.conclusion || '',
-      photos: [],
+      photos: existingPhotos,
       preparedBy: reportData.preparedBy || report.preparedBy || '',
       preparedByPosition: reportData.preparedByPosition || report.preparedByPosition || '',
+      preparedBySignature: reportData.preparedBySignature || report.preparedBySignature || null,
       approvedBy: reportData.approvedBy || report.approvedBy || '',
       approvedByPosition: reportData.approvedByPosition || report.approvedByPosition || ''
     });
@@ -570,6 +784,7 @@ function Reports() {
 
   const resetFormData = () => {
     setEditingReport(null);
+    setExistingPhotoPaths([]);
     setFormData({
       forName: '', 
       forPosition: '', 
@@ -1522,7 +1737,11 @@ function Reports() {
                             <div className="photo-preview">
                               {formData.photos.map((photo, index) => (
                                 <div key={index} className="photo-thumbnail">
+                                  {photo.isExisting ? (
+                                    <img src={photo.url} alt={`Upload ${index + 1}`} />
+                                  ) : (
                                   <img src={URL.createObjectURL(photo)} alt={`Upload ${index + 1}`} />
+                                  )}
                                   <button type="button" onClick={() => removeField('photos', index)}><FontAwesomeIcon icon={faXmark} /></button>
                                 </div>
                               ))}

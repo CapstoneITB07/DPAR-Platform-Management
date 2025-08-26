@@ -11,6 +11,10 @@ class TrainingProgram extends Model
         'date',
         'location',
         'description',
-        'image_path',
+        'photos',
+    ];
+
+    protected $casts = [
+        'photos' => 'array',
     ];
 }

@@ -65,6 +65,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/{id}/download', [ReportController::class, 'download']);
     Route::put('/reports/{id}/approve', [ReportController::class, 'approve']);
     Route::put('/reports/{id}/reject', [ReportController::class, 'reject']);
+
+    // Add POST route for FormData updates (to handle _method=PUT)
+    Route::post('/reports/{id}', [ReportController::class, 'update']);
+
     Route::apiResource('/reports', ReportController::class);
 
     Route::apiResource('/certificates', CertificateController::class);

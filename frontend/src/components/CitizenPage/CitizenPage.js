@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../logo.svg';
 import axios from 'axios';
-import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo } from 'react-icons/fa';
+import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import './CitizenPage.css';
@@ -32,7 +32,8 @@ function CitizenPage() {
   const [annError, setAnnError] = useState('');
 
   // For announcement modal
-  const [modalAnn, setModalAnn] = useState(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   // Associate groups state
   const [associateGroups, setAssociateGroups] = useState([]);
@@ -44,6 +45,7 @@ function CitizenPage() {
   // For training program modal
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [showProgramModal, setShowProgramModal] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -147,6 +149,32 @@ function CitizenPage() {
     if (words.length <= wordLimit) return text;
     return words.slice(0, wordLimit).join(' ') + '...';
   }
+
+  // Function to truncate description to 3 lines
+  const truncateDescription = (text, maxLines = 3) => {
+    if (!text) return '';
+    
+    // Split by both newlines and spaces to handle long text better
+    const words = text.split(' ');
+    const maxWords = 25; // Limit to approximately 3 lines
+    
+    if (words.length <= maxWords) return text;
+    
+    // Join first 25 words and add ellipsis
+    return words.slice(0, maxWords).join(' ') + '...';
+  };
+
+  // Function to check if description needs truncation
+  const needsTruncation = (text, maxLines = 3) => {
+    if (!text) return false;
+    
+    // Check both word count and character length for better detection
+    const words = text.split(' ');
+    const charCount = text.length;
+    
+    return words.length > 25 || charCount > 120; // More lenient limits
+  };
+
   // Track which announcement is expanded
   const [expandedAnn, setExpandedAnn] = useState({});
 
@@ -192,6 +220,33 @@ function CitizenPage() {
   const handleProgramClick = (program) => {
     setSelectedProgram(program);
     setShowProgramModal(true);
+    setCurrentPhotoIndex(0);
+  };
+
+  // Handle announcement click to show details
+  const handleAnnouncementClick = (announcement) => {
+    setSelectedAnnouncement(announcement);
+    setShowAnnouncementModal(true);
+    setCurrentPhotoIndex(0);
+  };
+
+  // Photo navigation functions - work with both training programs and announcements
+  const nextPhoto = () => {
+    const currentPhotos = selectedProgram?.photos || selectedAnnouncement?.photo_urls;
+    if (currentPhotos && currentPhotos.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === currentPhotos.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevPhoto = () => {
+    const currentPhotos = selectedProgram?.photos || selectedAnnouncement?.photo_urls;
+    if (currentPhotos && currentPhotos.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === 0 ? currentPhotos.length - 1 : prev - 1
+      );
+    }
   };
 
   // Inline style for associate groups background image
@@ -358,22 +413,26 @@ function CitizenPage() {
         ) : (
           <div className="citizen-announcements-grid">
             {announcements.map(a => {
-              const isLong = a.description && a.description.split(' ').length > 15;
               return (
                 <div
                   key={a.id}
                   className="citizen-announcement-card"
                 >
                   {/* Image or Icon */}
-                  {a.photo_url ? (
+                  {a.photo_urls && a.photo_urls.length > 0 ? (
                     <div className="citizen-announcement-image-container">
                       <img
-                        src={a.photo_url}
+                        src={a.photo_urls[0]}
                         alt="Announcement"
                         className="citizen-announcement-img"
-                        onClick={() => setModalAnn(a)}
+                        onClick={() => handleAnnouncementClick(a)}
                         title="Click to view larger"
                       />
+                      {a.photo_urls.length > 1 && (
+                        <div className="citizen-announcement-photos-indicator">
+                          <span>+{a.photo_urls.length - 1} more</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="citizen-announcement-icon-container">
@@ -387,13 +446,13 @@ function CitizenPage() {
                     {a.title && <div className="citizen-announcement-title">{a.title}</div>}
                     {a.description && (
                       <div className="citizen-announcement-desc">
-                        {getPreview(a.description, 15)}
-                        {isLong && (
+                        {truncateDescription(a.description)}
+                        {needsTruncation(a.description) && (
                           <button
                             className="citizen-announcement-see-more"
                             onClick={e => {
                               e.stopPropagation();
-                              setModalAnn(a);
+                              handleAnnouncementClick(a);
                             }}
                           >
                             See more
@@ -442,7 +501,6 @@ function CitizenPage() {
             <p className="citizen-no-data-message">No training programs available.</p>
           ) : (
             programs.map((program) => {
-              const isLong = program.description && program.description.split(' ').length > 15;
               return (
                 <div
                   key={program.id}
@@ -450,15 +508,15 @@ function CitizenPage() {
                 >
                   {/* Date and Location Bar */}
                   <div className="citizen-training-header">
-                    {program.date && <span>{program.date}</span>}
-                    {program.location && <span className="citizen-training-location">| {program.location}</span>}
+                    {program.date && <span className="citizen-training-date-label"><strong>Date:</strong> {program.date}</span>}
+                    {program.location && <span className="citizen-training-location-label"><strong>Location:</strong> {program.location}</span>}
                   </div>
                   {/* Title and Description */}
                   <div className="citizen-training-content">
                     <div className="citizen-training-title-card">{program.name}</div>
                     <div className="citizen-training-desc">
-                      {getPreview(program.description, 15)}
-                      {isLong && (
+                      {truncateDescription(program.description)}
+                      {needsTruncation(program.description) && (
                         <button
                           className="citizen-training-see-more"
                           onClick={e => {
@@ -471,16 +529,23 @@ function CitizenPage() {
                       )}
                     </div>
                   </div>
-                  {/* Post image */}
-                  {program.image_url && (
+                  {/* Post images - prioritize photos over single image */}
+                  {program.photos && program.photos.length > 0 ? (
+                    <div className="citizen-training-photos-display">
                     <img
-                      src={program.image_url}
-                      alt="Program"
+                        src={program.photos[0]}
+                        alt="Training Program"
                       className="citizen-training-img"
-                      onClick={() => openImageModal(program.image_url)}
+                        onClick={() => openImageModal(program.photos[0])}
                       title="Click to view larger"
                     />
+                      {program.photos.length > 1 && (
+                        <div className="citizen-training-photos-indicator">
+                          <span>+{program.photos.length - 1} more</span>
+                        </div>
                   )}
+                    </div>
+                  ) : null}
                 </div>
               );
             })
@@ -497,17 +562,77 @@ function CitizenPage() {
         </div>
       )}
       {/* Announcement Modal */}
-      {modalAnn && (
-        <div className="citizen-modal-overlay" onClick={() => setModalAnn(null)}>
+      {selectedAnnouncement && (
+        <div className="citizen-modal-overlay" onClick={() => setSelectedAnnouncement(null)}>
           <div className="citizen-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="citizen-modal-close" onClick={() => setModalAnn(null)}>&times;</button>
-            {modalAnn.photo_url ? (
-              <img src={modalAnn.photo_url} alt="Announcement" className="citizen-modal-img" />
-            ) : (
-              <FaBullhorn size={60} color="#a52a1a" className="citizen-announcement-icon" style={{ marginBottom: 18 }} />
+            <button className="citizen-modal-close" onClick={() => setSelectedAnnouncement(null)}>&times;</button>
+            <div className="citizen-announcement-modal-header">
+              <h3 className="citizen-announcement-modal-title">{selectedAnnouncement.title}</h3>
+            </div>
+            
+            {/* Date and Location Section - Match Admin Design */}
+            <div className="citizen-announcement-modal-meta">
+              {selectedAnnouncement.date && (
+                <div className="citizen-announcement-modal-date">
+                  <strong>Date:</strong> {selectedAnnouncement.date}
+                </div>
+              )}
+              {selectedAnnouncement.location && (
+                <div className="citizen-announcement-modal-location">
+                  <strong>Location:</strong> {selectedAnnouncement.location}
+                </div>
+              )}
+            </div>
+            
+            {/* Description Section - Match Admin Design */}
+            <div className="citizen-announcement-modal-description">
+              <strong>Description:</strong>
+              <p style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap',
+                maxWidth: '100%',
+                wordBreak: 'break-word'
+              }}>{selectedAnnouncement.description}</p>
+            </div>
+            
+            {/* Photo Navigation (Instagram/Facebook style) */}
+            {selectedAnnouncement.photo_urls && selectedAnnouncement.photo_urls.length > 0 && (
+              <div className="citizen-announcement-photo-navigation">
+                <div className="citizen-announcement-photo-container">
+                  <img 
+                    src={selectedAnnouncement.photo_urls[currentPhotoIndex]} 
+                    alt={`Photo ${currentPhotoIndex + 1}`} 
+                    className="citizen-announcement-modal-img" 
+                  />
+                  
+                  {/* Navigation Arrows */}
+                  {selectedAnnouncement.photo_urls.length > 1 && (
+                    <>
+                      <button 
+                        className="citizen-announcement-photo-nav-btn citizen-announcement-photo-nav-prev"
+                        onClick={prevPhoto}
+                      >
+                        <FaChevronLeft />
+                      </button>
+                      <button 
+                        className="citizen-announcement-photo-nav-btn citizen-announcement-photo-nav-next"
+                        onClick={nextPhoto}
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Photo Counter */}
+                  {selectedAnnouncement.photo_urls.length > 1 && (
+                    <div className="citizen-announcement-photo-counter">
+                      {currentPhotoIndex + 1} / {selectedAnnouncement.photo_urls.length}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
-            <div className="citizen-modal-title">{modalAnn.title}</div>
-            <div className="citizen-modal-desc">{modalAnn.description}</div>
           </div>
         </div>
       )}
@@ -553,34 +678,68 @@ function CitizenPage() {
             <div className="citizen-program-modal-header">
               <h3 className="citizen-program-modal-title">{selectedProgram.name}</h3>
             </div>
-            <div className="citizen-program-modal-info">
+            
+            {/* Date and Location Section - Match Admin Design */}
+            <div className="citizen-program-modal-meta">
               {selectedProgram.date && (
-                <div className="citizen-program-info-row">
+                <div className="citizen-program-modal-date">
                   <strong>Date:</strong> {selectedProgram.date}
                 </div>
               )}
               {selectedProgram.location && (
-                <div className="citizen-program-info-row">
+                <div className="citizen-program-modal-location">
                   <strong>Location:</strong> {selectedProgram.location}
                 </div>
               )}
             </div>
+            
+            {/* Description Section - Match Admin Design */}
             <div className="citizen-program-modal-description">
               <strong>Description:</strong>
-              <p>{selectedProgram.description}</p>
+              <p style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap',
+                maxWidth: '100%',
+                wordBreak: 'break-word'
+              }}>{selectedProgram.description}</p>
             </div>
-            {selectedProgram.image_url && (
-              <div className="citizen-program-modal-image">
-                <img
-                  src={selectedProgram.image_url}
-                  alt="Training Program"
-                  className="citizen-program-modal-img"
-                  onClick={() => {
-                    setShowProgramModal(false);
-                    openImageModal(selectedProgram.image_url);
-                  }}
-                  title="Click to view larger"
-                />
+            
+            {/* Photo Navigation (Instagram/Facebook style) */}
+            {selectedProgram.photos && selectedProgram.photos.length > 0 && (
+              <div className="citizen-program-photo-navigation">
+                <div className="citizen-program-photo-container">
+                  <img 
+                    src={selectedProgram.photos[currentPhotoIndex]} 
+                    alt={`Photo ${currentPhotoIndex + 1}`} 
+                    className="citizen-program-modal-img" 
+                  />
+                  
+                  {/* Navigation Arrows */}
+                  {selectedProgram.photos.length > 1 && (
+                    <>
+                      <button 
+                        className="citizen-program-photo-nav-btn citizen-program-photo-nav-prev"
+                        onClick={prevPhoto}
+                      >
+                        <FaChevronLeft />
+                      </button>
+                      <button 
+                        className="citizen-program-photo-nav-btn citizen-program-photo-nav-next"
+                        onClick={nextPhoto}
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Photo Counter */}
+                  {selectedProgram.photos.length > 1 && (
+                    <div className="citizen-program-photo-counter">
+                      {currentPhotoIndex + 1} / {selectedProgram.photos.length}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

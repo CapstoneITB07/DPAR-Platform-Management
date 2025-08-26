@@ -85,6 +85,8 @@ function ApprovalAOR() {
   const [confirmReportId, setConfirmReportId] = useState(null);
   const [selectedHistoryItems, setSelectedHistoryItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   // Create a wrapper for setNotification to add debugging
   const setNotificationWithDebug = (message, type = 'success') => {
@@ -333,6 +335,11 @@ function ApprovalAOR() {
     setShowConfirmModal(true);
   };
 
+  const handlePhotoClick = (photoPath) => {
+    setSelectedPhoto(`http://localhost:8000/storage/${photoPath}`);
+    setShowPhotoModal(true);
+  };
+
   const handleConfirmAction = async () => {
     // Close modal immediately for better UX
     setShowConfirmModal(false);
@@ -573,8 +580,26 @@ function ApprovalAOR() {
                 <div className="preview-content">
                   <div className="preview-details">
                     <div className="section-header">Report Details</div>
+                    <div className="privacy-note">
+                      <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
+                        Note: Signatures and logos are hidden for privacy. Photos are displayed for review purposes.
+                      </small>
+                    </div>
                     {Object.entries(selectedReport.data).map(([key, value]) => {
                       const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                      
+                      // Debug logging for complex fields
+                      if (key === 'participants' || key === 'keyOutcomes' || key === 'challenges' || key === 'recommendations') {
+                        console.log(`Field: ${key}`, value);
+                        console.log(`Type:`, typeof value);
+                        console.log(`Is Array:`, Array.isArray(value));
+                        if (Array.isArray(value)) {
+                          console.log(`Array length:`, value.length);
+                          value.forEach((item, idx) => {
+                            console.log(`  Item ${idx}:`, item, `Type:`, typeof item);
+                          });
+                        }
+                      }
                       
                       // Helper function to format value with "NONE" for empty fields
                       const formatValue = (val) => {
@@ -583,8 +608,121 @@ function ApprovalAOR() {
                             (typeof val === 'object' && Object.keys(val).length === 0)) {
                           return 'NONE';
                         }
+                        
+                        // Handle participants array specifically
+                        if (key === 'participants' && Array.isArray(val)) {
+                          if (val.length === 0) return 'NONE';
+                          return val.map((participant, idx) => {
+                            if (typeof participant === 'object' && participant !== null) {
+                              // Handle participant object with name and position
+                              const name = participant.name || participant.Name || 'Unknown';
+                              const position = participant.position || participant.Position || 'Unknown';
+                              return `${name} (${position})`;
+                            } else {
+                              // Handle simple string participants
+                              return String(participant);
+                            }
+                          }).join(', ');
+                        }
+                        
+                        // Handle other arrays
+                        if (Array.isArray(val)) {
+                          return val.map(item => {
+                            if (typeof item === 'object' && item !== null) {
+                              return JSON.stringify(item);
+                            }
+                            return String(item);
+                          }).join(', ');
+                        }
+                        
+                        // Handle objects
+                        if (typeof val === 'object' && val !== null) {
+                          return JSON.stringify(val);
+                        }
+                        
                         return String(val);
                       };
+
+                      // Hide signature fields for privacy
+                      if (key === 'preparedBySignature' || key === 'approvedBySignature' || 
+                          key === 'associateLogo' || key === 'pcgaLogo' || 
+                          key === 'signature' || key === 'logo' || key === 'stamp') {
+                        return null;
+                      }
+
+                      // Handle photos - display as images instead of links
+                      if (key === 'photos' && Array.isArray(value) && value.length > 0) {
+                        return (
+                          <div key={key} className="preview-field-group">
+                            <div className="section-header">Activity Photos ({value.length} photo{value.length !== 1 ? 's' : ''})</div>
+                            <div className="photos-grid">
+                              {value.map((photoPath, idx) => (
+                                <div key={idx} className="photo-item">
+                                  <img 
+                                    src={`http://localhost:8000/storage/${photoPath}`}
+                                    alt={`Activity Photo ${idx + 1}`}
+                                    className="preview-photo"
+                                    onClick={() => handlePhotoClick(photoPath)}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'block';
+                                    }}
+                                  />
+                                  <div className="photo-fallback" style={{ display: 'none' }}>
+                                    <span>Photo {idx + 1} not available</span>
+                                  </div>
+                                  <div className="photo-caption">Photo {idx + 1}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Handle participants - display in a readable format
+                      if (key === 'participants' && Array.isArray(value) && value.length > 0) {
+                        return (
+                          <div key={key} className="preview-field-group">
+                            <strong>{formattedKey}:</strong>
+                            <div className="participants-list">
+                              {value.map((participant, idx) => (
+                                <div key={idx} className="participant-item">
+                                  {typeof participant === 'object' && participant !== null ? (
+                                    <>
+                                      <span className="participant-name">
+                                        {participant.name || participant.Name || 'Unknown Name'}
+                                      </span>
+                                      <span className="participant-position">
+                                        ({participant.position || participant.Position || 'Unknown Position'})
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="participant-name">{String(participant)}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Handle arrays like keyOutcomes, challenges, recommendations
+                      if ((key === 'keyOutcomes' || key === 'challenges' || key === 'recommendations') && 
+                          Array.isArray(value) && value.length > 0) {
+                        return (
+                          <div key={key} className="preview-field-group">
+                            <strong>{formattedKey}:</strong>
+                            <div className="list-items">
+                              {value.map((item, idx) => (
+                                <div key={idx} className="list-item">
+                                  <span className="item-number">{idx + 1}.</span>
+                                  <span className="item-text">{String(item)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
 
                       if (key === 'activities' && typeof value === 'object' && value !== null) {
                         return (
@@ -705,6 +843,31 @@ function ApprovalAOR() {
                     Cancel
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Photo Modal */}
+        {showPhotoModal && selectedPhoto && (
+          <div className="modal-overlay" onClick={() => setShowPhotoModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Photo Preview</h3>
+                <button className="modal-close" onClick={() => setShowPhotoModal(false)}>
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <img 
+                  src={selectedPhoto} 
+                  alt="Photo Preview" 
+                  className="photo-preview-image"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentNode.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">Photo not available</div>';
+                  }}
+                />
               </div>
             </div>
           </div>

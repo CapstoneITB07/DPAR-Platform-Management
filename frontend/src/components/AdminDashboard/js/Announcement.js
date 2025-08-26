@@ -58,6 +58,11 @@ function Announcement() {
     photos.forEach((photo, index) => {
       formData.append(`photos[${index}]`, photo);
     });
+
+    // If editing, also send information about which existing photos to keep
+    if (editId) {
+      formData.append('keep_existing_photos', JSON.stringify(previews));
+    }
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -145,6 +150,10 @@ function Announcement() {
 
   const removePhoto = (index) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingPhoto = (index) => {
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -248,7 +257,7 @@ function Announcement() {
                         <img src={preview} alt={`Preview ${index + 1}`} className="announcement-upload-img" />
                         <button 
                           type="button" 
-                          onClick={() => removePhoto(index)} 
+                          onClick={() => removeExistingPhoto(index)} 
                           className="announcement-upload-remove"
                         >
                           Remove
@@ -270,6 +279,27 @@ function Announcement() {
                       </label>
                     </div>
                   </div>
+                  {/* Remove All Photos Button (only show when editing and has existing photos) */}
+                  {editId && previews.length > 0 && (
+                    <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setPreviews([])}
+                        className="announcement-remove-all-btn"
+                        style={{
+                          background: '#e74c3c',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Remove All Photos
+                      </button>
+                    </div>
+                  )}
                   <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB each)</small>
                 </div>
               </div>

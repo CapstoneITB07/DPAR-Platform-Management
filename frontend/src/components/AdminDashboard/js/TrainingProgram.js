@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaEllipsisH } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import axios from 'axios';
 import '../css/TrainingProgram.css';
 
@@ -17,7 +17,14 @@ function Notification({ message, onClose }) {
 function TrainingProgram() {
   const [programs, setPrograms] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', date: '', location: '', description: '', image: null, imagePreview: null });
+  const [form, setForm] = useState({ 
+    name: '', 
+    date: '', 
+    location: '', 
+    description: '', 
+    photos: [],
+    previews: []
+  });
   const [editIndex, setEditIndex] = useState(null);
   const [editId, setEditId] = useState(null);
   const [menuOpenIndex, setMenuOpenIndex] = useState(null);
@@ -25,8 +32,15 @@ function TrainingProgram() {
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState({});
   const [showDescModal, setShowDescModal] = useState(false);
-  const [descModalContent, setDescModalContent] = useState({ title: '', description: '' });
+  const [descModalContent, setDescModalContent] = useState({ 
+    title: '', 
+    description: '', 
+    photos: [], 
+    date: '', 
+    location: ''
+  });
   const [notification, setNotification] = useState('');
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     fetchPrograms();
@@ -49,21 +63,36 @@ function TrainingProgram() {
         date: prog.date || '',
         location: prog.location || '',
         description: prog.description || '',
-        image: null,
-        imagePreview: prog.image_url || null,
+        photos: [], // Keep empty for new uploads
+        previews: prog.photos || [] // Show existing photos as previews
       });
       setEditIndex(index);
       setEditId(prog.id);
     } else {
-      setForm({ name: '', date: '', location: '', description: '', image: null, imagePreview: null });
+      setForm({ 
+        name: '', 
+        date: '', 
+        location: '', 
+        description: '', 
+        photos: [],
+        previews: []
+      });
       setEditIndex(null);
       setEditId(null);
     }
     setModalOpen(true);
   };
+
   const closeModal = () => {
     setModalOpen(false);
-    setForm({ name: '', date: '', location: '', description: '', image: null, imagePreview: null });
+    setForm({ 
+      name: '', 
+      date: '', 
+      location: '', 
+      description: '', 
+      photos: [],
+      previews: []
+    });
     setEditIndex(null);
     setEditId(null);
   };
@@ -72,15 +101,46 @@ function TrainingProgram() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setForm({ ...form, image: file, imagePreview: URL.createObjectURL(file) });
-    }
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = [];
+    const newPreviews = [];
+
+    files.forEach(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        alert('Please upload valid image files (JPEG, PNG, JPG, or GIF)');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size should not exceed 2MB');
+        return;
+      }
+      validFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    });
+
+    setForm(prev => ({
+      ...prev,
+      photos: [...prev.photos, ...validFiles],
+      previews: [...prev.previews, ...newPreviews]
+    }));
+    e.target.value = '';
   };
 
-  const handleRemoveImage = () => {
-    setForm({ ...form, image: null, imagePreview: null });
+  const removePhoto = (index) => {
+    setForm(prev => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index),
+      previews: prev.previews.filter((_, i) => i !== index)
+    }));
+  };
+
+  const removeExistingPhoto = (index) => {
+    setForm(prev => ({
+      ...prev,
+      previews: prev.previews.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -92,7 +152,18 @@ function TrainingProgram() {
     formData.append('date', form.date);
     formData.append('location', form.location);
     formData.append('description', form.description);
-    if (form.image) formData.append('image', form.image);
+    
+    // Append multiple photos
+    form.photos.forEach((photo, index) => {
+      formData.append(`photos[${index}]`, photo);
+    });
+
+    // If editing, also send information about which existing photos to keep
+    if (editId) {
+      // Send the remaining previews (existing photos that weren't removed)
+      formData.append('keep_existing_photos', JSON.stringify(form.previews));
+    }
+
     try {
       if (editId) {
         await axios.post(`http://localhost:8000/api/training-programs/${editId}?_method=PUT`, formData, {
@@ -100,7 +171,7 @@ function TrainingProgram() {
         });
         setNotification('Training program updated successfully!');
       } else {
-        await axios.post('http://localhost:8000/api/training-programs', formData, {
+        const response = await axios.post('http://localhost:8000/api/training-programs', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setNotification('Training program added successfully!');
@@ -137,7 +208,58 @@ function TrainingProgram() {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const DESCRIPTION_LIMIT = 120;
+  const openFullModal = (program) => {
+    setDescModalContent({
+      title: program.name,
+      description: program.description,
+      photos: program.photos || [],
+      date: program.date || '',
+      location: program.location || ''
+    });
+    setCurrentPhotoIndex(0);
+    setShowDescModal(true);
+  };
+
+  const nextPhoto = () => {
+    if (descModalContent.photos && descModalContent.photos.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === descModalContent.photos.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevPhoto = () => {
+    if (descModalContent.photos && descModalContent.photos.length > 0) {
+      setCurrentPhotoIndex((prev) => 
+        prev === 0 ? descModalContent.photos.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Function to truncate description to 3 lines
+  const truncateDescription = (text, maxLines = 3) => {
+    if (!text) return '';
+    
+    // Split by both newlines and spaces to handle long text better
+    const words = text.split(' ');
+    const maxWords = 25; // Limit to approximately 3 lines
+    
+    if (words.length <= maxWords) return text;
+    
+    // Join first 25 words and add ellipsis
+    return words.slice(0, maxWords).join(' ') + '...';
+  };
+
+  // Function to check if description needs truncation
+  const needsTruncation = (text, maxLines = 3) => {
+    if (!text) return false;
+    
+    // Check both word count and character length for better detection
+    const words = text.split(' ');
+    const charCount = text.length;
+    
+    return words.length > 25 || charCount > 120; // More lenient limits
+  };
 
   return (
     <AdminLayout>
@@ -176,35 +298,65 @@ function TrainingProgram() {
                 <label className="training-form-label">Program Description</label>
                 <textarea name="description" value={form.description} onChange={handleChange} required className="training-form-textarea" />
               </div>
+              
+              {/* Multiple Photos Upload Section */}
               <div className="training-upload-section">
-                <label className="training-form-label" style={{ marginBottom: 10, textAlign: 'center' }}>Upload a Photo</label>
-                <div className="training-upload-row">
-                  {/* Left: Image or Placeholder + Remove */}
-                  <div className="training-upload-preview">
-                    {form.imagePreview ? (
-                      <>
-                        <img src={form.imagePreview} alt="Preview" className="training-upload-img" />
-                        <button type="button" onClick={handleRemoveImage} className="training-upload-remove">Remove</button>
-                      </>
-                    ) : (
-                      <div className="training-upload-placeholder">
-                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="3" y="7" width="18" height="12" rx="2" fill="#eee"/>
-                          <circle cx="12" cy="13" r="4" fill="#bbb"/>
-                          <rect x="8" y="4" width="8" height="3" rx="1.5" fill="#bbb"/>
-                          <circle cx="12" cy="13" r="2" fill="#fff"/>
-                        </svg>
+                <label className="training-form-label" style={{ marginBottom: 10, textAlign: 'center' }}>Upload Photos</label>
+                <div className="training-upload-container">
+                  {/* Photo Previews */}
+                  <div className="training-photos-grid">
+                    {form.previews.map((preview, index) => (
+                      <div key={index} className="training-photo-preview">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="training-upload-img" />
+                        <button 
+                          type="button" 
+                          onClick={() => removeExistingPhoto(index)} 
+                          className="training-upload-remove"
+                        >
+                          Remove
+                        </button>
                       </div>
-                    )}
+                    ))}
+                    {/* Upload Button */}
+                    <div className="training-upload-placeholder">
+                      <input 
+                        id="training-photos-upload" 
+                        type="file" 
+                        multiple
+                        accept="image/jpeg,image/png,image/jpg,image/gif" 
+                        onChange={handlePhotoUpload}
+                        style={{ display: 'none' }} 
+                      />
+                      <label htmlFor="training-photos-upload" className="training-upload-btn">
+                        Choose Photos
+                      </label>
+                    </div>
                   </div>
-                  {/* Right: Choose Photo + Note */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 220 }}>
-                    <input id="training-photo-upload" type="file" accept="image/jpeg,image/png,image/jpg,image/gif" onChange={handleImageChange} style={{ display: 'none' }} />
-                    <label htmlFor="training-photo-upload" className="training-upload-btn">Choose Photo</label>
-                    <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
-                  </div>
+                  {/* Remove All Photos Button (only show when editing and has existing photos) */}
+                  {editId && form.previews.length > 0 && (
+                    <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setForm(prev => ({ ...prev, previews: [] }))}
+                        className="training-remove-all-btn"
+                        style={{
+                          background: '#e74c3c',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Remove All Photos
+                      </button>
+                    </div>
+                  )}
+                  <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB each)</small>
                 </div>
               </div>
+
               <div className="training-modal-actions">
                 <button type="button" onClick={closeModal} className="training-cancel-btn">Cancel</button>
                 <button type="submit" disabled={loading} className="training-submit-btn">{loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}</button>
@@ -221,9 +373,6 @@ function TrainingProgram() {
           programs.map((program, idx) => {
             const title = program.name || '';
             const description = program.description || '';
-            const words = description.split(' ');
-            const isLong = words.length >= 9;
-            const shortDesc = isLong ? words.slice(0, 9).join(' ') + '...' : description;
             return (
               <div key={program.id} className="training-card"
                 onMouseOver={e => { e.currentTarget.classList.add('training-card-hover'); }}
@@ -231,7 +380,6 @@ function TrainingProgram() {
               >
                 {/* Header */}
                 <div className="training-card-header">
-                  <div className="training-card-date">{program.date} {program.location && <span className="training-card-location">| {program.location}</span>}</div>
                   <div className="training-card-menu">
                     <button onClick={() => handleMenuToggle(idx)} className="training-card-menu-btn">
                       <FaEllipsisH size={20} />
@@ -247,26 +395,49 @@ function TrainingProgram() {
                 {/* Content */}
                 <div className="training-card-content">
                   {title && <div className="training-card-title">{title}</div>}
-                  {description && (() => {
-                    const words = description.split(' ');
-                    const isLong = words.length > 15;
-                    const shortDesc = isLong ? words.slice(0, 15).join(' ') + '...' : description;
-                    return (
-                      <>
-                        <div className="training-card-desc">
-                          {shortDesc}
-                          {isLong && (
-                            <button
-                              className="training-card-see-more"
-                              onClick={() => setDescModalContent({ title, description }) || setShowDescModal(true)}
-                            >See More</button>
-                          )}
+                  
+                  {/* Date and Location Section */}
+                  <div className="training-card-meta">
+                    {program.date && (
+                      <div className="training-card-date-label">
+                        <strong>Date:</strong> {program.date}
+                      </div>
+                    )}
+                    {program.location && (
+                      <div className="training-card-location-label">
+                        <strong>Location:</strong> {program.location}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {description && (
+                    <div className="training-card-desc">
+                      <div className="training-text-content">
+                        {truncateDescription(description)}
+                      </div>
+                      {needsTruncation(description) && (
+                        <button
+                          className="training-card-see-more"
+                          onClick={() => openFullModal(program)}
+                        >See More</button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Show photos - exactly like announcements */}
+                  {program.photos && program.photos.length > 0 && (
+                    <div className="training-photos-display">
+                      <img 
+                        src={program.photos[0]} 
+                        alt="Training Program" 
+                        className="training-card-img" 
+                      />
+                      {program.photos.length > 1 && (
+                        <div className="training-photos-indicator">
+                          <span className="training-photos-count">+{program.photos.length - 1} more</span>
                         </div>
-                      </>
-                    );
-                  })()}
-                  {program.image_url && (
-                    <img src={program.image_url} alt={title} className="training-card-img" />
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -274,12 +445,70 @@ function TrainingProgram() {
           })
         )}
       </div>
+
+      {/* Full Description Modal with Photo Navigation */}
       {showDescModal && (
         <div className="training-desc-modal-overlay">
           <div className="training-desc-modal-card">
-            <button className="training-desc-modal-close" onClick={() => setShowDescModal(false)}>&times;</button>
+            <button onClick={() => setShowDescModal(false)} className="training-desc-modal-close">&times;</button>
             <h3 className="training-desc-modal-title">{descModalContent.title}</h3>
-            <div className="training-desc-modal-desc">{descModalContent.description}</div>
+            
+            {/* Date and Location in Modal */}
+            <div className="training-desc-modal-meta">
+              {descModalContent.date && (
+                <div className="training-desc-modal-date">
+                  <strong>Date:</strong> {descModalContent.date}
+                </div>
+              )}
+              {descModalContent.location && (
+                <div className="training-desc-modal-location">
+                  <strong>Location:</strong> {descModalContent.location}
+                </div>
+              )}
+            </div>
+            
+            <div className="training-desc-modal-desc">
+              <strong>Description:</strong>
+              <p>{descModalContent.description}</p>
+            </div>
+            
+            {/* Photo Navigation (Instagram/Facebook style) */}
+            {descModalContent.photos && descModalContent.photos.length > 0 && (
+              <div className="training-photo-navigation">
+                <div className="training-photo-container">
+                  <img 
+                    src={descModalContent.photos[currentPhotoIndex]} 
+                    alt={`Photo ${currentPhotoIndex + 1}`} 
+                    className="training-desc-modal-img" 
+                  />
+                  
+                  {/* Navigation Arrows */}
+                  {descModalContent.photos.length > 1 && (
+                    <>
+                      <button 
+                        className="training-photo-nav-btn training-photo-nav-prev"
+                        onClick={prevPhoto}
+                      >
+                        <FaChevronLeft />
+                      </button>
+                      <button 
+                        className="training-photo-nav-btn training-photo-nav-next"
+                        onClick={nextPhoto}
+                      >
+                        <FaChevronRight />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Photo Counter */}
+                  {descModalContent.photos.length > 1 && (
+                    <div className="training-photo-counter">
+                      {currentPhotoIndex + 1} / {descModalContent.photos.length}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

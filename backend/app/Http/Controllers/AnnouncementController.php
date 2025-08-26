@@ -76,30 +76,46 @@ class AnnouncementController extends Controller
             'photos.*' => 'nullable|image|max:5120',
         ]);
 
+        // Handle multiple photos
         if ($request->hasFile('photos')) {
-            // Delete old photos if they exist
-            if ($announcement->photos && is_array($announcement->photos)) {
-                foreach ($announcement->photos as $oldPhotoPath) {
-                    if (Storage::disk('public')->exists($oldPhotoPath)) {
-                        Storage::disk('public')->delete($oldPhotoPath);
-                    }
-                }
-            }
+            // Get existing photos to preserve them
+            $existingPhotos = $announcement->photos ? $announcement->photos : [];
 
+            // Add new photos to existing ones
             $photos = $request->file('photos');
             // Convert single file to array for consistent handling
             if (!is_array($photos)) {
                 $photos = [$photos];
             }
 
-            $photoPaths = [];
+            $newPhotoPaths = [];
             foreach ($photos as $photo) {
                 if ($photo && $photo->isValid()) {
                     $photoPath = $photo->store('announcements', 'public');
-                    $photoPaths[] = $photoPath;
+                    $newPhotoPaths[] = $photoPath;
                 }
             }
-            $announcement->photos = $photoPaths;
+
+            // Merge existing photos with new photos
+            $announcement->photos = array_merge($existingPhotos, $newPhotoPaths);
+        } else {
+            // Handle existing photos - keep only the ones that weren't removed
+            if ($request->has('keep_existing_photos')) {
+                $keepPhotos = json_decode($request->input('keep_existing_photos'), true);
+                if (is_array($keepPhotos)) {
+                    $announcement->photos = $keepPhotos;
+                } else {
+                    // If no photos to keep, remove all photos
+                    if ($announcement->photos) {
+                        foreach ($announcement->photos as $oldPhotoPath) {
+                            if (Storage::disk('public')->exists($oldPhotoPath)) {
+                                Storage::disk('public')->delete($oldPhotoPath);
+                            }
+                        }
+                    }
+                    $announcement->photos = null;
+                }
+            }
         }
 
         $announcement->title = $data['title'] ?? $announcement->title;

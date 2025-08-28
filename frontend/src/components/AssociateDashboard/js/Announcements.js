@@ -278,7 +278,19 @@ function Announcements() {
                   <div className="announcements-loading-text">Loading announcements...</div>
                 </div>
               ) : announcements.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#888', fontStyle: 'italic', background: '#fff', borderRadius: 10, padding: 32, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>No announcements yet.</div>
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '40px 20px', 
+                  color: '#dc3545', 
+                  fontSize: '18px', 
+                  fontWeight: '500',
+                  width: '100%',
+                  background: '#fff',
+                  borderRadius: 10,
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.06)'
+                }}>
+                  No announcements found. Announcements will appear here when they are created by administrators.
+                </div>
               ) : (
                 announcements.map(a => (
                   <div 

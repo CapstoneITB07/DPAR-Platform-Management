@@ -418,43 +418,57 @@ function ApprovalAOR() {
           <div className="loading">Loading...</div>
         ) : (
           <div className="reports-grid">
-            {reports.filter(report => report.status === 'sent').map(report => {
-              const logoUrl = getOrganizationLogo(report);
-              let displayStatus = report.status.toUpperCase();
-              
-              // Customize status display
-              if (report.status === 'sent') {
-                displayStatus = 'PENDING APPROVAL';
-              } else if (report.status === 'approved') {
-                displayStatus = 'APPROVED';
-              } else if (report.status === 'rejected') {
-                displayStatus = 'REJECTED';
-              }
-              
-              return (
-                <div key={report.id} className="report-card">
-                  <img 
-                    src={logoUrl}
-                    alt={report.user?.organization || 'Organization Logo'} 
-                    className="org-logo"
-                    onError={(e) => {
-                      console.log('Failed to load logo:', e.target.src);
-                      e.target.src = '/Assets/disaster_logo.png';
-                    }}
-                  />
-                  <div className="report-info">
-                    <span className="org-label">{report.user?.organization || 'ASSOCIATE'}</span>
-                    <h3>{report.title}</h3>
-                    <span className={`report-status ${report.status}`}>
-                      {displayStatus}
-                    </span>
-                    <button className="see-more-btn" onClick={() => handlePreview(report)}>
-                      SEE MORE
-                    </button>
+            {reports.filter(report => report.status === 'sent').length > 0 ? (
+              reports.filter(report => report.status === 'sent').map(report => {
+                const logoUrl = getOrganizationLogo(report);
+                let displayStatus = report.status.toUpperCase();
+                
+                // Customize status display
+                if (report.status === 'sent') {
+                  displayStatus = 'PENDING APPROVAL';
+                } else if (report.status === 'approved') {
+                  displayStatus = 'APPROVED';
+                } else if (report.status === 'rejected') {
+                  displayStatus = 'REJECTED';
+                }
+                
+                return (
+                  <div key={report.id} className="report-card">
+                    <img 
+                      src={logoUrl}
+                      alt={report.user?.organization || 'Organization Logo'} 
+                      className="org-logo"
+                      onError={(e) => {
+                        console.log('Failed to load logo:', e.target.src);
+                        e.target.src = '/Assets/disaster_logo.png';
+                      }}
+                    />
+                    <div className="report-info">
+                      <span className="org-label">{report.user?.organization || 'ASSOCIATE'}</span>
+                      <h3>{report.title}</h3>
+                      <span className={`report-status ${report.status}`}>
+                        {displayStatus}
+                      </span>
+                      <button className="see-more-btn" onClick={() => handlePreview(report)}>
+                        SEE MORE
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px 20px', 
+                color: '#dc3545', 
+                fontSize: '18px', 
+                fontWeight: '500',
+                width: '100%',
+                gridColumn: '1 / -1'
+              }}>
+                No pending reports found. Reports will appear here when associates submit them for approval.
+              </div>
+            )}
           </div>
         )}
 

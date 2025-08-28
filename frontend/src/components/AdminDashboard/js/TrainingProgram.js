@@ -368,7 +368,17 @@ function TrainingProgram() {
       {/* Card Grid */}
       <div className="training-card-grid">
         {programs.length === 0 ? (
-          <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888' }}>No training programs yet.</p>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px', 
+            color: '#dc3545', 
+            fontSize: '18px', 
+            fontWeight: '500',
+            width: '100%',
+            gridColumn: '1 / -1'
+          }}>
+            No training programs found. Click "ADD PROGRAM" to create your first training program.
+          </div>
         ) : (
           programs.map((program, idx) => {
             const title = program.name || '';

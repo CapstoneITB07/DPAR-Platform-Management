@@ -219,7 +219,8 @@ function Evaluation() {
           <div className="loading">Loading...</div>
         ) : (
           <div className="associates-grid">
-            {sortedAssociates.map(associate => (
+            {sortedAssociates.length > 0 ? (
+              sortedAssociates.map(associate => (
               <div key={associate.id} className="associate-card">
                 <div className="associate-info">
                   <img
@@ -240,7 +241,20 @@ function Evaluation() {
                   Evaluate
                 </button>
               </div>
-            ))}
+            ))
+            ) : (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px 20px', 
+                color: '#dc3545', 
+                fontSize: '18px', 
+                fontWeight: '500',
+                width: '100%',
+                gridColumn: '1 / -1'
+              }}>
+                No associate groups found. Associates will appear here when they are added to the system.
+              </div>
+            )}
           </div>
         )}
 

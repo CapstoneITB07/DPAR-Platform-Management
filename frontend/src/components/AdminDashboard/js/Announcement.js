@@ -314,7 +314,17 @@ function Announcement() {
       {/* Announcements List */}
       <div className="announcement-list">
         {announcements.length === 0 ? (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#888', fontStyle: 'italic' }}>No announcements yet.</div>
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px', 
+            color: '#dc3545', 
+            fontSize: '18px', 
+            fontWeight: '500',
+            width: '100%',
+            gridColumn: '1 / -1'
+          }}>
+            No announcements found. Click "Create Announcement" to create your first announcement.
+          </div>
         ) : (
           announcements.map(a => (
             <div key={a.id} className="announcement-card"

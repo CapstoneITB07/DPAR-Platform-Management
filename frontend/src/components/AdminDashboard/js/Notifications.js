@@ -311,7 +311,17 @@ function Notifications() {
         </button>
       </div>
       {notifications.length === 0 && (
-        <div className="notification-empty">No notifications yet.</div>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px 20px', 
+          color: '#dc3545', 
+          fontSize: '18px', 
+          fontWeight: '500',
+          width: '100%',
+          gridColumn: '1 / -1'
+        }}>
+          No notifications found. Click "Add Notification" to create your first notification.
+        </div>
       )}
       {filterNotifications(notifications).map(n => (
         <NotificationDropdown 

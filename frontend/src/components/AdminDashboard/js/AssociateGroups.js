@@ -510,7 +510,8 @@ function AssociateGroups() {
       </div>
       {error && <div className="error-message">{error}</div>}
       <div className="associate-logos-grid">
-        {associates.map(associate => (
+        {associates.length > 0 ? (
+          associates.map(associate => (
           <div key={associate.id} className="associate-logo-circle" style={{ position: 'relative' }}>
             <img
               src={getLogoUrl(associate.logo)}
@@ -565,7 +566,20 @@ function AssociateGroups() {
               </>
             )}
           </div>
-        ))}
+        ))
+        ) : (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px', 
+            color: '#dc3545', 
+            fontSize: '18px', 
+            fontWeight: '500',
+            width: '100%',
+            gridColumn: '1 / -1'
+          }}>
+            No Associate Groups found. Click "Add Associate" to create your first associate group.
+          </div>
+        )}
       </div>
       {/* Profile Modal */}
       <Modal

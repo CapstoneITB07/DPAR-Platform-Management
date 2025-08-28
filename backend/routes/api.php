@@ -33,6 +33,12 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/login/recovery', [AuthController::class, 'loginWithRecoveryPasscode'])->middleware('throttle:5,1');
 
+// Admin recovery account management routes
+Route::middleware(['auth:sanctum', 'role:head_admin'])->group(function () {
+    Route::get('/recovery-lockout-status', [AuthController::class, 'checkRecoveryLockoutStatus']);
+    Route::post('/recovery-unlock-account', [AuthController::class, 'unlockRecoveryAccount']);
+});
+
 // Public GET route for announcements
 Route::get('/announcements', [AnnouncementController::class, 'index']);
 

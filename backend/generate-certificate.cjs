@@ -41,7 +41,20 @@ function processTemplate(template, data) {
   Object.keys(data).forEach(key => {
     if (typeof data[key] === 'string' || typeof data[key] === 'number') {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      result = result.replace(regex, data[key] || '');
+      let value = data[key] || '';
+      
+      // Special handling for message to preserve line breaks
+      if (key === 'message' && typeof value === 'string') {
+        // Convert newlines to HTML line breaks and preserve formatting
+        // Each line will be centered individually
+        value = value
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('<br>');
+      }
+      
+      result = result.replace(regex, value);
     }
   });
   

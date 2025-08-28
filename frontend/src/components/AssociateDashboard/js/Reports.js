@@ -183,7 +183,7 @@ function Reports() {
           
           // Show notification if rejected within last 5 minutes
           if (timeDiff < 5 * 60 * 1000) {
-            setRejectionNotification('Your report has been rejected. Please submit a new one.');
+            setRejectionNotification('Your report has been rejected. Please check the rejection details and submit a new one.');
             setTimeout(() => setRejectionNotification(''), 5000);
           }
         }
@@ -998,6 +998,8 @@ function Reports() {
           </span>
         </div>
 
+
+
         {error && (
           <div className="error-message">
             {error}
@@ -1072,6 +1074,32 @@ function Reports() {
                           {report.status === 'rejected' && report.rejected_at && (
                             <div className="status-detail rejected">
                               Rejected on {formatDate(report.rejected_at)}
+                              {report.rejection_reason && (
+                                <div className="rejection-reason-display">
+                                  <div className="rejection-reason-header">
+                                    <strong>Rejection Reason:</strong>
+                                  </div>
+                                  <div className="rejection-reason-text">
+                                    {report.rejection_reason}
+                                  </div>
+                                  <div className="rejection-guidance">
+                                    <strong>Action Required:</strong>
+                                    <div className="rejection-action-steps">
+                                      <div className="rejection-step">
+                                        <span className="step-number">1</span>
+                                        <span className="step-text">Delete this rejected report using the delete button</span>
+                                      </div>
+                                      <div className="rejection-step">
+                                        <span className="step-number">2</span>
+                                        <span className="step-text">Create a new report addressing the issues above</span>
+                                      </div>
+                                    </div>
+                                    <div className="rejection-note">
+                                      <strong>Note:</strong> You cannot edit rejected reports. You must create a new submission.
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </td>
@@ -1111,7 +1139,20 @@ function Reports() {
                                 </button>
                               </>
                             )}
-                            {report.status !== 'draft' && (
+                            {report.status === 'rejected' && (
+                              <button
+                                className="action-btn delete-and-create-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(report.id);
+                                }}
+                                title="Delete & Create New Report"
+                              >
+                                <FontAwesomeIcon icon={faTrash} />
+                                <span className="btn-text">Delete & Create New</span>
+                              </button>
+                            )}
+                            {report.status !== 'draft' && report.status !== 'rejected' && (
                               <button
                                 className="action-btn delete-btn"
                                 onClick={(e) => {

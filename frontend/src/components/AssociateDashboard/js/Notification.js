@@ -398,6 +398,7 @@ function Notification() {
                         <div style={{ textAlign: 'left' }}>
                           <div className="notification-item-title" style={{ textAlign: 'left' }}>{n.title}</div>
                           <div className="notification-item-date" style={{ textAlign: 'left' }}>{dayjs(n.created_at).format('MMM D, YYYY h:mm A')}</div>
+
                         </div>
                         <div className="notification-item-arrow">{isOpen ? '▲' : '▼'}</div>
                       </div>

@@ -720,7 +720,7 @@ class ReportController extends Controller
     }
 
     // Reject a report
-    public function reject(string $id)
+    public function reject(Request $request, string $id)
     {
         try {
             $user = Auth::user();
@@ -729,6 +729,11 @@ class ReportController extends Controller
             if ($user->role !== 'head_admin') {
                 return response()->json(['message' => 'Unauthorized. Only head admin can reject reports.'], 403);
             }
+
+            // Validate rejection reason
+            $validated = $request->validate([
+                'rejection_reason' => 'required|string|min:10|max:1000'
+            ]);
 
             $report = Report::with('user')->findOrFail($id);
 
@@ -739,18 +744,29 @@ class ReportController extends Controller
             $report->status = 'rejected';
             $report->rejected_at = now();
             $report->rejected_by = $user->id;
+            $report->rejection_reason = $validated['rejection_reason'];
             $report->save();
 
             Log::info('Report rejected', [
                 'report_id' => $id,
                 'rejected_by' => $user->id,
-                'rejected_at' => now()
+                'rejected_at' => now(),
+                'rejection_reason' => $validated['rejection_reason']
             ]);
 
             return response()->json([
                 'message' => 'Report rejected successfully',
                 'report' => $report
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Report rejection validation failed', [
+                'errors' => $e->errors(),
+                'report_id' => $id
+            ]);
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to reject report: ' . $e->getMessage());
             return response()->json([

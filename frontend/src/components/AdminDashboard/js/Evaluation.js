@@ -16,6 +16,8 @@ function Notification({ message, onClose }) {
   );
 }
 
+
+
 const KPI_WEIGHTS = {
   'Volunteer Participation': 0.25,
   'Task Accommodation and Completion': 0.30,
@@ -247,48 +249,95 @@ function Evaluation() {
           <div className="modal-overlay">
             <div className="modal-content evaluation-modal">
               <div className="modal-header">
-                <h3>Evaluate {selectedAssociate.name}</h3>
-                <button
-                  className="modal-close"
-                  onClick={() => setShowEvaluationModal(false)}
-                >
-                  <FontAwesomeIcon icon={faTimes} />
-                </button>
+                <div className="header-content">
+                  <div className="associate-info-header">
+                    <img
+                      src={getLogoUrl(selectedAssociate.logo)}
+                      alt={selectedAssociate.name || 'Associate Logo'}
+                      className="associate-logo-modal"
+                      onError={e => { e.target.src = `${window.location.origin}/Assets/disaster_logo.png`; }}
+                    />
+                    <div className="associate-details">
+                      <h3>Performance Evaluation</h3>
+                      <p className="associate-name">{selectedAssociate.name}</p>
+                      {selectedAssociate.organization && (
+                        <p className="associate-org">{selectedAssociate.organization}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    className="modal-close"
+                    onClick={() => setShowEvaluationModal(false)}
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
               </div>
               <div className="modal-body">
+                <div className="evaluation-intro">
+                  <p>Please evaluate the associate's performance based on the following criteria. Each category has specific weight in the overall assessment.</p>
+                </div>
+                
                 {Object.entries(KPI_CRITERIA).map(([category, sections]) => (
                   <div key={category} className="evaluation-section">
-                    <h4>{category} ({(KPI_WEIGHTS[category] * 100)}%)</h4>
+                    <div className="section-header">
+                      <h4>{category}</h4>
+                      <div className="weight-badge">{(KPI_WEIGHTS[category] * 100)}%</div>
+                    </div>
+                    
                     {Object.entries(sections).map(([section, criteria]) => (
                       <div key={section} className="criteria-section">
-                        <h5>{section}</h5>
+                        <h5 className="section-title">{section}</h5>
                         {criteria.map((criterion, index) => (
-                          <div key={index} className="criterion">
-                            <p>{criterion}</p>
-                            <select
-                              value={evaluationData[category]?.scores[`${section}_${index}`] || 0}
-                              onChange={(e) => handleScoreChange(category, section, index, e.target.value)}
-                            >
-                              <option value={0}>Select score</option>
+                          <div key={index} className="criterion-item">
+                            <div className="criterion-text">
+                              <p>{criterion}</p>
+                            </div>
+                            <div className="scoring-options">
                               {Object.entries(SCORING_SCALE).map(([score, label]) => (
-                                <option key={score} value={score}>
-                                  {score} - {label}
-                                </option>
+                                <label key={score} className="radio-option">
+                                  <input
+                                    type="radio"
+                                    name={`${category}_${section}_${index}`}
+                                    value={score}
+                                    checked={evaluationData[category]?.scores[`${section}_${index}`] == score}
+                                    onChange={(e) => handleScoreChange(category, section, index, e.target.value)}
+                                  />
+                                  <span className="radio-custom"></span>
+                                  <span className="score-label">{score}</span>
+                                  <span className="score-text">{label}</span>
+                                </label>
                               ))}
-                            </select>
+                            </div>
                           </div>
                         ))}
                       </div>
                     ))}
-                    <div className="category-score">
-                      Category Score: {calculateCategoryScore(category).toFixed(2)}
+                    
+                    <div className="category-score-display">
+                      <div className="score-label">Category Score</div>
+                      <div className="score-value">{calculateCategoryScore(category).toFixed(2)}</div>
                     </div>
                   </div>
                 ))}
-                <div className="total-score">
-                  Total Weighted Score: {calculateTotalScore()}
+                
+                <div className="evaluation-summary">
+                  <div className="summary-header">
+                    <h4>Evaluation Summary</h4>
+                  </div>
+                  <div className="total-score-display">
+                    <div className="total-score-label">Total Weighted Score</div>
+                    <div className="total-score-value">{calculateTotalScore()}</div>
+                  </div>
                 </div>
+                
                 <div className="modal-actions">
+                  <button
+                    className="cancel-btn"
+                    onClick={() => setShowEvaluationModal(false)}
+                  >
+                    Cancel
+                  </button>
                   <button
                     className="submit-btn"
                     onClick={handleSubmitEvaluation}

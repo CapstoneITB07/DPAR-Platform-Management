@@ -277,7 +277,7 @@
   border: 1.5px solid #f0f0f0;
   display: flex;
   flex-direction: column;
-  min-height: 200px;
+  height: 320px; /* Fixed height like announcements */
   transition: box-shadow 0.18s, transform 0.18s;
   cursor: pointer;
   margin-bottom: 8px;
@@ -360,6 +360,8 @@
   position: relative;
   margin-top: 10px;
   margin-bottom: 10px;
+  /* Ensure photos don't break the fixed height layout */
+  flex-shrink: 0;
 }
 
 .training-photos-indicator {
@@ -389,11 +391,17 @@
 .training-card-content {
   padding: 18px 20px 10px 20px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* Ensure content fills the available space properly */
+  min-height: 0;
 }
 .training-card-meta {
   margin-bottom: 12px;
   padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
+  /* Ensure meta section doesn't take too much space */
+  flex-shrink: 0;
 }
 
 .training-card-date-label,
@@ -418,23 +426,44 @@
   font-size: 20px;
   margin-bottom: 8px;
   color: #222;
+  /* Ensure title doesn't take too much space */
+  flex-shrink: 0;
 }
 .training-card-desc {
   font-size: 16px;
   color: #444;
   margin-bottom: 12px;
+  /* Fix for description overflow - add proper text wrapping and truncation */
   word-wrap: break-word;
+  word-break: break-word;
   overflow-wrap: break-word;
-  white-space: pre-wrap;
-  line-height: 1.5;
+  white-space: normal;
+  line-height: 1.4;
+  max-width: 100%;
+  /* Use a simpler approach for truncation that works better with buttons */
+  max-height: 4.2em; /* Approximately 3 lines */
+  position: relative;
+  /* Ensure the container can show the button */
+  padding-bottom: 20px;
+  /* Add display flex to properly align content */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Allow description to grow and fill available space */
+  flex: 1;
+  min-height: 0;
 }
 
 .training-text-content {
-  display: block;
+  /* Ensure text flows properly */
+  line-height: 1.4;
   word-wrap: break-word;
+  word-break: break-word;
   overflow-wrap: break-word;
-  white-space: pre-wrap;
-  line-height: 1.5;
+  white-space: normal;
+  /* Limit height to approximately 3 lines */
+  max-height: 4.2em;
+  overflow: hidden;
 }
 
 .training-card-see-more {
@@ -442,10 +471,23 @@
   color: #A11C22;
   border: none;
   font-weight: 600;
-  margin-left: 8px;
+  margin-left: 0; /* Remove left margin since we're using flexbox */
   cursor: pointer;
   text-decoration: underline;
   font-size: 15px;
+  /* Ensure button is visible and properly positioned */
+  display: inline-block;
+  vertical-align: baseline;
+  white-space: nowrap;
+  /* Force visibility */
+  visibility: visible !important;
+  opacity: 1 !important;
+  /* Ensure it's not clipped */
+  position: relative;
+  z-index: 1;
+  /* Align button to the right */
+  align-self: flex-end;
+  margin-top: 4px;
 }
 
 /* Enhanced Description Modal with Photo Navigation */
@@ -643,7 +685,7 @@
     margin-top: 10px;
   }
   .training-card {
-    min-height: 200px;
+    height: 280px; /* Fixed height for mobile, slightly smaller */
   }
   .training-modal-card, .training-desc-modal-card {
     min-width: 0;

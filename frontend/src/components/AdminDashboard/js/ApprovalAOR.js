@@ -3,7 +3,7 @@ import AdminLayout from './AdminLayout';
 import axios from 'axios';
 import '../css/ApprovalAOR.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faTimes, faCheck, faBan, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faTimes, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
 
 // Notification component
 function Notification({ message, type, onClose }) {
@@ -83,8 +83,7 @@ function ApprovalAOR() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmReportId, setConfirmReportId] = useState(null);
-  const [selectedHistoryItems, setSelectedHistoryItems] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
@@ -300,7 +299,9 @@ function ApprovalAOR() {
       console.log('Attempting to reject report:', reportId);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
-      const response = await axios.put(`${API_BASE}/api/reports/${reportId}/reject`, {}, {
+      const response = await axios.put(`${API_BASE}/api/reports/${reportId}/reject`, {
+        rejection_reason: rejectionReason
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -319,7 +320,15 @@ function ApprovalAOR() {
     } catch (err) {
       console.error('Reject error:', err);
       console.error('Reject error response:', err.response?.data);
-      setError('Failed to reject report: ' + (err.response?.data?.message || err.message));
+      
+      // Handle validation errors specifically
+      if (err.response?.status === 422 && err.response?.data?.errors) {
+        const validationErrors = err.response.data.errors;
+        const errorMessages = Object.values(validationErrors).flat();
+        setError('Validation failed: ' + errorMessages.join(', '));
+      } else {
+        setError('Failed to reject report: ' + (err.response?.data?.message || err.message));
+      }
     }
   };
 
@@ -332,6 +341,7 @@ function ApprovalAOR() {
   const handleConfirmReject = (reportId) => {
     setConfirmAction('reject');
     setConfirmReportId(reportId);
+    setRejectionReason('');
     setShowConfirmModal(true);
   };
 
@@ -341,6 +351,18 @@ function ApprovalAOR() {
   };
 
   const handleConfirmAction = async () => {
+    // Validate rejection reason if rejecting
+    if (confirmAction === 'reject') {
+      if (rejectionReason.trim().length === 0) {
+        setError('Please provide a rejection reason before proceeding.');
+        return; // Don't proceed if no rejection reason
+      }
+      if (rejectionReason.trim().length < 10) {
+        setError('Rejection reason must be at least 10 characters long.');
+        return; // Don't proceed if rejection reason is too short
+      }
+    }
+    
     // Close modal immediately for better UX
     setShowConfirmModal(false);
     setConfirmAction(null);
@@ -358,49 +380,10 @@ function ApprovalAOR() {
     setShowConfirmModal(false);
     setConfirmAction(null);
     setConfirmReportId(null);
+    setRejectionReason('');
   };
 
-  const handleSelectHistoryItem = (reportId) => {
-    setSelectedHistoryItems(prev => {
-      if (prev.includes(reportId)) {
-        return prev.filter(id => id !== reportId);
-      } else {
-        return [...prev, reportId];
-      }
-    });
-  };
 
-  const handleSelectAll = () => {
-    const approvedReports = allReports.filter(report => report.status === 'approved');
-    if (selectAll) {
-      setSelectedHistoryItems([]);
-    } else {
-      setSelectedHistoryItems(approvedReports.map(report => report.id));
-    }
-    setSelectAll(!selectAll);
-  };
-
-  const handleDeleteSelected = async () => {
-    if (selectedHistoryItems.length === 0) return;
-    
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await Promise.all(
-        selectedHistoryItems.map(id => 
-          axios.delete(`${API_BASE}/api/reports/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        )
-      );
-      
-      setNotificationWithDebug(`${selectedHistoryItems.length} report(s) deleted successfully`);
-      setSelectedHistoryItems([]);
-      setSelectAll(false);
-      fetchReports();
-    } catch (error) {
-      setError('Failed to delete selected reports');
-    }
-  };
 
   const formatValue = (value) => {
     if (value === null || value === undefined) {
@@ -486,26 +469,6 @@ function ApprovalAOR() {
                 </button>
               </div>
               <div className="modal-body">
-                <div className="history-controls">
-                  <div className="history-selection-controls">
-                    <label className="select-all-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={selectAll}
-                        onChange={handleSelectAll}
-                      />
-                      <span>Select All</span>
-                    </label>
-                    {selectedHistoryItems.length > 0 && (
-                      <button 
-                        className="delete-selected-btn"
-                        onClick={handleDeleteSelected}
-                      >
-                        <FontAwesomeIcon icon={faTrash} /> Delete Selected ({selectedHistoryItems.length})
-                      </button>
-                    )}
-                  </div>
-                </div>
                 <div className="history-list">
                   {(() => {
                     const approvedReports = allReports.filter(report => report.status === 'approved');
@@ -514,13 +477,6 @@ function ApprovalAOR() {
                     
                     return approvedReports.map(report => (
                     <div key={report.id} className="history-item">
-                      <div className="history-item-selection">
-                        <input
-                          type="checkbox"
-                          checked={selectedHistoryItems.includes(report.id)}
-                          onChange={() => handleSelectHistoryItem(report.id)}
-                        />
-                      </div>
                       <img 
                         src={getOrganizationLogo(report)}
                         alt={report.user?.organization || 'Organization Logo'} 
@@ -822,25 +778,84 @@ function ApprovalAOR() {
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
-                <h3>Confirm Action</h3>
+                <h3>Action Confirmation Required</h3>
                 <button className="modal-close" onClick={handleCancelAction}>
                   <FontAwesomeIcon icon={faTimes} />
                 </button>
               </div>
               <div className="modal-body">
-                <p>Are you sure you want to {confirmAction === 'approve' ? 'approve' : 'reject'} this report?</p>
-                <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-                  {confirmAction === 'approve' 
-                    ? 'This will approve the report and make it available for download in the history.'
-                    : 'This will reject the report and the associate will need to submit a new one.'
-                  }
-                </p>
+                <div className="confirmation-content">
+                  <div className="confirmation-icon">
+                    <FontAwesomeIcon 
+                      icon={confirmAction === 'approve' ? faCheck : faBan} 
+                      className={confirmAction === 'approve' ? 'approve-icon' : 'reject-icon'}
+                    />
+                  </div>
+                  <h4 className="confirmation-title">
+                    {confirmAction === 'approve' ? 'Approve After Operation Report' : 'Reject After Operation Report'}
+                  </h4>
+                  <p className="confirmation-message">
+                    You are about to <strong>{confirmAction === 'approve' ? 'approve' : 'reject'}</strong> the report titled:
+                  </p>
+                  <div className="report-title-display">
+                    "{selectedReport?.title || 'Untitled Report'}"
+                  </div>
+                  <div className="confirmation-details">
+                    {confirmAction === 'approve' ? (
+                      <>
+                        <p><strong>Approval Action:</strong> This report will be marked as approved and will be:</p>
+                        <ul>
+                          <li>Available for AOR generation and download</li>
+                          <li>Added to the approved reports history</li>
+                        </ul>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>Rejection Action:</strong> This report will be marked as rejected and:</p>
+                        <ul>
+                          <li>The associate organization will be notified</li>
+                        </ul>
+                        <div className="rejection-reason-section">
+                          <label htmlFor="rejection-reason" className="rejection-reason-label">
+                            <strong>Rejection Reason (Required):</strong>
+                          </label>
+                          <textarea
+                            id="rejection-reason"
+                            className="rejection-reason-input"
+                            placeholder="Please provide a clear reason for rejection (minimum 10 characters) to help the associate improve their submission..."
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            rows="3"
+                            required
+                          />
+                          <div className="rejection-reason-help">
+                            <small>Minimum 10 characters required. Current: {rejectionReason.length}/10</small>
+                          </div>
+                          {rejectionReason.trim().length === 0 && (
+                            <div className="rejection-reason-error">
+                              Please provide a rejection reason before proceeding.
+                            </div>
+                          )}
+                          {rejectionReason.trim().length > 0 && rejectionReason.trim().length < 10 && (
+                            <div className="rejection-reason-error">
+                              Rejection reason must be at least 10 characters long.
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="confirmation-warning">
+                    <p><strong>Note:</strong> This action cannot be undone. Please ensure all information has been thoroughly reviewed.</p>
+                  </div>
+                </div>
                 <div className="modal-actions">
                   <button className={`modal-btn ${confirmAction === 'approve' ? 'confirm-approve' : 'confirm-reject'}`} onClick={handleConfirmAction}>
-                    <FontAwesomeIcon icon={confirmAction === 'approve' ? faCheck : faBan} /> Confirm {confirmAction === 'approve' ? 'Approve' : 'Reject'}
+                    <FontAwesomeIcon icon={confirmAction === 'approve' ? faCheck : faBan} /> 
+                    {confirmAction === 'approve' ? 'Approve Report' : 'Reject Report'}
                   </button>
                   <button className="modal-btn cancel-btn" onClick={handleCancelAction}>
-                    Cancel
+                    Cancel Action
                   </button>
                 </div>
               </div>

@@ -9,6 +9,17 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
   const [downloading, setDownloading] = useState(false);
   const [bulkInput, setBulkInput] = useState('');
 
+  // Helper function to calculate word count
+  const getWordCount = (text) => {
+    if (!text) return 0;
+    return text.split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  // Helper function to check if word count exceeds limit
+  const isWordCountExceeded = (text) => {
+    return getWordCount(text) > 100;
+  };
+
   useEffect(() => {
     setLocalData(certificateData);
   }, [certificateData]);
@@ -94,6 +105,12 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
 
   const isFormValid = () => {
     if (!localData.message) return false;
+    
+    // Check word count limit
+    if (isWordCountExceeded(localData.message)) {
+      return false;
+    }
+    
     const signatories = localData.signatories || [];
     for (const signatory of signatories) {
       if (!signatory.name || !signatory.title) return false;
@@ -106,6 +123,33 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
 
   const handleBulkDownload = async () => {
     if (!isFormValid()) {
+      // Check specific validation errors
+      if (!localData.message) {
+        alert('Please enter an appreciation message.');
+        return;
+      }
+      
+      if (isWordCountExceeded(localData.message)) {
+        const wordCount = getWordCount(localData.message);
+        alert(`Appreciation message exceeds 100 words. Current: ${wordCount} words. Please shorten your message.`);
+        return;
+      }
+      
+      const signatories = localData.signatories || [];
+      for (const signatory of signatories) {
+        if (!signatory.name || !signatory.title) {
+          alert('Please fill out all signatory names and titles.');
+          return;
+        }
+      }
+      
+      for (const recipient of recipients) {
+        if (!recipient.name || !recipient.controlNumber) {
+          alert('Please fill out all recipient names and control numbers.');
+          return;
+        }
+      }
+      
       alert('Please fill out all required fields: message, each signatory\'s name and title, and all recipient names and control numbers.');
       return;
     }
@@ -347,16 +391,33 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
                   name="message"
                   value={localData.message}
                   onChange={handleChange}
-                  placeholder="Enter the appreciation message that will appear on all certificates..."
+                  placeholder="Enter the appreciation message that will appear on all certificates. You can use line breaks to format the text properly. Maximum 100 words."
                   style={{
                     width: '100%',
-                    height: '100px',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    resize: 'vertical'
+                    minHeight: '120px',
+                    padding: '12px',
+                    border: localData.message && isWordCountExceeded(localData.message) ? '2px solid #d32f2f' : '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word'
                   }}
+                  maxLength={1000}
                 />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <small style={{ color: '#666' }}>
+                    Tip: Press Enter to create line breaks for better formatting
+                  </small>
+                  <small style={{ 
+                    color: localData.message && isWordCountExceeded(localData.message) ? '#d32f2f' : '#666',
+                    fontWeight: localData.message && isWordCountExceeded(localData.message) ? 'bold' : 'normal'
+                  }}>
+                    {localData.message ? getWordCount(localData.message) : 0} / 100 words
+                  </small>
+                </div>
               </div>
 
               <div className="bulk-actions">

@@ -88,8 +88,10 @@ const CertificatePreview = ({ data }) => {
               <SignatureBlock key={idx} sig={sig} />
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%', marginTop: '1.5rem' }}>
-            <SignatureBlock sig={validSignatories[3]} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '1rem' }}>
+            {validSignatories.slice(3).map((sig, idx) => (
+              <SignatureBlock key={idx} sig={sig} />
+            ))}
           </div>
         </>
       );
@@ -103,7 +105,7 @@ const CertificatePreview = ({ data }) => {
               <SignatureBlock key={idx} sig={sig} />
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginTop: '1rem' }}>
             {validSignatories.slice(3).map((sig, idx) => (
               <SignatureBlock key={idx} sig={sig} />
             ))}
@@ -119,7 +121,7 @@ const CertificatePreview = ({ data }) => {
           flexWrap: 'wrap',
           justifyContent: validSignatories.length === 1 ? 'center' : 'space-between',
           gap: '2rem',
-          marginTop: '2rem',
+          marginTop: '1rem',
           width: '100%',
         }}
       >
@@ -266,11 +268,11 @@ const CertificatePreview = ({ data }) => {
               </div>
             </div>
 
-            <div style={{ fontSize: '1.1rem', color: '#444', fontWeight: 400, marginBottom: '1rem' }}>
+            <div style={{ fontSize: '1.1rem', color: '#444', fontWeight: 400, marginBottom: '0.8rem' }}>
               This certificate is proudly presented to
             </div>
 
-            <div style={{ fontSize: '1.7rem', fontWeight: 'bold', color: '#222', margin: '1.5rem 0 1rem' }}>
+            <div style={{ fontSize: '1.7rem', fontWeight: 'bold', color: '#222', margin: '0.5rem 0 0.3rem' }}>
               {recipientName}
             </div>
 
@@ -279,7 +281,7 @@ const CertificatePreview = ({ data }) => {
                 fontSize: '1.3rem', 
                 fontWeight: '500', 
                 color: '#000', 
-                margin: '0.5rem 0 1rem',
+                margin: '0 0 0.3rem',
                 letterSpacing: '1px',
                 opacity: '0.85'
               }}>
@@ -287,14 +289,30 @@ const CertificatePreview = ({ data }) => {
               </div>
             )}
 
-            <hr style={{ width: '60%', border: 'none', borderTop: '1px solid #000' }} />
+            <hr style={{ width: '60%', border: 'none', borderTop: '1px solid #000', margin: '0.3rem auto 0.8rem auto' }} />
 
-            <div style={{ fontSize: '1.08rem', color: '#444', lineHeight: 1.5, textAlign: 'center', maxWidth: '80%', margin: '1.5rem auto' }}>
+            <div style={{ 
+              fontSize: '1.08rem', 
+              color: '#444', 
+              lineHeight: 1.6, 
+              textAlign: 'center', 
+              maxWidth: '80%', 
+              margin: '0.8rem auto 1.5rem auto',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              hyphens: 'auto',
+              whiteSpace: 'pre-line',
+              textAlignLast: 'center',
+              display: 'block'
+            }}>
               {displayMessage.split('\n').map((line, idx) => (
-                <span key={idx}>
-                  {line}
-                  {idx !== displayMessage.split('\n').length - 1 && <br />}
-                </span>
+                <div key={idx} style={{ 
+                  textAlign: 'center', 
+                  marginBottom: '0.3rem',
+                  width: '100%'
+                }}>
+                  {line.trim()}
+                </div>
               ))}
             </div>
 

@@ -41,7 +41,20 @@ function processTemplate(template, data) {
   Object.keys(data).forEach(key => {
     if (typeof data[key] === 'string' || typeof data[key] === 'number') {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      result = result.replace(regex, data[key] || '');
+      let value = data[key] || '';
+      
+      // Special handling for message to preserve line breaks
+      if (key === 'message' && typeof value === 'string') {
+        // Convert newlines to HTML line breaks and preserve formatting
+        // Each line will be centered individually
+        value = value
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('<br>');
+      }
+      
+      result = result.replace(regex, value);
     }
   });
   
@@ -150,7 +163,8 @@ async function generateBulkCertificates(data) {
             box-sizing: border-box;
             position: relative;
             background-image:
-            url('data:image/svg+xml;utf8,<svg width="1123" height="794" xmlns="http://www.w3.org/2000/svg"><g transform="translate(823,494)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(0,494)"><g transform="rotate(90,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></g><g transform="rotate(180,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(823,0) rotate(270,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></svg>');
+            url('data:image/svg+xml;utf8,<svg width="1123" height="794" xmlns="http://www.w3.org/2000/svg"><g transform="translate(823,494)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(0,494)"><g transform="rotate(90,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></g><g transform="rotate(180,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(823,0) rotate(270,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></svg>'),
+            url('${data.backgroundBase64 || ''}');
             background-size: cover, cover;
             background-position: center, center;
             background-repeat: no-repeat, no-repeat;
@@ -199,6 +213,8 @@ async function generateBulkCertificates(data) {
             align-items: center;
             background: rgba(255,255,255,0.05);
             padding: 0;
+            justify-content: flex-start;
+            gap: 0;
           }
           .cert-title {
             text-align: center;
@@ -211,31 +227,22 @@ async function generateBulkCertificates(data) {
             padding-top: 0px;
             margin-top: 0.3rem;
           }
-          .cert-subtitle {
-            text-align: center;
-            font-size: 1.3rem;
-            color: #bfa22a;
-            font-weight: bold;
-            letter-spacing: 2px;
-            margin-bottom: 0.7rem;
-            text-transform: uppercase;
-          }
           .cert-presentation {
             text-align: center;
             font-size: 1.1rem;
             color: #444;
             font-weight: 400;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0.8rem;
             margin-top: 0.2rem;
           }
           .cert-name {
             text-align: center;
             font-size: 2.2rem;
             font-weight: bold;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             color: #222;
             font-family: 'Playfair Display', serif;
-            margin-top: 0.8rem;
+            margin-top: 0.5rem;
             transition: font-size 0.3s ease;
             word-wrap: break-word;
             max-width: 90%;
@@ -246,29 +253,45 @@ async function generateBulkCertificates(data) {
             font-size: 0.9rem;
             color: #666;
             font-weight: 400;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             font-family: 'Montserrat', Arial, sans-serif;
           }
           .cert-divider {
             border: none;
             border-top: 1px solid #000;
-            margin: 0.5rem auto 1.2rem auto;
+            margin: 0.3rem auto 0.8rem auto;
             width: 60%;
           }
           .cert-body {
             text-align: center;
             font-size: 1.08rem;
             color: #444;
-            margin: 0 auto 2.2rem auto;
+            margin: 0 auto 1.5rem auto;
             max-width: 80%;
-            line-height: 1.5;
-            margin-top: 1.2rem;
+            line-height: 1.6;
+            margin-top: 0.8rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            white-space: pre-line;
+            text-align-last: center;
+            text-justify: none;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          .cert-body br {
+            display: block;
+            content: "";
+            margin-top: 0.5rem;
           }
           .cert-footer {
             display: flex;
             justify-content: center;
             align-items: flex-end;
-            margin-top: 1.5rem;
+            margin-top: 1rem;
             padding: 0 20px;
             width: 100%;
             box-sizing: border-box;
@@ -318,30 +341,6 @@ async function generateBulkCertificates(data) {
             justify-content: space-between;
             align-items: flex-end;
           }
-          .signatures-4 .signature-item:nth-child(4) {
-            position: static;
-            top: auto;
-            left: auto;
-            right: auto;
-            margin-top: 0;
-            width: auto;
-          }
-          .signatures-5 .signature-item:nth-child(4) {
-            position: static;
-            top: auto;
-            left: auto;
-            right: auto;
-            margin-top: 0;
-            width: auto;
-          }
-          .signatures-5 .signature-item:nth-child(5) {
-            position: static;
-            top: auto;
-            left: auto;
-            right: auto;
-            margin-top: 0;
-            width: auto;
-          }
           .content-box {
             background: rgba(255,255,255,0.05);
             border: 6px solid #2563b6;
@@ -356,12 +355,8 @@ async function generateBulkCertificates(data) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-          }
-          .certificate-page {
-            width: 100%;
-            height: 100vh;
-            position: relative;
+            justify-content: flex-start;
+            padding-top: 30px;
           }
         </style>
         <script>
@@ -398,7 +393,7 @@ async function generateBulkCertificates(data) {
             messageElements.forEach(messageElement => {
               // Reset to base size first
               messageElement.style.fontSize = '1.08rem';
-              messageElement.style.lineHeight = '1.5';
+              messageElement.style.lineHeight = '1.6';
               
               // Force a layout update
               messageElement.offsetHeight;
@@ -407,27 +402,27 @@ async function generateBulkCertificates(data) {
               const text = messageElement.textContent || messageElement.innerText;
               const textLength = text.length;
               
-              // Estimate characters per line (approximately 90-100 chars per line at base font size)
-              const baseCharsPerLine = 95;
+              // Estimate characters per line (approximately 70-80 chars per line at base font size for centered text)
+              const baseCharsPerLine = 75;
               const estimatedLines = Math.ceil(textLength / baseCharsPerLine);
               
-              // If estimated lines exceed 3, reduce font size
-              if (estimatedLines > 3) {
+              // If estimated lines exceed 4, reduce font size
+              if (estimatedLines > 4) {
                 let fontSize = 1.08; // Base font size in rem
-                let lineHeight = 1.5; // Base line height
+                let lineHeight = 1.6; // Base line height
                 
-                if (estimatedLines > 6) {
+                if (estimatedLines > 8) {
                   fontSize = 0.85; // Very long messages
-                  lineHeight = 1.3;
-                } else if (estimatedLines > 5) {
-                  fontSize = 0.9; // Long messages
-                  lineHeight = 1.35;
-                } else if (estimatedLines > 4) {
-                  fontSize = 0.95; // Medium long messages
                   lineHeight = 1.4;
-                } else if (estimatedLines > 3) {
+                } else if (estimatedLines > 6) {
+                  fontSize = 0.9; // Long messages
+                  lineHeight = 1.5;
+                } else if (estimatedLines > 5) {
+                  fontSize = 0.95; // Medium long messages
+                  lineHeight = 1.55;
+                } else if (estimatedLines > 4) {
                   fontSize = 1.0; // Slightly long messages
-                  lineHeight = 1.45;
+                  lineHeight = 1.6;
                 }
                 
                 messageElement.style.fontSize = fontSize + 'rem';
@@ -440,13 +435,13 @@ async function generateBulkCertificates(data) {
                 const lineHeightPx = parseFloat(getComputedStyle(messageElement).lineHeight);
                 const actualLines = Math.round(containerHeight / lineHeightPx);
                 
-                if (actualLines > 3) {
+                if (actualLines > 4) {
                   const currentFontSize = parseFloat(getComputedStyle(messageElement).fontSize);
-                  const reductionFactor = 3 / actualLines;
+                  const reductionFactor = 4 / actualLines;
                   const newFontSize = Math.max(0.8, currentFontSize * reductionFactor);
                   
                   messageElement.style.fontSize = newFontSize + 'px';
-                  messageElement.style.lineHeight = Math.max(1.2, 1.5 * reductionFactor);
+                  messageElement.style.lineHeight = Math.max(1.3, 1.6 * reductionFactor);
                 }
               }, 50);
             });

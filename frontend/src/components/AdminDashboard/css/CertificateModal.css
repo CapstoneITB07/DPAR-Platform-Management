@@ -125,8 +125,13 @@
   outline: none;
 }
 .certificate-form-group textarea {
-  min-height: 60px;
+  min-height: 120px;
   resize: vertical;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+  font-family: inherit;
 }
 .certificate-form-group small {
   color: #888;

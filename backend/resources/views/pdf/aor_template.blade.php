@@ -291,30 +291,64 @@
         <div class="header-logos">
             @php
             use Illuminate\Support\Facades\Log;
+            use Illuminate\Support\Facades\DB;
 
             $dparLogoPath = public_path('Assets/disaster_logo.png');
             $dparExists = file_exists($dparLogoPath);
             $dparBase64 = $dparExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($dparLogoPath)) : '';
 
-            // Automatically determine associate logo based on user's organization
+            // Get the associate name from the report
             $associateName = $report->user->organization ?? $report->data['associateName'] ?? '';
 
-            // Clean and normalize the associate name for better matching
-            $cleanAssociateName = trim(strtoupper($associateName));
-
-            // Debug: Show the actual paths being checked
-            Log::info('Logo Path Debug', [
-            'public_path' => public_path(),
-            'frontend_assets_path' => base_path('../frontend/public/Assets'),
-            'frontend_assets_exists' => is_dir(base_path('../frontend/public/Assets')),
-            'aklmv_path' => base_path('../frontend/public/Assets/AKLMV.png'),
-            'aklmv_exists' => file_exists(base_path('../frontend/public/Assets/AKLMV.png')),
-            'pcga_path' => base_path('../frontend/public/Assets/PCGA 107th.png'),
-            'pcga_exists' => file_exists(base_path('../frontend/public/Assets/PCGA 107th.png'))
-            ]);
-
+            // Try to get the associate logo from the database first
             $associateLogoBase64 = '';
             $associateLogoPath = '';
+            $displayAssociateName = $associateName;
+
+            if (!empty($associateName)) {
+            try {
+            // Query the associate_groups table to get the logo
+            $associateGroup = DB::table('associate_groups')
+            ->where('name', $associateName)
+            ->first();
+
+            if ($associateGroup && $associateGroup->logo) {
+            // Check if it's a storage path or asset path
+            if (str_starts_with($associateGroup->logo, '/Assets/')) {
+            // It's an asset path, check if file exists
+            $assetPath = base_path('../frontend/public' . $associateGroup->logo);
+            if (file_exists($assetPath)) {
+            $associateLogoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($assetPath));
+            $associateLogoPath = $assetPath;
+            }
+            } else {
+            // It's a storage path, get from storage
+            $storagePath = storage_path('app/public/' . $associateGroup->logo);
+            if (file_exists($storagePath)) {
+            $associateLogoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($storagePath));
+            $associateLogoPath = $storagePath;
+            }
+            }
+            }
+
+            // Log the logo retrieval process
+            Log::info('Associate Logo Retrieval', [
+            'associate_name' => $associateName,
+            'associate_group_found' => $associateGroup ? true : false,
+            'logo_path' => $associateGroup->logo ?? 'No logo',
+            'logo_exists' => !empty($associateLogoBase64),
+            'storage_path' => $associateGroup && !str_starts_with($associateGroup->logo, '/Assets/') ? storage_path('app/public/' . $associateGroup->logo) : 'N/A'
+            ]);
+
+            } catch (Exception $e) {
+            Log::error('Error retrieving associate logo: ' . $e->getMessage());
+            }
+            }
+
+            // If no logo found in database, fall back to the hardcoded mapping
+            if (empty($associateLogoBase64)) {
+            // Clean and normalize the associate name for better matching
+            $cleanAssociateName = trim(strtoupper($associateName));
 
             // Map associate names to their logo files and full names
             $associateLogoMap = [
@@ -336,32 +370,6 @@
             'TF' => ['logo' => 'TF.png', 'fullName' => 'Tooth Family Civic Action']
             ];
 
-            // Debug: Show the mapping being used
-            Log::info('Logo Mapping Debug', [
-            'associate_name_received' => $associateName,
-            'clean_associate_name' => $cleanAssociateName,
-            'available_keys' => array_keys($associateLogoMap),
-            'exact_match_found' => isset($associateLogoMap[$cleanAssociateName]),
-            'matching_key' => isset($associateLogoMap[$cleanAssociateName]) ? $cleanAssociateName : 'No exact match'
-            ]);
-
-            // Debug logging
-            Log::info('PDF Generation Debug', [
-            'user_id' => $report->user->id ?? 'No user',
-            'user_name' => $report->user->name ?? 'No name',
-            'user_email' => $report->user->email ?? 'No email',
-            'user_organization' => $report->user->organization ?? 'No organization',
-            'report_data_associate' => $report->data['associateName'] ?? 'No associate in data',
-            'final_associate_name' => $associateName,
-            'report_id' => $report->id ?? 'No report ID',
-            'report_title' => $report->title ?? 'No title',
-            'all_user_data' => $report->user ? $report->user->toArray() : 'No user data',
-            'user_organization_type' => gettype($report->user->organization ?? 'null'),
-            'user_organization_length' => strlen($report->user->organization ?? ''),
-            'user_organization_trimmed' => trim($report->user->organization ?? ''),
-            'user_organization_upper' => strtoupper(trim($report->user->organization ?? ''))
-            ]);
-
             // Find the matching logo and full name
             $selectedLogo = null;
             $selectedFullName = '';
@@ -370,11 +378,6 @@
             if (isset($associateLogoMap[$cleanAssociateName])) {
             $selectedLogo = $associateLogoMap[$cleanAssociateName]['logo'];
             $selectedFullName = $associateLogoMap[$cleanAssociateName]['fullName'];
-            Log::info('Exact match found', [
-            'clean_associate_name' => $cleanAssociateName,
-            'selected_logo' => $selectedLogo,
-            'selected_full_name' => $selectedFullName
-            ]);
             } else {
             // Try partial match with better logic
             foreach ($associateLogoMap as $name => $info) {
@@ -386,47 +389,28 @@
             $cleanAssociateName === $cleanName) {
             $selectedLogo = $info['logo'];
             $selectedFullName = $info['fullName'];
-            Log::info('Partial match found', [
-            'clean_associate_name' => $cleanAssociateName,
-            'matched_name' => $name,
-            'selected_logo' => $selectedLogo,
-            'selected_full_name' => $selectedFullName
-            ]);
             break;
             }
             }
             }
 
-            // Debug logging for logo selection
-            Log::info('Logo Selection Debug', [
-            'original_associate_name' => $associateName,
-            'clean_associate_name' => $cleanAssociateName,
-            'selected_logo' => $selectedLogo,
-            'selected_full_name' => $selectedFullName,
-            'logo_exists' => $selectedLogo ? file_exists(base_path('../frontend/public/Assets/' . $selectedLogo)) : false,
-            'logo_path' => $selectedLogo ? base_path('../frontend/public/Assets/' . $selectedLogo) : 'No logo',
-            'aklmv_exists' => file_exists(base_path('../frontend/public/Assets/AKLMV.png')),
-            'aklmv_path' => base_path('../frontend/public/Assets/AKLMV.png')
-            ]);
-
-            // If no specific logo found, use PCGA 107th as default
-            if (empty($selectedLogo) || !file_exists(base_path('../frontend/public/Assets/' . $selectedLogo))) {
-            Log::info('Logo file not found, using default', [
-            'selected_logo' => $selectedLogo,
-            'file_exists' => $selectedLogo ? file_exists(base_path('../frontend/public/Assets/' . $selectedLogo)) : false,
-            'falling_back_to_default' => true
-            ]);
-
-            $selectedLogo = 'PCGA 107th.png';
-            $selectedFullName = '107th Squadron PCGA';
+            // If a logo is found in the mapping, use it
+            if ($selectedLogo && file_exists(base_path('../frontend/public/Assets/' . $selectedLogo))) {
+            $associateLogoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents(base_path('../frontend/public/Assets/' . $selectedLogo)));
+            $associateLogoPath = base_path('../frontend/public/Assets/' . $selectedLogo);
+            $displayAssociateName = $selectedFullName ?: $associateName;
+            }
             }
 
-            $associateLogoPath = base_path('../frontend/public/Assets/' . $selectedLogo);
-            $associateLogoExists = file_exists($associateLogoPath);
-            $associateLogoBase64 = $associateLogoExists ? 'data:image/png;base64,' . base64_encode(file_get_contents($associateLogoPath)) : '';
-
-            // Use the full name for display
-            $displayAssociateName = $selectedFullName ?: $associateName;
+            // If still no logo found, use PCGA 107th as default
+            if (empty($associateLogoBase64)) {
+            $defaultLogoPath = base_path('../frontend/public/Assets/PCGA 107th.png');
+            if (file_exists($defaultLogoPath)) {
+            $associateLogoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($defaultLogoPath));
+            $associateLogoPath = $defaultLogoPath;
+            }
+            $displayAssociateName = $associateName ?: '107th Squadron PCGA';
+            }
 
             // Determine text size class based on associate name length
             $nameLength = strlen($displayAssociateName);
@@ -464,7 +448,7 @@
             </div>
 
             <!-- Right Logo - Automatically determined Associate Logo -->
-            @if($associateLogoExists)
+            @if(!empty($associateLogoBase64))
             <img src="{{ $associateLogoBase64 }}" alt="Associate Logo">
             @endif
         </div>

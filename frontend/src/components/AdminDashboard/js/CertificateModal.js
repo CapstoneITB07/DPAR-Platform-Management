@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CertificatePreview from './CertificatePreview';
 import Modal from 'react-modal';
 import axios from 'axios';
@@ -10,6 +10,9 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [recipients, setRecipients] = useState([{ name: '', controlNumber: '' }]);
   const [bulkInput, setBulkInput] = useState('');
+  const [debounceTimer, setDebounceTimer] = useState(null);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
 
   // Helper function to calculate word count
   const getWordCount = (text) => {
@@ -22,15 +25,70 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     return getWordCount(text) > 100;
   };
 
+  // Helper function to check if character count exceeds limit
+  const isCharacterCountExceeded = (text) => {
+    return text && text.length > 1000;
+  };
+
+  // Debounced function to update parent component
+  const debouncedUpdate = useCallback((updatedData) => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    
+    const timer = setTimeout(() => {
+      onCertificateDataChange(updatedData);
+    }, 300); // 300ms delay
+    
+    setDebounceTimer(timer);
+  }, [debounceTimer, onCertificateDataChange]);
+
+  // Show warning message
+  const showWarningMessage = (message) => {
+    setWarningMessage(message);
+    setShowWarning(true);
+    setTimeout(() => setShowWarning(false), 3000); // Auto-hide after 3 seconds
+  };
+
   useEffect(() => {
     setLocalData(certificateData);
   }, [certificateData]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+    };
+  }, [debounceTimer]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special handling for message field to prevent spam
+    if (name === 'message') {
+      // Check character limit first
+      if (value.length > 1000) {
+        showWarningMessage('Character limit exceeded! Maximum 1000 characters allowed.');
+        return;
+      }
+      
+      // Check for repeated characters (spam detection)
+      if (value.length > 50) {
+        const repeatedPattern = /(.)\1{10,}/; // Detect 11+ repeated characters
+        if (repeatedPattern.test(value)) {
+          showWarningMessage('Too many repeated characters detected. Please enter a meaningful message.');
+          return;
+        }
+      }
+    }
+    
     const updated = { ...localData, [name]: value };
     setLocalData(updated);
-    onCertificateDataChange(updated);
+    
+    // Use debounced update for parent component
+    debouncedUpdate(updated);
   };
 
   const handleSignatoryChange = (index, field, value) => {
@@ -293,6 +351,22 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
           <h2 style={{margin: 0, fontWeight: 700}}>Generate Certificate</h2>
           <button className="certificate-modal-close" onClick={onClose}>&times;</button>
         </div>
+        
+        {/* Warning Message Display */}
+        {showWarning && (
+          <div style={{
+            background: '#ff9800',
+            color: 'white',
+            padding: '12px 20px',
+            textAlign: 'center',
+            fontSize: '14px',
+            fontWeight: '500',
+            borderBottom: '1px solid #f57c00'
+          }}>
+            ⚠️ {warningMessage}
+          </div>
+        )}
+        
         <div className="certificate-modal-content enhanced-modal-content">
           <div className="enhanced-modal-flex">
             <div className="enhanced-form-card">
@@ -524,7 +598,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                       width: '100%',
                       minHeight: '120px',
                       padding: '12px',
-                      border: isWordCountExceeded(localData.message) ? '2px solid #d32f2f' : '1px solid #ddd',
+                      border: isWordCountExceeded(localData.message) || isCharacterCountExceeded(localData.message) ? '2px solid #d32f2f' : '1px solid #ddd',
                       borderRadius: '6px',
                       fontSize: '14px',
                       lineHeight: '1.5',
@@ -539,12 +613,20 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                     <small style={{ color: '#666' }}>
                       Tip: Press Enter to create line breaks for better formatting
                     </small>
-                    <small style={{ 
-                      color: isWordCountExceeded(localData.message) ? '#d32f2f' : '#666',
-                      fontWeight: isWordCountExceeded(localData.message) ? 'bold' : 'normal'
-                    }}>
-                      {getWordCount(localData.message)} / 100 words
-                    </small>
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                      <small style={{ 
+                        color: isCharacterCountExceeded(localData.message) ? '#d32f2f' : '#666',
+                        fontWeight: isCharacterCountExceeded(localData.message) ? 'bold' : 'normal'
+                      }}>
+                        {localData.message ? localData.message.length : 0} / 1000 characters
+                      </small>
+                      <small style={{ 
+                        color: isWordCountExceeded(localData.message) ? '#d32f2f' : '#666',
+                        fontWeight: isWordCountExceeded(localData.message) ? 'bold' : 'normal'
+                      }}>
+                        {getWordCount(localData.message)} / 100 words
+                      </small>
+                    </div>
                   </div>
                 </div>
               </form>

@@ -73,11 +73,11 @@ function CustomCalendarToolbar({ date, onNavigate, onAddEvent, onToday }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#A11C22',
+            background: '#495057',
             color: 'white',
             borderRadius: 8,
             border: 'none',
-            boxShadow: '0 2px 8px rgba(161, 28, 34, 0.2)',
+            boxShadow: '0 2px 8px rgba(73, 80, 87, 0.2)',
             cursor: 'pointer',
             lineHeight: 1,
           }}

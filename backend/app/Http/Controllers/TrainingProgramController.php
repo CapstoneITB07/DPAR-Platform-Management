@@ -15,9 +15,14 @@ class TrainingProgramController extends Controller
     {
         $programs = TrainingProgram::orderBy('created_at', 'desc')->get();
         foreach ($programs as $p) {
-            // Ensure photos is always an array
+            // Ensure photos is always an array and convert to full URLs
             if (!$p->photos) {
                 $p->photos = [];
+            } else {
+                // Convert relative paths to full URLs for frontend
+                $p->photos = array_map(function ($photoPath) {
+                    return asset('storage/' . $photoPath);
+                }, $p->photos);
             }
         }
         return $programs;
@@ -43,7 +48,7 @@ class TrainingProgramController extends Controller
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $photo) {
                 $path = $photo->store('training_programs', 'public');
-                $photoUrls[] = asset('storage/' . $path);
+                $photoUrls[] = $path; // Store relative path, not full URL
             }
         }
 
@@ -52,6 +57,16 @@ class TrainingProgramController extends Controller
         }
 
         $program = TrainingProgram::create($data);
+
+        // Add photo_urls to response for consistency
+        if (!empty($photoUrls)) {
+            $program->photo_urls = array_map(function ($photoPath) {
+                return asset('storage/' . $photoPath);
+            }, $photoUrls);
+        } else {
+            $program->photo_urls = [];
+        }
+
         return response()->json($program, 201);
     }
 
@@ -79,7 +94,7 @@ class TrainingProgramController extends Controller
             $newPhotoUrls = [];
             foreach ($photos as $photo) {
                 $path = $photo->store('training_programs', 'public');
-                $newPhotoUrls[] = asset('storage/' . $path);
+                $newPhotoUrls[] = $path; // Store relative path, not full URL
             }
 
             // Merge existing photos with new photos
@@ -89,7 +104,19 @@ class TrainingProgramController extends Controller
             if ($request->has('keep_existing_photos')) {
                 $keepPhotos = json_decode($request->input('keep_existing_photos'), true);
                 if (is_array($keepPhotos)) {
-                    $program->photos = $keepPhotos;
+                    // Convert full URLs back to relative paths for storage
+                    $relativePaths = [];
+                    foreach ($keepPhotos as $photoUrl) {
+                        if (str_starts_with($photoUrl, asset('storage/'))) {
+                            // Extract relative path from full URL
+                            $relativePath = str_replace(asset('storage/'), '', $photoUrl);
+                            $relativePaths[] = $relativePath;
+                        } else {
+                            // If it's already a relative path, keep it as is
+                            $relativePaths[] = $photoUrl;
+                        }
+                    }
+                    $program->photos = $relativePaths;
                 } else {
                     // If no photos to keep, remove all photos
                     if ($program->photos) {
@@ -110,6 +137,15 @@ class TrainingProgramController extends Controller
         $program->location = $request->input('location');
         $program->description = $request->input('description');
         $program->save();
+
+        // Add photo_urls to response for consistency
+        if ($program->photos && is_array($program->photos)) {
+            $program->photo_urls = array_map(function ($photoPath) {
+                return asset('storage/' . $photoPath);
+            }, $program->photos);
+        } else {
+            $program->photo_urls = [];
+        }
 
         return response()->json($program);
     }

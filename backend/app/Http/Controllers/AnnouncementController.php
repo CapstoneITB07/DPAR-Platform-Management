@@ -103,7 +103,19 @@ class AnnouncementController extends Controller
             if ($request->has('keep_existing_photos')) {
                 $keepPhotos = json_decode($request->input('keep_existing_photos'), true);
                 if (is_array($keepPhotos)) {
-                    $announcement->photos = $keepPhotos;
+                    // Convert full URLs back to relative paths for storage
+                    $relativePaths = [];
+                    foreach ($keepPhotos as $photoUrl) {
+                        if (str_starts_with($photoUrl, asset('storage/'))) {
+                            // Extract relative path from full URL
+                            $relativePath = str_replace(asset('storage/'), '', $photoUrl);
+                            $relativePaths[] = $relativePath;
+                        } else {
+                            // If it's already a relative path, keep it as is
+                            $relativePaths[] = $photoUrl;
+                        }
+                    }
+                    $announcement->photos = $relativePaths;
                 } else {
                     // If no photos to keep, remove all photos
                     if ($announcement->photos) {

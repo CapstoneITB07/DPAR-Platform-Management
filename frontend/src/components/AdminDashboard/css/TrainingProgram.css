@@ -311,8 +311,8 @@
   margin-right: 0;
   margin-top: 0;
   align-self: flex-start;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0.6;
+  visibility: visible;
   transition: opacity 0.18s, visibility 0.18s;
 }
 .training-card-menu-dropdown {

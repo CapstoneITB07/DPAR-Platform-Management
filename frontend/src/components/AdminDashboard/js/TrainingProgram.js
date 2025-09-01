@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
 import axios from 'axios';
 import '../css/TrainingProgram.css';
 
@@ -113,7 +113,7 @@ function TrainingProgram() {
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        alert('File size should not exceed 2MB');
+        // Silently skip files that exceed 2MB without showing alert
         return;
       }
       validFiles.push(file);
@@ -236,30 +236,57 @@ function TrainingProgram() {
     }
   };
 
-  // Function to truncate description to 3 lines
-  const truncateDescription = (text, maxLines = 3) => {
+  // Function to truncate description to first line
+  const truncateDescription = (text) => {
     if (!text) return '';
     
-    // Split by both newlines and spaces to handle long text better
-    const words = text.split(' ');
-    const maxWords = 25; // Limit to approximately 3 lines
+    // Split by paragraphs first and filter out empty ones
+    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
     
-    if (words.length <= maxWords) return text;
+    if (paragraphs.length === 0) return '';
     
-    // Join first 25 words and add ellipsis
+    // Get the first paragraph
+    const firstParagraph = paragraphs[0];
+    
+    // If first paragraph is short, return it as is
+    if (firstParagraph.length <= 120) return firstParagraph;
+    
+    // Truncate first paragraph to approximately one line
+    const words = firstParagraph.split(' ');
+    const maxWords = 20; // Increased to show more content
+    
+    if (words.length <= maxWords) return firstParagraph;
+    
     return words.slice(0, maxWords).join(' ') + '...';
   };
 
   // Function to check if description needs truncation
-  const needsTruncation = (text, maxLines = 3) => {
+  const needsTruncation = (text) => {
     if (!text) return false;
     
-    // Check both word count and character length for better detection
-    const words = text.split(' ');
-    const charCount = text.length;
+    // Check for multiple paragraphs
+    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
+    if (paragraphs.length > 1) return true;
     
-    return words.length > 25 || charCount > 120; // More lenient limits
+    // Check if first paragraph is long enough to need truncation
+    if (paragraphs.length === 1) {
+      const firstParagraph = paragraphs[0];
+      const words = firstParagraph.split(' ');
+      const charCount = firstParagraph.length;
+      
+      return words.length > 15 || charCount > 80;
+    }
+    
+    return false;
   };
+
+  // Function to render default training program icon
+  const renderDefaultIcon = () => (
+    <div className="training-default-icon">
+      <FaGraduationCap size={40} />
+      <span className="training-default-text">No Image</span>
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -353,7 +380,7 @@ function TrainingProgram() {
                       </button>
                     </div>
                   )}
-                  <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB each)</small>
+                  <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF</small>
                 </div>
               </div>
 
@@ -420,35 +447,45 @@ function TrainingProgram() {
                     )}
                   </div>
                   
-                  {description && (
-                    <div className="training-card-desc">
-                      <div className="training-text-content">
-                        {truncateDescription(description)}
-                      </div>
-                      {needsTruncation(description) && (
+                  {/* Always show description area, handle empty content */}
+                  <div className="training-card-desc">
+                    {description && description.trim() ? (
+                      <>
+                        <div className="training-text-content">
+                          {description.length > 100 ? description.substring(0, 100) + '...' : description}
+                        </div>
+                        {/* Always show See More button if there's any description */}
                         <button
                           className="training-card-see-more"
                           onClick={() => openFullModal(program)}
                         >See More</button>
-                      )}
-                    </div>
-                  )}
+                      </>
+                    ) : (
+                      <div className="training-text-content" style={{ color: '#999', fontStyle: 'italic' }}>
+                        No description available
+                      </div>
+                    )}
+                  </div>
                   
-                  {/* Show photos - exactly like announcements */}
-                  {program.photos && program.photos.length > 0 && (
-                    <div className="training-photos-display">
-                      <img 
-                        src={program.photos[0]} 
-                        alt="Training Program" 
-                        className="training-card-img" 
-                      />
-                      {program.photos.length > 1 && (
-                        <div className="training-photos-indicator">
-                          <span className="training-photos-count">+{program.photos.length - 1} more</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Show photos or default icon */}
+                  <div className="training-photos-display">
+                    {program.photos && program.photos.length > 0 ? (
+                      <>
+                        <img 
+                          src={program.photos[0]} 
+                          alt="Training Program" 
+                          className="training-card-img" 
+                        />
+                        {program.photos.length > 1 && (
+                          <div className="training-photos-indicator">
+                            <span className="training-photos-count">+{program.photos.length - 1} more</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      renderDefaultIcon()
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -463,62 +500,65 @@ function TrainingProgram() {
             <button onClick={() => setShowDescModal(false)} className="training-desc-modal-close">&times;</button>
             <h3 className="training-desc-modal-title">{descModalContent.title}</h3>
             
-            {/* Date and Location in Modal */}
-            <div className="training-desc-modal-meta">
-              {descModalContent.date && (
-                <div className="training-desc-modal-date">
-                  <strong>Date:</strong> {descModalContent.date}
-                </div>
-              )}
-              {descModalContent.location && (
-                <div className="training-desc-modal-location">
-                  <strong>Location:</strong> {descModalContent.location}
-                </div>
-              )}
-            </div>
-            
-            <div className="training-desc-modal-desc">
-              <strong>Description:</strong>
-              <p>{descModalContent.description}</p>
-            </div>
-            
-            {/* Photo Navigation (Instagram/Facebook style) */}
-            {descModalContent.photos && descModalContent.photos.length > 0 && (
-              <div className="training-photo-navigation">
-                <div className="training-photo-container">
-                  <img 
-                    src={descModalContent.photos[currentPhotoIndex]} 
-                    alt={`Photo ${currentPhotoIndex + 1}`} 
-                    className="training-desc-modal-img" 
-                  />
-                  
-                  {/* Navigation Arrows */}
-                  {descModalContent.photos.length > 1 && (
-                    <>
-                      <button 
-                        className="training-photo-nav-btn training-photo-nav-prev"
-                        onClick={prevPhoto}
-                      >
-                        <FaChevronLeft />
-                      </button>
-                      <button 
-                        className="training-photo-nav-btn training-photo-nav-next"
-                        onClick={nextPhoto}
-                      >
-                        <FaChevronRight />
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* Photo Counter */}
-                  {descModalContent.photos.length > 1 && (
-                    <div className="training-photo-counter">
-                      {currentPhotoIndex + 1} / {descModalContent.photos.length}
-                    </div>
-                  )}
-                </div>
+            {/* Scrollable content container */}
+            <div className="training-desc-modal-content">
+              {/* Date and Location in Modal */}
+              <div className="training-desc-modal-meta">
+                {descModalContent.date && (
+                  <div className="training-desc-modal-date">
+                    <strong>Date:</strong> {descModalContent.date}
+                  </div>
+                )}
+                {descModalContent.location && (
+                  <div className="training-desc-modal-location">
+                    <strong>Location:</strong> {descModalContent.location}
+                  </div>
+                )}
               </div>
-            )}
+              
+              <div className="training-desc-modal-desc">
+                <strong>Description:</strong>
+                <p>{descModalContent.description}</p>
+              </div>
+              
+              {/* Photo Navigation (Instagram/Facebook style) */}
+              {descModalContent.photos && descModalContent.photos.length > 0 && (
+                <div className="training-photo-navigation">
+                  <div className="training-photo-container">
+                    <img 
+                      src={descModalContent.photos[currentPhotoIndex]} 
+                      alt={`Photo ${currentPhotoIndex + 1}`} 
+                      className="training-desc-modal-img" 
+                    />
+                    
+                    {/* Navigation Arrows */}
+                    {descModalContent.photos.length > 1 && (
+                      <>
+                        <button 
+                          className="training-photo-nav-btn training-photo-nav-prev"
+                          onClick={prevPhoto}
+                        >
+                          <FaChevronLeft />
+                        </button>
+                        <button 
+                          className="training-photo-nav-btn training-photo-nav-next"
+                          onClick={nextPhoto}
+                        >
+                          <FaChevronRight />
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Photo Counter */}
+                    {descModalContent.photos.length > 1 && (
+                      <div className="training-photo-counter">
+                        {currentPhotoIndex + 1} / {descModalContent.photos.length}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

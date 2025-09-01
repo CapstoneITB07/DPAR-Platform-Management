@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import axios from 'axios';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaBullhorn, FaNewspaper } from 'react-icons/fa';
 import '../css/announcement.css';
 
 // Notification component
@@ -136,7 +136,7 @@ function Announcement() {
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        alert('File size should not exceed 2MB');
+        // Silently skip files that exceed 2MB without showing alert
         return;
       }
       validFiles.push(file);
@@ -192,30 +192,81 @@ function Announcement() {
     }
   };
 
-  // Function to truncate description to 3 lines
+  // Function to truncate description to 3 lines while preserving paragraph structure
   const truncateDescription = (text, maxLines = 3) => {
     if (!text) return '';
     
-    // Split by both newlines and spaces to handle long text better
-    const words = text.split(' ');
-    const maxWords = 25; // Limit to approximately 3 lines
+    // Split by paragraphs first and filter out empty ones
+    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
     
-    if (words.length <= maxWords) return text;
+    // If only one paragraph or short text, use word-based truncation
+    if (paragraphs.length === 1) {
+      const words = text.split(' ');
+      const maxWords = 25;
+      
+      if (words.length <= maxWords) return text;
+      return words.slice(0, maxWords).join(' ') + '...';
+    }
     
-    // Join first 25 words and add ellipsis
-    return words.slice(0, maxWords).join(' ') + '...';
+    // For multiple paragraphs, show first paragraph + partial second if needed
+    if (paragraphs.length === 2) {
+      const firstPara = paragraphs[0];
+      const secondPara = paragraphs[1];
+      
+      // If first paragraph is short, include some of second
+      if (firstPara.length < 100) {
+        const words = secondPara.split(' ');
+        const maxWords = 15; // Limit second paragraph words
+        
+        if (words.length <= maxWords) {
+          return `${firstPara}\n\n${secondPara}`;
+        } else {
+          return `${firstPara}\n\n${words.slice(0, maxWords).join(' ')}...`;
+        }
+      } else {
+        // First paragraph is long enough, truncate it
+        const words = firstPara.split(' ');
+        const maxWords = 25;
+        
+        if (words.length <= maxWords) {
+          return firstPara + '...';
+        } else {
+          return words.slice(0, maxWords).join(' ') + '...';
+        }
+      }
+    }
+    
+    // For 3+ paragraphs, show first two paragraphs
+    if (paragraphs.length >= 3) {
+      const firstTwo = paragraphs.slice(0, 2).join('\n\n');
+      return firstTwo + '...';
+    }
+    
+    return text;
   };
 
   // Function to check if description needs truncation
   const needsTruncation = (text, maxLines = 3) => {
     if (!text) return false;
     
-    // Check both word count and character length for better detection
+    // Check for multiple paragraphs (filter out empty ones)
+    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
+    if (paragraphs.length > 1) return true;
+    
+    // Check word count and character length for single paragraph
     const words = text.split(' ');
     const charCount = text.length;
     
-    return words.length > 25 || charCount > 120; // More lenient limits
+    return words.length > 25 || charCount > 120;
   };
+
+  // Function to render default announcement icon
+  const renderDefaultIcon = () => (
+    <div className="announcement-default-icon">
+      <FaBullhorn size={40} />
+      <span className="announcement-default-text">No Image</span>
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -245,7 +296,12 @@ function Announcement() {
               </div>
               <div>
                 <label className="announcement-form-label">DESCRIPTION</label>
-                <textarea value={description} onChange={e => setDescription(e.target.value)} className="announcement-form-textarea" />
+                <textarea 
+                  value={description} 
+                  onChange={e => setDescription(e.target.value)} 
+                  className="announcement-form-textarea"
+                  placeholder="Enter your announcement description here. You can use multiple paragraphs by pressing Enter."
+                />
               </div>
               <div>
                 <label className="announcement-upload-label">Upload Photos</label>
@@ -300,7 +356,7 @@ function Announcement() {
                       </button>
                     </div>
                   )}
-                  <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (max 2MB each)</small>
+                  <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF</small>
                 </div>
               </div>
               <div className="announcement-modal-actions">
@@ -362,21 +418,25 @@ function Announcement() {
                     )}
                   </div>
                 )}
-                {/* Show only first photo in card */}
-                {a.photo_urls && a.photo_urls.length > 0 && (
-                  <div className="announcement-photos-display">
-                    <img 
-                      src={a.photo_urls[0]} 
-                      alt="Announcement" 
-                      className="announcement-card-img" 
-                    />
-                    {a.photo_urls.length > 1 && (
-                      <div className="announcement-photos-indicator">
-                        <span className="announcement-photos-count">+{a.photo_urls.length - 1} more</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Show photo or default icon */}
+                <div className="announcement-photos-display">
+                  {a.photo_urls && a.photo_urls.length > 0 ? (
+                    <>
+                      <img 
+                        src={a.photo_urls[0]} 
+                        alt="Announcement" 
+                        className="announcement-card-img" 
+                      />
+                      {a.photo_urls.length > 1 && (
+                        <div className="announcement-photos-indicator">
+                          <span className="announcement-photos-count">+{a.photo_urls.length - 1} more</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    renderDefaultIcon()
+                  )}
+                </div>
               </div>
             </div>
           ))
@@ -388,45 +448,49 @@ function Announcement() {
           <div className="announcement-desc-modal-card">
             <button onClick={() => setShowDescModal(false)} className="announcement-desc-modal-close">&times;</button>
             <h3 className="announcement-desc-modal-title">{descModalContent.title}</h3>
-            <div className="announcement-desc-modal-desc">{descModalContent.description}</div>
             
-            {/* Photo Navigation (Instagram/Facebook style) */}
-            {descModalContent.photo_urls && descModalContent.photo_urls.length > 0 && (
-              <div className="announcement-photo-navigation">
-                <div className="announcement-photo-container">
-                  <img 
-                    src={descModalContent.photo_urls[currentPhotoIndex]} 
-                    alt={`Photo ${currentPhotoIndex + 1}`} 
-                    className="announcement-desc-modal-img" 
-                  />
-                  
-                  {/* Navigation Arrows */}
-                  {descModalContent.photo_urls.length > 1 && (
-                    <>
-                      <button 
-                        className="announcement-photo-nav-btn announcement-photo-nav-prev"
-                        onClick={prevPhoto}
-                      >
-                        <FaChevronLeft />
-                      </button>
-                      <button 
-                        className="announcement-photo-nav-btn announcement-photo-nav-next"
-                        onClick={nextPhoto}
-                      >
-                        <FaChevronRight />
-                      </button>
-                    </>
-                  )}
-                  
-                  {/* Photo Counter */}
-                  {descModalContent.photo_urls.length > 1 && (
-                    <div className="announcement-photo-counter">
-                      {currentPhotoIndex + 1} / {descModalContent.photo_urls.length}
-                    </div>
-                  )}
+            {/* Scrollable content container */}
+            <div className="announcement-desc-modal-content">
+              <div className="announcement-desc-modal-desc">{descModalContent.description}</div>
+              
+              {/* Photo Navigation (Instagram/Facebook style) */}
+              {descModalContent.photo_urls && descModalContent.photo_urls.length > 0 && (
+                <div className="announcement-photo-navigation">
+                  <div className="announcement-photo-container">
+                    <img 
+                      src={descModalContent.photo_urls[currentPhotoIndex]} 
+                      alt={`Photo ${currentPhotoIndex + 1}`} 
+                      className="announcement-desc-modal-img" 
+                    />
+                    
+                    {/* Navigation Arrows */}
+                    {descModalContent.photo_urls.length > 1 && (
+                      <>
+                        <button 
+                          className="announcement-photo-nav-btn announcement-photo-nav-prev"
+                          onClick={prevPhoto}
+                        >
+                          <FaChevronLeft />
+                        </button>
+                        <button 
+                          className="announcement-photo-nav-btn announcement-photo-nav-next"
+                          onClick={nextPhoto}
+                        >
+                          <FaChevronRight />
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Photo Counter */}
+                    {descModalContent.photo_urls.length > 1 && (
+                      <div className="announcement-photo-counter">
+                        {currentPhotoIndex + 1} / {descModalContent.photo_urls.length}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

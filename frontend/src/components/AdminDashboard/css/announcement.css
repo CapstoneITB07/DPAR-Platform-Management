@@ -79,6 +79,7 @@
 .announcement-form-textarea {
   min-height: 100px;
   resize: vertical;
+  white-space: pre-wrap; /* Preserve line breaks and spaces in textarea */
 }
 .announcement-upload-label {
   font-weight: 600;
@@ -300,6 +301,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  text-align: center; /* Center the description container in cards */
 }
 
 .announcement-text-content {
@@ -308,7 +310,8 @@
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
-  white-space: normal;
+  white-space: pre-line; /* Preserve line breaks and spaces */
+  text-align: center; /* Center the description text in cards */
   /* Limit height to approximately 3 lines */
   max-height: 4.2em;
   overflow: hidden;
@@ -374,6 +377,36 @@
   color: white;
 }
 
+/* Default Announcement Icon Styles */
+.announcement-default-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px dashed #dee2e6;
+  border-radius: 10px;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.announcement-default-icon:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  border-color: #A11C22;
+  color: #A11C22;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(161, 28, 34, 0.15);
+}
+
+.announcement-default-text {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
 /* Description Modal */
 .announcement-desc-modal-overlay {
   position: fixed;
@@ -398,6 +431,35 @@
   position: relative;
   box-shadow: 0 8px 32px rgba(161,28,34,0.13);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollable content container for the entire modal */
+.announcement-desc-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #A11C22 #f0f0f0;
+}
+
+/* Custom scrollbar for webkit browsers */
+.announcement-desc-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-desc-modal-content::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.announcement-desc-modal-content::-webkit-scrollbar-thumb {
+  background: #A11C22;
+  border-radius: 4px;
+}
+
+.announcement-desc-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #8b1a1f;
 }
 .announcement-desc-modal-close {
   position: absolute;
@@ -434,19 +496,20 @@
   font-size: 16px;
   color: #333;
   margin: 0;
-  padding: 20px 24px;
+  padding: 20px 24px 24px 24px; /* Extra bottom padding for scrollable content */
   line-height: 1.6;
   /* Fix for description overflow in modal */
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
-  white-space: normal;
+  white-space: pre-line; /* Preserve line breaks and spaces */
+  text-align: justify; /* Left-aligned and justified text in modal */
   max-width: 100%;
-  /* Ensure proper text wrapping */
-  overflow: visible;
   background: #fff;
   border-bottom: 1px solid #e9ecef;
 }
+
+
 
 /* Photo Navigation System (Instagram/Facebook style) */
 .announcement-photo-navigation {
@@ -466,8 +529,8 @@
 
 .announcement-desc-modal-img {
   width: 100%;
-  max-height: 350px;
-  object-fit: cover;
+  max-height: none; /* Remove height restriction to show full image */
+  object-fit: contain; /* Show full image without cropping */
   border-radius: 12px;
   margin: 0;
   display: block;
@@ -845,6 +908,8 @@
   .announcement-desc-modal-desc {
     font-size: 15px;
     padding: 16px 20px;
+    white-space: pre-line; /* Preserve line breaks and spaces */
+    text-align: justify; /* Left-aligned and justified text in modal */
   }
   
   .announcement-photo-navigation {
@@ -852,7 +917,22 @@
   }
   
   .announcement-desc-modal-img {
-    max-height: 250px;
+    max-height: none; /* Remove height restriction to show full image */
+    object-fit: contain; /* Show full image without cropping */
+  }
+  
+  /* Mobile responsive default icon */
+  .announcement-default-icon {
+    height: 150px;
+  }
+  
+  .announcement-default-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .announcement-default-text {
+    font-size: 12px;
   }
 }
 

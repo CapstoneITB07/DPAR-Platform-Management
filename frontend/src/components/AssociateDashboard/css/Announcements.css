@@ -208,7 +208,7 @@
 .announcements-right-col {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 32px;
   flex: 1;
   height: 100%;
   overflow-y: auto;
@@ -242,140 +242,213 @@
 
 .announcement-card {
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06); /* Softer, lighter shadow */
-  border: 1px solid #e3e7ed; /* Light gray border */
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(161,28,34,0.10), 0 1.5px 6px rgba(0,0,0,0.04);
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
-  height: auto;
-  padding-bottom: 12px;
-  max-width: 100%;
-  width: 100%;
-  margin: 0 6px 12px 6px;
-  box-sizing: border-box;
+  border: 1.5px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  max-height: 260px;
+  transition: box-shadow 0.18s, transform 0.18s;
   cursor: pointer;
+  margin-bottom: 8px;
+  box-sizing: border-box;
 }
 
 .announcement-card:hover {
-  margin: 0 6px 12px 6px;
-  border: 1px solid #a72828; /* Slight accent border on hover */
-  background: #fafbfc; /* Very subtle background tint on hover */
-  box-shadow: 0 4px 12px rgba(167,40,40,0.12); /* Enhanced shadow on hover */
-  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 8px 32px rgba(161,28,34,0.16), 0 2px 8px rgba(0,0,0,0.08);
+  transform: translateY(-4px) scale(1.01);
+  border: 2px solid #a72828;
 }
 
-.announcement-card:active {
-  transform: translateY(0px); /* Reset transform when clicked */
-  box-shadow: 0 2px 8px rgba(167,40,40,0.08); /* Reduced shadow when active */
-}
+
 
 .announcement-datetime-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px ;
+  padding: 6px 20px 4px 20px;
+  border-bottom: 1px solid #f0f2f5;
+  background: #f7f8fa;
+  min-height: 28px;
 }
 
 .announcement-date-badge, .announcement-time-badge {
-  background: transparent;
-  color: #000000;
-  border-radius: 8px;
-  padding: 2px 10px;
-  font-size: 15px;
+  font-size: 13px;
+  color: #888;
+  flex: 0 0 auto;
+  margin-right: 8px;
+  white-space: nowrap;
+  align-self: center;
   display: flex;
   align-items: center;
   gap: 5px;
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: #a72828;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
+}
+
+/* Enhanced styling for modal date/time badges */
+.announcement-full-modal-datetime .announcement-date-badge,
+.announcement-full-modal-datetime .announcement-time-badge {
+  background: #fff;
+  color: #666;
+  border: 1px solid #e3e7ed;
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.announcement-full-modal-datetime .announcement-date-badge:hover,
+.announcement-full-modal-datetime .announcement-time-badge:hover {
+  background: #f8f9fa;
+  border-color: #a72828;
+  color: #a72828;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .announcement-content {
-  padding: 10px 20px 0 20px;
-  text-align: center;
-  gap: 8px;
-  overflow: visible;
+  padding: 14px 20px 8px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .announcement-title {
   font-weight: 700;
-  font-size: 24px;
-  margin-bottom: 6px;
-  color: #a72828;
+  font-size: 20px;
+  margin-bottom: 4px;
+  color: #222;
 }
 
 .announcement-desc {
   font-size: 16px;
   color: #444;
-  margin-bottom: 12px;
-  line-height: 1.5;
+  margin-bottom: 8px;
   /* Fix for description overflow - add proper text wrapping and truncation */
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
+  line-height: 1.4;
   max-width: 100%;
-  /* Add height limit and overflow hidden to prevent vertical overflow */
-  max-height: 4.5em; /* Approximately 3 lines */
+  /* Limit height to prevent overlap with images - reduced to 2 lines */
+  max-height: 2.8em; /* Approximately 2 lines */
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  text-overflow: ellipsis;
+  position: relative;
+  /* Remove extra padding to save space */
+  padding-bottom: 0;
+  /* Add display flex to properly align content */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left; /* Left-aligned text in cards */
 }
 
 .announcement-see-more-btn {
   background: none;
-  border: none;
   color: #a72828;
-  font-size: 14px;
+  border: none;
   font-weight: 600;
+  margin-left: 0;
   cursor: pointer;
-  padding: 0;
-  margin-left: 8px;
   text-decoration: underline;
-  text-decoration-color: #a72828;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-  transition: color 0.2s ease;
+  font-size: 15px;
+  /* Ensure button is always visible */
+  display: inline-block !important;
+  white-space: nowrap;
+  /* Force visibility */
+  visibility: visible !important;
+  opacity: 1 !important;
+  /* Ensure it's not clipped */
+  position: relative;
+  z-index: 1;
+  /* Align button to the right */
+  align-self: flex-end;
+  margin-top: 6px;
+  flex-shrink: 0;
+  /* Ensure button is always shown */
+  pointer-events: auto;
 }
 
 .announcement-see-more-btn:hover {
   color: #7a1a1a;
-  text-decoration-color: #7a1a1a;
 }
 
 /* Full Announcement Modal Styles */
 .announcement-full-modal-content {
   background: #fff;
   border-radius: 16px;
-  max-width: 90vw;
+  min-width: 450px;
+  max-width: 700px;
+  width: 90vw;
   max-height: 90vh;
-  width: 600px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
   position: relative;
+  box-shadow: 0 8px 32px rgba(161,28,34,0.13);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   z-index: 2000; /* Lower than image modal (3000) but higher than other content */
 }
 
 .announcement-full-modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 24px 24px 16px 24px;
   border-bottom: 1px solid #e3e7ed;
   background: #f8f9fa;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+/* Scrollable content container for the entire modal */
+.announcement-full-modal-content-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #a72828 #f0f0f0;
+}
+
+/* Custom scrollbar for webkit browsers */
+.announcement-full-modal-content-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-full-modal-content-scrollable::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.announcement-full-modal-content-scrollable::-webkit-scrollbar-thumb {
+  background: #a72828;
+  border-radius: 4px;
+}
+
+.announcement-full-modal-content-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #7a1a1a;
 }
 
 .announcement-full-modal-header h2 {
   color: #a72828;
-  font-size: 24px;
+  font-size: 40px;
   font-weight: 700;
   margin: 0;
   line-height: 1.3;
+}
+
+.announcement-full-modal-timestamp {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 0;
 }
 
 .announcement-full-modal-close {
@@ -392,6 +465,9 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 .announcement-full-modal-close:hover {
@@ -400,40 +476,51 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.announcement-full-modal-datetime {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e3e7ed;
+.announcement-full-modal-content-container {
+  background: #fff;
+  border-bottom: none !important;
+}
+
+.announcement-posted-text {
+  font-size: 14px;
+  color: #666;
+  font-weight: 400;
+  font-style: italic;
 }
 
 .announcement-full-modal-description {
-  padding: 20px 24px;
   font-size: 16px;
-  line-height: 1.6;
   color: #333;
-  text-align: left;
-  background: #fff;
-  border-bottom: 1px solid #e9ecef;
+  margin: 0;
+  padding: 20px 24px 24px 24px; /* Add top padding back since datetime is now in header */
+  line-height: 1.6;
   /* Fix for description overflow in modal */
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
-  white-space: normal;
+  white-space: pre-line; /* Preserve line breaks and spaces */
+  text-align: left; /* Left-aligned text in modal */
   max-width: 100%;
-  overflow: visible;
+  background: #fff;
 }
 
 .announcement-full-modal-image {
   padding: 0 24px 24px 24px;
 }
 
+/* Multiple Photos Display in Cards */
+.announcement-photos-display {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .announcement-full-modal-img {
   width: 100%;
-  max-height: 400px;
-  object-fit: cover;
+  max-height: 500px; /* Increased height for better visibility */
+  object-fit: contain; /* Show full image without cropping */
   border-radius: 12px;
   margin: 0;
   display: block;
@@ -445,8 +532,9 @@
 /* Photo Navigation System (Instagram/Facebook style) */
 .announcement-photo-navigation {
   margin: 0;
-  padding: 20px 24px 24px 24px;
+  padding: 16px 24px 20px 24px;
   background: #fff;
+  border-bottom: none !important;
 }
 
 .announcement-photo-container {
@@ -456,6 +544,7 @@
   overflow: hidden;
   background: #f8f9fa;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0;
   z-index: 1; /* Ensure proper stacking context */
 }
 
@@ -517,6 +606,195 @@
   margin-top: 10px;
 }
 
+/* Simple image styling for cards */
+.announcement-card-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+/* Ensure proper spacing between text and images */
+.announcement-photos-display {
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+/* Responsive Design for Announcement Cards */
+@media (max-width: 768px) {
+  .announcements-right-col {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px 16px 0 0;
+  }
+  
+  .announcement-card {
+    min-height: 180px;
+    max-height: 220px;
+    border-radius: 12px;
+  }
+  
+  .announcement-datetime-row {
+    padding: 4px 16px 2px 16px;
+    min-height: 24px;
+  }
+  
+  .announcement-content {
+    padding: 12px 16px 6px 16px;
+  }
+  
+  .announcement-title {
+    font-size: 18px;
+    margin-bottom: 3px;
+  }
+  
+  .announcement-desc {
+    font-size: 15px;
+    max-height: 2.8em;
+  }
+  
+  .announcement-card-img {
+    height: 100px;
+    margin-top: 6px;
+  }
+}
+
+/* Responsive Design for Announcement Modal */
+@media (max-width: 768px) {
+  .announcement-full-modal-content {
+    width: 95vw;
+    min-width: unset;
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .announcement-full-modal-header {
+    padding: 16px 16px 12px 16px;
+    gap: 6px;
+  }
+  
+  .announcement-full-modal-close {
+    top: 12px;
+    right: 12px;
+  }
+  
+  .announcement-full-modal-header h2 {
+    font-size: 32px;
+  }
+  
+  .announcement-full-modal-content-scrollable {
+    max-height: 70vh;
+  }
+  
+  .announcement-full-modal-content-container {
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+
+  
+  .announcement-full-modal-description {
+    padding: 16px 16px 20px 16px;
+    font-size: 15px;
+  }
+  
+  .announcement-photo-navigation {
+    padding: 12px 16px 16px 16px;
+  }
+  
+  .announcement-photo-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .announcement-photo-nav-prev {
+    left: 12px;
+  }
+  
+  .announcement-photo-nav-next {
+    right: 12px;
+  }
+  
+  .announcement-photo-counter {
+    bottom: 12px;
+    right: 12px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .announcements-right-col {
+    gap: 12px;
+    padding: 12px 12px 0 0;
+  }
+  
+  .announcement-card {
+    min-height: 160px;
+    max-height: 200px;
+    border-radius: 10px;
+  }
+  
+  .announcement-datetime-row {
+    padding: 3px 12px 1px 12px;
+    min-height: 20px;
+  }
+  
+  .announcement-content {
+    padding: 10px 12px 4px 12px;
+  }
+  
+  .announcement-title {
+    font-size: 16px;
+    margin-bottom: 2px;
+  }
+  
+  .announcement-desc {
+    font-size: 14px;
+    max-height: 2.8em;
+  }
+  
+  .announcement-card-img {
+    height: 80px;
+    margin-top: 4px;
+  }
+}
+
+  .announcement-full-modal-content {
+    width: 98vw;
+    margin: 5px;
+  }
+  
+  .announcement-full-modal-header {
+    padding: 12px 12px 8px 12px;
+    gap: 4px;
+  }
+  
+  .announcement-full-modal-close {
+    top: 8px;
+    right: 8px;
+  }
+  
+  .announcement-full-modal-header h2 {
+    font-size: 28px;
+  }
+  
+  .announcement-full-modal-content-container {
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+
+  
+  .announcement-full-modal-description {
+    padding: 12px 12px 16px 12px;
+    font-size: 14px;
+  }
+  
+  .announcement-photo-navigation {
+    padding: 8px 12px 12px 12px;
+  }
+
 .announcement-img-wrapper {
   width: 100%;
   overflow: hidden;
@@ -538,6 +816,11 @@
   font-size: 12px;
   font-weight: 600;
   z-index: 2;
+}
+
+/* Photo Counter */
+.announcement-photos-count {
+  color: white;
 }
 
 .announcement-photos-count {
@@ -566,58 +849,7 @@
   z-index: 2000; /* For announcement modal */
 }
 
-.announcements-image-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3000; /* Higher than announcement modal */
-}
 
-.announcements-image-modal-content {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  max-width: 95vw;
-  max-height: 95vh;
-}
-
-.announcements-image-modal-close {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  font-size: 24px;
-  color: #333;
-  cursor: pointer;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.announcements-image-modal-close:hover {
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.announcements-modal-img {
-  max-width: 90vw;
-  max-height: 90vh;
-  border-radius: 12px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.25);
-}
 
 .announcements-icon-bg {
   background: #fff;
@@ -761,7 +993,7 @@
     max-width: 500px;
   }
   .announcement-full-modal-header h2 {
-    font-size: 20px;
+    font-size: 32px;
   }
   .announcement-full-modal-description {
     font-size: 15px;
@@ -936,7 +1168,7 @@
     padding: 0 20px 20px 20px;
   }
   .announcement-full-modal-img {
-    max-height: 300px;
+    max-height: 350px;
   }
   .announcement-img {
     max-height: 250px;
@@ -954,62 +1186,18 @@
     z-index: 2000; /* For announcement modal */
   }
   
-  .announcements-image-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000; /* Higher than announcement modal */
-  }
   
-  .announcements-image-modal-content {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: 98vw;
-    max-height: 98vh;
-  }
-  
-  .announcements-image-modal-close {
-    position: absolute;
-    top: -35px;
-    right: 0;
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    font-size: 20px;
-    color: #333;
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    z-index: 10;
-  }
-  
-  .announcements-modal-img {
-    max-width: 95vw;
-    max-height: 85vh;
-  }
   
   .announcement-full-modal-image {
     padding: 0 16px 16px 16px;
   }
   
   .announcement-full-modal-img {
-    max-height: 250px;
+    max-height: 280px;
   }
   
   .announcement-img {
-    max-height: 200px;
+    max-height: 150px;
   }
   
   .announcement-img-wrapper {

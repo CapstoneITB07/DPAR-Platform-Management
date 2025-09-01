@@ -28,7 +28,6 @@ class VolunteerController extends Controller
             'address' => 'required|string',
             'contact_info' => 'required|string|max:11',
             'expertise' => 'nullable|string',
-            'location' => 'required|string',
         ]);
 
         $associateGroup = AssociateGroup::where('user_id', Auth::id())->first();
@@ -53,7 +52,6 @@ class VolunteerController extends Controller
             'address' => 'required|string',
             'contact_info' => 'required|string|max:11',
             'expertise' => 'nullable|string',
-            'location' => 'required|string',
         ]);
 
         $volunteer->update($request->all());

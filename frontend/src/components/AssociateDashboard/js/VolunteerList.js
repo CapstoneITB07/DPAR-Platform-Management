@@ -18,8 +18,7 @@ import {
   faSortDown,
   faVenusMars,
   faPhone,
-  faMapMarkerAlt,
-  faMapMarkedAlt
+  faMapMarkerAlt
 } from '@fortawesome/free-solid-svg-icons';
 import AssociateLayout from './AssociateLayout';
 import '../css/VolunteerList.css';
@@ -74,7 +73,6 @@ function VolunteerList() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [filters, setFilters] = useState({
     type: '',
-    location: '',
     expertise: '',
     gender: ''
   });
@@ -84,8 +82,7 @@ function VolunteerList() {
     gender: '',
     address: '',
     contact_info: '',
-    expertise: '',
-    location: ''
+    expertise: ''
   });
   const [formErrors, setFormErrors] = useState({});
   const [toast, setToast] = useState({ message: '', type: '' });
@@ -123,7 +120,6 @@ function VolunteerList() {
     if (!formData.contact_info || formData.contact_info.length !== 11) {
       errors.contact_info = 'Contact number must be 11 digits';
     }
-    if (!formData.location.trim()) errors.location = 'Location is required';
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -169,8 +165,7 @@ function VolunteerList() {
       gender: '',
       address: '',
       contact_info: '',
-      expertise: '',
-      location: ''
+      expertise: ''
     });
     setFormErrors({});
   };
@@ -184,8 +179,7 @@ function VolunteerList() {
       gender: volunteer.gender,
       address: volunteer.address,
       contact_info: volunteer.contact_info,
-      expertise: volunteer.expertise,
-      location: volunteer.location
+      expertise: volunteer.expertise
     });
     setShowModal(true);
   };
@@ -273,10 +267,9 @@ function VolunteerList() {
       const matchesSearch = volunteer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           volunteer.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           volunteer.contact_info.includes(searchTerm);
-      const matchesLocation = !filters.location || volunteer.location === filters.location;
       const matchesExpertise = !filters.expertise || volunteer.expertise === filters.expertise;
       const matchesGender = !filters.gender || volunteer.gender === filters.gender;
-      return matchesSearch && matchesLocation && matchesExpertise && matchesGender;
+      return matchesSearch && matchesExpertise && matchesGender;
     })
     .sort((a, b) => {
       if (!sortConfig.key) return 0;
@@ -330,24 +323,29 @@ function VolunteerList() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Gender', 'Contact Info', 'Address', 'Expertise', 'Location'];
+    const headers = ['Name', 'Gender', 'Contact Info', 'Expertise', 'Address'];
     const csvContent = [
       headers.join(','),
       ...filteredVolunteers.map(v => [
         v.name,
         v.gender,
         v.contact_info,
-        v.address,
         v.expertise,
-        v.location
+        v.address
       ].join(','))
     ].join('\n');
+
+    // Get group name from localStorage
+    const groupName = localStorage.getItem('userOrganization') || 'Group';
+    
+    // Create filename with group name
+    const filename = `${groupName}'s Volunteers.csv`;
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'volunteers.csv';
+    a.download = filename;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -437,16 +435,6 @@ function VolunteerList() {
               </select>
               
               <select
-                value={filters.location}
-                onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-              >
-                <option value="">All Locations</option>
-                {getUniqueValues('location').map(location => (
-                  <option key={location} value={location}>{location}</option>
-                ))}
-              </select>
-              
-              <select
                 value={filters.expertise}
                 onChange={(e) => setFilters({ ...filters, expertise: e.target.value })}
               >
@@ -458,7 +446,7 @@ function VolunteerList() {
               
               <button 
                 className="clear-filters-btn"
-                onClick={() => setFilters({ type: '', location: '', expertise: '', gender: '' })}
+                onClick={() => setFilters({ type: '', expertise: '', gender: '' })}
               >
                 Clear Filter
               </button>
@@ -502,31 +490,26 @@ function VolunteerList() {
                         <FontAwesomeIcon icon={getSortIcon('contact_info')} />
                       </div>
                     </th>
-                    <th onClick={() => handleSort('address')} className="sortable">
-                      <div className="th-content">
-                        Address
-                        <FontAwesomeIcon icon={getSortIcon('address')} />
-                      </div>
-                    </th>
                     <th onClick={() => handleSort('expertise')} className="sortable">
                       <div className="th-content">
                         Expertise
                         <FontAwesomeIcon icon={getSortIcon('expertise')} />
                       </div>
                     </th>
-                    <th onClick={() => handleSort('location')} className="sortable">
+                    <th onClick={() => handleSort('address')} className="sortable">
                       <div className="th-content">
-                        Location
-                        <FontAwesomeIcon icon={getSortIcon('location')} />
+                        Address
+                        <FontAwesomeIcon icon={getSortIcon('address')} />
                       </div>
                     </th>
+
                     <th style={{textAlign: 'left'}}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredVolunteers.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="no-data">
+                      <td colSpan="7" className="no-data">
                         <div className="no-data-content">
                           <FontAwesomeIcon icon={faUserPlus} />
                           <p>No volunteers found</p>
@@ -558,9 +541,8 @@ function VolunteerList() {
                         </td>
                         <td>{volunteer.gender}</td>
                         <td className="contact-cell">{volunteer.contact_info}</td>
+                        <td className="expertise-cell">{volunteer.expertise}</td>
                         <td className="address-cell">{volunteer.address}</td>
-                        <td>{volunteer.expertise}</td>
-                        <td>{volunteer.location}</td>
                         <td className="actions-cell">
                           <div className="action-buttons">
                             <button
@@ -673,6 +655,15 @@ function VolunteerList() {
                     </div>
                   </div>
                   <div className="form-group">
+                    <label>Expertise</label>
+                    <input
+                      type="text"
+                      value={formData.expertise}
+                      onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
+                      placeholder="Enter expertise (optional)"
+                    />
+                  </div>
+                  <div className="form-group">
                     <label>Address *</label>
                     <input
                       type="text"
@@ -685,31 +676,6 @@ function VolunteerList() {
                       placeholder="Enter complete address"
                     />
                     {formErrors.address && <span className="error-text">{formErrors.address}</span>}
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Location *</label>
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={(e) => {
-                          setFormData({ ...formData, location: e.target.value });
-                          if (formErrors.location) setFormErrors({ ...formErrors, location: '' });
-                        }}
-                        className={formErrors.location ? 'error' : ''}
-                        placeholder="Enter location"
-                      />
-                      {formErrors.location && <span className="error-text">{formErrors.location}</span>}
-                    </div>
-                    <div className="form-group">
-                      <label>Expertise</label>
-                      <input
-                        type="text"
-                        value={formData.expertise}
-                        onChange={(e) => setFormData({ ...formData, expertise: e.target.value })}
-                        placeholder="Enter expertise (optional)"
-                      />
-                    </div>
                   </div>
                   <div className="volunteer-modal-actions">
                     <button
@@ -754,20 +720,16 @@ function VolunteerList() {
                     <span className="profile-info-value">{detailsVolunteer.contact_info}</span>
                   </div>
                   <div className="profile-info-row">
-                    <FontAwesomeIcon icon={faMapMarkerAlt} className="profile-info-icon" />
-                    <span className="profile-info-label">Address:</span>
-                    <span className="profile-info-value">{detailsVolunteer.address}</span>
-                  </div>
-                  <div className="profile-info-row">
                     <FontAwesomeIcon icon={faUserPlus} className="profile-info-icon" />
                     <span className="profile-info-label">Expertise:</span>
                     <span className="profile-info-value">{detailsVolunteer.expertise || 'N/A'}</span>
                   </div>
                   <div className="profile-info-row">
-                    <FontAwesomeIcon icon={faMapMarkedAlt} className="profile-info-icon" />
-                    <span className="profile-info-label">Location:</span>
-                    <span className="profile-info-value">{detailsVolunteer.location || 'N/A'}</span>
+                    <FontAwesomeIcon icon={faMapMarkerAlt} className="profile-info-icon" />
+                    <span className="profile-info-label">Address:</span>
+                    <span className="profile-info-value">{detailsVolunteer.address}</span>
                   </div>
+
                 </div>
               </div>
             </div>

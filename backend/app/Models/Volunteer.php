@@ -15,8 +15,7 @@ class Volunteer extends Model
         'gender',
         'address',
         'contact_info',
-        'expertise',
-        'location'
+        'expertise'
     ];
 
     public function associateGroup()

@@ -388,11 +388,17 @@ function LoginPage() {
               <button
                 type="button"
                 onClick={toggleRecoveryMode}
-                className="recoveryToggleButton"
+                className={`recoveryToggleButton ${isRecoveryMode ? 'recoveryModeActive' : ''}`}
               >
                 <FontAwesomeIcon icon={faKey} />
                 {isRecoveryMode ? ' Use Regular Password' : ' Forgot Password? Use Recovery Passcode'}
               </button>
+              {isRecoveryMode && (
+                <div className="recoveryModeIndicator">
+                  <FontAwesomeIcon icon={faLock} />
+                  <span>Recovery Mode: You will need to change your password after login</span>
+                </div>
+              )}
             </div>
           </form>
           {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
@@ -446,7 +452,34 @@ function LoginPage() {
       {showChangePasswordModal && (
         <div className="changePasswordModal">
           <div className="modalContent">
-            <h2>Change Password</h2>
+            <div className="passwordChangeHeader">
+              <div className="securityIcon">
+                <FontAwesomeIcon icon={faLock} />
+              </div>
+              <h2>Security Required: Change Your Password</h2>
+              <p className="securityNotice">
+                You logged in using a recovery passcode. For security reasons, you must change your password before accessing the system.
+              </p>
+            </div>
+            
+            <div className="passwordRequirements">
+              <h3>Password Requirements:</h3>
+              <ul className="requirementsList">
+                <li className={newPassword.length >= 8 ? 'requirementMet' : 'requirementNotMet'}>
+                  <span className="requirementIcon">{newPassword.length >= 8 ? '✓' : '○'}</span>
+                  At least 8 characters long
+                </li>
+                <li className={newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? 'requirementMet' : 'requirementNotMet'}>
+                  <span className="requirementIcon">{newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? '✓' : '○'}</span>
+                  Not a common weak password
+                </li>
+                <li className={newPassword === confirmPassword && newPassword !== '' ? 'requirementMet' : 'requirementNotMet'}>
+                  <span className="requirementIcon">{newPassword === confirmPassword && newPassword !== '' ? '✓' : '○'}</span>
+                  Passwords match
+                </li>
+              </ul>
+            </div>
+
             <form onSubmit={handleChangePassword}>
               <div className="inputGroup">
                 <label htmlFor="newPassword">New Password:</label>
@@ -505,20 +538,19 @@ function LoginPage() {
                 </div>
               </div>
               <div className="inputGroup">
-                <label htmlFor="recoveryPasscode">Current Recovery Passcode:</label>
+                <label htmlFor="recoveryPasscode">Recovery Passcode (Auto-filled):</label>
                 <div className="passwordInputContainer">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id="recoveryPasscode"
                     value={recoveryPasscode}
                     onChange={(e) => setRecoveryPasscode(e.target.value)}
-                    className="passwordInput"
+                    className="passwordInput recoveryPasscodeField"
                     required
                     placeholder="Enter your recovery passcode"
                     aria-label="Recovery Passcode"
                     maxLength="10"
                     readOnly
-                    style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
                   />
                   <span
                     onClick={togglePasswordVisibility}
@@ -534,12 +566,30 @@ function LoginPage() {
                     )}
                   </span>
                 </div>
-                <small style={{ color: '#666', fontSize: '0.8rem', marginTop: '4px' }}>
-                  This is the recovery passcode you used to login. It will be automatically consumed after password change.
-                </small>
+                <div className="recoveryPasscodeInfo">
+                  <FontAwesomeIcon icon={faKey} className="infoIcon" />
+                  <span>This recovery passcode will be automatically consumed and cannot be reused after password change.</span>
+                </div>
               </div>
-              <button type="submit" className="signInButton" disabled={isChangingPassword}>
-                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+              
+              <div className="passwordStrengthIndicator">
+                <div className="strengthLabel">Password Strength:</div>
+                <div className="strengthBar">
+                  <div 
+                    className={`strengthFill ${newPassword.length >= 8 && newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? 'strong' : newPassword.length >= 6 ? 'medium' : 'weak'}`}
+                  ></div>
+                </div>
+                <span className="strengthText">
+                  {newPassword.length >= 8 && newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? 'Strong' : newPassword.length >= 6 ? 'Medium' : 'Weak'}
+                </span>
+              </div>
+
+              <button 
+                type="submit" 
+                className="signInButton" 
+                disabled={isChangingPassword || newPassword.length < 8 || newPassword !== confirmPassword || newPassword.toLowerCase().includes('password') || newPassword.toLowerCase().includes('123') || newPassword.toLowerCase().includes('qwerty')}
+              >
+                {isChangingPassword ? 'Changing Password...' : 'Change Password & Continue'}
               </button>
               {changePasswordMessage && (
                 <p className={`changePasswordMessage ${isPasswordChangeSuccess ? 'success' : 'error'}`}>

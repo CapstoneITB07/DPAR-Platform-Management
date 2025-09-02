@@ -314,7 +314,7 @@ function Notifications() {
         <div style={{ 
           textAlign: 'center', 
           padding: '40px 20px', 
-          color: '#dc3545', 
+          color: '#6c757d', 
           fontSize: '18px', 
           fontWeight: '500',
           width: '100%',

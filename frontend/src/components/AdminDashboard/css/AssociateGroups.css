@@ -602,6 +602,11 @@
   font-size: 0.85rem;
   margin-top: 4px;
 }
+.add-edit-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
 .save-btn {
   background: #007bff;
   color: #fff;

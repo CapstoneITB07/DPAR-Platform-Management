@@ -48,10 +48,13 @@
   min-width: 340px;
   max-width: 500px;
   width: 100%;
+  max-height: 90vh;
   box-shadow: 0 8px 32px rgba(161,28,34,0.13);
   position: relative;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .training-modal-header {
   background: #A11C22;
@@ -89,6 +92,27 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Custom scrollbar for modal form */
+.training-modal-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.training-modal-form::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.training-modal-form::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.training-modal-form::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 .training-form-label {
   font-weight: 600;
@@ -105,6 +129,11 @@
   font-size: 16px;
   background: #f8f9fa;
 }
+
+.training-form-input.error {
+  border-color: #dc3545;
+  background: #fff5f5;
+}
 .training-form-textarea {
   min-height: 80px;
   resize: vertical;
@@ -113,7 +142,10 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 10px;
+  padding: 20px 32px;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+  flex-shrink: 0;
 }
 .training-cancel-btn {
   background: transparent !important;
@@ -224,6 +256,29 @@
 .training-upload-remove:hover {
   color: #8b1a1f !important;
   background: none !important;
+}
+.training-upload-remove-x {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: transparent !important;
+  color: #e74c3c !important;
+  border: none !important;
+  font-weight: bold !important;
+  font-size: 16px !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+.training-upload-remove-x:hover {
+  background: transparent !important;
+  color: #e74c3c !important;
 }
 .training-upload-placeholder {
   width: 70px;

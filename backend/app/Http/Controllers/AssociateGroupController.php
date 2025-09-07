@@ -76,6 +76,7 @@ class AssociateGroupController extends Controller
                 'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'email' => 'required|email|unique:users,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
+                'date_joined' => 'required|date|before_or_equal:today',
             ], [
                 'name.required' => 'Organization name is required.',
                 'email.required' => 'Email address is required.',
@@ -84,6 +85,9 @@ class AssociateGroupController extends Controller
                 'phone.required' => 'Phone number is required.',
                 'phone.size' => 'Phone number must be exactly 11 digits.',
                 'phone.regex' => 'Phone number must start with 09 and contain only numbers.',
+                'date_joined.required' => 'Date joined is required.',
+                'date_joined.date' => 'Please enter a valid date.',
+                'date_joined.before_or_equal' => 'Date joined cannot be in the future.',
                 'logo.required' => 'Logo is required for new associate groups.',
                 'logo.image' => 'Logo must be a valid image file.',
                 'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
@@ -130,6 +134,7 @@ class AssociateGroupController extends Controller
                 'logo' => $logoPath,
                 'email' => $request->email,
                 'phone' => $request->phone,
+                'date_joined' => $request->date_joined,
             ]);
 
             // Return the group with the full logo URL for immediate display
@@ -258,6 +263,7 @@ class AssociateGroupController extends Controller
                 'description' => 'nullable|string',
                 'email' => 'required|email|unique:users,email,' . $group->user_id,
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
+                'date_joined' => 'required|date|before_or_equal:today',
             ];
 
             $customMessages = [
@@ -268,6 +274,9 @@ class AssociateGroupController extends Controller
                 'phone.required' => 'Phone number is required.',
                 'phone.size' => 'Phone number must be exactly 11 digits.',
                 'phone.regex' => 'Phone number must start with 09 and contain only numbers.',
+                'date_joined.required' => 'Date joined is required.',
+                'date_joined.date' => 'Please enter a valid date.',
+                'date_joined.before_or_equal' => 'Date joined cannot be in the future.',
             ];
 
             // Add logo validation only if a file is being uploaded
@@ -288,7 +297,8 @@ class AssociateGroupController extends Controller
                 'director' => $request->input('director'),
                 'description' => $request->input('description'),
                 'email' => $request->input('email'),
-                'phone' => $request->input('phone')
+                'phone' => $request->input('phone'),
+                'date_joined' => $request->input('date_joined')
             ];
 
             // Update user account if it exists

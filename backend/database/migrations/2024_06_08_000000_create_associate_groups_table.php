@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('logo')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
+            $table->date('date_joined')->nullable();
             $table->integer('members')->default(0);
             $table->timestamps();
 

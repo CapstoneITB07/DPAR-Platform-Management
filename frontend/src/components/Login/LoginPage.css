@@ -114,7 +114,7 @@
 
 .signInTitle {
   font-size: clamp(1.3rem, 2.5vw, 2.2rem);
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   color: #c0392b;
   font-weight: bold;
   text-align: center;
@@ -122,7 +122,7 @@
 }
 
 .inputGroup {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .label {
@@ -190,21 +190,6 @@
   color: #333;
 }
 
-.rememberMe {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px; /* Bottom margin */
-}
-
-.rememberMeCheckbox {
-  margin-right: 8px;
-  transform: scale(1.1);
-}
-
-.rememberMeLabel {
-  font-size: 14px;
-  color: #555;
-}
 
 .signInButton {
   width: 100%;
@@ -233,7 +218,7 @@
 
 .errorMessage {
   color: #e74c3c;
-  margin-top: 10px;
+  margin-bottom: 15px;
   text-align: center;
   font-size: 14px;
   padding: 8px 12px;
@@ -243,11 +228,11 @@
 }
 
 .recoveryToggle {
-  margin-top: 15px;
+  margin-top: 20px;
   text-align: center;
 }
 
-.recoveryToggleButton {
+.recoveryToggleLink {
   background: transparent !important;
   border: none;
   color: #c0392b !important;
@@ -268,7 +253,7 @@
   visibility: visible !important;
 }
 
-.recoveryToggleButton:hover {
+.recoveryToggleLink:hover {
   background-color: transparent !important;
   color: #a93226 !important;
   text-decoration: underline !important;
@@ -276,7 +261,7 @@
   visibility: visible !important;
 }
 
-.recoveryToggleButton:focus {
+.recoveryToggleLink:focus {
   outline: none;
   box-shadow: none;
   background-color: transparent !important;
@@ -284,38 +269,41 @@
   text-decoration: underline !important;
 }
 
-.recoveryToggleButton.recoveryModeActive {
+.recoveryToggleLink.recoveryModeActive {
   color: #dc3545 !important;
-  font-weight: 600 !important;
-  background: rgba(220, 53, 69, 0.1) !important;
-  padding: 8px 12px !important;
-  border-radius: 6px !important;
-  border: 1px solid rgba(220, 53, 69, 0.3) !important;
+  font-weight: normal !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  text-decoration: underline !important;
 }
 
-.recoveryToggleButton.recoveryModeActive:hover {
-  background: rgba(220, 53, 69, 0.15) !important;
+.recoveryToggleLink.recoveryModeActive:hover {
+  background: transparent !important;
   color: #c82333 !important;
+  text-decoration: underline !important;
 }
 
 .recoveryModeIndicator {
   display: flex;
   align-items: center;
-  margin-top: 10px;
+  margin-top: -5px;
+  margin-bottom: 20px;
   padding: 8px 12px;
   background: #fff3cd;
   border: 1px solid #ffeaa7;
-  border-radius: 6px;
+  border-radius: 4px;
   color: #856404;
   font-size: 0.85rem;
-  font-weight: 500;
-  animation: slideIn 0.3s ease-out;
+  font-weight: normal;
+  line-height: 1.3;
 }
 
 .recoveryModeIndicator .fa-lock {
   margin-right: 6px;
   color: #dc3545;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 @keyframes slideIn {
@@ -326,6 +314,20 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments for recovery mode indicator */
+@media (max-width: 480px) {
+  .recoveryModeIndicator {
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+  
+  .recoveryModeIndicator .fa-lock {
+    font-size: 0.85rem;
+    margin-right: 6px;
   }
 }
 
@@ -700,9 +702,6 @@
     margin-bottom: 6px;
   }
   
-  .rememberMeLabel {
-    font-size: 13px;
-  }
   
   .raButton {
     bottom: 8px;
@@ -794,9 +793,6 @@
 /* Password Change Header */
 .passwordChangeHeader {
   text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid #e9ecef;
 }
 
 .securityIcon {
@@ -805,16 +801,16 @@
   justify-content: center;
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #dc3545, #c82333);
+  background: linear-gradient(135deg, #c0392b, #a93226);
   color: white;
   border-radius: 50%;
   margin-bottom: 1rem;
   font-size: 1.5rem;
-  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  box-shadow: 0 4px 15px rgba(192, 57, 43, 0.3);
 }
 
 .passwordChangeHeader h2 {
-  color: #dc3545;
+  color: #c0392b;
   margin-bottom: 0.5rem;
   font-size: 1.5rem;
   font-weight: 700;
@@ -834,9 +830,9 @@
 /* Password Requirements */
 .passwordRequirements {
   background: #f8f9fa;
-  border-radius: 10px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
   border: 1px solid #e9ecef;
 }
 
@@ -915,7 +911,7 @@
 
 .recoveryPasscodeInfo {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-top: 0.5rem;
   padding: 0.75rem;
   background: #e3f2fd;
@@ -923,77 +919,16 @@
   border: 1px solid #bbdefb;
   font-size: 0.85rem;
   color: #1976d2;
+  line-height: 1.4;
 }
 
 .infoIcon {
   margin-right: 0.5rem;
   font-size: 0.9rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
 }
 
-/* Password Strength Indicator */
-.passwordStrengthIndicator {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.strengthLabel {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #495057;
-  margin-bottom: 0.5rem;
-}
-
-.strengthBar {
-  width: 100%;
-  height: 8px;
-  background: #e9ecef;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.strengthFill {
-  height: 100%;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-}
-
-.strengthFill.weak {
-  width: 33%;
-  background: linear-gradient(90deg, #dc3545, #fd7e14);
-}
-
-.strengthFill.medium {
-  width: 66%;
-  background: linear-gradient(90deg, #fd7e14, #ffc107);
-}
-
-.strengthFill.strong {
-  width: 100%;
-  background: linear-gradient(90deg, #28a745, #20c997);
-}
-
-.strengthText {
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.strengthFill.weak + .strengthText {
-  color: #dc3545;
-}
-
-.strengthFill.medium + .strengthText {
-  color: #fd7e14;
-}
-
-.strengthFill.strong + .strengthText {
-  color: #28a745;
-}
 
 @keyframes modalSlideIn {
   from {
@@ -1020,10 +955,11 @@
 
 .modalContent .inputGroup label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: #555;
-  font-weight: 500;
-  font-size: 0.95rem;
+  margin-bottom: 7px;
+  color: #222;
+  font-weight: bold;
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  text-align: left;
 }
 
 .modalContent .passwordInputContainer {
@@ -1034,56 +970,86 @@
 
 .modalContent .passwordInput {
   width: 100%;
-  padding: 12px 45px 12px 15px;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 12px 16px;
+  padding-right: 50px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
   transition: border-color 0.3s ease;
-  background: #f8f9fa;
+  background: white;
 }
 
 .modalContent .passwordInput:focus {
   outline: none;
-  border-color: #007bff;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: #c0392b;
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
 }
 
 .modalContent .passwordToggleIcon {
   position: absolute;
-  right: 15px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  color: #6c757d;
-  padding: 5px;
+  padding: 8px;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
+  color: #666;
 }
 
 .modalContent .passwordToggleIcon:hover {
-  color: #007bff;
-  background-color: #f8f9fa;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.passwordStrengthText {
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 4px;
+  color: #666;
+}
+
+.passwordMatchIndicator {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.passwordMatchText {
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.passwordMatch {
+  color: #28a745;
+}
+
+.passwordNoMatch {
+  color: #dc3545;
 }
 
 .modalContent .signInButton {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  padding: 14px 16px;
+  background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: clamp(1rem, 2vw, 1.15rem);
   font-weight: 600;
   cursor: pointer;
+  margin-top: 8px;
   transition: all 0.3s ease;
-  margin-top: 1rem;
 }
 
 .modalContent .signInButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0056b3, #004085);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+  background-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
 .modalContent .signInButton:disabled {
@@ -1188,9 +1154,6 @@
     font-size: 0.85rem;
   }
   
-  .passwordStrengthIndicator {
-    padding: 0.75rem;
-  }
   
   .recoveryModeIndicator {
     font-size: 0.8rem;
@@ -1240,18 +1203,6 @@
     margin-right: 0.5rem;
   }
   
-  .passwordStrengthIndicator {
-    margin: 1rem 0;
-    padding: 0.5rem;
-  }
-  
-  .strengthLabel {
-    font-size: 0.8rem;
-  }
-  
-  .strengthText {
-    font-size: 0.75rem;
-  }
   
   .recoveryPasscodeInfo {
     font-size: 0.8rem;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/TrainingProgram.css';
 
@@ -98,7 +100,23 @@ function TrainingProgram() {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // If it's the date field, validate it immediately
+    if (name === 'date' && value) {
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        setError('Training program date cannot be in the past. Please select today\'s date or a future date.');
+        return; // Don't update the form with invalid date
+      } else {
+        setError(''); // Clear any previous date errors
+      }
+    }
+    
+    setForm({ ...form, [name]: value });
   };
 
   const handlePhotoUpload = (e) => {
@@ -147,6 +165,18 @@ function TrainingProgram() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Validate date - cannot be in the past
+    const selectedDate = new Date(form.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+    
+    if (selectedDate < today) {
+      setError('Training program date cannot be in the past. Please select today\'s date or a future date.');
+      setLoading(false);
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('name', form.name);
     formData.append('date', form.date);
@@ -314,7 +344,16 @@ function TrainingProgram() {
               <div style={{ display: 'flex', gap: 40, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <label className="training-form-label" style={{ marginBottom: 4 }}>Date</label>
-                  <input type="date" name="date" value={form.date} onChange={handleChange} required className="training-form-input" />
+                  <input 
+                    type="date" 
+                    name="date" 
+                    value={form.date} 
+                    onChange={handleChange} 
+                    required 
+                    min={new Date().toISOString().split('T')[0]}
+                    className={`training-form-input ${error && error.includes('date') ? 'error' : ''}`}
+                    title="Select today's date or a future date"
+                  />
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <label className="training-form-label" style={{ marginBottom: 4 }}>Location</label>
@@ -332,18 +371,19 @@ function TrainingProgram() {
                 <div className="training-upload-container">
                   {/* Photo Previews */}
                   <div className="training-photos-grid">
-                    {form.previews.map((preview, index) => (
-                      <div key={index} className="training-photo-preview">
-                        <img src={preview} alt={`Preview ${index + 1}`} className="training-upload-img" />
-                        <button 
-                          type="button" 
-                          onClick={() => removeExistingPhoto(index)} 
-                          className="training-upload-remove"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                     {form.previews.map((preview, index) => (
+                       <div key={index} className="training-photo-preview">
+                         <img src={preview} alt={`Preview ${index + 1}`} className="training-upload-img" />
+                         <button 
+                           type="button" 
+                           onClick={() => removeExistingPhoto(index)} 
+                           className="training-upload-remove-x"
+                           title="Remove this photo"
+                         >
+                           <FontAwesomeIcon icon={faTimes} />
+                         </button>
+                       </div>
+                     ))}
                     {/* Upload Button */}
                     <div className="training-upload-placeholder">
                       <input 
@@ -359,13 +399,13 @@ function TrainingProgram() {
                       </label>
                     </div>
                   </div>
-                  {/* Remove All Photos Button (only show when editing and has existing photos) */}
-                  {editId && form.previews.length > 0 && (
+                  {/* Clear All Photos Button (show when there are photos) */}
+                  {form.previews.length > 0 && (
                     <div style={{ textAlign: 'center', marginTop: '10px' }}>
                       <button 
                         type="button" 
                         onClick={() => setForm(prev => ({ ...prev, previews: [] }))}
-                        className="training-remove-all-btn"
+                        className="training-clear-all-btn"
                         style={{
                           background: '#e74c3c',
                           color: 'white',
@@ -376,7 +416,7 @@ function TrainingProgram() {
                           fontSize: '14px'
                         }}
                       >
-                        Remove All Photos
+                        Clear All Photos
                       </button>
                     </div>
                   )}

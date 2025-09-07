@@ -13,7 +13,6 @@ function LoginPage() {
   const [message, setMessage] = useState('');
   const [showRA, setShowRA] = useState(false); // State for the pop-up
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
-  const [rememberMe, setRememberMe] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false); // State for recovery mode
   
   // New states for change password modal
@@ -30,13 +29,6 @@ function LoginPage() {
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
 
-  useEffect(() => {
-    const remembered = localStorage.getItem('rememberedEmail');
-    if (remembered) {
-      setEmail(remembered);
-      setRememberMe(true);
-    }
-  }, []);
 
   const toggleRA = () => {
     setShowRA(!showRA);
@@ -219,14 +211,8 @@ function LoginPage() {
         const userRole = data.user ? data.user.role : null; // Adjust based on actual backend response structure
         const userId = data.user ? data.user.id : null;
 
-        // Store token and email based on rememberMe
-        if (rememberMe) {
-          localStorage.setItem('authToken', token);
-          localStorage.setItem('rememberedEmail', email);
-        } else {
-          sessionStorage.setItem('authToken', token);
-          localStorage.removeItem('rememberedEmail');
-        }
+        // Store token in sessionStorage only
+        sessionStorage.setItem('authToken', token);
         // You might also want to save user details like role
         localStorage.setItem('userRole', userRole);
         if (userId) localStorage.setItem('userId', userId);
@@ -369,30 +355,23 @@ function LoginPage() {
               </div>
             )}
             
-            <div className="rememberMe">
-              <input
-                type="checkbox"
-                id="rememberMe"
-                className="rememberMeCheckbox"
-                checked={rememberMe}
-                onChange={e => setRememberMe(e.target.checked)}
-              />
-              <label htmlFor="rememberMe" className="rememberMeLabel">Remember me?</label>
-            </div>
             
             <button type="submit" className="signInButton">
               {isRecoveryMode ? 'Sign In with Recovery Passcode' : 'Sign In'}
             </button>
             
             <div className="recoveryToggle">
-              <button
-                type="button"
-                onClick={toggleRecoveryMode}
-                className={`recoveryToggleButton ${isRecoveryMode ? 'recoveryModeActive' : ''}`}
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleRecoveryMode();
+                }}
+                className={`recoveryToggleLink ${isRecoveryMode ? 'recoveryModeActive' : ''}`}
               >
                 <FontAwesomeIcon icon={faKey} />
                 {isRecoveryMode ? ' Use Regular Password' : ' Forgot Password? Use Recovery Passcode'}
-              </button>
+              </a>
               {isRecoveryMode && (
                 <div className="recoveryModeIndicator">
                   <FontAwesomeIcon icon={faLock} />

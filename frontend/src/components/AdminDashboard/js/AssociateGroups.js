@@ -39,7 +39,8 @@ function AssociateGroups() {
     description: '', 
     logo: '', 
     email: '', 
-    phone: ''
+    phone: '',
+    date_joined: new Date().toISOString().split('T')[0]
   });
   const [logoFile, setLogoFile] = useState(null);
   const [error, setError] = useState('');
@@ -143,7 +144,8 @@ function AssociateGroups() {
       description: associate.description || '',
       logo: associate.logo || '',
       email: associate.email || '',
-      phone: associate.phone || ''
+      phone: associate.phone || '',
+      date_joined: associate.date_joined || new Date().toISOString().split('T')[0]
     };
     
     setForm(formData);
@@ -156,7 +158,7 @@ function AssociateGroups() {
   const closeEditModal = () => {
     setShowEditModal(false);
     setEditMode(false); // Reset edit mode when closing
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
+    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', date_joined: new Date().toISOString().split('T')[0] });
     setLogoFile(null);
     setError('');
   };
@@ -238,6 +240,7 @@ function AssociateGroups() {
       formData.append('description', form.description);
       formData.append('email', form.email);
       formData.append('phone', form.phone);
+      formData.append('date_joined', form.date_joined);
       if (logoFile) formData.append('logo', logoFile);
       
       const response = await axios.post(`${API_BASE}/api/associate-groups`, formData, {
@@ -303,6 +306,7 @@ function AssociateGroups() {
       formData.append('description', form.description);
       formData.append('email', form.email);
       formData.append('phone', form.phone);
+      formData.append('date_joined', form.date_joined);
       if (logoFile) formData.append('logo', logoFile);
       
       const response = await axios.post(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
@@ -751,6 +755,19 @@ function AssociateGroups() {
                       />
                     </div>
                     
+                    <div className="form-group">
+                      <label>Date Joined *</label>
+                      <input 
+                        name="date_joined" 
+                        type="date" 
+                        value={form.date_joined || ''} 
+                        onChange={handleFormChange} 
+                        required 
+                        max={new Date().toISOString().split('T')[0]}
+                        title="Select the date when this group joined"
+                      />
+                    </div>
+                    
                     <div className="form-group full-width">
                       <label>Description *</label>
                       <textarea 
@@ -877,6 +894,19 @@ function AssociateGroups() {
                       title="Phone number must start with 09 and be exactly 11 digits"
                       maxLength="11"
                       inputMode="numeric"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Date Joined *</label>
+                    <input 
+                      name="date_joined" 
+                      type="date" 
+                      value={form.date_joined || ''} 
+                      onChange={handleFormChange} 
+                      required 
+                      max={new Date().toISOString().split('T')[0]}
+                      title="Select the date when this group joined"
                     />
                   </div>
                   

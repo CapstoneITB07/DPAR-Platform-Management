@@ -19,7 +19,8 @@ class AssociateGroup extends Model
         'phone',
         'user_id',
         'members',
-        'status'
+        'status',
+        'date_joined'
     ];
 
     protected $appends = ['members_count'];

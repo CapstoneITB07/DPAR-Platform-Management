@@ -319,6 +319,7 @@ function Evaluation() {
                                   />
                                   <span className="radio-custom"></span>
                                   <span className="score-label">{score}</span>
+                                  <span className="score-hyphen">-</span>
                                   <span className="score-text">{label}</span>
                                 </label>
                               ))}

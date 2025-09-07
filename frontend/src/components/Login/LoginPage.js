@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css'; // Import the CSS file
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faKey, faLock, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 // You might need to import useHistory or useNavigate from react-router-dom for redirection
 // import { useHistory } from 'react-router-dom'; // For react-router-dom v5
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
@@ -62,12 +62,12 @@ function LoginPage() {
       return;
     }
 
-    // Check for common weak passwords
-    if (newPassword.toLowerCase().includes('password') || 
-        newPassword.toLowerCase().includes('123') ||
-        newPassword.toLowerCase().includes('qwerty')) {
-      setChangePasswordMessage('Please choose a stronger password.');
-      return;
+    // Check password requirements - only special characters needed
+    if (newPassword.length >= 8) {
+      if (!/[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword)) {
+        setChangePasswordMessage('Password must contain special characters (0-9, @, #, !, etc.).');
+        return;
+      }
     }
 
     setIsChangingPassword(true);
@@ -212,7 +212,7 @@ function LoginPage() {
         const userId = data.user ? data.user.id : null;
 
         // Store token in sessionStorage only
-        sessionStorage.setItem('authToken', token);
+          sessionStorage.setItem('authToken', token);
         // You might also want to save user details like role
         localStorage.setItem('userRole', userRole);
         if (userId) localStorage.setItem('userId', userId);
@@ -364,7 +364,7 @@ function LoginPage() {
             
             
             <button type="submit" className="signInButton">
-              {isRecoveryMode ? 'Reset Password' : 'Sign In'}
+              {isRecoveryMode ? 'Continue with Recovery Passcode' : 'Sign In'}
             </button>
             
             <div className="recoveryToggle">
@@ -435,10 +435,7 @@ function LoginPage() {
               <div className="securityIcon">
                 <FontAwesomeIcon icon={faLock} />
               </div>
-              <h2>Security Required: Change Your Password</h2>
-              <p className="securityNotice">
-                You logged in using a recovery passcode. For security reasons, you must change your password before accessing the system.
-              </p>
+              <h2>Change Your Password</h2>
             </div>
             
             <div className="passwordRequirements">
@@ -448,13 +445,9 @@ function LoginPage() {
                   <span className="requirementIcon">{newPassword.length >= 8 ? '✓' : '○'}</span>
                   At least 8 characters long
                 </li>
-                <li className={newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? 'requirementMet' : 'requirementNotMet'}>
-                  <span className="requirementIcon">{newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? '✓' : '○'}</span>
-                  Not a common weak password
-                </li>
-                <li className={newPassword === confirmPassword && newPassword !== '' ? 'requirementMet' : 'requirementNotMet'}>
-                  <span className="requirementIcon">{newPassword === confirmPassword && newPassword !== '' ? '✓' : '○'}</span>
-                  Passwords match
+                <li className={newPassword !== '' && /[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword) ? 'requirementMet' : 'requirementNotMet'}>
+                  <span className="requirementIcon">{newPassword !== '' && /[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword) ? '✓' : '○'}</span>
+                  With special characters (0-9, @, #, !, etc.)
                 </li>
               </ul>
             </div>
@@ -487,6 +480,11 @@ function LoginPage() {
                     )}
                   </span>
                 </div>
+                <div className="passwordStrengthText">
+                  <span><strong>Password Strength: </strong></span>
+                  {newPassword.length < 8 ? 'Weak' : 
+                   (newPassword.length >= 8 && /[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword)) ? 'Strong' : 'Weak'}
+                </div>
               </div>
               <div className="inputGroup">
                 <label htmlFor="confirmPassword">Confirm New Password:</label>
@@ -513,6 +511,11 @@ function LoginPage() {
                     ) : (
                       <FontAwesomeIcon icon={faEyeSlash} />
                     )}
+                  </span>
+                </div>
+                <div className="passwordMatchIndicator">
+                  <span className={`passwordMatchText ${newPassword === confirmPassword && newPassword !== '' ? 'passwordMatch' : 'passwordNoMatch'}`}>
+                    {newPassword === confirmPassword && newPassword !== '' ? '✓ Passwords match' : '✗ Passwords do not match'}
                   </span>
                 </div>
               </div>
@@ -546,27 +549,16 @@ function LoginPage() {
                   </span>
                 </div>
                 <div className="recoveryPasscodeInfo">
-                  <FontAwesomeIcon icon={faKey} className="infoIcon" />
+                  <FontAwesomeIcon icon={faInfoCircle} className="infoIcon" />
                   <span>This recovery passcode will be automatically consumed and cannot be reused after password change.</span>
                 </div>
               </div>
               
-              <div className="passwordStrengthIndicator">
-                <div className="strengthLabel">Password Strength:</div>
-                <div className="strengthBar">
-                  <div 
-                    className={`strengthFill ${newPassword.length >= 8 && newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? 'strong' : newPassword.length >= 6 ? 'medium' : 'weak'}`}
-                  ></div>
-                </div>
-                <span className="strengthText">
-                  {newPassword.length >= 8 && newPassword !== '' && !newPassword.toLowerCase().includes('password') && !newPassword.toLowerCase().includes('123') && !newPassword.toLowerCase().includes('qwerty') ? 'Strong' : newPassword.length >= 6 ? 'Medium' : 'Weak'}
-                </span>
-              </div>
 
               <button 
                 type="submit" 
                 className="signInButton" 
-                disabled={isChangingPassword || newPassword.length < 8 || newPassword !== confirmPassword || newPassword.toLowerCase().includes('password') || newPassword.toLowerCase().includes('123') || newPassword.toLowerCase().includes('qwerty')}
+                disabled={isChangingPassword || newPassword.length < 8 || newPassword !== confirmPassword || (newPassword.length >= 8 && !/[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword))}
               >
                 {isChangingPassword ? 'Changing Password...' : 'Change Password & Continue'}
               </button>

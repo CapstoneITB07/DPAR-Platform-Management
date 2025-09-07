@@ -280,7 +280,14 @@ function LoginPage() {
       <div className="container"> {/* Main container */}
         <div className="loginSection"> {/* Left (Login) section */}
           <h2 className="signInTitle">Sign In</h2>
+          {isRecoveryMode && (
+            <div className="recoveryModeIndicator align-items-center">
+              {/* <FontAwesomeIcon icon={faLock} /> */}
+              <span><strong>Recovery Mode: </strong>You will need to change your password after entering the recovery passcode.</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
+            {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
             <div className="inputGroup">
               <label htmlFor="email" className="label">Email:</label>
               <input
@@ -357,7 +364,7 @@ function LoginPage() {
             
             
             <button type="submit" className="signInButton">
-              {isRecoveryMode ? 'Sign In with Recovery Passcode' : 'Sign In'}
+              {isRecoveryMode ? 'Reset Password' : 'Sign In'}
             </button>
             
             <div className="recoveryToggle">
@@ -372,15 +379,8 @@ function LoginPage() {
                 <FontAwesomeIcon icon={faKey} />
                 {isRecoveryMode ? ' Use Regular Password' : ' Forgot Password? Use Recovery Passcode'}
               </a>
-              {isRecoveryMode && (
-                <div className="recoveryModeIndicator">
-                  <FontAwesomeIcon icon={faLock} />
-                  <span>Recovery Mode: You will need to change your password after login</span>
-                </div>
-              )}
             </div>
           </form>
-          {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
         </div>
         <div className="welcomeSection"> {/* Right (Welcome) section */}
           <div className="welcomeContent">

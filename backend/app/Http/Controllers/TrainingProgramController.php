@@ -35,10 +35,12 @@ class TrainingProgramController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'date' => 'required|date',
+            'date' => 'required|date|after_or_equal:today',
             'location' => 'required|string|max:255',
             'description' => 'required|string',
             'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'date.after_or_equal' => 'Training program date cannot be in the past. Please select today\'s date or a future date.',
         ]);
 
         $data = $request->only(['name', 'date', 'location', 'description']);
@@ -78,10 +80,12 @@ class TrainingProgramController extends Controller
         $program = TrainingProgram::findOrFail($id);
         $request->validate([
             'name' => 'required|string|max:255',
-            'date' => 'required|date',
+            'date' => 'required|date|after_or_equal:today',
             'location' => 'required|string|max:255',
             'description' => 'required|string',
             'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ], [
+            'date.after_or_equal' => 'Training program date cannot be in the past. Please select today\'s date or a future date.',
         ]);
 
         // Handle multiple photos

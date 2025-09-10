@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../css/AdminDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Modal from 'react-modal';
 import axios from 'axios';
@@ -11,6 +11,7 @@ const API_BASE = 'http://localhost:8000';
 function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile'); // New state for tab management
   const [profileImage, setProfileImage] = useState('/Assets/disaster_logo.png');
   const [imagePreview, setImagePreview] = useState(null);
   const [newProfileImage, setNewProfileImage] = useState(null);
@@ -20,12 +21,20 @@ function AdminLayout({ children }) {
     new_password_confirmation: ''
   });
   const [profileForm, setProfileForm] = useState({
+    name: '',
     email: ''
   });
   const [userDisplayName, setUserDisplayName] = useState('Admin');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [passwordSuggestions, setPasswordSuggestions] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -45,23 +54,63 @@ function AdminLayout({ children }) {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setPasswordError('');
+    setPasswordSuccess('');
     setIsLoading(true);
+
+    // Client-side validation
+    if (passwordForm.new_password !== passwordForm.new_password_confirmation) {
+      setPasswordError('New passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
+    if (passwordForm.new_password.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      setIsLoading(false);
+      return;
+    }
+
+    if (passwordForm.current_password === passwordForm.new_password) {
+      setPasswordError('New password must be different from current password');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check for common passwords
+    if (commonPasswords.includes(passwordForm.new_password.toLowerCase())) {
+      setPasswordError('Password is too common. Please choose a more secure password.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Check password strength
+    if (passwordStrength < 3) {
+      setPasswordError('Password is too weak. Please include uppercase, lowercase, numbers, and special characters.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/change-password`, passwordForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Password changed successfully');
+      setPasswordSuccess('Password changed successfully');
       setPasswordForm({
         current_password: '',
         new_password: '',
         new_password_confirmation: ''
       });
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to change password');
+      const errorMessage = error.response?.data?.message || 'Failed to change password';
+      if (errorMessage.includes('current password') || errorMessage.includes('Current password')) {
+        setPasswordError('Current password is incorrect');
+      } else if (errorMessage.includes('validation') || errorMessage.includes('Validation')) {
+        setPasswordError('Please check your password requirements');
+      } else {
+        setPasswordError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +122,91 @@ function AdminLayout({ children }) {
       ...prev,
       [name]: value
     }));
+
+    // Check password strength when new password changes
+    if (name === 'new_password') {
+      checkPasswordStrength(value);
+    }
+  };
+
+  // Common passwords list
+  const commonPasswords = [
+    'password', '123456', '123456789', 'qwerty', 'abc123', 'password123',
+    'admin', 'letmein', 'welcome', 'monkey', '1234567890', 'dragon',
+    'master', 'hello', 'freedom', 'whatever', 'qazwsx', 'trustno1',
+    'jordan23', 'harley', 'password1', '1234', 'robert', 'matthew',
+    'jordan', 'asshole', 'daniel', 'andrew', 'joshua', 'michael',
+    'charlie', 'michelle', 'jessica', 'pepper', '12345', 'mickey',
+    'secret', 'dallas', 'jennifer', 'josh', 'amanda', 'summer',
+    'love', 'ashley', 'nicole', 'chelsea', 'biteme', 'matthew',
+    'access', 'yankees', '987654321', 'dallas', 'austin', 'thunder',
+    'taylor', 'matrix', 'william', 'corvette', 'hello', 'martin',
+    'heather', 'secret', 'fucker', 'merlin', 'diamond', '1234qwer',
+    'gfhjkm', 'hammer', 'silver', '222222', 'bigdick', '888888',
+    'anthony', 'justin', 'test', 'bailey', 'q1w2e3r4t5', 'patrick',
+    'internet', 'scooter', 'orange', '11111', 'q1w2e3r4', 'merlin',
+    'jordan23', 'harley', 'password1', '1234', 'robert', 'matthew'
+  ];
+
+  const checkPasswordStrength = (password) => {
+    let strength = 0;
+    const suggestions = [];
+
+    // Length check
+    if (password.length >= 8) {
+      strength += 1;
+    } else {
+      suggestions.push('Use at least 8 characters');
+    }
+
+    // Uppercase check
+    if (/[A-Z]/.test(password)) {
+      strength += 1;
+    } else {
+      suggestions.push('Include uppercase letters');
+    }
+
+    // Lowercase check
+    if (/[a-z]/.test(password)) {
+      strength += 1;
+    } else {
+      suggestions.push('Include lowercase letters');
+    }
+
+    // Number check
+    if (/\d/.test(password)) {
+      strength += 1;
+    } else {
+      suggestions.push('Include numbers');
+    }
+
+    // Special character check
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      strength += 1;
+    } else {
+      suggestions.push('Include special characters (!@#$%^&*)');
+    }
+
+    // Common password check
+    if (commonPasswords.includes(password.toLowerCase())) {
+      suggestions.push('Avoid common passwords');
+      strength = Math.max(0, strength - 2); // Penalize for common passwords
+    }
+
+    // Sequential characters check
+    if (/(.)\1{2,}/.test(password)) {
+      suggestions.push('Avoid repeating characters');
+      strength = Math.max(0, strength - 1);
+    }
+
+    // Sequential numbers check
+    if (/123|234|345|456|567|678|789|890|012/.test(password)) {
+      suggestions.push('Avoid sequential numbers');
+      strength = Math.max(0, strength - 1);
+    }
+
+    setPasswordStrength(strength);
+    setPasswordSuggestions(suggestions);
   };
 
   const handleProfileFormChange = (e) => {
@@ -89,29 +223,35 @@ function AdminLayout({ children }) {
       // Validate file type
       const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
       if (!validTypes.includes(file.type)) {
-        setError('Please upload a valid image file (JPEG, PNG, JPG, or GIF)');
+        setProfileError('Please upload a valid image file (JPEG, PNG, JPG, or GIF)');
         return;
       }
       // Validate file size (2MB)
       if (file.size > 2 * 1024 * 1024) {
-        setError('File size should not exceed 2MB');
+        setProfileError('File size should not exceed 2MB');
         return;
       }
       setNewProfileImage(file);
-      setError('');
+      setProfileError('');
       
       // Show preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
+        console.log('Image preview set:', reader.result.substring(0, 50) + '...');
       };
       reader.readAsDataURL(file);
+    } else {
+      // Clear preview if no file selected
+      setImagePreview(null);
+      setNewProfileImage(null);
     }
   };
 
   const handleProfileUpdate = async () => {
     if (newProfileImage) {
       setIsLoading(true);
+      setProfileError('');
       try {
         const formData = new FormData();
         formData.append('profile_picture', newProfileImage);
@@ -124,15 +264,24 @@ function AdminLayout({ children }) {
           }
         });
         
-        setSuccess('Profile picture updated successfully');
-        setNewProfileImage(null);
-        // Update the profile image in the UI
+        setProfileSuccess('Profile picture updated successfully');
+        
+        console.log('Profile update response:', response.data);
+        console.log('Current imagePreview:', imagePreview ? 'exists' : 'null');
+        
+        // Update the profile image with the server response URL
         if (response.data.profile_picture_url) {
           setProfileImage(response.data.profile_picture_url);
+          console.log('Updated profileImage with server URL:', response.data.profile_picture_url);
+        } else if (imagePreview) {
+          // Fallback to preview if no server URL
+          setProfileImage(imagePreview);
+          console.log('Updated profileImage with preview');
         }
+        setNewProfileImage(null);
         setImagePreview(null); // Clear preview
       } catch (error) {
-        setError(error.response?.data?.message || 'Failed to update profile picture');
+        setProfileError(error.response?.data?.message || 'Failed to update profile picture');
       } finally {
         setIsLoading(false);
       }
@@ -142,21 +291,21 @@ function AdminLayout({ children }) {
   const handleProfileInfoUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setProfileError('');
+    setProfileSuccess('');
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/profile/update`, profileForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Email address updated successfully');
-      // Refresh profile data to update UI
+      setProfileSuccess('Profile information updated successfully');
+      // Refresh profile data to update UI and sidebar name
       await fetchProfile();
       // Force a re-render by updating the profile data
       setProfileForm(prev => ({ ...prev }));
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to update email address');
+      setProfileError(error.response?.data?.message || 'Failed to update profile information');
     } finally {
       setIsLoading(false);
     }
@@ -217,11 +366,12 @@ function AdminLayout({ children }) {
       
       // Update profile form with current data
       setProfileForm({
+        name: response.data.name || 'Mark Carlo Garcia',
         email: response.data.email || ''
       });
       
-      // Update user display name for sidebar (fixed for head admin)
-      setUserDisplayName('Head Admin');
+      // Update user display name for sidebar with actual user name
+      setUserDisplayName(response.data.name || 'Head Admin');
       
       // Update profile image
       if (response.data.profile_picture_url) {
@@ -351,9 +501,15 @@ function AdminLayout({ children }) {
                 className="edit-profile"
                 onClick={() => {
                   setShowProfileModal(true);
+                  setActiveTab('profile'); // Reset to profile tab when opening modal
                   setImagePreview(null);
-                  setError('');
-                  setSuccess('');
+                  setNewProfileImage(null);
+                  setProfileError('');
+                  setProfileSuccess('');
+                  setPasswordError('');
+                  setPasswordSuccess('');
+                  // Only fetch profile if we don't have a recent image update
+                  // This prevents overriding a recently updated profile image
                   fetchProfile(); // Refresh profile data when opening modal
                 }}
                 style={{
@@ -519,6 +675,87 @@ function AdminLayout({ children }) {
             }}>Update your profile information and picture</p>
           </div>
 
+          {/* Tab Navigation */}
+          <div style={{
+            display: 'flex',
+            background: '#f8f9fa',
+            borderBottom: '1px solid #dee2e6',
+            padding: '0'
+          }}>
+            <button
+              onClick={() => setActiveTab('profile')}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: window.innerWidth <= 480 ? '15px 10px' : '20px 15px',
+                background: activeTab === 'profile' ? 'white' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                fontWeight: '600',
+                color: activeTab === 'profile' ? '#A11C22' : '#666',
+                borderBottom: activeTab === 'profile' ? '3px solid #A11C22' : '3px solid transparent',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: activeTab === 'profile' ? '#A11C22' : '#6c757d',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                1
+              </div>
+              <FontAwesomeIcon icon={faUser} />
+              <span>Profile</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('password')}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: window.innerWidth <= 480 ? '15px 10px' : '20px 15px',
+                background: activeTab === 'password' ? 'white' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                fontWeight: '600',
+                color: activeTab === 'password' ? '#A11C22' : '#666',
+                borderBottom: activeTab === 'password' ? '3px solid #A11C22' : '3px solid transparent',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                background: activeTab === 'password' ? '#A11C22' : '#6c757d',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                2
+              </div>
+              <FontAwesomeIcon icon={faLock} />
+              <span>Password</span>
+            </button>
+          </div>
+
           {/* Content */}
           <div style={{ 
             padding: window.innerWidth <= 480 ? '20px' : '30px', 
@@ -526,8 +763,8 @@ function AdminLayout({ children }) {
             flex: 1,
             maxHeight: 'calc(90vh - 120px)'
           }}>
-            {/* Error and Success Messages */}
-            {error && !error.includes('password') && (
+            {/* Profile Tab Error and Success Messages */}
+            {activeTab === 'profile' && profileError && (
               <div style={{
                 background: '#ffebee',
                 color: '#c62828',
@@ -537,10 +774,10 @@ function AdminLayout({ children }) {
                 border: '1px solid #ffcdd2',
                 fontSize: window.innerWidth <= 480 ? '12px' : '14px'
               }}>
-                {error}
+                {profileError}
               </div>
             )}
-            {success && (
+            {activeTab === 'profile' && profileSuccess && (
               <div style={{
                 background: '#e8f5e8',
                 color: '#2e7d32',
@@ -550,79 +787,212 @@ function AdminLayout({ children }) {
                 border: '1px solid #c8e6c9',
                 fontSize: window.innerWidth <= 480 ? '12px' : '14px'
               }}>
-                {success}
+                {profileSuccess}
               </div>
             )}
 
-            {/* Profile Picture Section */}
-            <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>
-              <h3 style={{ 
-                margin: '0 0 15px 0', 
-                fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
-                fontWeight: '600',
-                color: '#333',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
-                Admin Profile 
-              </h3>
-              
+            {/* Password Tab Error and Success Messages */}
+            {activeTab === 'password' && passwordError && (
               <div style={{
-                display: 'flex',
-                flexDirection: window.innerWidth <= 480 ? 'column' : 'row',
-                alignItems: window.innerWidth <= 480 ? 'center' : 'center',
-                gap: window.innerWidth <= 480 ? '15px' : '20px',
-                padding: window.innerWidth <= 480 ? '15px' : '20px',
-                background: '#f8f9fa',
-                borderRadius: '12px',
-                border: '2px dashed #dee2e6'
+                background: '#ffebee',
+                color: '#c62828',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #ffcdd2',
+                fontSize: window.innerWidth <= 480 ? '12px' : '14px'
               }}>
-                <img 
-                  src={imagePreview || profileImage}
-                  alt="Profile Preview" 
-                  style={{
-                    width: window.innerWidth <= 480 ? '80px' : '100px',
-                    height: window.innerWidth <= 480 ? '80px' : '100px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '3px solid #fff',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                  }}
-                />
-                
-                <div style={{ 
-                  flex: 1,
-                  width: window.innerWidth <= 480 ? '100%' : 'auto',
-                  textAlign: window.innerWidth <= 480 ? 'center' : 'left'
-                }}>
-                  <input 
-                    type="file" 
-                    accept="image/jpeg,image/png,image/jpg,image/gif"
-                    onChange={handleProfileImageChange}
-                    style={{ 
-                      marginBottom: '10px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      width: window.innerWidth <= 480 ? '100%' : 'auto'
-                    }}
-                  />
-                  <div style={{ 
-                    fontSize: window.innerWidth <= 480 ? '10px' : '12px', 
-                    color: '#666', 
-                    marginBottom: '15px' 
+                {passwordError}
+              </div>
+            )}
+            {activeTab === 'password' && passwordSuccess && (
+              <div style={{
+                background: '#e8f5e8',
+                color: '#2e7d32',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                border: '1px solid #c8e6c9',
+                fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+              }}>
+                {passwordSuccess}
+              </div>
+            )}
+
+            {/* Profile Tab Content */}
+            {activeTab === 'profile' && (
+              <>
+                {/* Profile Picture Section */}
+                <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>
+                  <h3 style={{ 
+                    margin: '0 0 15px 0', 
+                    fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
+                    fontWeight: '600',
+                    color: '#333',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
-                    Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)
+                    <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
+                    Admin Profile Picture
+                  </h3>
+                  
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: window.innerWidth <= 480 ? 'column' : 'row',
+                    alignItems: window.innerWidth <= 480 ? 'center' : 'center',
+                    gap: window.innerWidth <= 480 ? '15px' : '20px',
+                    padding: window.innerWidth <= 480 ? '15px' : '20px',
+                    background: '#f8f9fa',
+                    borderRadius: '12px',
+                    border: '2px dashed #dee2e6'
+                  }}>
+                    <img 
+                      src={imagePreview || profileImage}
+                      alt="Profile Preview" 
+                      style={{
+                        width: window.innerWidth <= 480 ? '80px' : '100px',
+                        height: window.innerWidth <= 480 ? '80px' : '100px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '3px solid #fff',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                      }}
+                      onError={(e) => {
+                        e.target.src = '/Assets/disaster_logo.png';
+                      }}
+                    />
+                    
+                    <div style={{ 
+                      flex: 1,
+                      width: window.innerWidth <= 480 ? '100%' : 'auto',
+                      textAlign: window.innerWidth <= 480 ? 'center' : 'left'
+                    }}>
+                      <input 
+                        type="file" 
+                        accept="image/jpeg,image/png,image/jpg,image/gif"
+                        onChange={handleProfileImageChange}
+                        style={{ 
+                          marginBottom: '10px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          width: window.innerWidth <= 480 ? '100%' : 'auto'
+                        }}
+                      />
+                      <div style={{ 
+                        fontSize: window.innerWidth <= 480 ? '10px' : '12px', 
+                        color: '#666', 
+                        marginBottom: '15px' 
+                      }}>
+                        Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)
+                      </div>
+                      {newProfileImage && (
+                        <button 
+                          onClick={() => {
+                            console.log('Update button clicked, newProfileImage:', newProfileImage);
+                            console.log('imagePreview exists:', !!imagePreview);
+                            handleProfileUpdate();
+                          }} 
+                          disabled={isLoading}
+                          style={{
+                            background: '#A11C22',
+                            color: 'white',
+                            border: 'none',
+                            padding: window.innerWidth <= 480 ? '8px 16px' : '10px 20px',
+                            borderRadius: '6px',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                            fontWeight: '500',
+                            opacity: isLoading ? 0.6 : 1,
+                            width: window.innerWidth <= 480 ? '100%' : 'auto'
+                          }}
+                        >
+                          {isLoading ? 'Updating...' : 'Update Profile Picture'}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {newProfileImage && (
+                </div>
+
+                {/* Profile Information Section */}
+                <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>
+                  <h3 style={{ 
+                    margin: '0 0 15px 0', 
+                    fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
+                    fontWeight: '600',
+                    color: '#333',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
+                    Profile Information
+                  </h3>
+                  
+                  <form onSubmit={handleProfileInfoUpdate}>
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '5px',
+                        fontWeight: '500',
+                        color: '#333',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                      }}>
+                        <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={profileForm.name}
+                        onChange={handleProfileFormChange}
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '5px',
+                        fontWeight: '500',
+                        color: '#333',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                      }}>
+                        <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: '8px', color: '#666' }} />
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={profileForm.email}
+                        onChange={handleProfileFormChange}
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                      />
+                    </div>
+
                     <button 
-                      onClick={handleProfileUpdate} 
+                      type="submit" 
                       disabled={isLoading}
                       style={{
                         background: '#A11C22',
                         color: 'white',
                         border: 'none',
-                        padding: window.innerWidth <= 480 ? '8px 16px' : '10px 20px',
+                        padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
                         borderRadius: '6px',
                         cursor: isLoading ? 'not-allowed' : 'pointer',
                         fontSize: window.innerWidth <= 480 ? '12px' : '14px',
@@ -631,202 +1001,284 @@ function AdminLayout({ children }) {
                         width: window.innerWidth <= 480 ? '100%' : 'auto'
                       }}
                     >
-                      {isLoading ? 'Updating...' : 'Update Profile Picture'}
+                      {isLoading ? 'Updating...' : 'Update Profile Information'}
                     </button>
-                  )}
+                  </form>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
 
-            {/* Profile Information Section */}
-            <div style={{ marginBottom: window.innerWidth <= 480 ? '20px' : '30px' }}>
-            
-              <form onSubmit={handleProfileInfoUpdate}>
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: '8px', color: '#666' }} />
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={profileForm.email}
-                    onChange={handleProfileFormChange}
-                    style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
-                    }}
-                    required
-                  />
-                </div>
-
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  style={{
-                    background: '#A11C22',
-                    color: 'white',
-                    border: 'none',
-                    padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
-                    borderRadius: '6px',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                    fontWeight: '500',
-                    opacity: isLoading ? 0.6 : 1,
-                    marginRight: '10px',
-                    width: window.innerWidth <= 480 ? '100%' : 'auto'
-                  }}
-                >
-                  {isLoading ? 'Updating...' : 'Update Email Address'}
-                </button>
-              </form>
-            </div>
-
-            {/* Change Password Section */}
-            <div>
-              <h3 style={{ 
-                margin: '0 0 15px 0', 
-                fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
-                fontWeight: '600',
-                color: '#333',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <FontAwesomeIcon icon={faUser} style={{ color: '#A11C22' }} />
-                Change Password
-              </h3>
-              
-              <form onSubmit={handlePasswordChange}>
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    name="current_password"
-                    value={passwordForm.current_password}
-                    onChange={handlePasswordFormChange}
-                    style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
-                    }}
-                    required
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '15px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    name="new_password"
-                    value={passwordForm.new_password}
-                    onChange={handlePasswordFormChange}
-                    style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
-                    }}
-                    required
-                    minLength="8"
-                  />
-                </div>
-                
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontWeight: '500',
-                    color: '#333',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px'
-                  }}>
-                    Confirm New Password
-                  </label>
-                  <input
-                    type="password"
-                    name="new_password_confirmation"
-                    value={passwordForm.new_password_confirmation}
-                    onChange={handlePasswordFormChange}
-                    style={{
-                      width: '100%',
-                      padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                      boxSizing: 'border-box'
-                    }}
-                    required
-                    minLength="8"
-                  />
-                </div>
-                
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  style={{
-                    background: '#A11C22',
-                    color: 'white',
-                    border: 'none',
-                    padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
-                    borderRadius: '6px',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                    fontWeight: '500',
-                    opacity: isLoading ? 0.6 : 1,
-                    marginRight: '10px',
-                    width: window.innerWidth <= 480 ? '100%' : 'auto'
-                  }}
-                >
-                  {isLoading ? 'Changing...' : 'Change Password'}
-                </button>
-              </form>
-              
-              {/* Password Error Message - moved below password fields */}
-              {error && error.includes('password') && (
-                <div style={{
-                  background: '#ffebee',
-                  color: '#c62828',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  marginTop: '15px',
-                  border: '1px solid #ffcdd2',
-                  fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+            {/* Password Tab Content */}
+            {activeTab === 'password' && (
+              <div>
+                <h3 style={{ 
+                  margin: '0 0 15px 0', 
+                  fontSize: window.innerWidth <= 480 ? '16px' : '18px', 
+                  fontWeight: '600',
+                  color: '#333',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  {error}
-                </div>
-              )}
-            </div>
+                  <FontAwesomeIcon icon={faLock} style={{ color: '#A11C22' }} />
+                  Change Password
+                </h3>
+                
+                <form onSubmit={handlePasswordChange}>
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '5px',
+                      fontWeight: '500',
+                      color: '#333',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                    }}>
+                      Current Password
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        name="current_password"
+                        value={passwordForm.current_password}
+                        onChange={handlePasswordFormChange}
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 45px 10px 12px' : '12px 50px 12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#666',
+                          padding: '5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <FontAwesomeIcon icon={showCurrentPassword ? faEyeSlash : faEye} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: '15px' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '5px',
+                      fontWeight: '500',
+                      color: '#333',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                    }}>
+                      New Password
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        name="new_password"
+                        value={passwordForm.new_password}
+                        onChange={handlePasswordFormChange}
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 45px 10px 12px' : '12px 50px 12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                        minLength="8"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#666',
+                          padding: '5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <FontAwesomeIcon icon={showNewPassword ? faEyeSlash : faEye} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Password Strength Indicator */}
+                  {passwordForm.new_password && (
+                    <div style={{ marginBottom: '15px' }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: '8px'
+                      }}>
+                        <span style={{
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          fontWeight: '500',
+                          color: '#333',
+                          marginRight: '10px'
+                        }}>
+                          Password Strength:
+                        </span>
+                        <div style={{
+                          display: 'flex',
+                          gap: '4px'
+                        }}>
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <div
+                              key={level}
+                              style={{
+                                width: '20px',
+                                height: '4px',
+                                borderRadius: '2px',
+                                backgroundColor: level <= passwordStrength 
+                                  ? passwordStrength <= 2 
+                                    ? '#ff4444' 
+                                    : passwordStrength <= 3 
+                                      ? '#ffaa00' 
+                                      : '#00aa00'
+                                  : '#e0e0e0'
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <span style={{
+                          marginLeft: '8px',
+                          fontSize: window.innerWidth <= 480 ? '11px' : '12px',
+                          fontWeight: '600',
+                          color: passwordStrength <= 2 
+                            ? '#ff4444' 
+                            : passwordStrength <= 3 
+                              ? '#ffaa00' 
+                              : '#00aa00'
+                        }}>
+                          {passwordStrength <= 2 ? 'Weak' : passwordStrength <= 3 ? 'Medium' : 'Strong'}
+                        </span>
+                      </div>
+
+                      {/* Password Suggestions */}
+                      {passwordSuggestions.length > 0 && (
+                        <div style={{
+                          background: '#fff3cd',
+                          border: '1px solid #ffeaa7',
+                          borderRadius: '6px',
+                          padding: '10px 12px',
+                          marginBottom: '10px'
+                        }}>
+                          <div style={{
+                            fontSize: window.innerWidth <= 480 ? '11px' : '12px',
+                            fontWeight: '600',
+                            color: '#856404',
+                            marginBottom: '5px'
+                          }}>
+                            Suggestions to improve your password:
+                          </div>
+                          <ul style={{
+                            margin: 0,
+                            paddingLeft: '15px',
+                            fontSize: window.innerWidth <= 480 ? '10px' : '11px',
+                            color: '#856404'
+                          }}>
+                            {passwordSuggestions.map((suggestion, index) => (
+                              <li key={index}>{suggestion}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '5px',
+                      fontWeight: '500',
+                      color: '#333',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                    }}>
+                      Confirm New Password
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="new_password_confirmation"
+                        value={passwordForm.new_password_confirmation}
+                        onChange={handlePasswordFormChange}
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 45px 10px 12px' : '12px 50px 12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                        minLength="8"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#666',
+                          padding: '5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <FontAwesomeIcon icon={showConfirmPassword ? faEyeSlash : faEye} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    disabled={isLoading}
+                    style={{
+                      background: '#A11C22',
+                      color: 'white',
+                      border: 'none',
+                      padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
+                      borderRadius: '6px',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                      fontWeight: '500',
+                      opacity: isLoading ? 0.6 : 1,
+                      width: window.innerWidth <= 480 ? '100%' : 'auto'
+                    }}
+                  >
+                    {isLoading ? 'Changing...' : 'Change Password'}
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
 
           {/* Footer */}

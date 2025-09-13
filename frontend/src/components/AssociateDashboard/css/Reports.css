@@ -1712,11 +1712,12 @@ button[type="button"]:last-child:hover {
 .action-buttons-row {
   display: flex;
   flex-direction: row;
-  gap: 6px; /* Reduced gap for consistency */
+  gap: 6px;
   align-items: center;
-  justify-content: flex-start; /* Keep flex-start to align buttons to the left */
-  width: auto; /* Add width auto for content fitting */
-  min-width: fit-content; /* Ensure it fits content properly */
+  justify-content: flex-start;
+  width: 100%;
+  min-width: fit-content;
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -1772,10 +1773,11 @@ button[type="button"]:last-child:hover {
   background: #dc2626;
   color: white;
   width: auto;
-  min-width: 120px;
-  padding: 0 12px;
+  min-width: 100px;
+  padding: 0 8px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .delete-and-create-btn:hover {
@@ -1787,6 +1789,235 @@ button[type="button"]:last-child:hover {
   margin-left: 6px;
   font-size: 11px;
   white-space: nowrap;
+}
+
+.view-btn {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.view-btn:hover {
+  background: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* View Report Modal Styles */
+.report-view-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.report-view-content {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.report-view-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #a51d1d;
+}
+
+.report-view-section h3 {
+  color: #a51d1d;
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-view-section .detail-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.report-view-section .detail-row:last-child {
+  border-bottom: none;
+}
+
+.report-view-section .detail-row strong {
+  min-width: 150px;
+  color: #374151;
+  font-weight: 600;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.report-view-section .detail-row span {
+  color: #4b5563;
+  flex: 1;
+}
+
+.report-view-section .detail-list {
+  margin: 8px 0;
+  padding-left: 20px;
+  flex: 1;
+}
+
+.report-view-section .detail-list li {
+  margin-bottom: 4px;
+  color: #4b5563;
+}
+
+.report-view-section .detail-textarea {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+  color: #374151;
+  font-size: 14px;
+  flex: 1;
+}
+
+.report-view-section .detail-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  flex: 1;
+}
+
+.report-view-section .detail-image {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  object-fit: cover;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-draft {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.status-sent {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.status-reviewed {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-approved {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-rejected {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
+/* Error Modal Styles */
+.error-modal {
+  max-width: 400px;
+  width: 90vw;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.error-modal-body {
+  padding: 40px 30px;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+}
+
+.error-icon {
+  font-size: 48px;
+  color: #dc2626;
+  margin-bottom: 20px;
+}
+
+.error-modal-body h3 {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.error-modal-body p {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.error-modal-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+.error-modal-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Responsive adjustments for view modal */
+@media (max-width: 768px) {
+  .report-view-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .report-view-section .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .report-view-section .detail-row strong {
+    min-width: auto;
+    margin-bottom: 5px;
+  }
+  
+  .report-view-section .detail-images {
+    justify-content: center;
+  }
+  
+  .report-view-section .detail-image {
+    max-width: 150px;
+    max-height: 120px;
+  }
 }
 
 /* No Data */
@@ -2418,11 +2649,12 @@ button.report-modal-draft-btn:hover {
 .action-buttons-row {
   display: flex;
   flex-direction: row;
-  gap: 6px; /* Reduced gap for consistency */
+  gap: 6px;
   align-items: center;
-  justify-content: flex-start; /* Keep flex-start to align buttons to the left */
-  width: auto; /* Add width auto for content fitting */
-  min-width: fit-content; /* Ensure it fits content properly */
+  justify-content: flex-start;
+  width: 100%;
+  min-width: fit-content;
+  flex-wrap: wrap;
 }
 
 .reports-table th:last-child {
@@ -2444,11 +2676,12 @@ button.report-modal-draft-btn:hover {
 
 .reports-table th.actions-col,
 .reports-table td.actions-col {
-  text-align: center;
-  width: 160px;
-  min-width: 160px;
-  max-width: 160px;
-  padding: 16px 12px;
+  text-align: left;
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  padding: 16px 8px;
+  overflow: visible;
 }
 
 .reports-table th.actions-col {
@@ -2507,10 +2740,12 @@ tr.selected {
 
 .actions-cell {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   height: 100%;
+  padding: 8px;
+  overflow: visible;
 }
 
 @media (max-width: 700px) {

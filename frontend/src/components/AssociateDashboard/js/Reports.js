@@ -2,10 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane, faEye } from '@fortawesome/free-solid-svg-icons';
 import '../css/Reports.css';
 import imageCompression from 'browser-image-compression';
 import '../css/VolunteerList.css'; // Import confirm modal styles
+
+const API_BASE = 'http://localhost:8000';
 
 // Helper function to format dates as "Mon xx, XXXX"
 const formatDate = (dateString) => {
@@ -112,6 +114,10 @@ function Reports() {
   const [rejectionNotification, setRejectionNotification] = useState('');
   const [focusedFields, setFocusedFields] = useState(new Set());
   const [existingPhotoPaths, setExistingPhotoPaths] = useState([]);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingReport, setViewingReport] = useState(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState('');
 
   const steps = [
     'Heading',
@@ -225,7 +231,7 @@ function Reports() {
       
       setReports(res.data);
     } catch (err) {
-      setError('Failed to load reports');
+      showError('Failed to load reports');
     }
     setLoading(false);
   };
@@ -371,7 +377,7 @@ function Reports() {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
-        setError('Authentication token not found. Please log in again.');
+        showError('Authentication token not found. Please log in again.');
         setSubmitting(false);
         return;
       }
@@ -410,7 +416,7 @@ function Reports() {
           }));
           const incompleteSteps = validationResults.filter(result => !result.isComplete).map(result => result.step);
           if (incompleteSteps.length > 0) {
-            setError(`Please complete all required fields in: ${incompleteSteps.join(', ')}`);
+            showError(`Please fill in all required fields in: ${incompleteSteps.join(', ')}`);
             setSubmitting(false);
             return;
           }
@@ -418,7 +424,7 @@ function Reports() {
 
         // Check if FormData is supported
         if (typeof FormData === 'undefined') {
-          setError('FormData is not supported in this browser. Please update your browser.');
+          showError('FormData is not supported in this browser. Please update your browser.');
           setSubmitting(false);
           return;
         }
@@ -434,7 +440,7 @@ function Reports() {
           console.log('FormData.append test successful');
         } catch (error) {
           console.error('FormData.append test failed:', error);
-          setError('FormData.append is not working. Please check browser compatibility.');
+          showError('FormData.append is not working. Please check browser compatibility.');
           setSubmitting(false);
           return;
         }
@@ -490,6 +496,19 @@ function Reports() {
         const description = formData.eventOverview?.trim() || 'No summary provided';
         const status = shouldSubmit ? 'sent' : 'draft';
         
+        // Additional validation for time fields
+        if (shouldSubmit) {
+          if (formData.startTime && formData.endTime) {
+            const startTime = new Date(`2000-01-01 ${formData.startTime}`);
+            const endTime = new Date(`2000-01-01 ${formData.endTime}`);
+            if (startTime >= endTime) {
+              showError('The end time should be after the start time. Please check your time entries.');
+              setSubmitting(false);
+              return;
+            }
+          }
+        }
+
         // Debug: Check if required fields are empty
         if (shouldSubmit) {
           console.log('=== VALIDATION CHECK ===');
@@ -507,7 +526,7 @@ function Reports() {
           console.log('Title appended successfully');
         } catch (error) {
           console.error('Failed to append title:', error);
-          setError('Failed to append title to FormData: ' + error.message);
+          showError('Failed to append title to FormData: ' + error.message);
           setSubmitting(false);
           return;
         }
@@ -518,7 +537,7 @@ function Reports() {
           console.log('Description appended successfully');
         } catch (error) {
           console.error('Failed to append description:', error);
-          setError('Failed to append description to FormData: ' + error.message);
+          showError('Failed to append description to FormData: ' + error.message);
           setSubmitting(false);
           return;
         }
@@ -529,7 +548,7 @@ function Reports() {
           console.log('Status appended successfully');
         } catch (error) {
           console.error('Failed to append status:', error);
-          setError('Failed to append status to FormData: ' + error.message);
+          showError('Failed to append status to FormData: ' + error.message);
           setSubmitting(false);
           return;
         }
@@ -540,7 +559,7 @@ function Reports() {
           console.log('Data appended successfully');
         } catch (error) {
           console.error('Failed to append data:', error);
-          setError('Failed to append data to FormData: ' + error.message);
+          showError('Failed to append data to FormData: ' + error.message);
           setSubmitting(false);
           return;
         }
@@ -684,7 +703,7 @@ function Reports() {
         
         // Show more detailed error message
         const errorMessage = err.response.data?.message || err.response.data?.error || 'Server error: ' + err.response.status;
-        setError(`Failed to create report: ${errorMessage}`);
+        showError(`Failed to create report: ${errorMessage}`);
         
         // Log the request data for debugging
         console.error('Request data that failed:', {
@@ -693,10 +712,10 @@ function Reports() {
         });
       } else if (err.request) {
         console.error('No response received:', err.request);
-        setError('No response from server. Please check your connection.');
+        showError('No response from server. Please check your connection.');
       } else {
         console.error('Error setting up request:', err.message);
-        setError('Error preparing request: ' + err.message);
+        showError('Error preparing request: ' + err.message);
       }
     }
     setSubmitting(false);
@@ -831,7 +850,7 @@ function Reports() {
           });
           fetchReports();
         } catch {
-          setError('Failed to delete report');
+          showError('Failed to delete report');
         }
       }
     });
@@ -849,6 +868,36 @@ function Reports() {
         setFocusedFields(new Set());
       }
     });
+  };
+
+  const handleViewReport = async (reportId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/reports/${reportId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setViewingReport(response.data);
+      setShowViewModal(true);
+    } catch (error) {
+      console.error('Error fetching report:', error);
+      showError('Failed to load report details');
+    }
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setViewingReport(null);
+  };
+
+  const handleCloseErrorModal = () => {
+    setShowErrorModal(false);
+    setErrorModalMessage('');
+  };
+
+  const showError = (message) => {
+    setErrorModalMessage(message);
+    setShowErrorModal(true);
   };
 
   const getStatusColor = (status) => {
@@ -875,7 +924,7 @@ function Reports() {
       } else {
         // Show specific validation error for current step
         const stepName = steps[currentStep];
-        setError(`Please complete all required fields in ${stepName} before proceeding.`);
+        showError(`Please fill in all required fields in ${stepName} before proceeding.`);
       }
     }
   };
@@ -917,7 +966,7 @@ function Reports() {
           setSelectedReports([]);
           fetchReports();
         } catch {
-          setError('Failed to delete some reports');
+          showError('Failed to delete some reports');
         }
       }
     });
@@ -1105,6 +1154,18 @@ function Reports() {
                         </td>
                         <td className="actions-cell actions-col">
                           <div className="action-buttons-row">
+                            {/* View button for all statuses */}
+                            <button
+                              className="action-btn view-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewReport(report.id);
+                              }}
+                              title="View Report"
+                            >
+                              <FontAwesomeIcon icon={faEye} />
+                            </button>
+                            
                             {report.status === 'draft' && (
                               <>
                                 <button
@@ -1141,7 +1202,7 @@ function Reports() {
                             )}
                             {report.status === 'rejected' && (
                               <button
-                                className="action-btn delete-and-create-btn"
+                                className="action-btn delete-btn"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDelete(report.id);
@@ -1149,7 +1210,6 @@ function Reports() {
                                 title="Delete & Create New Report"
                               >
                                 <FontAwesomeIcon icon={faTrash} />
-                                <span className="btn-text">Delete & Create New</span>
                               </button>
                             )}
                             {report.status !== 'draft' && report.status !== 'rejected' && (
@@ -1937,6 +1997,327 @@ function Reports() {
                     </div>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Report Modal */}
+        {showViewModal && viewingReport && (
+          <div className="modal-overlay">
+            <div className="modal-content report-view-modal">
+              <div className="report-modal-header">
+                <h2>View Report</h2>
+                <button 
+                  className="modal-close"
+                  onClick={handleCloseViewModal}
+                >
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+              </div>
+              <div className="report-view-content">
+                <div className="report-view-section">
+                  <h3>Report Information</h3>
+                  <div className="detail-row">
+                    <strong>Title:</strong>
+                    <span>{viewingReport.title}</span>
+                  </div>
+                  <div className="detail-row">
+                    <strong>Status:</strong>
+                    <span className={`status-badge status-${viewingReport.status}`}>
+                      {viewingReport.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <strong>Created:</strong>
+                    <span>{formatDateTime(viewingReport.created_at)}</span>
+                  </div>
+                  {viewingReport.updated_at && (
+                    <div className="detail-row">
+                      <strong>Last Updated:</strong>
+                      <span>{formatDateTime(viewingReport.updated_at)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {viewingReport.data && (
+                  <>
+                    {/* Heading Section */}
+                    <div className="report-view-section">
+                      <h3>I. HEADING</h3>
+                      <div className="detail-row">
+                        <strong>For:</strong>
+                        <span>{viewingReport.data.for || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Position:</strong>
+                        <span>{viewingReport.data.forPosition || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Date:</strong>
+                        <span>{viewingReport.data.date || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Subject:</strong>
+                        <span>{viewingReport.data.subject || 'N/A'}</span>
+                      </div>
+                      {viewingReport.data.authorities && viewingReport.data.authorities.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Authorities:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.authorities.map((auth, index) => (
+                              <li key={index}>{auth}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Event Details Section */}
+                    <div className="report-view-section">
+                      <h3>II. EVENT DETAILS</h3>
+                      <div className="detail-row">
+                        <strong>Date & Time:</strong>
+                        <span>{viewingReport.data.dateTime || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Place:</strong>
+                        <span>{viewingReport.data.place || 'N/A'}</span>
+                      </div>
+                      {viewingReport.data.personnelInvolved && viewingReport.data.personnelInvolved.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Personnel Involved:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.personnelInvolved.map((person, index) => (
+                              <li key={index}>{person}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="detail-row">
+                        <strong>Event Name:</strong>
+                        <span>{viewingReport.data.eventName || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Event Location:</strong>
+                        <span>{viewingReport.data.eventLocation || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Event Date:</strong>
+                        <span>{viewingReport.data.eventDate || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Start Time:</strong>
+                        <span>{viewingReport.data.startTime || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>End Time:</strong>
+                        <span>{viewingReport.data.endTime || 'N/A'}</span>
+                      </div>
+                      {viewingReport.data.organizers && viewingReport.data.organizers.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Organizers:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.organizers.map((org, index) => (
+                              <li key={index}>{org}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Narration of Events I Section */}
+                    <div className="report-view-section">
+                      <h3>III. NARRATION OF EVENTS I</h3>
+                      <div className="detail-row">
+                        <strong>Event Overview:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.eventOverview || 'N/A'}
+                        </div>
+                      </div>
+                      {viewingReport.data.participants && viewingReport.data.participants.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Participants:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.participants.map((participant, index) => (
+                              <li key={index}>
+                                {participant.name} - {participant.position}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="detail-row">
+                        <strong>Training Agenda:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.trainingAgenda || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Narration of Events II Section */}
+                    <div className="report-view-section">
+                      <h3>IV. NARRATION OF EVENTS II</h3>
+                      {viewingReport.data.keyOutcomes && viewingReport.data.keyOutcomes.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Key Outcomes:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.keyOutcomes.map((outcome, index) => (
+                              <li key={index}>{outcome}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {viewingReport.data.challenges && viewingReport.data.challenges.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Challenges:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.challenges.map((challenge, index) => (
+                              <li key={index}>{challenge}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {viewingReport.data.recommendations && viewingReport.data.recommendations.length > 0 && (
+                        <div className="detail-row">
+                          <strong>Recommendations:</strong>
+                          <ul className="detail-list">
+                            {viewingReport.data.recommendations.map((rec, index) => (
+                              <li key={index}>{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="detail-row">
+                        <strong>Conclusion:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.conclusion || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Attachments Section */}
+                    {viewingReport.data.photos && viewingReport.data.photos.length > 0 && (
+                      <div className="report-view-section">
+                        <h3>V. ATTACHMENTS</h3>
+                        <div className="detail-row">
+                          <strong>Photos:</strong>
+                          <div className="detail-images">
+                            {viewingReport.data.photos.map((photo, index) => (
+                              <img
+                                key={index}
+                                src={`http://localhost:8000/storage/${photo}`}
+                                alt={`Report photo ${index + 1}`}
+                                className="detail-image"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Signatories Section */}
+                    <div className="report-view-section">
+                      <h3>VI. SIGNATORIES</h3>
+                      <div className="detail-row">
+                        <strong>Prepared By:</strong>
+                        <span>{viewingReport.data.preparedBy || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Position:</strong>
+                        <span>{viewingReport.data.preparedByPosition || 'N/A'}</span>
+                      </div>
+                      {viewingReport.data.preparedBySignature && (
+                        <div className="detail-row">
+                          <strong>Signature:</strong>
+                          <img
+                            src={`http://localhost:8000/storage/${viewingReport.data.preparedBySignature}`}
+                            alt="Prepared by signature"
+                            className="detail-image"
+                            style={{ maxWidth: '200px', maxHeight: '100px' }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="detail-row">
+                        <strong>Approved By:</strong>
+                        <span>{viewingReport.data.approvedBy || 'N/A'}</span>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Position:</strong>
+                        <span>{viewingReport.data.approvedByPosition || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    {/* Approval Information */}
+                    {viewingReport.approved_at && (
+                      <div className="report-view-section">
+                        <h3>APPROVAL INFORMATION</h3>
+                        <div className="detail-row">
+                          <strong>Approved At:</strong>
+                          <span>{formatDateTime(viewingReport.approved_at)}</span>
+                        </div>
+                        {viewingReport.approved_by && (
+                          <div className="detail-row">
+                            <strong>Approved By:</strong>
+                            <span>Admin</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Rejection Information */}
+                    {viewingReport.rejected_at && (
+                      <div className="report-view-section">
+                        <h3>REJECTION INFORMATION</h3>
+                        <div className="detail-row">
+                          <strong>Rejected At:</strong>
+                          <span>{formatDateTime(viewingReport.rejected_at)}</span>
+                        </div>
+                        {viewingReport.rejected_by && (
+                          <div className="detail-row">
+                            <strong>Rejected By:</strong>
+                            <span>Admin</span>
+                          </div>
+                        )}
+                        {viewingReport.rejection_reason && (
+                          <div className="detail-row">
+                            <strong>Rejection Reason:</strong>
+                            <div className="detail-textarea">
+                              {viewingReport.rejection_reason}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Modal */}
+        {showErrorModal && (
+          <div className="modal-overlay">
+            <div className="modal-content error-modal">
+              <div className="error-modal-body">
+                <div className="error-icon">
+                  <FontAwesomeIcon icon={faXmark} />
+                </div>
+                <h3>Oops! Something went wrong</h3>
+                <p>{errorModalMessage}</p>
+                <button 
+                  className="error-modal-btn"
+                  onClick={handleCloseErrorModal}
+                >
+                  Got it
+                </button>
               </div>
             </div>
           </div>

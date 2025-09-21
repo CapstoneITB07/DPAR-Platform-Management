@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
@@ -31,6 +32,16 @@ class AuthController extends Controller
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Log login activity for associates
+            if ($user->role === 'associate_group_leader') {
+                ActivityLog::logActivity(
+                    $user->id,
+                    'login',
+                    'User logged in successfully',
+                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent()]
+                );
+            }
 
             return response()->json([
                 'user' => [
@@ -154,6 +165,16 @@ class AuthController extends Controller
             // This allows the user to use the same passcode in the change password modal
 
             $token = $user->createToken('auth_token')->plainTextToken;
+
+            // Log login activity for associates
+            if ($user->role === 'associate_group_leader') {
+                ActivityLog::logActivity(
+                    $user->id,
+                    'login',
+                    'User logged in with recovery passcode',
+                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'recovery_passcode']
+                );
+            }
 
             return response()->json([
                 'user' => [

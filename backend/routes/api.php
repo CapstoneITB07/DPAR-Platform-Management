@@ -79,6 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('/certificates', CertificateController::class);
     Route::post('/certificates/bulk', [CertificateController::class, 'storeBulk']);
+    Route::get('/members/active', [MemberController::class, 'getActiveMembers']);
     Route::apiResource('/members', MemberController::class);
     Route::get('/evaluations/statistics', [EvaluationController::class, 'statistics']);
     Route::apiResource('/evaluations', EvaluationController::class);
@@ -86,12 +87,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');
     Route::delete('/associate-groups/{id}/password', [AssociateGroupController::class, 'clearTempPassword'])->middleware('role:head_admin');
     Route::get('/associate-groups/{id}/recovery-passcodes', [AssociateGroupController::class, 'getRecoveryPasscodes'])->middleware('role:head_admin');
+    Route::post('/associate-groups/{id}/cleanup-director-history', [AssociateGroupController::class, 'cleanupDirectorHistory'])->middleware('role:head_admin');
+    Route::post('/associate-groups/cleanup-all-director-history', [AssociateGroupController::class, 'cleanupAllDirectorHistory'])->middleware('role:head_admin');
+    Route::post('/associate-groups/fix-director-fields', [AssociateGroupController::class, 'fixDirectorFields'])->middleware('role:head_admin');
 
     // Director History routes
     Route::get('/associate-groups/{id}/director-history', [DirectorHistoryController::class, 'index']);
     Route::post('/associate-groups/{id}/director-history', [DirectorHistoryController::class, 'store'])->middleware('role:head_admin');
     Route::put('/director-history/{id}', [DirectorHistoryController::class, 'update'])->middleware('role:head_admin');
     Route::delete('/director-history/{id}', [DirectorHistoryController::class, 'destroy'])->middleware('role:head_admin');
+
+    // Director Achievement routes
+    Route::get('/director-history/{id}/achievements', [DirectorHistoryController::class, 'getAchievements']);
+    Route::post('/director-history/{id}/generate-achievements', [DirectorHistoryController::class, 'generateAchievements'])->middleware('role:head_admin');
+    Route::post('/director-history/{id}/end-directorship', [DirectorHistoryController::class, 'endDirectorship'])->middleware('role:head_admin');
 
     // Volunteer routes
     Route::get('/volunteers', [VolunteerController::class, 'index']);

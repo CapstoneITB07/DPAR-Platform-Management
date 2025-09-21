@@ -120,6 +120,9 @@ function AdminDashboard() {
   const [error, setError] = useState('');
   const [selectedAssociate, setSelectedAssociate] = useState(null);
   const [associatesPerformance, setAssociatesPerformance] = useState([]);
+  const [activeMembers, setActiveMembers] = useState([]);
+  const [activeMembersStats, setActiveMembersStats] = useState({ total_associates: 0, active_associates: 0 });
+  const [activityPeriod, setActivityPeriod] = useState('day');
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [groupPerformance, setGroupPerformance] = useState({});
   const [evaluations, setEvaluations] = useState([]);
@@ -145,6 +148,55 @@ function AdminDashboard() {
   const [preserveCalendarEvents, setPreserveCalendarEvents] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState([]);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
+
+  const fetchActiveMembers = useCallback(async (period = 'day') => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+      
+      const response = await axios.get(`http://localhost:8000/api/members/active?period=${period}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && response.data.members && response.data.statistics) {
+        setActiveMembers(response.data.members);
+        setActiveMembersStats(response.data.statistics);
+      } else {
+        console.error('Invalid response format:', response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching active members:', err);
+      if (err.response) {
+        console.error('Error response:', err.response.data);
+        console.error('Error status:', err.response.status);
+      }
+    }
+  }, []);
+
+  const formatTimeSince = (dateString) => {
+    if (!dateString) return 'Never';
+    
+    const now = new Date();
+    const activityDate = new Date(dateString);
+    const diffInMinutes = Math.floor((now - activityDate) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
+    
+    const diffInMonths = Math.floor(diffInDays / 30);
+    return `${diffInMonths}mo ago`;
+  };
 
   const processAssociatePerformance = (evaluations, members) => {
     const performanceByGroup = {};
@@ -628,6 +680,13 @@ function AdminDashboard() {
     fetchDashboardData();
     fetchCalendarEventsOnly();
   }, [fetchDashboardData]);
+
+  // Fetch active members after initial data is loaded
+  useEffect(() => {
+    if (!loading) {
+      fetchActiveMembers(activityPeriod);
+    }
+  }, [loading, fetchActiveMembers, activityPeriod]);
 
   // Separate function to fetch calendar events without interfering with live polling
   const fetchCalendarEventsOnly = async () => {
@@ -1239,48 +1298,68 @@ function AdminDashboard() {
             </div>
              {/* Members Overview */}
             <div className="dashboard-section members-overview">
-              <h3><FontAwesomeIcon icon={faUsers} /> Members Overview</h3>
+              <div className="members-overview-header">
+                <h3><FontAwesomeIcon icon={faUsers} /> Active Members</h3>
+                <div className="period-selector">
+                  <select 
+                    value={activityPeriod} 
+                    onChange={(e) => {
+                      setActivityPeriod(e.target.value);
+                      fetchActiveMembers(e.target.value);
+                    }}
+                    className="period-select"
+                  >
+                    <option value="day">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                  </select>
+                </div>
+              </div>
               <div className="members-stats">
                 <div className="stat-card">
                   <h4>Total Associates</h4>
-                  <div className="stat-value">{associatesPerformance.length}</div>
+                  <div className="stat-value">{activeMembersStats.total_associates || 0}</div>
                 </div>
                 <div className="stat-card">
-                  <h4>Evaluated Associates</h4>
-                  <div className="stat-value">
-                    {associatesPerformance.filter(a => a.evaluations.length > 0).length}
-                  </div>
+                  <h4>Active Associates</h4>
+                  <div className="stat-value">{activeMembersStats.active_associates || 0}</div>
                 </div>
               </div>
-              <div className="members-list">
-                {associatesPerformance.slice(0, 5).map(associate => (
-                  <div key={associate.id} className="member-item">
+                <div className="members-list">
+                  {activeMembers && activeMembers.length > 0 ? activeMembers
+                    .filter(member => member.is_active)
+                    .map(member => (
+                  <div key={member.id} className="member-item">
                     <div className="member-info">
                       <img 
-                        src={getLogoUrl(associate.logo)}
-                        alt={associate.name} 
+                        src={getLogoUrl(member.logo)}
+                        alt={member.name} 
                         className="member-avatar"
                         onError={(e) => {
                           e.target.src = `${window.location.origin}/Assets/disaster_logo.png`;
                         }}
                       />
                       <div className="member-details">
-                        <span className="member-name">{associate.name}</span>
-                        <span className="member-org">{associate.organization}</span>
+                        <span className="member-name">{member.name}</span>
+                        <span className="member-org">{member.organization}</span>
                       </div>
                     </div>
                     <div className="member-stats">
-                      <div className="member-score" style={{ color: getPerformanceColor(associate.totalScore) }}>
-                        {associate.totalScore}
+                      <div className="activity-status active">
+                        Active
                       </div>
-                      {associate.lastEvaluationDate && (
-                        <div className="last-evaluation">
-                          Last: {format(associate.lastEvaluationDate, 'MMM dd')}
+                      {member.last_activity && (
+                        <div className="last-activity">
+                          {formatTimeSince(member.last_activity)}
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="no-members">
+                    <p>No active members found for the selected period.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

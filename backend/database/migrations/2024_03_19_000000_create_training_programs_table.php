@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('location');
             $table->text('description');
             $table->string('image_path')->nullable();
+            $table->json('photos')->nullable();
             $table->timestamps();
         });
     }

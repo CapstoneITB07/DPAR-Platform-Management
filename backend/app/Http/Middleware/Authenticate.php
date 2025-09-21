@@ -16,9 +16,9 @@ class Authenticate extends Middleware
         if ($request->expectsJson()) {
             return null;
         }
-        
-        // For web requests, redirect to login (though we don't have web routes)
-        return route('login');
+
+        // For web requests, redirect to login page
+        return '/login';
     }
 
     /**
@@ -32,4 +32,4 @@ class Authenticate extends Middleware
 
         parent::unauthenticated($request, $guards);
     }
-} 
+}

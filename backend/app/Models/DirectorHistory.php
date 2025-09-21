@@ -2,21 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\ActivityLog;
 
 class DirectorHistory extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'associate_group_id',
         'director_name',
         'director_email',
         'contributions',
         'volunteers_recruited',
-        'events_organized',
+        'reports_submitted',
+        'notifications_responded',
+        'logins',
         'start_date',
         'end_date',
-        'reason_for_leaving',
         'is_current'
     ];
 
@@ -25,11 +31,13 @@ class DirectorHistory extends Model
         'end_date' => 'date',
         'is_current' => 'boolean',
         'volunteers_recruited' => 'integer',
-        'events_organized' => 'integer'
+        'reports_submitted' => 'integer',
+        'notifications_responded' => 'integer',
+        'logins' => 'integer'
     ];
 
     /**
-     * Get the associate group that this director history belongs to
+     * Get the associate group that owns the director history
      */
     public function associateGroup(): BelongsTo
     {
@@ -37,18 +45,124 @@ class DirectorHistory extends Model
     }
 
     /**
-     * Scope to get only current directors
+     * Get the user associated with this director (if any)
      */
-    public function scopeCurrent($query)
+    public function user(): BelongsTo
     {
-        return $query->where('is_current', true);
+        return $this->belongsTo(User::class, 'director_email', 'email');
     }
 
     /**
-     * Scope to get only former directors
+     * Get the activity logs for this director
      */
-    public function scopeFormer($query)
+    public function activityLogs()
     {
-        return $query->where('is_current', false);
+        if (!$this->user) {
+            return collect(); // Return empty collection if no user
+        }
+
+        return ActivityLog::where('user_id', $this->user->id)->get();
+    }
+
+    /**
+     * Get the achievements for this director
+     */
+    public function achievements(): HasMany
+    {
+        return $this->hasMany(DirectorAchievement::class);
+    }
+
+    /**
+     * Get the reports created by this director
+     */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Get the notifications created by this director
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Get the volunteers recruited by this director
+     */
+    public function recruitedVolunteers(): HasMany
+    {
+        return $this->hasMany(Volunteer::class, 'recruited_by_director_id');
+    }
+
+    /**
+     * Get director activity summary
+     */
+    public function getActivitySummary()
+    {
+        $user = $this->user;
+        if (!$user) {
+            return [
+                'total_activities' => 0,
+                'last_activity' => null,
+                'notifications_created' => 0,
+                'reports_submitted' => 0,
+                'volunteers_recruited' => $this->volunteers_recruited,
+                'events_organized' => $this->events_organized,
+                'system_engagement_score' => 0
+            ];
+        }
+
+        $notificationsCount = $this->notifications()->count();
+        $reportsCount = $this->reports()->count();
+        $activitiesCount = $this->activityLogs()->count();
+        $lastActivity = $this->activityLogs()->latest('activity_at')->first();
+
+        // Calculate system engagement score based on various activities
+        $engagementScore = min(
+            100,
+            ($notificationsCount * 10) +
+                ($reportsCount * 15) +
+                ($activitiesCount * 5) +
+                ($this->volunteers_recruited * 20) +
+                ($this->events_organized * 25)
+        );
+
+        return [
+            'total_activities' => $activitiesCount,
+            'last_activity' => $lastActivity ? $lastActivity->activity_at : null,
+            'notifications_created' => $notificationsCount,
+            'reports_submitted' => $reportsCount,
+            'volunteers_recruited' => $this->volunteers_recruited,
+            'events_organized' => $this->events_organized,
+            'system_engagement_score' => $engagementScore
+        ];
+    }
+
+    /**
+     * Get recent activities for this director
+     */
+    public function getRecentActivities($limit = 10)
+    {
+        $user = $this->user;
+        if (!$user) {
+            return collect();
+        }
+
+        return $this->activityLogs()
+            ->with('user')
+            ->orderBy('activity_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'activity_type' => $log->activity_type,
+                    'description' => $log->description,
+                    'activity_at' => $log->activity_at,
+                    'metadata' => $log->metadata
+                ];
+            });
     }
 }

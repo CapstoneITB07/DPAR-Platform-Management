@@ -18,10 +18,12 @@ return new class extends Migration
             $table->string('director_email')->nullable();
             $table->text('contributions')->nullable(); // Description of contributions
             $table->integer('volunteers_recruited')->default(0); // Number of volunteers recruited
+            $table->integer('reports_submitted')->default(0); // Number of reports submitted
+            $table->integer('notifications_responded')->default(0); // Number of notifications responded to
+            $table->integer('logins')->default(0); // Number of system logins
             $table->integer('events_organized')->default(0); // Number of events organized
             $table->date('start_date'); // When they became director
             $table->date('end_date')->nullable(); // When they left (null if current)
-            $table->string('reason_for_leaving')->nullable(); // Why they left
             $table->boolean('is_current')->default(false); // Whether they are the current director
             $table->timestamps();
         });

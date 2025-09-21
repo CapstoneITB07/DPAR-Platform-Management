@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Volunteer;
 use App\Models\AssociateGroup;
+use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,6 +38,25 @@ class VolunteerController extends Controller
         }
 
         $volunteer = $associateGroup->volunteers()->create($request->all());
+
+        // Log activity for volunteer recruitment
+        ActivityLog::logActivity(
+            Auth::id(),
+            'volunteer_recruited',
+            'Recruited a new volunteer: ' . $volunteer->name,
+            [
+                'volunteer_id' => $volunteer->id,
+                'volunteer_name' => $volunteer->name,
+                'volunteer_gender' => $volunteer->gender,
+                'volunteer_expertise' => $volunteer->expertise
+            ]
+        );
+
+        // Update current director's volunteer count
+        DirectorHistory::where('associate_group_id', $associateGroup->id)
+            ->where('is_current', true)
+            ->increment('volunteers_recruited');
+
         return response()->json($volunteer, 201);
     }
 
@@ -66,6 +87,12 @@ class VolunteerController extends Controller
         }
 
         $volunteer->delete();
+
+        // Update current director's volunteer count
+        DirectorHistory::where('associate_group_id', $associateGroup->id)
+            ->where('is_current', true)
+            ->decrement('volunteers_recruited');
+
         return response()->json(null, 204);
     }
 

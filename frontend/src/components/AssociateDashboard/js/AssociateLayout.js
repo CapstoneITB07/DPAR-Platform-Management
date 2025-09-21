@@ -48,6 +48,14 @@ function AssociateLayout({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const userId = Number(localStorage.getItem('userId'));
   const userOrganization = localStorage.getItem('userOrganization');
+  
+  // Director change warning states
+  const [showDirectorWarning, setShowDirectorWarning] = useState(false);
+  const [originalDirectorValues, setOriginalDirectorValues] = useState({
+    director: '',
+    email: ''
+  });
+  const [pendingChanges, setPendingChanges] = useState({});
   const NOTIF_READ_KEY = `associateNotifRead_${userId}`;
   const [notifications, setNotifications] = useState([]);
   const [editProfileHover, setEditProfileHover] = useState(false);
@@ -310,6 +318,23 @@ function AssociateLayout({ children }) {
 
   const handleProfileInfoUpdate = async (e) => {
     e.preventDefault();
+    
+    // Check if director name or email has changed
+    const directorChanged = profileForm.director !== originalDirectorValues.director;
+    const emailChanged = profileForm.email !== originalDirectorValues.email;
+    
+    if (directorChanged || emailChanged) {
+      // Store pending changes and show warning
+      setPendingChanges(profileForm);
+      setShowDirectorWarning(true);
+      return;
+    }
+    
+    // Proceed with normal update if no director changes
+    await performProfileUpdate();
+  };
+
+  const performProfileUpdate = async () => {
     setIsLoading(true);
     setProfileError('');
     setProfileSuccess('');
@@ -331,6 +356,23 @@ function AssociateLayout({ children }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDirectorChangeConfirm = async () => {
+    setShowDirectorWarning(false);
+    setProfileForm(pendingChanges);
+    await performProfileUpdate();
+  };
+
+  const handleDirectorChangeCancel = () => {
+    setShowDirectorWarning(false);
+    setPendingChanges({});
+    // Reset form to original values
+    setProfileForm(prev => ({
+      ...prev,
+      director: originalDirectorValues.director,
+      email: originalDirectorValues.email
+    }));
   };
 
   const fetchProfile = async () => {
@@ -358,6 +400,12 @@ function AssociateLayout({ children }) {
       
       // Update user display name for sidebar
       setUserDisplayName(response.data.name || 'Associate');
+      
+      // Store original director values for change detection
+      setOriginalDirectorValues({
+        director: response.data.director || '',
+        email: response.data.email || ''
+      });
       
       // Update profile image
       if (response.data.profile_picture_url) {
@@ -1408,6 +1456,125 @@ function AssociateLayout({ children }) {
             background: '#f8f9fa',
             borderTop: '1px solid #dee2e6'
           }}>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Director Change Warning Modal */}
+      <Modal
+        isOpen={showDirectorWarning}
+        onRequestClose={handleDirectorChangeCancel}
+        style={{
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          },
+          content: {
+            position: 'relative',
+            background: 'white',
+            borderRadius: '12px',
+            padding: '0',
+            border: 'none',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+          }
+        }}
+      >
+        <div style={{
+          padding: '30px',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            fontSize: '48px',
+            color: '#ffc107',
+            marginBottom: '20px'
+          }}>
+            ⚠️
+          </div>
+          
+          <h3 style={{
+            color: '#333',
+            marginBottom: '15px',
+            fontSize: '20px',
+            fontWeight: '600'
+          }}>
+            Director Change Warning
+          </h3>
+          
+          <p style={{
+            color: '#666',
+            marginBottom: '25px',
+            lineHeight: '1.5',
+            fontSize: '14px'
+          }}>
+            You are about to change the director information. This will create a new director history record 
+            and end the current director's tenure. This action cannot be undone.
+          </p>
+          
+          <div style={{
+            background: '#f8f9fa',
+            padding: '15px',
+            borderRadius: '8px',
+            marginBottom: '25px',
+            textAlign: 'left'
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '14px' }}>Changes to be made:</h4>
+            {pendingChanges.director !== originalDirectorValues.director && (
+              <p style={{ margin: '5px 0', fontSize: '13px', color: '#666' }}>
+                <strong>Director Name:</strong> "{originalDirectorValues.director}" → "{pendingChanges.director}"
+              </p>
+            )}
+            {pendingChanges.email !== originalDirectorValues.email && (
+              <p style={{ margin: '5px 0', fontSize: '13px', color: '#666' }}>
+                <strong>Email Address:</strong> "{originalDirectorValues.email}" → "{pendingChanges.email}"
+              </p>
+            )}
+          </div>
+          
+          <div style={{
+            display: 'flex',
+            gap: '15px',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              onClick={handleDirectorChangeCancel}
+              style={{
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                minWidth: '120px'
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDirectorChangeConfirm}
+              style={{
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                padding: '12px 24px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                minWidth: '120px'
+              }}
+            >
+              Confirm Change
+            </button>
           </div>
         </div>
       </Modal>

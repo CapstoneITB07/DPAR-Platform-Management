@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AssociateGroup;
 use App\Models\User;
+use App\Models\DirectorHistory;
+use App\Models\DirectorAchievement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -52,7 +54,7 @@ class AssociateGroupController extends Controller
     public function show($id)
     {
         try {
-            $group = AssociateGroup::with(['user', 'directorHistories'])->findOrFail($id);
+            $group = AssociateGroup::with(['user', 'directorHistoriesWithActivities'])->findOrFail($id);
             // Add full URL for logos
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
                 $group->logo = Storage::url($group->logo);
@@ -129,7 +131,7 @@ class AssociateGroupController extends Controller
                 'user_id' => $user->id,
                 'name' => $request->name,
                 'type' => $request->type,
-                'director' => $request->director,
+                'director' => $request->director, // Store actual director name, not org name
                 'description' => $request->description,
                 'logo' => $logoPath,
                 'email' => $request->email,
@@ -137,8 +139,24 @@ class AssociateGroupController extends Controller
                 'date_joined' => $request->date_joined,
             ]);
 
+            // Create initial director history record for the first director
+            if ($request->director) {
+                DirectorHistory::create([
+                    'associate_group_id' => $group->id,
+                    'director_name' => $request->director,
+                    'director_email' => $request->email,
+                    'contributions' => 'Initial director - ' . $request->director,
+                    'volunteers_recruited' => 0,
+                    'reports_submitted' => 0,
+                    'notifications_responded' => 0,
+                    'logins' => 0,
+                    'start_date' => $request->date_joined,
+                    'is_current' => true
+                ]);
+            }
+
             // Return the group with the full logo URL for immediate display
-            $group = $group->fresh();
+            $group = $group->fresh(['user', 'directorHistoriesWithActivities']);
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
                 $group->logo = Storage::url($group->logo);
             }
@@ -301,12 +319,31 @@ class AssociateGroupController extends Controller
                 'date_joined' => $request->input('date_joined')
             ];
 
+            // Check if director name or email changed
+            $directorChanged = false;
+            $previousDirector = null;
+            $originalDirectorName = null;
+            $originalDirectorEmail = null;
+
+            // Check if director actually changed by comparing with the stored director field
+            if (
+                $group->user &&
+                ($group->director !== $validatedData['director'] ||
+                    $group->user->email !== $validatedData['email'])
+            ) {
+                $directorChanged = true;
+                $previousDirector = $group->user;
+                // Use the stored director name from associate group, not user name
+                $originalDirectorName = $group->director;
+                $originalDirectorEmail = $group->user->email;
+            }
+
             // Update user account if it exists
             if ($group->user) {
                 $group->user->update([
-                    'name' => $validatedData['name'],
+                    'name' => $validatedData['name'], // User name should be the organization name
                     'email' => $validatedData['email'],
-                    'organization' => $validatedData['name'],
+                    'organization' => $validatedData['name'], // Organization name goes to organization field
                 ]);
             }
 
@@ -343,8 +380,74 @@ class AssociateGroupController extends Controller
 
             $group->update($updateData);
 
+            // If director changed, create director history entry for previous director
+            if ($directorChanged && $previousDirector) {
+                // End current directorship
+                DirectorHistory::where('associate_group_id', $group->id)
+                    ->where('is_current', true)
+                    ->update([
+                        'is_current' => false,
+                        'end_date' => now()->toDateString()
+                    ]);
+
+                // Get activity summary for previous director
+                $activitySummary = $this->getDirectorActivitySummary($previousDirector->id);
+
+                // Use the original director name before the update
+                $previousDirectorName = $originalDirectorName; // This is the actual previous director's name
+
+                // Check if previous director already has a history entry to avoid duplicates
+                $existingHistory = DirectorHistory::where('associate_group_id', $group->id)
+                    ->where('director_name', $previousDirectorName)
+                    ->where('director_email', $originalDirectorEmail)
+                    ->where('is_current', false)
+                    ->first();
+
+                if (!$existingHistory) {
+                    // Create director history entry for previous director
+                    DirectorHistory::create([
+                        'associate_group_id' => $group->id,
+                        'director_name' => $previousDirectorName,
+                        'director_email' => $originalDirectorEmail,
+                        'contributions' => 'Previous director - ' . $activitySummary['contributions_summary'],
+                        'volunteers_recruited' => $activitySummary['volunteers_recruited'],
+                        'reports_submitted' => $activitySummary['reports_submitted'],
+                        'notifications_responded' => $activitySummary['notifications_created'],
+                        'logins' => $activitySummary['total_activities'],
+                        'start_date' => $previousDirector->created_at->toDateString(),
+                        'end_date' => now()->toDateString(),
+                        'is_current' => false
+                    ]);
+                }
+
+                // Generate achievements for previous director
+                $this->generateDirectorAchievements($group->id, $previousDirector->id, $activitySummary);
+
+                // Create director history entry for new director (only if it's a real change)
+                $existingCurrentHistory = DirectorHistory::where('associate_group_id', $group->id)
+                    ->where('director_email', $validatedData['email'])
+                    ->where('is_current', true)
+                    ->first();
+
+                if (!$existingCurrentHistory) {
+                    // Create director history entry for new director
+                    DirectorHistory::create([
+                        'associate_group_id' => $group->id,
+                        'director_name' => $validatedData['director'],
+                        'director_email' => $validatedData['email'],
+                        'contributions' => 'New director - ' . $validatedData['director'],
+                        'volunteers_recruited' => 0,
+                        'reports_submitted' => 0,
+                        'notifications_responded' => 0,
+                        'logins' => 0,
+                        'start_date' => now()->toDateString(),
+                        'is_current' => true
+                    ]);
+                }
+            }
+
             // Refresh the model to get the latest data
-            $group = $group->fresh('user');
+            $group = $group->fresh(['user', 'directorHistoriesWithActivities']);
 
             // Format logo URL for response
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
@@ -456,6 +559,244 @@ class AssociateGroupController extends Controller
         } catch (\Exception $e) {
             Log::error('Error clearing temporary password: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to clear password'], 500);
+        }
+    }
+
+    /**
+     * Get director activity summary
+     */
+    private function getDirectorActivitySummary($userId)
+    {
+        $user = User::find($userId);
+        if (!$user) {
+            return [
+                'contributions_summary' => 'No activity data available',
+                'volunteers_recruited' => 0,
+                'notifications_created' => 0,
+                'reports_submitted' => 0,
+                'total_activities' => 0
+            ];
+        }
+
+        $notificationsCount = $user->notifications()->count();
+        $reportsCount = $user->reports()->count();
+        $activitiesCount = $user->activityLogs()->count();
+        $volunteersCount = $user->volunteers()->count();
+
+        $contributions = [];
+        if ($notificationsCount > 0) $contributions[] = "Created {$notificationsCount} notifications";
+        if ($reportsCount > 0) $contributions[] = "Submitted {$reportsCount} reports";
+        if ($activitiesCount > 0) $contributions[] = "Performed {$activitiesCount} system activities";
+        if ($volunteersCount > 0) $contributions[] = "Recruited {$volunteersCount} volunteers";
+
+        return [
+            'contributions_summary' => empty($contributions) ? 'No significant activities recorded' : implode(', ', $contributions),
+            'volunteers_recruited' => $volunteersCount,
+            'notifications_created' => $notificationsCount,
+            'reports_submitted' => $reportsCount,
+            'total_activities' => $activitiesCount
+        ];
+    }
+
+    /**
+     * Generate achievements for a director
+     */
+    private function generateDirectorAchievements($associateGroupId, $userId, $activitySummary)
+    {
+        $directorHistory = DirectorHistory::where('associate_group_id', $associateGroupId)
+            ->where('director_email', User::find($userId)->email)
+            ->where('is_current', false)
+            ->latest()
+            ->first();
+
+        if (!$directorHistory) return;
+
+        $achievements = [];
+
+        // Generate achievements based on activities
+        if ($activitySummary['notifications_created'] >= 5) {
+            $achievements[] = [
+                'title' => 'Communication Champion',
+                'description' => 'Created ' . $activitySummary['notifications_created'] . ' notifications',
+                'achievement_type' => 'communication',
+                'points_earned' => min(50, $activitySummary['notifications_created'] * 5),
+                'badge_icon' => 'fa-bullhorn',
+                'badge_color' => '#007bff',
+                'is_milestone' => $activitySummary['notifications_created'] >= 20,
+                'achieved_at' => now()
+            ];
+        }
+
+        if ($activitySummary['reports_submitted'] >= 3) {
+            $achievements[] = [
+                'title' => 'Report Master',
+                'description' => 'Submitted ' . $activitySummary['reports_submitted'] . ' reports',
+                'achievement_type' => 'reporting',
+                'points_earned' => min(75, $activitySummary['reports_submitted'] * 10),
+                'badge_icon' => 'fa-file-alt',
+                'badge_color' => '#28a745',
+                'is_milestone' => $activitySummary['reports_submitted'] >= 10,
+                'achieved_at' => now()
+            ];
+        }
+
+        if ($activitySummary['volunteers_recruited'] >= 10) {
+            $achievements[] = [
+                'title' => 'Recruitment Leader',
+                'description' => 'Recruited ' . $activitySummary['volunteers_recruited'] . ' volunteers',
+                'achievement_type' => 'recruitment',
+                'points_earned' => min(100, $activitySummary['volunteers_recruited'] * 5),
+                'badge_icon' => 'fa-users',
+                'badge_color' => '#ffc107',
+                'is_milestone' => $activitySummary['volunteers_recruited'] >= 50,
+                'achieved_at' => now()
+            ];
+        }
+
+
+        // Save achievements
+        foreach ($achievements as $achievement) {
+            DirectorAchievement::create([
+                'director_history_id' => $directorHistory->id,
+                ...$achievement
+            ]);
+        }
+    }
+
+    /**
+     * Clean up incorrect director history entries
+     */
+    public function cleanupDirectorHistory($id)
+    {
+        try {
+            $group = AssociateGroup::findOrFail($id);
+
+            // Get all director histories for this group
+            $histories = DirectorHistory::where('associate_group_id', $id)->get();
+
+            // Find entries where director_name matches the organization name (incorrect)
+            $incorrectEntries = $histories->where('director_name', $group->name);
+
+            $cleanedCount = 0;
+            foreach ($incorrectEntries as $entry) {
+                // Delete entries where director name matches organization name
+                $entry->delete();
+                $cleanedCount++;
+            }
+
+            // Also clean up any duplicate entries for the same director
+            $directorNames = $histories->pluck('director_name')->unique();
+            foreach ($directorNames as $directorName) {
+                if ($directorName !== $group->name) { // Skip org name entries
+                    $duplicates = DirectorHistory::where('associate_group_id', $id)
+                        ->where('director_name', $directorName)
+                        ->where('is_current', false)
+                        ->orderBy('created_at', 'desc')
+                        ->skip(1) // Keep the most recent one
+                        ->get();
+
+                    foreach ($duplicates as $duplicate) {
+                        $duplicate->delete();
+                        $cleanedCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'message' => 'Director history cleaned up successfully',
+                'entries_removed' => $cleanedCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error cleaning up director history: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to clean up director history'], 500);
+        }
+    }
+
+    /**
+     * Clean up all director history entries across all associate groups
+     */
+    public function cleanupAllDirectorHistory()
+    {
+        try {
+            $groups = AssociateGroup::all();
+            $totalCleaned = 0;
+
+            foreach ($groups as $group) {
+                // Get all director histories for this group
+                $histories = DirectorHistory::where('associate_group_id', $group->id)->get();
+
+                // Find entries where director_name matches the organization name (incorrect)
+                $incorrectEntries = $histories->where('director_name', $group->name);
+
+                foreach ($incorrectEntries as $entry) {
+                    $entry->delete();
+                    $totalCleaned++;
+                }
+
+                // Clean up duplicates for each director
+                $directorNames = $histories->pluck('director_name')->unique();
+                foreach ($directorNames as $directorName) {
+                    if ($directorName !== $group->name) {
+                        $duplicates = DirectorHistory::where('associate_group_id', $group->id)
+                            ->where('director_name', $directorName)
+                            ->where('is_current', false)
+                            ->orderBy('created_at', 'desc')
+                            ->skip(1)
+                            ->get();
+
+                        foreach ($duplicates as $duplicate) {
+                            $duplicate->delete();
+                            $totalCleaned++;
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'message' => 'All director history cleaned up successfully',
+                'entries_removed' => $totalCleaned
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error cleaning up all director history: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to clean up all director history'], 500);
+        }
+    }
+
+    /**
+     * Fix director field in associate groups where it contains organization name
+     */
+    public function fixDirectorFields()
+    {
+        try {
+            $groups = AssociateGroup::with('user')->get();
+            $fixedCount = 0;
+
+            foreach ($groups as $group) {
+                // Check if director field contains organization name (incorrect)
+                if ($group->director === $group->name) {
+                    // Try to get the correct director name from the current director history
+                    $currentDirector = DirectorHistory::where('associate_group_id', $group->id)
+                        ->where('is_current', true)
+                        ->first();
+
+                    if ($currentDirector) {
+                        $group->update(['director' => $currentDirector->director_name]);
+                        $fixedCount++;
+                    } else if ($group->user) {
+                        // Fallback to user name if no director history
+                        $group->update(['director' => $group->user->name]);
+                        $fixedCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'message' => 'Director fields fixed successfully',
+                'groups_fixed' => $fixedCount
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fixing director fields: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to fix director fields'], 500);
         }
     }
 }

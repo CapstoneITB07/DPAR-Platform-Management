@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CalendarEvent;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -16,7 +17,7 @@ class CalendarEventController extends Controller
     {
         try {
             $events = CalendarEvent::with('creator')->orderBy('start_date', 'asc')->get();
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $events
@@ -60,6 +61,23 @@ class CalendarEventController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
+            // Log activity for event creation (only for associate group leaders)
+            $user = Auth::user();
+            if ($user && $user->role === 'associate_group_leader') {
+                ActivityLog::logActivity(
+                    $user->id,
+                    'event_created',
+                    'Created a new event: ' . $event->title,
+                    [
+                        'event_id' => $event->id,
+                        'event_title' => $event->title,
+                        'event_location' => $event->location,
+                        'start_date' => $event->start_date,
+                        'end_date' => $event->end_date
+                    ]
+                );
+            }
+
             $event->load('creator');
 
             return response()->json([
@@ -82,7 +100,7 @@ class CalendarEventController extends Controller
     {
         try {
             $calendarEvent->load('creator');
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $calendarEvent
@@ -147,7 +165,7 @@ class CalendarEventController extends Controller
     {
         try {
             $calendarEvent->delete();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Event deleted successfully'
@@ -159,4 +177,4 @@ class CalendarEventController extends Controller
             ], 500);
         }
     }
-} 
+}

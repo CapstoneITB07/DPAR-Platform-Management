@@ -1880,6 +1880,9 @@ button[type="button"]:last-child:hover {
   color: #374151;
   font-size: 14px;
   flex: 1;
+  width: 100%;
+  display: block;
+  min-height: 60px;
 }
 
 .report-view-section .detail-images {
@@ -2266,6 +2269,9 @@ button[type="button"]:last-child:hover {
   line-height: 1.5;
   color: #374151;
   font-size: 14px;
+  width: 100%;
+  display: block;
+  min-height: 60px;
 }
 
 .detail-images {

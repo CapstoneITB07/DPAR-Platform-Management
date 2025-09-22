@@ -2158,36 +2158,30 @@ function Reports() {
                     {/* Narration of Events II Section */}
                     <div className="report-view-section">
                       <h3>IV. NARRATION OF EVENTS II</h3>
-                      {viewingReport.data.keyOutcomes && viewingReport.data.keyOutcomes.length > 0 && (
-                        <div className="detail-row">
-                          <strong>Key Outcomes:</strong>
-                          <ul className="detail-list">
-                            {viewingReport.data.keyOutcomes.map((outcome, index) => (
-                              <li key={index}>{outcome}</li>
-                            ))}
-                          </ul>
+                      <div className="detail-row">
+                        <strong>Key Outcomes:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.keyOutcomes && viewingReport.data.keyOutcomes.length > 0 
+                            ? viewingReport.data.keyOutcomes.join('\n') 
+                            : 'N/A'}
                         </div>
-                      )}
-                      {viewingReport.data.challenges && viewingReport.data.challenges.length > 0 && (
-                        <div className="detail-row">
-                          <strong>Challenges:</strong>
-                          <ul className="detail-list">
-                            {viewingReport.data.challenges.map((challenge, index) => (
-                              <li key={index}>{challenge}</li>
-                            ))}
-                          </ul>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Challenges:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.challenges && viewingReport.data.challenges.length > 0 
+                            ? viewingReport.data.challenges.join('\n') 
+                            : 'N/A'}
                         </div>
-                      )}
-                      {viewingReport.data.recommendations && viewingReport.data.recommendations.length > 0 && (
-                        <div className="detail-row">
-                          <strong>Recommendations:</strong>
-                          <ul className="detail-list">
-                            {viewingReport.data.recommendations.map((rec, index) => (
-                              <li key={index}>{rec}</li>
-                            ))}
-                          </ul>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Recommendations:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.recommendations && viewingReport.data.recommendations.length > 0 
+                            ? viewingReport.data.recommendations.join('\n') 
+                            : 'N/A'}
                         </div>
-                      )}
+                      </div>
                       <div className="detail-row">
                         <strong>Conclusion:</strong>
                         <div className="detail-textarea">

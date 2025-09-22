@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey, faTrophy, faMedal, faStar, faCrown, faHandshake, faFileAlt, faSignInAlt, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
@@ -50,17 +50,6 @@ function AssociateGroups() {
   const [popupError, setPopupError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState('');
-  const [showDirectorManagementModal, setShowDirectorManagementModal] = useState(false);
-  const [showAddDirectorModal, setShowAddDirectorModal] = useState(false);
-  const [newDirectorForm, setNewDirectorForm] = useState({
-    director_name: '',
-    director_email: '',
-    contributions: '',
-    volunteers_recruited: 0,
-    events_organized: 0,
-    start_date: new Date().toISOString().split('T')[0],
-    reason_for_leaving: ''
-  });
 
   const fetchAssociates = async () => {
     try {
@@ -319,6 +308,12 @@ function AssociateGroups() {
         setLogoFile(null);
         setError('');
         fetchAssociates();
+        
+        // Update selectedGroup if it's currently being viewed
+        if (selectedGroup && selectedGroup.id === form.id) {
+          setSelectedGroup(response.data);
+        }
+        
         setTimeout(() => setNotification(''), 2000);
       }
     } catch (error) {
@@ -437,63 +432,6 @@ function AssociateGroups() {
     }
   };
 
-  const handleManageDirectors = async (groupId) => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups/${groupId}/director-history`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Set the director history data and show the director management modal
-      setSelectedGroup({ id: groupId, director_histories: response.data });
-      setShowDirectorManagementModal(true);
-    } catch (error) {
-      console.error('Error fetching director history:', error);
-      setError('Failed to fetch director history data.');
-    }
-  };
-
-  const handleAddNewDirector = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.post(`${API_BASE}/api/associate-groups/${selectedGroup.id}/director-history`, {
-        ...newDirectorForm,
-        is_new_director: true
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Refresh director history
-      const historyResponse = await axios.get(`${API_BASE}/api/associate-groups/${selectedGroup.id}/director-history`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setSelectedGroup(prev => ({ ...prev, director_histories: historyResponse.data }));
-      setShowAddDirectorModal(false);
-      setNewDirectorForm({
-        director_name: '',
-        director_email: '',
-        contributions: '',
-        volunteers_recruited: 0,
-        events_organized: 0,
-        start_date: new Date().toISOString().split('T')[0],
-        reason_for_leaving: ''
-      });
-      
-      setNotification('New director added successfully!');
-      setTimeout(() => setNotification(''), 3000);
-    } catch (error) {
-      console.error('Error adding new director:', error);
-      setError('Failed to add new director. Please try again.');
-    }
-  };
-
-  const handleNewDirectorFormChange = (e) => {
-    const { name, value } = e.target;
-    setNewDirectorForm(prev => ({ ...prev, [name]: value }));
-  };
 
   return (
     <AdminLayout>
@@ -603,7 +541,7 @@ function AssociateGroups() {
                   e.target.src = '/Assets/disaster_logo.png';
                 }}
               />
-              <button onClick={() => setShowModal(false)} className="enhanced-close-icon">&times;</button>
+              <button onClick={() => setShowModal(false)} className="enhanced-close-icon">✕</button>
             </div>
             <h3 className="enhanced-profile-title">{selectedGroup.name}</h3>
             <div className="enhanced-profile-info">
@@ -623,9 +561,9 @@ function AssociateGroups() {
                 <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />
                 Director History
               </h4>
-              {selectedGroup.director_histories && selectedGroup.director_histories.length > 0 ? (
+              {selectedGroup.director_histories_with_activities && selectedGroup.director_histories_with_activities.length > 0 ? (
                 <div className="director-history-list">
-                  {selectedGroup.director_histories.map((history, index) => (
+                  {selectedGroup.director_histories_with_activities.map((history, index) => (
                     <div key={history.id} className={`director-history-item ${history.is_current ? 'current' : 'former'}`}>
                       <div className="director-history-header">
                         <span className="director-name">{history.director_name}</span>
@@ -647,13 +585,93 @@ function AssociateGroups() {
                           <span className="stat-item">
                             <FontAwesomeIcon icon={faUsers} /> {history.volunteers_recruited} Volunteers
                           </span>
-                          <span className="stat-item">
-                            <FontAwesomeIcon icon={faBullhorn} /> {history.events_organized} Events
-                          </span>
                         </div>
-                        {history.reason_for_leaving && !history.is_current && (
-                          <div className="reason-for-leaving">
-                            <strong>Reason for leaving:</strong> {history.reason_for_leaving}
+                        
+                        {/* Director Activity Summary */}
+                        {history.user && (
+                          <div className="director-activity-summary">
+                            <h5 className="activity-summary-title">
+                              <FontAwesomeIcon icon={faChartBar} style={{ marginRight: '8px' }} />
+                              Activity Summary
+                            </h5>
+                            <div className="activity-stats-grid">
+                              <div className="activity-stat">
+                                <FontAwesomeIcon icon={faBell} />
+                                <span className="stat-label">Notifications:</span>
+                                <span className="stat-value">{history.user.notifications_created || 0}</span>
+                              </div>
+                              <div className="activity-stat">
+                                <FontAwesomeIcon icon={faFileAlt} />
+                                <span className="stat-label">Reports:</span>
+                                <span className="stat-value">{history.user.reports_submitted || 0}</span>
+                              </div>
+                              <div className="activity-stat">
+                                <FontAwesomeIcon icon={faSignInAlt} />
+                                <span className="stat-label">System Logins:</span>
+                                <span className="stat-value">{history.user.total_activities || 0}</span>
+                              </div>
+                              <div className="activity-stat">
+                                <FontAwesomeIcon icon={faStar} />
+                                <span className="stat-label">Engagement Score:</span>
+                                <span className="stat-value">{history.user.system_engagement_score || 0}%</span>
+                              </div>
+                            </div>
+                            
+                            {/* Recent Activities */}
+                            {history.activity_logs && history.activity_logs.length > 0 && (
+                              <div className="recent-activities">
+                                <h6 className="recent-activities-title">Recent Activities</h6>
+                                <div className="activities-list">
+                                  {history.activity_logs.slice(0, 5).map((activity, actIndex) => (
+                                    <div key={actIndex} className="activity-item">
+                                      <div className="activity-icon">
+                                        <FontAwesomeIcon icon={
+                                          activity.activity_type === 'login' ? faSignInAlt :
+                                          activity.activity_type === 'notification' ? faBell :
+                                          activity.activity_type === 'report' ? faFileAlt :
+                                          activity.activity_type === 'member' ? faUsers :
+                                          faChartBar
+                                        } />
+                                      </div>
+                                      <div className="activity-content">
+                                        <div className="activity-description">{activity.description}</div>
+                                        <div className="activity-date">
+                                          {new Date(activity.activity_at).toLocaleDateString()} at {new Date(activity.activity_at).toLocaleTimeString()}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Achievements */}
+                            {history.achievements && history.achievements.length > 0 && (
+                              <div className="director-achievements">
+                                <h6 className="achievements-title">
+                                  <FontAwesomeIcon icon={faTrophy} style={{ marginRight: '8px' }} />
+                                  Achievements ({history.achievements.length})
+                                </h6>
+                                <div className="achievements-list">
+                                  {history.achievements.slice(0, 3).map((achievement, achIndex) => (
+                                    <div key={achIndex} className="achievement-item">
+                                      <div className="achievement-badge" style={{ backgroundColor: achievement.badge_color }}>
+                                        <FontAwesomeIcon icon={faTrophy} />
+                                      </div>
+                                      <div className="achievement-details">
+                                        <div className="achievement-title">{achievement.title}</div>
+                                        <div className="achievement-points">{achievement.points_earned} points</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  {history.achievements.length > 3 && (
+                                    <div className="more-achievements">
+                                      +{history.achievements.length - 3} more achievements
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -662,7 +680,14 @@ function AssociateGroups() {
                 </div>
               ) : (
                 <div className="no-director-history">
-                  <p>No director history available.</p>
+                  <div className="no-history-content">
+                    <FontAwesomeIcon icon={faUsers} className="no-history-icon" />
+                    <p className="no-history-message">No director history available</p>
+                    <p className="no-history-submessage">
+                      Director history will appear here once the director starts performing activities 
+                      such as logging in, creating reports, recruiting volunteers, or organizing events.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -963,25 +988,6 @@ function AssociateGroups() {
               </div>
               {error && <div className="error-message">{error}</div>}
               <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="btn-manage-directors"
-                  onClick={() => handleManageDirectors(form.id)}
-                  style={{
-                    background: '#17a2b8',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    marginRight: '10px',
-                    fontSize: '0.9rem',
-                    fontWeight: '500'
-                  }}
-                >
-                  <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />
-                  Manage Director History
-                </button>
                 <button type="submit" className="btn-submit">
                   <FontAwesomeIcon icon={faCheck} /> Save Changes
                 </button>
@@ -1250,206 +1256,6 @@ function AssociateGroups() {
         </Modal>
       )}
 
-      {/* Director Management Modal */}
-      {showDirectorManagementModal && (
-        <Modal
-          isOpen={showDirectorManagementModal}
-          onRequestClose={() => setShowDirectorManagementModal(false)}
-          className="enhanced-error-modal"
-          overlayClassName="enhanced-error-overlay"
-          shouldCloseOnOverlayClick={true}
-        >
-          <div className="enhanced-error-header">
-            <span className="enhanced-error-icon" role="img" aria-label="Directors">👥</span>
-            <h2>Manage Director History</h2>
-            <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowDirectorManagementModal(false)} />
-          </div>
-          <div className="enhanced-error-body">
-            <div className="director-management-content">
-              {selectedGroup.director_histories && selectedGroup.director_histories.length > 0 ? (
-                <div className="director-history-list">
-                  {selectedGroup.director_histories.map((history, index) => (
-                    <div key={history.id} className={`director-history-item ${history.is_current ? 'current' : 'former'}`}>
-                      <div className="director-history-header">
-                        <span className="director-name">{history.director_name}</span>
-                        <span className={`director-status ${history.is_current ? 'current' : 'former'}`}>
-                          {history.is_current ? 'Current Director' : 'Former Director'}
-                        </span>
-                      </div>
-                      <div className="director-history-details">
-                        <div className="director-period">
-                          <strong>Period:</strong> {new Date(history.start_date).toLocaleDateString()} 
-                          {history.end_date && ` - ${new Date(history.end_date).toLocaleDateString()}`}
-                        </div>
-                        {history.contributions && (
-                          <div className="director-contributions">
-                            <strong>Contributions:</strong> {history.contributions}
-                          </div>
-                        )}
-                        <div className="director-stats">
-                          <span className="stat-item">
-                            <FontAwesomeIcon icon={faUsers} /> {history.volunteers_recruited} Volunteers
-                          </span>
-                          <span className="stat-item">
-                            <FontAwesomeIcon icon={faBullhorn} /> {history.events_organized} Events
-                          </span>
-                        </div>
-                        {history.reason_for_leaving && !history.is_current && (
-                          <div className="reason-for-leaving">
-                            <strong>Reason for leaving:</strong> {history.reason_for_leaving}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="no-director-history">
-                  <p>No director history available.</p>
-                </div>
-              )}
-              
-              <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <button 
-                  className="enhanced-error-btn" 
-                  style={{ background: '#17a2b8', marginRight: '10px' }}
-                  onClick={() => setShowAddDirectorModal(true)}
-                >
-                  Add New Director
-                </button>
-                <button className="enhanced-error-btn" onClick={() => setShowDirectorManagementModal(false)}>
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Add New Director Modal */}
-      {showAddDirectorModal && (
-        <Modal
-          isOpen={showAddDirectorModal}
-          onRequestClose={() => setShowAddDirectorModal(false)}
-          className="enhanced-error-modal"
-          overlayClassName="enhanced-error-overlay"
-          shouldCloseOnOverlayClick={true}
-        >
-          <div className="enhanced-error-header">
-            <span className="enhanced-error-icon" role="img" aria-label="Add Director">➕</span>
-            <h2>Add New Director</h2>
-            <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowAddDirectorModal(false)} />
-          </div>
-          <div className="enhanced-error-body">
-            <form onSubmit={handleAddNewDirector} className="add-director-form">
-              <div className="form-group">
-                <label>Director Name *</label>
-                <input
-                  type="text"
-                  name="director_name"
-                  value={newDirectorForm.director_name}
-                  onChange={handleNewDirectorFormChange}
-                  placeholder="Enter director's full name"
-                  required
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Director Email</label>
-                <input
-                  type="email"
-                  name="director_email"
-                  value={newDirectorForm.director_email}
-                  onChange={handleNewDirectorFormChange}
-                  placeholder="Enter director's email"
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Contributions & Works *</label>
-                <textarea
-                  name="contributions"
-                  value={newDirectorForm.contributions}
-                  onChange={handleNewDirectorFormChange}
-                  placeholder="Describe the director's contributions, works, and achievements..."
-                  required
-                  rows="4"
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px', resize: 'vertical' }}
-                />
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Volunteers Recruited</label>
-                  <input
-                    type="number"
-                    name="volunteers_recruited"
-                    value={newDirectorForm.volunteers_recruited}
-                    onChange={handleNewDirectorFormChange}
-                    min="0"
-                    style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Events Organized</label>
-                  <input
-                    type="number"
-                    name="events_organized"
-                    value={newDirectorForm.events_organized}
-                    onChange={handleNewDirectorFormChange}
-                    min="0"
-                    style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label>Start Date *</label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={newDirectorForm.start_date}
-                  onChange={handleNewDirectorFormChange}
-                  required
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Reason for Previous Director Leaving</label>
-                <input
-                  type="text"
-                  name="reason_for_leaving"
-                  value={newDirectorForm.reason_for_leaving}
-                  onChange={handleNewDirectorFormChange}
-                  placeholder="e.g., Passed to new director, Resigned, etc."
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}
-                />
-              </div>
-              
-              <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <button 
-                  type="submit" 
-                  className="enhanced-error-btn" 
-                  style={{ background: '#28a745', marginRight: '10px' }}
-                >
-                  Add Director
-                </button>
-                <button 
-                  type="button" 
-                  className="enhanced-error-btn" 
-                  onClick={() => setShowAddDirectorModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </Modal>
-      )}
     </AdminLayout>
   );
 }

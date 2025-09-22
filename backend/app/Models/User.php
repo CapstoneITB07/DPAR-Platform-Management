@@ -7,6 +7,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Notification;
+use App\Models\Report;
+use App\Models\ActivityLog;
+use App\Models\Volunteer;
+use App\Models\AssociateGroup;
+use App\Models\CalendarEvent;
 
 class User extends Authenticatable
 {
@@ -55,5 +61,45 @@ class User extends Authenticatable
     public function getPhotoUrlAttribute()
     {
         return $this->profile_picture ? asset('storage/' . $this->profile_picture) : null;
+    }
+
+    /**
+     * Get the notifications created by this user
+     */
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'created_by');
+    }
+
+    /**
+     * Get the reports submitted by this user
+     */
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'user_id');
+    }
+
+    /**
+     * Get the activity logs for this user
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    /**
+     * Get the volunteers for this user's associate group
+     */
+    public function volunteers()
+    {
+        return $this->hasManyThrough(Volunteer::class, AssociateGroup::class, 'user_id', 'associate_group_id');
+    }
+
+    /**
+     * Get the calendar events created by this user
+     */
+    public function calendarEvents()
+    {
+        return $this->hasMany(CalendarEvent::class, 'created_by');
     }
 }

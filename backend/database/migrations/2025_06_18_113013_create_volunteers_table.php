@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('associate_group_id')->constrained()->onDelete('cascade');
             $table->string('name');
+            $table->enum('gender', ['Male', 'Female']);
             $table->string('address');
             $table->string('contact_info', 11);
             $table->string('expertise')->nullable();
-            $table->string('location');
             $table->timestamps();
         });
     }

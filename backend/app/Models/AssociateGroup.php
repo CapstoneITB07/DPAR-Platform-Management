@@ -55,4 +55,14 @@ class AssociateGroup extends Model
     {
         return $this->hasOne(DirectorHistory::class)->where('is_current', true);
     }
+
+    /**
+     * Get director history with activities
+     */
+    public function directorHistoriesWithActivities()
+    {
+        return $this->hasMany(DirectorHistory::class)
+            ->with(['user', 'achievements'])
+            ->orderBy('start_date', 'desc');
+    }
 }

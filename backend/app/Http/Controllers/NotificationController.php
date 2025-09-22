@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Notification;
 use App\Models\NotificationRecipient;
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -52,7 +53,7 @@ class NotificationController extends Controller
                 'expertise_requirements' => $request->expertise_requirements,
                 'associate_ids' => $request->associate_ids
             ]);
-            
+
             $notification = Notification::create([
                 'title' => $request->title,
                 'description' => $request->description,
@@ -82,7 +83,7 @@ class NotificationController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
-                'error' => 'Failed to create notification', 
+                'error' => 'Failed to create notification',
                 'details' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
@@ -113,7 +114,7 @@ class NotificationController extends Controller
             'expertise_requirements.*.expertise' => 'required|string|max:255',
             'expertise_requirements.*.count' => 'required|integer|min:1',
         ]);
-        
+
         $notification = Notification::findOrFail($id);
         $notification->update($request->only(['title', 'description', 'expertise_requirements']));
         return response()->json(['message' => 'Notification updated.', 'notification' => $notification]);
@@ -133,7 +134,7 @@ class NotificationController extends Controller
         $notification = Notification::findOrFail($id);
         $notification->status = $notification->status === 'active' ? 'on_hold' : 'active';
         $notification->save();
-        
+
         $action = $notification->status === 'on_hold' ? 'put on hold' : 'activated';
         return response()->json([
             'message' => "Notification {$action} successfully.",
@@ -150,23 +151,23 @@ class NotificationController extends Controller
             'volunteer_selections.*.expertise' => 'required_with:volunteer_selections|string|max:255',
             'volunteer_selections.*.count' => 'required_with:volunteer_selections|integer|min:1',
         ]);
-        
+
         $user = $request->user();
         $notification = Notification::with('recipients.user')->findOrFail($id);
-        
+
         // Check if notification is on hold
         if ($notification->status === 'on_hold') {
             return response()->json(['error' => 'This notification is currently on hold and cannot accept responses.'], 403);
         }
-        
+
         $recipient = NotificationRecipient::where('notification_id', $id)
             ->where('user_id', $user->id)
             ->firstOrFail();
-        
+
         // If accepting, validate volunteer selections against available capacity
         if ($request->response === 'accept' && $request->volunteer_selections) {
             $errors = [];
-            
+
             // Calculate current progress for each expertise
             $currentProgress = [];
             foreach ($notification->expertise_requirements as $requirement) {
@@ -178,17 +179,19 @@ class NotificationController extends Controller
                     'remaining' => $required
                 ];
             }
-            
+
             // Calculate what's already been provided by other associates
             foreach ($notification->recipients as $otherRecipient) {
-                if ($otherRecipient->user_id !== $user->id && 
-                    $otherRecipient->response === 'accept' && 
-                    $otherRecipient->volunteer_selections) {
-                    
+                if (
+                    $otherRecipient->user_id !== $user->id &&
+                    $otherRecipient->response === 'accept' &&
+                    $otherRecipient->volunteer_selections
+                ) {
+
                     foreach ($otherRecipient->volunteer_selections as $selection) {
                         $expertise = $selection['expertise'];
                         $count = $selection['count'];
-                        
+
                         if (isset($currentProgress[$expertise])) {
                             $currentProgress[$expertise]['provided'] += $count;
                             $currentProgress[$expertise]['remaining'] = max(0, $currentProgress[$expertise]['required'] - $currentProgress[$expertise]['provided']);
@@ -196,21 +199,21 @@ class NotificationController extends Controller
                     }
                 }
             }
-            
+
             // Validate the new selections
             foreach ($request->volunteer_selections as $selection) {
                 $expertise = $selection['expertise'];
                 $requestedCount = $selection['count'];
-                
+
                 if (isset($currentProgress[$expertise])) {
                     $available = $currentProgress[$expertise]['remaining'];
-                    
+
                     if ($requestedCount > $available) {
                         $errors[] = "Cannot provide {$requestedCount} {$expertise} volunteers. Only {$available} remaining.";
                     }
                 }
             }
-            
+
             if (!empty($errors)) {
                 return response()->json([
                     'error' => 'Validation failed',
@@ -218,13 +221,32 @@ class NotificationController extends Controller
                 ], 422);
             }
         }
-            
+
         $recipient->update([
             'response' => $request->response,
             'volunteer_selections' => $request->volunteer_selections,
             'responded_at' => now(),
         ]);
-        
+
+        // Log activity for associates
+        if ($user->role === 'associate_group_leader') {
+            $activityType = $request->response === 'accept' ? 'notification_accepted' : 'notification_declined';
+            $description = $request->response === 'accept'
+                ? 'Accepted notification and provided volunteer selections'
+                : 'Declined notification';
+
+            ActivityLog::logActivity(
+                $user->id,
+                $activityType,
+                $description,
+                [
+                    'notification_id' => $notification->id,
+                    'notification_title' => $notification->title,
+                    'volunteer_selections' => $request->volunteer_selections
+                ]
+            );
+        }
+
         return response()->json(['message' => 'Response recorded.']);
     }
 
@@ -232,19 +254,19 @@ class NotificationController extends Controller
     public function getVolunteerProgress($id)
     {
         $notification = Notification::with('recipients.user')->findOrFail($id);
-        
+
         // Check if notification is on hold
         if ($notification->status === 'on_hold') {
             return response()->json(['error' => 'This notification is currently on hold.'], 403);
         }
-        
+
         if (!$notification->expertise_requirements) {
             return response()->json(['progress' => []]);
         }
-        
+
         $progress = [];
         $totalProgress = [];
-        
+
         // Initialize progress tracking for each expertise requirement
         foreach ($notification->expertise_requirements as $requirement) {
             $expertise = $requirement['expertise'];
@@ -256,24 +278,24 @@ class NotificationController extends Controller
                 'groups' => []
             ];
         }
-        
+
         // Calculate progress from responses
         foreach ($notification->recipients as $recipient) {
             if ($recipient->response === 'accept' && $recipient->volunteer_selections) {
                 foreach ($recipient->volunteer_selections as $selection) {
                     $expertise = $selection['expertise'];
                     $count = $selection['count'];
-                    
+
                     if (isset($progress[$expertise])) {
                         // Cap the provided count to not exceed required
                         $currentProvided = $progress[$expertise]['provided'];
                         $maxAllowed = $progress[$expertise]['required'] - $currentProvided;
                         $actualCount = min($count, $maxAllowed);
-                        
+
                         if ($actualCount > 0) {
                             $progress[$expertise]['provided'] += $actualCount;
                             $progress[$expertise]['remaining'] = max(0, $progress[$expertise]['required'] - $progress[$expertise]['provided']);
-                            
+
                             // Track which group provided these volunteers
                             $groupName = $recipient->user ? $recipient->user->name : 'Unknown Group';
                             $progress[$expertise]['groups'][] = [
@@ -285,7 +307,7 @@ class NotificationController extends Controller
                 }
             }
         }
-        
+
         return response()->json(['progress' => $progress]);
     }
 
@@ -294,18 +316,18 @@ class NotificationController extends Controller
     {
         $notification = Notification::with('recipients.user')->findOrFail($id);
         $currentUser = $request->user();
-        
+
         // Check if notification is on hold
         if ($notification->status === 'on_hold') {
             return response()->json(['error' => 'This notification is currently on hold.'], 403);
         }
-        
+
         if (!$notification->expertise_requirements) {
             return response()->json(['available' => []]);
         }
-        
+
         $available = [];
-        
+
         // Initialize available capacity for each expertise requirement
         foreach ($notification->expertise_requirements as $requirement) {
             $expertise = $requirement['expertise'];
@@ -316,23 +338,25 @@ class NotificationController extends Controller
                 'remaining' => $required
             ];
         }
-        
+
         // Calculate what's already been provided by OTHER associates (excluding current user)
         foreach ($notification->recipients as $recipient) {
-            if ($recipient->user_id !== $currentUser->id && 
-                $recipient->response === 'accept' && 
-                $recipient->volunteer_selections) {
-                
+            if (
+                $recipient->user_id !== $currentUser->id &&
+                $recipient->response === 'accept' &&
+                $recipient->volunteer_selections
+            ) {
+
                 foreach ($recipient->volunteer_selections as $selection) {
                     $expertise = $selection['expertise'];
                     $count = $selection['count'];
-                    
+
                     if (isset($available[$expertise])) {
                         // Cap the provided count to not exceed required
                         $currentProvided = $available[$expertise]['provided'];
                         $maxAllowed = $available[$expertise]['required'] - $currentProvided;
                         $actualCount = min($count, $maxAllowed);
-                        
+
                         if ($actualCount > 0) {
                             $available[$expertise]['provided'] += $actualCount;
                             $available[$expertise]['remaining'] = max(0, $available[$expertise]['required'] - $available[$expertise]['provided']);
@@ -341,7 +365,7 @@ class NotificationController extends Controller
                 }
             }
         }
-        
+
         return response()->json(['available' => $available]);
     }
 }

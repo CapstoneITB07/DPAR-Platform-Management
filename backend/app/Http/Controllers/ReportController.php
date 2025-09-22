@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -243,6 +244,21 @@ class ReportController extends Controller
             // Create the report
             $report = Report::create($reportDataToStore);
 
+            // Log activity for associates when submitting reports
+            if ($user->role === 'associate_group_leader' && $validatedData['status'] === 'sent') {
+                ActivityLog::logActivity(
+                    $user->id,
+                    'report_submitted',
+                    'Submitted a new report',
+                    [
+                        'report_id' => $report->id,
+                        'report_title' => $report->title,
+                        'has_photos' => !empty($photoPaths),
+                        'photo_count' => count($photoPaths)
+                    ]
+                );
+            }
+
             // Add photo URLs to response
             if (!empty($photoPaths)) {
                 $report->photo_urls = array_map(function ($path) {
@@ -348,8 +364,23 @@ class ReportController extends Controller
 
             // If only status is being updated (submitting a draft)
             if ($request->has('status') && count($request->all()) === 1) {
+                $oldStatus = $report->status;
                 $report->status = $request->status;
                 $report->save();
+
+                // Log activity for associates when submitting draft reports
+                if ($user->role === 'associate_group_leader' && $oldStatus === 'draft' && $request->status === 'sent') {
+                    ActivityLog::logActivity(
+                        $user->id,
+                        'report_submitted',
+                        'Submitted a draft report',
+                        [
+                            'report_id' => $report->id,
+                            'report_title' => $report->title,
+                            'was_draft' => true
+                        ]
+                    );
+                }
 
                 Log::info('Report status updated', [
                     'report_id' => $id,

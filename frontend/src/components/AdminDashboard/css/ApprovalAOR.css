@@ -326,7 +326,7 @@
   }
   .preview-details .preview-field strong,
   .preview-details .preview-field-group strong {
-    color: #A11C22;
+    color: #A11C22 !important;
     font-weight: 700;
     min-width: 0;
     flex-shrink: 0;
@@ -342,6 +342,8 @@
     font-size: 1rem;
     text-align: left;
     width: 100%;
+    white-space: pre-wrap;
+    line-height: 1.5;
   }
   .modal-header {
     position: static !important;
@@ -702,7 +704,7 @@
   .preview-details .preview-field-group strong {
     font-size: 1rem;
     margin-bottom: 2px;
-    color: #A11C22;
+    color: #A11C22 !important;
     width: 100%;
     text-align: left;
   }
@@ -712,6 +714,8 @@
     width: 100%;
     text-align: left;
     word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.5;
   }
   .preview-btn {
     width: 100%;
@@ -1464,7 +1468,15 @@
 }
 
 .preview-details .preview-field strong {
-  color: #A11C22;
+  color: #A11C22 !important;
+  font-weight: 700;
+  min-width: 120px;
+  flex-shrink: 0;
+  letter-spacing: 0.2px;
+}
+
+.preview-details .preview-field-group strong {
+  color: #A11C22 !important;
   font-weight: 700;
   min-width: 120px;
   flex-shrink: 0;
@@ -1475,6 +1487,8 @@
   color: #333;
   font-weight: 500;
   word-break: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
 
 .preview-details .preview-field-group {

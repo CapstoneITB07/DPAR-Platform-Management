@@ -682,13 +682,20 @@ function ApprovalAOR() {
                         return (
                           <div key={key} className="preview-field-group">
                             <strong>{formattedKey}:</strong>
-                            <div className="list-items">
-                              {value.map((item, idx) => (
-                                <div key={idx} className="list-item">
-                                  <span className="item-number">{idx + 1}.</span>
-                                  <span className="item-text">{String(item)}</span>
-                                </div>
-                              ))}
+                            <div className="preview-value">
+                              {value.join('\n')}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Handle conclusion field to match the design of other three fields
+                      if (key === 'conclusion') {
+                        return (
+                          <div key={key} className="preview-field-group">
+                            <strong>{formattedKey}:</strong>
+                            <div className="preview-value">
+                              {formatValue(value)}
                             </div>
                           </div>
                         );

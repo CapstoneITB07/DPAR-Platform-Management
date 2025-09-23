@@ -1057,7 +1057,8 @@ function Reports() {
 
         {loading ? (
           <div className="loading-container">
-            <p>Loading reports...</p>
+            <div className="reports-loading-spinner"></div>
+            <div className="reports-loading-text">Loading reports...</div>
           </div>
         ) : (
           <div className="table-container">

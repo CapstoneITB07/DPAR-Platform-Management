@@ -366,7 +366,7 @@ function Notification() {
         {loading && (
           <div className="notification-loading">
             <div className="notification-loading-spinner"></div>
-            <span>Loading notifications...</span>
+            <div className="notification-loading-text">Loading notifications...</div>
           </div>
         )}
         

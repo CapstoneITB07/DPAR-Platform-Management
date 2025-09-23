@@ -52,21 +52,57 @@ class EvaluationController extends Controller
                 'evaluation_data' => 'required|array',
             ]);
 
-            // Calculate total score from evaluation data
+            // Validate that all evaluation criteria are scored
+            $expectedCategories = [
+                'Volunteer Participation',
+                'Task Accommodation and Completion',
+                'Communication Effectiveness',
+                'Team Objective Above Self'
+            ];
+
+            $missingScores = [];
             $totalScore = 0;
             $count = 0;
-            foreach ($request->evaluation_data as $category) {
-                if (isset($category['scores'])) {
-                    $scores = array_values($category['scores']);
-                    $validScores = array_filter($scores, function ($score) {
-                        return is_numeric($score) && $score > 0;
-                    });
-                    if (count($validScores) > 0) {
-                        $totalScore += array_sum($validScores);
-                        $count += count($validScores);
+
+            foreach ($expectedCategories as $category) {
+                if (!isset($request->evaluation_data[$category]) || !isset($request->evaluation_data[$category]['scores'])) {
+                    $missingScores[] = $category . ' - No scores provided';
+                    continue;
+                }
+
+                $scores = $request->evaluation_data[$category]['scores'];
+                $categoryMissingScores = [];
+
+                // Check for missing or invalid scores
+                foreach ($scores as $key => $score) {
+                    if (!is_numeric($score) || $score <= 0 || $score > 4) {
+                        $categoryMissingScores[] = $key;
                     }
                 }
+
+                if (!empty($categoryMissingScores)) {
+                    $missingScores[] = $category . ' - Missing or invalid scores: ' . implode(', ', array_slice($categoryMissingScores, 0, 3));
+                }
+
+                // Calculate valid scores for this category
+                $validScores = array_filter($scores, function ($score) {
+                    return is_numeric($score) && $score > 0 && $score <= 4;
+                });
+
+                if (count($validScores) > 0) {
+                    $totalScore += array_sum($validScores);
+                    $count += count($validScores);
+                }
             }
+
+            // If there are missing scores, return validation error
+            if (!empty($missingScores)) {
+                return response()->json([
+                    'message' => 'Evaluation incomplete. Please score all criteria before submitting.',
+                    'errors' => $missingScores
+                ], 422);
+            }
+
             $averageScore = $count > 0 ? $totalScore / $count : 0;
 
             $evaluation = Evaluation::create([

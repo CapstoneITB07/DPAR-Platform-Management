@@ -29,6 +29,8 @@ function Announcement() {
   const [descModalContent, setDescModalContent] = useState({ title: '', description: '', photo_urls: [] });
   const [notification, setNotification] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -50,6 +52,8 @@ function Announcement() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    
     const formData = new FormData();
     if (title) formData.append('title', title);
     if (description) formData.append('description', description);
@@ -108,11 +112,16 @@ function Announcement() {
     setMenuOpenId(null);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+  const handleDelete = (id) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+    setMenuOpenId(null);
+  };
+
+  const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.delete(`http://localhost:8000/api/announcements/${id}`, {
+      await axios.delete(`http://localhost:8000/api/announcements/${deleteId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchAnnouncements();
@@ -121,7 +130,13 @@ function Announcement() {
     } catch (err) {
       setError('Failed to delete announcement');
     }
-    setMenuOpenId(null);
+    setShowDeleteModal(false);
+    setDeleteId(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteId(null);
   };
 
   const handlePhotoUpload = (e) => {
@@ -292,7 +307,7 @@ function Announcement() {
             <form onSubmit={handleSubmit} className="announcement-modal-form">
               <div>
                 <label className="announcement-form-label">TITLE</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="announcement-form-input" />
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="announcement-form-input" required />
               </div>
               <div>
                 <label className="announcement-form-label">DESCRIPTION</label>
@@ -301,6 +316,7 @@ function Announcement() {
                   onChange={e => setDescription(e.target.value)} 
                   className="announcement-form-textarea"
                   placeholder="Enter your announcement description here. You can use multiple paragraphs by pressing Enter."
+                  required
                 />
               </div>
               <div>
@@ -490,6 +506,34 @@ function Announcement() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="announcement-delete-modal-overlay">
+          <div className="announcement-delete-modal-card">
+            <div className="announcement-delete-modal-header">
+              <button onClick={cancelDelete} className="announcement-delete-modal-close">
+                ×
+              </button>
+              <div className="announcement-delete-modal-icon">
+                !
+              </div>
+            </div>
+            <div className="announcement-delete-modal-content">
+              <p className="announcement-delete-modal-message">
+                Are you sure you want to delete this announcement? This action cannot be undone.
+              </p>
+            </div>
+            <div className="announcement-delete-modal-actions">
+              <button onClick={confirmDelete} className="announcement-delete-confirm-btn">
+                Yes, I'm sure
+              </button>
+              <button onClick={cancelDelete} className="announcement-delete-cancel-btn">
+                No, cancel
+              </button>
             </div>
           </div>
         </div>

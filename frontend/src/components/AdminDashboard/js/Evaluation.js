@@ -155,6 +155,25 @@ function Evaluation() {
     return scores.reduce((sum, score) => sum + score, 0) / scores.length;
   };
 
+  const isCategoryComplete = (category) => {
+    const sections = KPI_CRITERIA[category];
+    let totalCriteria = 0;
+    let scoredCriteria = 0;
+    
+    Object.entries(sections).forEach(([section, criteria]) => {
+      criteria.forEach((_, index) => {
+        totalCriteria++;
+        const scoreKey = `${section}_${index}`;
+        const score = evaluationData[category]?.scores?.[scoreKey];
+        if (score && score > 0) {
+          scoredCriteria++;
+        }
+      });
+    });
+    
+    return totalCriteria === scoredCriteria;
+  };
+
   const calculateTotalScore = () => {
     let totalWeightedScore = 0;
     Object.entries(KPI_WEIGHTS).forEach(([category, weight]) => {
@@ -164,7 +183,33 @@ function Evaluation() {
     return totalWeightedScore.toFixed(2);
   };
 
+  const validateEvaluation = () => {
+    const missingScores = [];
+    
+    Object.entries(KPI_CRITERIA).forEach(([category, sections]) => {
+      Object.entries(sections).forEach(([section, criteria]) => {
+        criteria.forEach((_, index) => {
+          const scoreKey = `${section}_${index}`;
+          const score = evaluationData[category]?.scores?.[scoreKey];
+          if (!score || score === 0) {
+            missingScores.push(`${category} - ${section} - Criterion ${index + 1}`);
+          }
+        });
+      });
+    });
+    
+    return missingScores;
+  };
+
   const handleSubmitEvaluation = async () => {
+    // Validate that all criteria are scored
+    const missingScores = validateEvaluation();
+    
+    if (missingScores.length > 0) {
+      setError(`Please complete all evaluation criteria before submitting. Missing scores for: ${missingScores.slice(0, 3).join(', ')}${missingScores.length > 3 ? '...' : ''}`);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`http://localhost:8000/api/evaluations`, {
@@ -180,7 +225,14 @@ function Evaluation() {
       setNotification('Evaluation submitted successfully!');
       setTimeout(() => setNotification(''), 2000);
     } catch (err) {
-      setError('Failed to submit evaluation');
+      if (err.response?.status === 422) {
+        // Handle validation errors from backend
+        const errorMessage = err.response.data.message || 'Evaluation incomplete';
+        const errors = err.response.data.errors || [];
+        setError(`${errorMessage}. ${errors.slice(0, 2).join(', ')}${errors.length > 2 ? '...' : ''}`);
+      } else {
+        setError('Failed to submit evaluation');
+      }
     }
   };
 
@@ -293,10 +345,15 @@ function Evaluation() {
                 </div>
                 
                 {Object.entries(KPI_CRITERIA).map(([category, sections]) => (
-                  <div key={category} className="evaluation-section">
+                  <div key={category} className={`evaluation-section ${!isCategoryComplete(category) ? 'incomplete' : ''}`}>
                     <div className="section-header">
                       <h4>{category}</h4>
-                      <div className="weight-badge">{(KPI_WEIGHTS[category] * 100)}%</div>
+                      <div className="header-right">
+                        <div className="weight-badge">{(KPI_WEIGHTS[category] * 100)}%</div>
+                        {!isCategoryComplete(category) && (
+                          <div className="incomplete-badge">Incomplete</div>
+                        )}
+                      </div>
                     </div>
                     
                     {Object.entries(sections).map(([section, criteria]) => (
@@ -354,10 +411,12 @@ function Evaluation() {
                     Cancel
                   </button>
                   <button
-                    className="submit-btn"
+                    className={`submit-btn ${validateEvaluation().length > 0 ? 'disabled' : ''}`}
                     onClick={handleSubmitEvaluation}
+                    disabled={validateEvaluation().length > 0}
                   >
-                    <FontAwesomeIcon icon={faSave} /> Submit Evaluation
+                    <FontAwesomeIcon icon={faSave} /> 
+                    {validateEvaluation().length > 0 ? 'Complete All Criteria' : 'Submit Evaluation'}
                   </button>
                 </div>
               </div>

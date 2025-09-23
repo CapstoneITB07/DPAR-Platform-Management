@@ -456,8 +456,8 @@ function VolunteerList() {
 
         {loading ? (
           <div className="loading-container">
-            {/* <div className="loading-spinner"></div> */}
-            <p>Loading volunteers...</p>
+            <div className="volunteer-loading-spinner"></div>
+            <div className="volunteer-loading-text">Loading volunteers...</div>
           </div>
         ) : (
           <>

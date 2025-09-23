@@ -1057,7 +1057,8 @@ function Reports() {
 
         {loading ? (
           <div className="loading-container">
-            <p>Loading reports...</p>
+            <div className="reports-loading-spinner"></div>
+            <div className="reports-loading-text">Loading reports...</div>
           </div>
         ) : (
           <div className="table-container">
@@ -2007,7 +2008,7 @@ function Reports() {
           <div className="modal-overlay">
             <div className="modal-content report-view-modal">
               <div className="report-modal-header">
-                <h2>View Report</h2>
+                <h2>Report: {viewingReport.title || 'Untitled'}</h2>
                 <button 
                   className="modal-close"
                   onClick={handleCloseViewModal}
@@ -2016,29 +2017,6 @@ function Reports() {
                 </button>
               </div>
               <div className="report-view-content">
-                <div className="report-view-section">
-                  <h3>Report Information</h3>
-                  <div className="detail-row">
-                    <strong>Title:</strong>
-                    <span>{viewingReport.title}</span>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Status:</strong>
-                    <span className={`status-badge status-${viewingReport.status}`}>
-                      {viewingReport.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Created:</strong>
-                    <span>{formatDateTime(viewingReport.created_at)}</span>
-                  </div>
-                  {viewingReport.updated_at && (
-                    <div className="detail-row">
-                      <strong>Last Updated:</strong>
-                      <span>{formatDateTime(viewingReport.updated_at)}</span>
-                    </div>
-                  )}
-                </div>
 
                 {viewingReport.data && (
                   <>
@@ -2291,6 +2269,28 @@ function Reports() {
                     )}
                   </>
                 )}
+              </div>
+              
+              {/* Sticky Bottom Report Information */}
+              <div className="report-info-sticky-bottom">
+                <div className="report-info-row">
+                  <div className="report-info-item">
+                    <span className="report-info-label">Status:</span>
+                    <span className={`status-badge status-${viewingReport.status}`}>
+                      {viewingReport.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="report-info-item">
+                    <span className="report-info-label">Created:</span>
+                    <span className="report-info-value">{formatDateTime(viewingReport.created_at)}</span>
+                  </div>
+                  {viewingReport.updated_at && (
+                    <div className="report-info-item">
+                      <span className="report-info-label">Last Updated:</span>
+                      <span className="report-info-value">{formatDateTime(viewingReport.updated_at)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

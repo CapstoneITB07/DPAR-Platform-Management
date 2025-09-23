@@ -638,7 +638,10 @@
   margin-bottom: 18px;
   font-size: 1.08rem;
   line-height: 1.5;
-  text-align: center;
+  text-align: justify;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Mobile responsive improvements for notification content */
@@ -650,7 +653,10 @@
   .notification-item-description {
     font-size: 1rem;
     margin-bottom: 16px;
-    text-align: left;
+    text-align: justify;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 
@@ -662,6 +668,10 @@
   .notification-item-description {
     font-size: 0.95rem;
     margin-bottom: 14px;
+    text-align: justify;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 
@@ -1403,23 +1413,69 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 300px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+  border: 1px solid #e3e7ed;
   padding: 40px 20px;
-  color: #6c757d;
 }
 
 .notification-loading-spinner {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border-top: 4px solid #a72828;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.notification-loading-text {
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Montserrat', 'Poppins', Arial, sans-serif;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsive loading styles for notifications */
+@media (max-width: 768px) {
+  .notification-loading {
+    min-height: 200px;
+    padding: 30px 15px;
+  }
+  
+  .notification-loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 15px;
+  }
+  
+  .notification-loading-text {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-loading {
+    min-height: 180px;
+    padding: 24px 12px;
+  }
+  
+  .notification-loading-spinner {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 12px;
+  }
+  
+  .notification-loading-text {
+    font-size: 13px;
+  }
 }
 
 /* Enhanced Empty State */

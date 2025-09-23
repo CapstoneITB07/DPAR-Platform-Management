@@ -145,11 +145,19 @@ function Announcements() {
     return lines.slice(0, maxLines).join('\n') + '...';
   };
 
-  // Function to check if text needs truncation
-  const needsTruncation = (text, maxLines = 3) => {
+  // Function to truncate text by character count for better control
+  const truncateTextByLength = (text, maxLength = 150) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  // Function to check if text needs truncation based on content length
+  const needsTruncation = (text, hasImages = false) => {
     if (!text) return false;
-    const lines = text.split('\n');
-    return lines.length > maxLines || text.length > 150; // Also check character length
+    // Different thresholds for cards with and without images
+    const threshold = hasImages ? 150 : 300;
+    return text.length > threshold;
   };
 
   const openFullModal = (announcement) => {
@@ -258,24 +266,40 @@ function Announcements() {
             {/* Right: Announcements List */}
             <div className="announcements-right-col">
               {loading ? (
-                <div className="announcements-loading">
-                  <div className="announcements-loading-spinner"></div>
-                  <div className="announcements-loading-text">Loading announcements...</div>
-                </div>
-              ) : announcements.length === 0 ? (
                 <div style={{ 
+                  gridColumn: '1 / -1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   textAlign: 'center', 
-                  padding: '40px 20px', 
-                  color: '#dc3545', 
-                  fontSize: '18px', 
-                  fontWeight: '500',
+                  padding: '60px 20px', 
+                  color: '#666', 
+                  fontSize: '16px', 
+                  fontWeight: '400',
                   width: '100%',
-                  background: '#fff',
-                  borderRadius: 10,
-                  boxShadow: '0 1px 6px rgba(0,0,0,0.06)'
+                  minHeight: '200px'
                 }}>
-                  No announcements found. Announcements will appear here when they are created by administrators.
+                  <div className="announcements-loading-spinner"></div>
+                  <div style={{ marginTop: '16px' }}>Loading announcements...</div>
                 </div>
+               ) : announcements.length === 0 ? (
+                 <div style={{ 
+                   gridColumn: '1 / -1',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                    textAlign: 'center',
+                    fontStyle: 'italic',
+                   padding: '60px 20px', 
+                   color: '#666', 
+                   fontSize: '16px', 
+                   fontWeight: '400',
+                   width: '100%',
+                   minHeight: '200px'
+                 }}>
+                   No announcements found yet. <br />It will appear here when the coalition creates one.
+                 </div>
               ) : (
                 announcements.map(a => (
                   <div 
@@ -302,16 +326,21 @@ function Announcements() {
                       {a.title && <div className="announcement-title">{a.title}</div>}
                       {a.description && (
                         <div className="announcement-desc">
-                          {truncateText(a.description)}
-                          <button 
-                            className="announcement-see-more-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openFullModal(a);
-                            }}
-                          >
-                            See more
-                          </button>
+                          {a.photo_urls && a.photo_urls.length > 0 
+                            ? truncateTextByLength(a.description, 150)
+                            : truncateTextByLength(a.description, 650)
+                          }
+                          {needsTruncation(a.description, a.photo_urls && a.photo_urls.length > 0) && (
+                            <button 
+                              className="announcement-see-more-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openFullModal(a);
+                              }}
+                            >
+                              See more
+                            </button>
+                          )}
                         </div>
                       )}
                       

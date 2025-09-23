@@ -638,7 +638,10 @@
   margin-bottom: 18px;
   font-size: 1.08rem;
   line-height: 1.5;
-  text-align: center;
+  text-align: justify;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Mobile responsive improvements for notification content */
@@ -650,7 +653,10 @@
   .notification-item-description {
     font-size: 1rem;
     margin-bottom: 16px;
-    text-align: left;
+    text-align: justify;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 
@@ -662,6 +668,10 @@
   .notification-item-description {
     font-size: 0.95rem;
     margin-bottom: 14px;
+    text-align: justify;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 

@@ -31,6 +31,9 @@ function Notifications() {
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
   const [notification, setNotification] = useState('');
   const [toggleLoading, setToggleLoading] = useState({}); // Track loading state for each toggle
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteTargetNotification, setDeleteTargetNotification] = useState(null);
 
   // Fetch notifications
   useEffect(() => {
@@ -110,12 +113,55 @@ function Notifications() {
   };
 
   const updateExpertiseRequirement = (index, field, value) => {
-    setForm(f => ({
-      ...f,
-      expertise_requirements: f.expertise_requirements.map((req, i) => 
-        i === index ? { ...req, [field]: value } : req
-      )
-    }));
+    setForm(f => {
+      const updatedRequirements = f.expertise_requirements.map((req, i) => {
+        if (i === index) {
+          const updatedReq = { ...req, [field]: value };
+          
+          // If updating expertise name, check for duplicates
+          if (field === 'expertise' && value.trim()) {
+            const expertiseName = value.trim().toLowerCase();
+            const isDuplicate = f.expertise_requirements.some((otherReq, otherIndex) => 
+              otherIndex !== index && 
+              otherReq.expertise && 
+              otherReq.expertise.toLowerCase() === expertiseName
+            );
+            
+            if (isDuplicate) {
+              setError(`Expertise "${value.trim()}" already exists. Please use a different name.`);
+              return req; // Don't update if duplicate
+            } else {
+              setError(''); // Clear error if no duplicate
+            }
+          }
+          
+          // If updating count, validate maximum per expertise
+          if (field === 'count' && value > 2000) {
+            setError('Maximum number of volunteers per expertise is 2000.');
+            return { ...updatedReq, count: 2000 }; // Cap at 2000
+          }
+          
+          // Check total count across all expertise after this update
+          if (field === 'count') {
+            const updatedRequirements = f.expertise_requirements.map((req, i) => 
+              i === index ? updatedReq : req
+            );
+            const totalVolunteers = updatedRequirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0);
+            if (totalVolunteers > 5000) {
+              setError('Total number of volunteers across all expertise cannot exceed 5000.');
+              return req; // Don't update if it would exceed total limit
+            } else {
+              setError(''); // Clear error if within limit
+            }
+          }
+          
+          return updatedReq;
+        }
+        return req;
+      });
+      
+      return { ...f, expertise_requirements: updatedRequirements };
+    });
   };
 
   const calculateTotalVolunteers = () => {
@@ -147,6 +193,31 @@ function Notifications() {
       );
       if (invalidRequirements.length > 0) {
         setError('Please fill in all expertise fields and ensure count is greater than 0');
+        setLoading(false);
+        return;
+      }
+      
+      // Check for duplicate expertise names (case-insensitive)
+      const expertiseNames = form.expertise_requirements.map(req => req.expertise.trim().toLowerCase());
+      const uniqueNames = new Set(expertiseNames);
+      if (expertiseNames.length !== uniqueNames.size) {
+        setError('Duplicate expertise names are not allowed. Please use unique names for each expertise.');
+        setLoading(false);
+        return;
+      }
+      
+      // Check for maximum count per expertise
+      const exceedsMaxPerExpertise = form.expertise_requirements.some(req => req.count > 2000);
+      if (exceedsMaxPerExpertise) {
+        setError('Maximum number of volunteers per expertise is 2000.');
+        setLoading(false);
+        return;
+      }
+      
+      // Check for maximum total count across all expertise
+      const totalVolunteers = form.expertise_requirements.reduce((total, req) => total + (parseInt(req.count) || 0), 0);
+      if (totalVolunteers > 5000) {
+        setError('Total number of volunteers across all expertise cannot exceed 5000.');
         setLoading(false);
         return;
       }
@@ -190,15 +261,32 @@ function Notifications() {
   };
 
   const handleRemove = async id => {
-    if (!window.confirm('Are you sure you want to remove this notification?')) return;
+    const targetNotification = notifications.find(n => n.id === id);
+    setDeleteTargetId(id);
+    setDeleteTargetNotification(targetNotification);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
+    
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    await fetch(`http://localhost:8000/api/notifications/${id}`, {
+    await fetch(`http://localhost:8000/api/notifications/${deleteTargetId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
-    setNotifications(notifications.filter(n => n.id !== id));
+    setNotifications(notifications.filter(n => n.id !== deleteTargetId));
     setNotification('Notification removed successfully!');
     setTimeout(() => setNotification(''), 2000);
+    setShowDeleteConfirm(false);
+    setDeleteTargetId(null);
+    setDeleteTargetNotification(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeleteTargetId(null);
+    setDeleteTargetNotification(null);
   };
 
   const handleToggleHold = async id => {
@@ -422,7 +510,7 @@ function Notifications() {
                           placeholder="min 1"
                           className="enhanced-input count-input"
                           min={1}
-                          max={512}
+                          max={2000}
                         />
                         <button
                           type="button"
@@ -460,6 +548,26 @@ function Notifications() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay" style={{zIndex: 10000}}>
+          <div className="confirm-modal">
+            <button className="modal-close confirm-close" onClick={cancelDelete}>&times;</button>
+            <div className="confirm-icon">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+                <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+              </svg>
+            </div>
+            <div className="confirm-message">Are you sure you want to remove this notification?</div>
+            <div className="modal-actions confirm-actions">
+              <button className="delete-btn" onClick={confirmDelete}>Yes, I'm sure</button>
+              <button className="cancel-btn" onClick={cancelDelete}>No, cancel</button>
+            </div>
           </div>
         </div>
       )}

@@ -512,28 +512,19 @@ function Announcement() {
       )}
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="announcement-delete-modal-overlay">
-          <div className="announcement-delete-modal-card">
-            <div className="announcement-delete-modal-header">
-              <button onClick={cancelDelete} className="announcement-delete-modal-close">
-                ×
-              </button>
-              <div className="announcement-delete-modal-icon">
-                !
-              </div>
+        <div className="modal-overlay" style={{zIndex: 10000}}>
+          <div className="confirm-modal">
+            <button className="modal-close confirm-close" onClick={cancelDelete}>&times;</button>
+            <div className="confirm-icon">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+                <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+              </svg>
             </div>
-            <div className="announcement-delete-modal-content">
-              <p className="announcement-delete-modal-message">
-                Are you sure you want to delete this announcement? This action cannot be undone.
-              </p>
-            </div>
-            <div className="announcement-delete-modal-actions">
-              <button onClick={confirmDelete} className="announcement-delete-confirm-btn">
-                Yes, I'm sure
-              </button>
-              <button onClick={cancelDelete} className="announcement-delete-cancel-btn">
-                No, cancel
-              </button>
+            <div className="confirm-message">Are you sure you want to delete this volunteer?</div>
+            <div className="modal-actions confirm-actions">
+              <button className="delete-btn" onClick={confirmDelete}>Yes, I'm sure</button>
+              <button className="cancel-btn" onClick={cancelDelete}>No, cancel</button>
             </div>
           </div>
         </div>

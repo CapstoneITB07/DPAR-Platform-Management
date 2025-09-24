@@ -1995,4 +1995,431 @@ body.ReactModal__Body--open {
   .activity-icon {
     align-self: center;
   }
+}
+
+/* Delete Confirmation Modal Styles */
+.delete-confirmation-overlay {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000 !important;
+  backdrop-filter: blur(2px);
+}
+
+.delete-confirmation-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1);
+  max-width: 420px;
+  width: 90%;
+  margin: auto;
+  position: relative;
+  animation: modalSlideIn 0.3s ease-out;
+  z-index: 5100;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.delete-confirmation-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.delete-confirmation-body {
+  padding: 32px 24px 24px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.delete-confirmation-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.delete-confirmation-body h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.delete-confirmation-body p {
+  margin: 0;
+  font-size: 15px;
+  color: #666;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.delete-confirmation-actions {
+  padding: 20px 24px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #fafafa;
+  border-radius: 0 0 16px 16px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.delete-confirm-btn {
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-width: 80px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.delete-confirm-btn:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.delete-confirm-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
+}
+
+.delete-confirm-btn:active {
+  transform: translateY(0);
+}
+
+.delete-cancel-btn {
+  background: #fff;
+  color: #666;
+  border: 1px solid #d1d5db;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-width: 80px;
+  transition: all 0.2s ease;
+}
+
+.delete-cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+  transform: translateY(-1px);
+}
+
+.delete-cancel-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.delete-cancel-btn:active {
+  transform: translateY(0);
+}
+
+/* Mobile responsiveness for delete modal */
+@media (max-width: 480px) {
+  .delete-confirmation-modal {
+    max-width: 95vw;
+    margin: 20px;
+    border-radius: 12px;
+  }
+  
+  .delete-confirmation-body {
+    padding: 24px 20px 20px 20px;
+  }
+  
+  .delete-confirmation-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+  
+  .delete-confirmation-body h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  
+  .delete-confirmation-body p {
+    font-size: 14px;
+  }
+  
+  .delete-confirmation-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    padding: 16px 20px 20px 20px;
+  }
+  
+  .delete-confirm-btn,
+  .delete-cancel-btn {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+
+/* Compact Delete Confirmation Modal Styles */
+.compact-delete-confirmation-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  position: relative;
+  padding: 0;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.compact-delete-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.compact-delete-body {
+  margin-bottom: 20px;
+}
+
+.compact-delete-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.compact-delete-body h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.compact-delete-body p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.compact-delete-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.compact-delete-cancel-btn {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.compact-delete-cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.compact-delete-confirm-btn {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.compact-delete-confirm-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.compact-delete-confirm-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+/* Responsive adjustments for compact modal */
+@media (max-width: 480px) {
+  .compact-delete-confirmation-modal {
+    width: 95%;
+    max-width: 350px;
+  }
+  
+  .compact-delete-content {
+    padding: 20px;
+  }
+  
+  .compact-delete-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .compact-delete-cancel-btn,
+  .compact-delete-confirm-btn {
+    width: 100%;
+    padding: 10px 16px;
+  }
+}
+
+/* Delete Confirmation Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-modal {
+  position: relative;
+  max-width: 340px;
+  min-width: unset;
+  width: auto;
+  padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  margin: 0;
+}
+
+.confirm-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.confirm-close:hover {
+  color: #fff;
+}
+
+.confirm-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+}
+
+.confirm-message {
+  font-size: 1.08rem;
+  color: #374151;
+  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.confirm-actions .delete-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.5rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.confirm-actions .delete-btn:hover {
+  background: #b71c1c;
+  color: #fff;
+}
+
+.confirm-actions .cancel-btn {
+  background: #fff0f0;
+  border: 2px solid #f58484;
+  color: #a51d1d;
+  border-radius: 7px;
+  padding: 0.5rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  /* transition: background 0.2s, border 0.2s; */
+}
+
+.confirm-actions .cancel-btn:hover {
+  background: #f3f4f6;
+  border: 1.5px solid #bdbdbd;
+}
+
+/* Mobile-optimized confirmation modal */
+@media (max-width: 768px) {
+  .confirm-modal {
+    width: 90%;
+    max-width: 300px;
+    margin: 20px auto;
+  }
+  
+  .confirm-message {
+    font-size: 14px;
+  }
+  
+  .confirm-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .confirm-actions .delete-btn,
+  .confirm-actions .cancel-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
 } 

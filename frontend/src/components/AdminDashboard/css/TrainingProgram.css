@@ -1063,4 +1063,129 @@
     gap: 4px;
     margin-top: 10px;
   }
+}
+
+/* Delete Confirmation Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-modal {
+  position: relative;
+  max-width: 340px;
+  min-width: unset;
+  width: auto;
+  padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  margin: 0;
+}
+
+.confirm-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.confirm-close:hover {
+  color: #fff;
+}
+
+.confirm-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+}
+
+.confirm-message {
+  font-size: 1.08rem;
+  color: #374151;
+  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.5rem;
+}
+
+.confirm-actions .delete-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 0.5rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.confirm-actions .delete-btn:hover {
+  background: #b71c1c;
+  color: #fff;
+}
+
+.confirm-actions .cancel-btn {
+  background: #fff0f0;
+  border: 2px solid #f58484;
+  color: #a51d1d;
+  border-radius: 7px;
+  padding: 0.5rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  /* transition: background 0.2s, border 0.2s; */
+}
+
+.confirm-actions .cancel-btn:hover {
+  background: #f3f4f6;
+  border: 1.5px solid #bdbdbd;
+}
+
+/* Mobile-optimized confirmation modal */
+@media (max-width: 768px) {
+  .confirm-modal {
+    width: 90%;
+    max-width: 300px;
+    margin: 20px auto;
+  }
+  
+  .confirm-message {
+    font-size: 14px;
+  }
+  
+  .confirm-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .confirm-actions .delete-btn,
+  .confirm-actions .cancel-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
 } 

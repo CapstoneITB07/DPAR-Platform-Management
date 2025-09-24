@@ -55,6 +55,8 @@ function AssociateGroups() {
   const [popupError, setPopupError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [associateToDelete, setAssociateToDelete] = useState(null);
 
   const fetchAssociates = async (showNotification = false) => {
     try {
@@ -416,23 +418,38 @@ function AssociateGroups() {
     }
   };
 
-  const handleRemoveAssociate = async (associateId) => {
-    if (!window.confirm('Are you sure you want to remove this associate group?')) return;
+  const handleRemoveAssociate = (associate) => {
+    setAssociateToDelete(associate);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAssociate = async () => {
+    if (!associateToDelete) return;
+    
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.delete(`${API_BASE}/api/associate-groups/${associateId}`, {
+      await axios.delete(`${API_BASE}/api/associate-groups/${associateToDelete.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAssociates(prev => prev.filter(a => a.id !== associateId));
-      if (selectedAssociate && selectedAssociate.id === associateId) {
+      setAssociates(prev => prev.filter(a => a.id !== associateToDelete.id));
+      if (selectedAssociate && selectedAssociate.id === associateToDelete.id) {
         setSelectedAssociate(null);
         setShowProfileModal(false);
       }
       setNotification('Associate group removed successfully!');
       setTimeout(() => setNotification(''), 2000);
+      setShowDeleteModal(false);
+      setAssociateToDelete(null);
     } catch (error) {
       setError('Failed to remove associate group.');
+      setShowDeleteModal(false);
+      setAssociateToDelete(null);
     }
+  };
+
+  const cancelDeleteAssociate = () => {
+    setShowDeleteModal(false);
+    setAssociateToDelete(null);
   };
 
   const navigate = useNavigate();
@@ -591,7 +608,7 @@ function AssociateGroups() {
                   style={{ position: 'absolute', top: 8, right: 8, color: '#dc3545', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveAssociate(associate.id);
+                    handleRemoveAssociate(associate);
                   }}
                 />
               </>
@@ -688,22 +705,22 @@ function AssociateGroups() {
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faBell} />
                                 <span className="stat-label">Notifications:</span>
-                                <span className="stat-value">{history.user.notifications_created || 0}</span>
+                                <span className="stat-value">{history.notification_activities_count || 0}</span>
                               </div>
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faFileAlt} />
                                 <span className="stat-label">Reports:</span>
-                                <span className="stat-value">{history.user.reports_submitted || 0}</span>
+                                <span className="stat-value">{history.reports_submitted_count || 0}</span>
                               </div>
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faSignInAlt} />
                                 <span className="stat-label">System Logins:</span>
-                                <span className="stat-value">{history.user.total_activities || 0}</span>
+                                <span className="stat-value">{history.login_activities_count || 0}</span>
                               </div>
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faStar} />
                                 <span className="stat-label">Engagement Score:</span>
-                                <span className="stat-value">{history.user.system_engagement_score || 0}%</span>
+                                <span className="stat-value">{history.system_engagement_score || 0}%</span>
                               </div>
                             </div>
                             
@@ -1576,6 +1593,26 @@ function AssociateGroups() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay" style={{zIndex: 10000}}>
+          <div className="confirm-modal">
+            <button className="modal-close confirm-close" onClick={cancelDeleteAssociate}>&times;</button>
+            <div className="confirm-icon">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+                <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+              </svg>
+            </div>
+            <div className="confirm-message">Are you sure you want to delete this volunteer?</div>
+            <div className="modal-actions confirm-actions">
+              <button className="delete-btn" onClick={confirmDeleteAssociate}>Yes, I'm sure</button>
+              <button className="cancel-btn" onClick={cancelDeleteAssociate}>No, cancel</button>
+            </div>
+          </div>
+        </div>
       )}
 
     </AdminLayout>

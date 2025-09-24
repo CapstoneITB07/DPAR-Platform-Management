@@ -36,6 +36,16 @@ class DirectorHistory extends Model
         'logins' => 'integer'
     ];
 
+    protected $appends = [
+        'notifications_created',
+        'notification_activities_count',
+        'reports_submitted_count',
+        'total_activities',
+        'login_activities_count',
+        'system_engagement_score',
+        'activity_logs'
+    ];
+
     /**
      * Get the associate group that owns the director history
      */
@@ -164,5 +174,97 @@ class DirectorHistory extends Model
                     'metadata' => $log->metadata
                 ];
             });
+    }
+
+    /**
+     * Get notifications created count
+     */
+    public function getNotificationsCreatedAttribute()
+    {
+        if (!$this->user) {
+            return 0;
+        }
+        return $this->user->notifications ? $this->user->notifications->count() : 0;
+    }
+
+    /**
+     * Get notification activities count (accepted/declined notifications)
+     */
+    public function getNotificationActivitiesCountAttribute()
+    {
+        if (!$this->user) {
+            return 0;
+        }
+        return $this->user->activityLogs ? $this->user->activityLogs->whereIn('activity_type', ['notification_accepted', 'notification_declined'])->count() : 0;
+    }
+
+    /**
+     * Get reports submitted count
+     */
+    public function getReportsSubmittedCountAttribute()
+    {
+        if (!$this->user) {
+            return 0;
+        }
+        return $this->user->reports ? $this->user->reports->count() : 0;
+    }
+
+    /**
+     * Get total activities count
+     */
+    public function getTotalActivitiesAttribute()
+    {
+        if (!$this->user) {
+            return 0;
+        }
+        return $this->user->activityLogs ? $this->user->activityLogs->count() : 0;
+    }
+
+    /**
+     * Get login activities count
+     */
+    public function getLoginActivitiesCountAttribute()
+    {
+        if (!$this->user) {
+            return 0;
+        }
+        return $this->user->activityLogs ? $this->user->activityLogs->where('activity_type', 'login')->count() : 0;
+    }
+
+    /**
+     * Get system engagement score
+     */
+    public function getSystemEngagementScoreAttribute()
+    {
+        if (!$this->user) {
+            return 0;
+        }
+
+        $notificationsCount = $this->getNotificationsCreatedAttribute();
+        $reportsCount = $this->getReportsSubmittedCountAttribute();
+        $activitiesCount = $this->getTotalActivitiesAttribute();
+        $volunteersCount = $this->volunteers_recruited ?? 0;
+
+        // Calculate engagement score based on various activities
+        $engagementScore = min(
+            100,
+            ($notificationsCount * 10) +
+            ($reportsCount * 15) +
+            ($activitiesCount * 5) +
+            ($volunteersCount * 20)
+        );
+
+        return $engagementScore;
+    }
+
+    /**
+     * Get activity logs for this director
+     */
+    public function getActivityLogsAttribute()
+    {
+        if (!$this->user) {
+            return [];
+        }
+        return $this->user->activityLogs ? $this->user->activityLogs->toArray() : [];
     }
 }

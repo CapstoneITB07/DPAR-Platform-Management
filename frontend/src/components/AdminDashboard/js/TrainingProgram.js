@@ -43,6 +43,8 @@ function TrainingProgram() {
   });
   const [notification, setNotification] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     fetchPrograms();
@@ -216,18 +218,29 @@ function TrainingProgram() {
     }
   };
 
-  const handleDelete = async (index) => {
-    if (!window.confirm('Are you sure you want to delete this training program?')) return;
+  const handleDelete = (index) => {
+    const id = programs[index].id;
+    setDeleteId(id);
+    setShowDeleteModal(true);
+    setMenuOpenIndex(null);
+  };
+
+  const confirmDelete = async () => {
     try {
-      const id = programs[index].id;
-      await axios.delete(`http://localhost:8000/api/training-programs/${id}`);
+      await axios.delete(`http://localhost:8000/api/training-programs/${deleteId}`);
       fetchPrograms();
       setNotification('Training program deleted successfully!');
       setTimeout(() => setNotification(''), 2000);
     } catch (err) {
       setError('Failed to delete training program');
     }
-    setMenuOpenIndex(null);
+    setShowDeleteModal(false);
+    setDeleteId(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteId(null);
   };
 
   const handleMenuToggle = (idx) => {
@@ -598,6 +611,26 @@ function TrainingProgram() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay" style={{zIndex: 10000}}>
+          <div className="confirm-modal">
+            <button className="modal-close confirm-close" onClick={cancelDelete}>&times;</button>
+            <div className="confirm-icon">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="28" stroke="#e53935" strokeWidth="4" fill="#fff"/>
+                <text x="50%" y="50%" textAnchor="middle" dy=".35em" fontSize="32" fill="#e53935">!</text>
+              </svg>
+            </div>
+            <div className="confirm-message">Are you sure you want to delete this volunteer?</div>
+            <div className="modal-actions confirm-actions">
+              <button className="delete-btn" onClick={confirmDelete}>Yes, I'm sure</button>
+              <button className="cancel-btn" onClick={cancelDelete}>No, cancel</button>
             </div>
           </div>
         </div>

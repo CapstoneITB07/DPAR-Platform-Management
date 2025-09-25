@@ -46,6 +46,8 @@ class DirectorHistory extends Model
         'system_engagement_score',
         'activity_logs',
         'actual_volunteer_count'
+        'activity_logs'
+
     ];
 
     /**

@@ -432,6 +432,7 @@ function AssociateGroups() {
     setAssociateToDelete(null);
   };
 
+
   const confirmDeleteAssociate = async () => {
     if (!associateToDelete) return;
     
@@ -447,12 +448,19 @@ function AssociateGroups() {
       }
       setNotification('Associate group removed successfully!');
       setTimeout(() => setNotification(''), 2000);
+      setShowDeleteModal(false);
+      setAssociateToDelete(null);
     } catch (error) {
       setError('Failed to remove associate group.');
     } finally {
       setShowDeleteModal(false);
       setAssociateToDelete(null);
     }
+  };
+
+  const cancelDeleteAssociate = () => {
+    setShowDeleteModal(false);
+    setAssociateToDelete(null);
   };
 
   const navigate = useNavigate();
@@ -591,7 +599,7 @@ function AssociateGroups() {
                   style={{ position: 'absolute', top: 8, right: 8, color: '#dc3545', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveAssociate(associate.id);
+                    handleRemoveAssociate(associate);
                   }}
                 />
               </>
@@ -1537,7 +1545,6 @@ function AssociateGroups() {
           </div>
         </Modal>
       )}
-
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="modal-overlay" style={{zIndex: 10000}}>

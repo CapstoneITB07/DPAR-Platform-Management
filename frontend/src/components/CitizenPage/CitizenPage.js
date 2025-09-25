@@ -491,61 +491,150 @@ function CitizenPage() {
       </div>
       {/* Training Programs as Posts */}
       <div className="citizen-training-section">
-        <h2 className="citizen-training-title">Training Programs</h2>
-        <div className="citizen-training-grid">
+        <div className="citizen-training-header">
+          <h2 className="citizen-training-title">Training Programs</h2>
+          <p className="citizen-training-subtitle">Enhance your skills with our comprehensive training programs</p>
+        </div>
+        <div className="citizen-training-card-grid">
           {loading ? (
-            <div className="citizen-loading-message">Loading...</div>
+            <div className="citizen-loading-container">
+              <div className="citizen-loading-spinner"></div>
+              <p className="citizen-loading-message">Loading training programs...</p>
+            </div>
           ) : error ? (
-            <div className="citizen-error-message">{error}</div>
+            <div className="citizen-error-container">
+              <p className="citizen-error-message">{error}</p>
+            </div>
           ) : programs.length === 0 ? (
-            <p className="citizen-no-data-message">No training programs available.</p>
+            <div className="citizen-empty-container">
+              <h3 className="citizen-empty-title">No Training Programs Available</h3>
+              <p className="citizen-empty-message">Check back later for new training opportunities.</p>
+            </div>
           ) : (
-            programs.map((program) => {
+            programs.map((program, index) => {
+              const title = program.name || '';
+              const description = program.description || '';
+              const hasPhotos = program.photos && program.photos.length > 0;
+              const photoCount = hasPhotos ? program.photos.length : 0;
+              
               return (
                 <div
                   key={program.id}
                   className="citizen-training-card"
+                  onClick={() => handleProgramClick(program)}
+                  style={{ 
+                    cursor: 'pointer',
+                    animationDelay: `${index * 0.1}s`
+                  }}
+                  onMouseOver={e => { 
+                    e.currentTarget.classList.add('citizen-training-card-hover');
+                    e.currentTarget.querySelector('.citizen-training-card-overlay').style.opacity = '1';
+                  }}
+                  onMouseOut={e => { 
+                    e.currentTarget.classList.remove('citizen-training-card-hover');
+                    e.currentTarget.querySelector('.citizen-training-card-overlay').style.opacity = '0';
+                  }}
                 >
-                  {/* Date and Location Bar */}
-                  <div className="citizen-training-header">
-                    {program.date && <span className="citizen-training-date-label"><strong>Date:</strong> {program.date}</span>}
-                    {program.location && <span className="citizen-training-location-label"><strong>Location:</strong> {program.location}</span>}
-                  </div>
-                  {/* Title and Description */}
-                  <div className="citizen-training-content">
-                    <div className="citizen-training-title-card">{program.name}</div>
-                    <div className="citizen-training-desc">
-                      {truncateDescription(program.description)}
-                      {needsTruncation(program.description) && (
-                        <button
-                          className="citizen-training-see-more"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleProgramClick(program);
-                          }}
-                        >
-                          See more
-                        </button>
-                      )}
+                  {/* Card Header with Gradient */}
+                  <div className="citizen-training-card-header">
+                    <div className="citizen-training-card-category">
+                      <span className="citizen-training-category-text">Training Program</span>
                     </div>
+                    {hasPhotos && (
+                      <div className="citizen-training-photo-count">
+                        <span>{photoCount} Photos</span>
+                      </div>
+                    )}
                   </div>
-                  {/* Post images - prioritize photos over single image */}
-                  {program.photos && program.photos.length > 0 ? (
-                    <div className="citizen-training-photos-display">
-                    <img
-                        src={program.photos[0]}
-                        alt="Training Program"
-                      className="citizen-training-img"
-                        onClick={() => openImageModal(program.photos[0])}
-                      title="Click to view larger"
-                    />
-                      {program.photos.length > 1 && (
-                        <div className="citizen-training-photos-indicator">
-                          <span>+{program.photos.length - 1} more</span>
+
+                  {/* Date and Location Badges */}
+                  <div className="citizen-training-badges">
+                    {program.date && (
+                      <div className="citizen-training-date-badge">
+                        <span className="citizen-training-badge-text">
+                          {new Date(program.date).toLocaleDateString(undefined, { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    {program.location && (
+                      <div className="citizen-training-location-badge">
+                        <span className="citizen-training-badge-text">{program.location}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="citizen-training-card-content">
+                    {title && (
+                      <h3 className="citizen-training-card-title">{title}</h3>
+                    )}
+                    
+                    {description && (
+                      <div className="citizen-training-card-description">
+                        <p className="citizen-training-desc-text">
+                          {program.photos && program.photos.length > 0 
+                            ? description.length > 120 ? description.substring(0, 120) + '...' : description
+                            : description.length > 200 ? description.substring(0, 200) + '...' : description
+                          }
+                        </p>
+                        {description.length > (program.photos && program.photos.length > 0 ? 120 : 200) && (
+                          <button 
+                            className="citizen-training-read-more"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProgramClick(program);
+                            }}
+                          >
+                            Read More
+                            <span className="citizen-training-read-more-arrow">→</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Photo Display */}
+                  {hasPhotos && (
+                    <div className="citizen-training-card-image">
+                      <div className="citizen-training-image-container">
+                        <img
+                          src={program.photos[0]}
+                          alt="Training Program"
+                          className="citizen-training-card-img"
+                        />
+                        {photoCount > 1 && (
+                          <div className="citizen-training-more-photos">
+                            <span className="citizen-training-more-photos-count">+{photoCount - 1}</span>
+                          </div>
+                        )}
+                        <div className="citizen-training-image-overlay">
+                          <span className="citizen-training-view-text">View Details</span>
                         </div>
-                  )}
+                      </div>
                     </div>
-                  ) : null}
+                  )}
+
+                  {/* Card Footer */}
+                  <div className="citizen-training-card-footer">
+                    <div className="citizen-training-card-actions">
+                      <button 
+                        className="citizen-training-view-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProgramClick(program);
+                        }}
+                      >
+                        <span>View Details</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hover Overlay */}
+                  <div className="citizen-training-card-overlay"></div>
                 </div>
               );
             })
@@ -670,78 +759,121 @@ function CitizenPage() {
           </div>
         </div>
       )}
-      {/* Training Program Details Modal */}
+      {/* Enhanced Training Program Details Modal */}
       {showProgramModal && selectedProgram && (
-        <div className="citizen-modal-overlay" onClick={() => setShowProgramModal(false)}>
-          <div className="citizen-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="citizen-modal-close" onClick={() => setShowProgramModal(false)}>&times;</button>
-            <div className="citizen-program-modal-header">
-              <h3 className="citizen-program-modal-title">{selectedProgram.name}</h3>
-            </div>
-            
-            {/* Date and Location Section - Match Admin Design */}
-            <div className="citizen-program-modal-meta">
-              {selectedProgram.date && (
-                <div className="citizen-program-modal-date">
-                  <strong>Date:</strong> {selectedProgram.date}
+        <div className="citizen-training-modal-overlay" onClick={() => setShowProgramModal(false)}>
+          <div className="citizen-training-modal-content" onClick={(e) => e.stopPropagation()}>
+            {/* Modern Modal Header */}
+            <div className="citizen-training-modal-header">
+              <div className="citizen-training-modal-header-content">
+                <div className="citizen-training-modal-category">
+                  <span className="citizen-training-modal-category-text">Training Program</span>
                 </div>
-              )}
-              {selectedProgram.location && (
-                <div className="citizen-program-modal-location">
-                  <strong>Location:</strong> {selectedProgram.location}
-                </div>
-              )}
-            </div>
-            
-            {/* Description Section - Match Admin Design */}
-            <div className="citizen-program-modal-description">
-              <strong>Description:</strong>
-              <p style={{
-                wordWrap: 'break-word',
-                overflowWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                maxWidth: '100%',
-                wordBreak: 'break-word'
-              }}>{selectedProgram.description}</p>
-            </div>
-            
-            {/* Photo Navigation (Instagram/Facebook style) */}
-            {selectedProgram.photos && selectedProgram.photos.length > 0 && (
-              <div className="citizen-program-photo-navigation">
-                <div className="citizen-program-photo-container">
-                  <img 
-                    src={selectedProgram.photos[currentPhotoIndex]} 
-                    alt={`Photo ${currentPhotoIndex + 1}`} 
-                    className="citizen-program-modal-img" 
-                  />
-                  
-                  {/* Navigation Arrows */}
-                  {selectedProgram.photos.length > 1 && (
-                    <>
-                      <button 
-                        className="citizen-program-photo-nav-btn citizen-program-photo-nav-prev"
-                        onClick={prevPhoto}
-                      >
-                        <FaChevronLeft />
-                      </button>
-                      <button 
-                        className="citizen-program-photo-nav-btn citizen-program-photo-nav-next"
-                        onClick={nextPhoto}
-                      >
-                        <FaChevronRight />
-                      </button>
-                    </>
+                <div className="citizen-training-modal-meta">
+                  {selectedProgram.date && (
+                    <div className="citizen-training-modal-date">
+                      <span className="citizen-training-modal-meta-label">Date:</span>
+                      <span className="citizen-training-modal-meta-value">
+                        {new Date(selectedProgram.date).toLocaleDateString(undefined, { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </div>
                   )}
-                  
-                  {/* Photo Counter */}
-                  {selectedProgram.photos.length > 1 && (
-                    <div className="citizen-program-photo-counter">
-                      {currentPhotoIndex + 1} / {selectedProgram.photos.length}
+                  {selectedProgram.location && (
+                    <div className="citizen-training-modal-location">
+                      <span className="citizen-training-modal-meta-label">Location:</span>
+                      <span className="citizen-training-modal-meta-value">{selectedProgram.location}</span>
                     </div>
                   )}
                 </div>
               </div>
-            )}
+              <button
+                className="citizen-training-modal-close"
+                onClick={() => setShowProgramModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Title */}
+            <div className="citizen-training-modal-title-section">
+              <h2 className="citizen-training-modal-title">{selectedProgram.name}</h2>
+            </div>
+            
+            {/* Scrollable content container */}
+            <div className="citizen-training-modal-scrollable">
+              {/* Description Section */}
+              <div className="citizen-training-modal-description-section">
+                <div className="citizen-training-modal-description-header">
+                  <h3 className="citizen-training-modal-description-title">Program Description</h3>
+                </div>
+                <div className="citizen-training-modal-description-content">
+                  <p className="citizen-training-modal-description-text">
+                    {selectedProgram.description}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Enhanced Photo Gallery */}
+              {selectedProgram.photos && selectedProgram.photos.length > 0 && (
+                <div className="citizen-training-modal-gallery">
+                  <div className="citizen-training-modal-gallery-header">
+                    <h3 className="citizen-training-modal-gallery-title">Program Photos</h3>
+                    {selectedProgram.photos.length > 1 && (
+                      <div className="citizen-training-modal-gallery-counter">
+                        {currentPhotoIndex + 1} of {selectedProgram.photos.length}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="citizen-training-modal-gallery-container">
+                    <div className="citizen-training-modal-image-wrapper">
+                      <img
+                        src={selectedProgram.photos[currentPhotoIndex]}
+                        alt={`Training Program Photo ${currentPhotoIndex + 1}`}
+                        className="citizen-training-modal-image"
+                      />
+                      
+                      {/* Navigation Arrows */}
+                      {selectedProgram.photos.length > 1 && (
+                        <>
+                          <button 
+                            className="citizen-training-modal-nav-btn citizen-training-modal-nav-prev"
+                            onClick={prevPhoto}
+                          >
+                            <FaChevronLeft />
+                          </button>
+                          <button 
+                            className="citizen-training-modal-nav-btn citizen-training-modal-nav-next"
+                            onClick={nextPhoto}
+                          >
+                            <FaChevronRight />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Photo Thumbnails */}
+                    {selectedProgram.photos.length > 1 && (
+                      <div className="citizen-training-modal-thumbnails">
+                        {selectedProgram.photos.map((photo, index) => (
+                          <button
+                            key={index}
+                            className={`citizen-training-modal-thumbnail ${index === currentPhotoIndex ? 'active' : ''}`}
+                            onClick={() => setCurrentPhotoIndex(index)}
+                          >
+                            <img src={photo} alt={`Thumbnail ${index + 1}`} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

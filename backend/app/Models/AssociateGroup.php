@@ -63,6 +63,9 @@ class AssociateGroup extends Model
     {
         return $this->hasMany(DirectorHistory::class)
             ->with([
+                'achievements',
+                'associateGroup',
+                'associateGroup.user'
                 'user.activityLogs' => function($query) {
                     $query->orderBy('activity_at', 'desc')->limit(10);
                 },

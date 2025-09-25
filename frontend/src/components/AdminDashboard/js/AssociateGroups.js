@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey, faTrophy, faMedal, faStar, faCrown, faHandshake, faFileAlt, faSignInAlt, faUserCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey, faTrophy, faMedal, faStar, faCrown, faHandshake, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
@@ -27,6 +27,11 @@ function AssociateGroups() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [pendingApplications, setPendingApplications] = useState([]);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
@@ -53,7 +58,7 @@ function AssociateGroups() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [associateToDelete, setAssociateToDelete] = useState(null);
 
-  const fetchAssociates = async () => {
+  const fetchAssociates = async (showNotification = false) => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups`, {
@@ -61,6 +66,10 @@ function AssociateGroups() {
       });
       
       setAssociates(response.data);
+      if (showNotification) {
+        setNotification('Associate groups data refreshed successfully!');
+        setTimeout(() => setNotification(''), 3000);
+      }
     } catch (error) {
       console.error('Error fetching associate groups:', error);
       setError('Failed to fetch associate groups. Please try again later.');
@@ -70,6 +79,15 @@ function AssociateGroups() {
   // Fetch associate groups from the backend
   useEffect(() => {
     fetchAssociates();
+    fetchPendingApplications(); // Also fetch pending applications for counter
+    
+    // Refresh data every 5 seconds to catch profile updates
+    const interval = setInterval(() => {
+      fetchAssociates();
+      fetchPendingApplications(); // Also refresh pending applications
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Simulate fetching member count (replace with API call if available)
@@ -83,7 +101,7 @@ function AssociateGroups() {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchAssociates();
-    }, 30000); // Poll every 30 seconds (associate data doesn't change frequently)
+    }, 10000); // Poll every 10 seconds to catch profile updates
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 
@@ -117,6 +135,81 @@ function AssociateGroups() {
     setPopupError('');
   };
 
+  const openApplicationModal = () => {
+    setShowApplicationModal(true);
+    fetchPendingApplications();
+  };
+
+  const closeApplicationModal = () => {
+    setShowApplicationModal(false);
+  };
+
+  const fetchPendingApplications = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/pending-applications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPendingApplications(response.data);
+    } catch (error) {
+      console.error('Error fetching pending applications:', error);
+      setError('Failed to fetch pending applications. Please try again later.');
+    }
+  };
+
+  const approveApplication = async (applicationId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNotification('Application approved successfully! OTP sent to user email.');
+      fetchPendingApplications(); // Refresh the list
+      fetchAssociates(); // Refresh associate groups
+      setTimeout(() => setNotification(''), 3000);
+    } catch (error) {
+      console.error('Error approving application:', error);
+      setError('Failed to approve application. Please try again.');
+    }
+  };
+
+  const openRejectionModal = (applicationId) => {
+    setSelectedApplicationId(applicationId);
+    setRejectionReason('');
+    setShowRejectionModal(true);
+  };
+
+  const closeRejectionModal = () => {
+    setShowRejectionModal(false);
+    setRejectionReason('');
+    setSelectedApplicationId(null);
+  };
+
+  const rejectApplication = async () => {
+    if (!rejectionReason || rejectionReason.trim() === '') {
+      setError('Rejection reason is required.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      await axios.post(`${API_BASE}/api/pending-applications/${selectedApplicationId}/reject`, {
+        rejection_reason: rejectionReason.trim()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNotification('Application rejected successfully! Rejection email sent to user.');
+      fetchPendingApplications(); // Refresh the list
+      closeRejectionModal();
+      setTimeout(() => setNotification(''), 3000);
+    } catch (error) {
+      console.error('Error rejecting application:', error);
+      setError('Failed to reject application. Please try again.');
+    }
+  };
+
   const openEditListMode = () => {
     setEditListMode(true);
   };
@@ -144,6 +237,7 @@ function AssociateGroups() {
     setEditMode(true);
     setError('');
     setShowEditModal(true);
+    setEditListMode(false);
   };
 
   const closeEditModal = () => {
@@ -239,18 +333,17 @@ function AssociateGroups() {
       });
       
       if (response.status === 201 || response.status === 200) {
-        // Show success message with generated password and recovery passcodes
-        const generatedPassword = response.data.generated_password;
+        // Show success message with recovery passcodes
         const recoveryPasscodes = response.data.recovery_passcodes || [];
         
         setNotification(`Associate group added successfully!`);
         
-        // Show password and recovery passcodes in a modal for admin to copy
+        // Show recovery passcodes in a modal for admin to copy
         const recoveryPasscodesText = recoveryPasscodes.length > 0 
           ? `\n\nRecovery Passcodes:\n${recoveryPasscodes.map((code, index) => `${index + 1}. ${code}`).join('\n')}\n\nPlease copy these codes and provide them to the associate group leader.`
           : '';
         
-        setPopupError(`Associate created successfully!\n\nGenerated Password: ${generatedPassword}${recoveryPasscodesText}\n\nPlease copy this password and recovery passcodes and provide them to the associate group leader.`);
+        setPopupError(`Associate created successfully!${recoveryPasscodesText}\n\nPlease copy these recovery passcodes and provide them to the associate group leader.`);
         setShowPopup(true);
         
         setShowAddModal(false);
@@ -329,21 +422,27 @@ function AssociateGroups() {
     }
   };
 
-  const handleRemoveAssociate = (associate) => {
-    setAssociateToDelete(associate);
+  const handleRemoveAssociate = (associateId) => {
+    setAssociateToDelete(associateId);
     setShowDeleteModal(true);
   };
+
+  const cancelDeleteAssociate = () => {
+    setShowDeleteModal(false);
+    setAssociateToDelete(null);
+  };
+
 
   const confirmDeleteAssociate = async () => {
     if (!associateToDelete) return;
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.delete(`${API_BASE}/api/associate-groups/${associateToDelete.id}`, {
+      await axios.delete(`${API_BASE}/api/associate-groups/${associateToDelete}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAssociates(prev => prev.filter(a => a.id !== associateToDelete.id));
-      if (selectedAssociate && selectedAssociate.id === associateToDelete.id) {
+      setAssociates(prev => prev.filter(a => a.id !== associateToDelete));
+      if (selectedAssociate && selectedAssociate.id === associateToDelete) {
         setSelectedAssociate(null);
         setShowProfileModal(false);
       }
@@ -353,6 +452,7 @@ function AssociateGroups() {
       setAssociateToDelete(null);
     } catch (error) {
       setError('Failed to remove associate group.');
+    } finally {
       setShowDeleteModal(false);
       setAssociateToDelete(null);
     }
@@ -374,14 +474,14 @@ function AssociateGroups() {
   const getLogoUrl = (logoPath) => {
     if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
     
+    // Handle full URLs (already processed by backend)
+    if (logoPath.startsWith('http')) {
+      return logoPath;
+    }
+    
     // Handle storage URLs
     if (logoPath.startsWith('logos/')) {
       return `${API_BASE}/storage/${logoPath}`;
-    }
-    
-    // Handle full URLs
-    if (logoPath.startsWith('http')) {
-      return logoPath;
     }
     
     // Handle storage paths
@@ -416,18 +516,6 @@ function AssociateGroups() {
     }
   };
 
-  const handleViewPassword = async (associateId) => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups/${associateId}/password`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setPopupError(`Associate Password: ${response.data.password}`);
-      setShowPopup(true);
-    } catch (error) {
-      setError('Failed to fetch password.');
-    }
-  };
 
   const handleViewRecoveryPasscodes = async (associateId) => {
     try {
@@ -458,7 +546,9 @@ function AssociateGroups() {
         <div>
           {!editListMode && (
             <>
-              <button className="add-associate-btn" onClick={openAddModal}>Add Associate</button>
+              <button className="add-associate-btn" onClick={openApplicationModal}>
+                Application {pendingApplications.length > 0 && `(${pendingApplications.length})`}
+              </button>
               <button className="edit-associate-btn" onClick={openEditListMode}>Edit</button>
             </>
           )}
@@ -494,19 +584,9 @@ function AssociateGroups() {
                   }}
                 />
                 <FontAwesomeIcon
-                  icon={faLock}
-                  className="password-icon"
-                  style={{ position: 'absolute', top: 8, left: 40, color: '#007bff', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewPassword(associate.id);
-                  }}
-                  title="View Password"
-                />
-                <FontAwesomeIcon
                   icon={faKey}
                   className="recovery-passcode-icon"
-                  style={{ position: 'absolute', top: 8, left: 72, color: '#28a745', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
+                  style={{ position: 'absolute', top: 8, left: 40, color: '#28a745', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleViewRecoveryPasscodes(associate.id);
@@ -565,6 +645,7 @@ function AssociateGroups() {
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faUser} className="enhanced-profile-icon" /> <span><b>Director:</b> {selectedGroup.director}</span></div>
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faEnvelope} className="enhanced-profile-icon" /> <span><b>Email:</b> {selectedGroup.email}</span></div>
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faPhone} className="enhanced-profile-icon" /> <span><b>Phone:</b> {selectedGroup.phone || 'N/A'}</span></div>
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faCalendarAlt} className="enhanced-profile-icon" /> <span><b>Date Joined:</b> {selectedGroup.date_joined ? new Date(selectedGroup.date_joined).toLocaleDateString() : 'N/A'}</span></div>
             </div>
             <div className="enhanced-profile-description">{selectedGroup.description}</div>
             <div className="enhanced-profile-stats-grid">
@@ -605,34 +686,33 @@ function AssociateGroups() {
                         </div>
                         
                         {/* Director Activity Summary */}
-                        {history.user && (
-                          <div className="director-activity-summary">
-                            <h5 className="activity-summary-title">
-                              <FontAwesomeIcon icon={faChartBar} style={{ marginRight: '8px' }} />
-                              Activity Summary
-                            </h5>
-                            <div className="activity-stats-grid">
-                              <div className="activity-stat">
-                                <FontAwesomeIcon icon={faBell} />
-                                <span className="stat-label">Notifications:</span>
-                                <span className="stat-value">{history.notification_activities_count || 0}</span>
-                              </div>
-                              <div className="activity-stat">
-                                <FontAwesomeIcon icon={faFileAlt} />
-                                <span className="stat-label">Reports:</span>
-                                <span className="stat-value">{history.reports_submitted_count || 0}</span>
-                              </div>
-                              <div className="activity-stat">
-                                <FontAwesomeIcon icon={faSignInAlt} />
-                                <span className="stat-label">System Logins:</span>
-                                <span className="stat-value">{history.login_activities_count || 0}</span>
-                              </div>
-                              <div className="activity-stat">
-                                <FontAwesomeIcon icon={faStar} />
-                                <span className="stat-label">Engagement Score:</span>
-                                <span className="stat-value">{history.system_engagement_score || 0}%</span>
-                              </div>
+                        <div className="director-activity-summary">
+                          <h5 className="activity-summary-title">
+                            <FontAwesomeIcon icon={faChartBar} style={{ marginRight: '8px' }} />
+                            Activity Summary
+                          </h5>
+                          <div className="activity-stats-grid">
+                            <div className="activity-stat">
+                              <FontAwesomeIcon icon={faBell} />
+                              <span className="stat-label">Notifications:</span>
+                              <span className="stat-value">{history.notifications_created || 0}</span>
                             </div>
+                            <div className="activity-stat">
+                              <FontAwesomeIcon icon={faFileAlt} />
+                              <span className="stat-label">Reports:</span>
+                              <span className="stat-value">{history.reports_submitted_count || 0}</span>
+                            </div>
+                            <div className="activity-stat">
+                              <FontAwesomeIcon icon={faSignInAlt} />
+                              <span className="stat-label">System Logins:</span>
+                              <span className="stat-value">{history.total_activities || 0}</span>
+                            </div>
+                            <div className="activity-stat">
+                              <FontAwesomeIcon icon={faStar} />
+                              <span className="stat-label">Engagement Score:</span>
+                              <span className="stat-value">{history.system_engagement_score || 0}%</span>
+                            </div>
+                          </div>
                             
                             {/* Recent Activities */}
                             {history.activity_logs && history.activity_logs.length > 0 && (
@@ -690,7 +770,6 @@ function AssociateGroups() {
                               </div>
                             )}
                           </div>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -883,13 +962,19 @@ function AssociateGroups() {
                   
                   <div className="form-group">
                     <label>Organization Type *</label>
-                    <input 
+                    <select 
                       name="type" 
                       value={form.type || ''} 
                       onChange={handleFormChange} 
-                      placeholder="e.g., Emergency Response, Medical, etc."
                       required 
-                    />
+                    >
+                      <option value="">Select organization type</option>
+                      <option value="Educational Institution">Educational Institution</option>
+                      <option value="Private Company">Private Company</option>
+                      <option value="Religious Organization">Religious Organization</option>
+                      <option value="Community Group">Community Group</option>
+                      <option value="Government Agency">Government Agency</option>
+                    </select>
                   </div>
                   
                   <div className="form-group">
@@ -913,6 +998,8 @@ function AssociateGroups() {
                       placeholder="Enter email address"
                       required 
                       pattern="[^@\s]+@[^\s@]+\.[^\s@]+" 
+                      readOnly
+                      style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
                     />
                   </div>
                   
@@ -940,15 +1027,14 @@ function AssociateGroups() {
                   </div>
                   
                   <div className="form-group">
-                    <label>Date Joined *</label>
+                    <label>Date Joined</label>
                     <input 
                       name="date_joined" 
                       type="date" 
                       value={form.date_joined || ''} 
-                      onChange={handleFormChange} 
-                      required 
-                      max={new Date().toISOString().split('T')[0]}
-                      title="Select the date when this group joined"
+                      readOnly
+                      style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                      title="Date joined cannot be changed"
                     />
                   </div>
                   
@@ -1022,15 +1108,10 @@ function AssociateGroups() {
           shouldCloseOnOverlayClick={true}
         >
           <div className="enhanced-error-header">
-            {popupError.includes('Generated Password:') ? (
+            {popupError.includes('Associate created successfully!') ? (
               <>
                 <span className="enhanced-error-icon" role="img" aria-label="Success">✅</span>
                 <h2>Associate Created Successfully!</h2>
-              </>
-            ) : popupError.includes('Associate Password:') ? (
-              <>
-                <span className="enhanced-error-icon" role="img" aria-label="Password">🔐</span>
-                <h2>Associate Password</h2>
               </>
             ) : popupError.includes('Associate Recovery Passcodes:') ? (
               <>
@@ -1046,52 +1127,12 @@ function AssociateGroups() {
             <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={() => setShowPopup(false)} />
           </div>
           <div className="enhanced-error-body">
-            {popupError.includes('Generated Password:') ? (
+            {popupError.includes('Associate created successfully!') ? (
               <>
                 <p style={{ color: '#28a745', marginBottom: 16, fontWeight: 500 }}>
                   The associate group has been created successfully!
                 </p>
                 <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '2px solid #28a745' }}>
-                  <p style={{ fontWeight: 600, color: '#28a745', marginBottom: '8px' }}>Generated Password:</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                    <code style={{ 
-                      background: '#fff', 
-                      padding: '8px 12px', 
-                      borderRadius: '4px', 
-                      border: '1px solid #ddd',
-                      fontFamily: 'monospace',
-                      fontSize: '14px',
-                      flex: 1
-                    }}>
-                      {popupError.split('Generated Password: ')[1]?.split('\n')[0]}
-                    </code>
-                    <button 
-                      onClick={(e) => {
-                        navigator.clipboard.writeText(popupError.split('Generated Password: ')[1]?.split('\n')[0]);
-                        // Show temporary feedback
-                        const btn = e.target;
-                        const originalText = btn.textContent;
-                        btn.textContent = 'Copied!';
-                        btn.style.background = '#28a745';
-                        setTimeout(() => {
-                          btn.textContent = originalText;
-                          btn.style.background = '#007bff';
-                        }, 2000);
-                      }}
-                      style={{ 
-                        background: '#007bff', 
-                        color: '#fff', 
-                        border: 'none', 
-                        padding: '8px 12px', 
-                        borderRadius: '4px', 
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      Copy Password
-                    </button>
-                  </div>
-                  
                   {/* Recovery Passcodes Section */}
                   {popupError.includes('Recovery Passcodes:') && (
                     <>
@@ -1143,11 +1184,11 @@ function AssociateGroups() {
                   )}
                   
                   <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', marginBottom: 0 }}>
-                    ⚠️ Please copy this password and recovery passcodes and provide them to the associate group leader. They will not be shown again.
+                    ⚠️ Please copy these recovery passcodes and provide them to the associate group leader. They will not be shown again.
                   </p>
                 </div>
                 <p style={{ color: '#555', fontSize: '0.95rem' }}>
-                  The associate can now log in using their email and the generated password above, or use any of the recovery passcodes if they forget their password.
+                  The associate can now log in using their email and a temporary password, or use any of the recovery passcodes if they forget their password.
                 </p>
               </>
             ) : popupError.includes('Associate Password:') ? (
@@ -1273,6 +1314,237 @@ function AssociateGroups() {
         </Modal>
       )}
 
+      {/* Application Modal */}
+      {showApplicationModal && (
+        <Modal
+          isOpen={showApplicationModal}
+          onRequestClose={closeApplicationModal}
+          className="profile-modal-overlay"
+          overlayClassName="profile-modal-overlay"
+        >
+          <div className="profile-modal-card enhanced-modal" style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="profile-modal-header">
+              <h3>Pending Applications</h3>
+              <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeApplicationModal} />
+            </div>
+            
+            <div className="profile-modal-body">
+              {pendingApplications.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  <FontAwesomeIcon icon={faUserCheck} size="3x" style={{ marginBottom: '16px', opacity: 0.5 }} />
+                  <p>No pending applications at the moment.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {pendingApplications.map((application) => (
+                    <div key={application.id} style={{ 
+                      border: '1px solid #ddd', 
+                      borderRadius: '8px', 
+                      padding: '16px',
+                      backgroundColor: '#f9f9f9'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                        <img 
+                          src={getLogoUrl(application.logo)} 
+                          alt={application.organization_name}
+                          style={{ 
+                            width: '60px', 
+                            height: '60px', 
+                            borderRadius: '50%', 
+                            objectFit: 'cover',
+                            border: '2px solid #ddd'
+                          }}
+                          onError={(e) => {
+                            e.target.src = '/Assets/disaster_logo.png';
+                          }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 4px 0', color: '#333' }}>{application.organization_name}</h4>
+                          <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                            <strong>Type:</strong> {application.organization_type}
+                          </p>
+                          <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                            <strong>Director:</strong> {application.director_name}
+                          </p>
+                          <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                            <strong>Email:</strong> {application.email}
+                          </p>
+                          <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
+                            <strong>Phone:</strong> {application.phone}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button 
+                          onClick={() => openRejectionModal(application.id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          Reject
+                        </button>
+                        <button 
+                          onClick={() => approveApplication(application.id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          Approve
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {showRejectionModal && (
+        <Modal
+          isOpen={showRejectionModal}
+          onRequestClose={closeRejectionModal}
+          style={{
+            overlay: {
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000
+            },
+            content: {
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              right: 'auto',
+              bottom: 'auto',
+              marginRight: '-50%',
+              transform: 'translate(-50%, -50%)',
+              width: '400px',
+              maxWidth: '90vw',
+              backgroundColor: '#1a1a1a',
+              border: '1px solid #333',
+              borderRadius: '8px',
+              padding: '0',
+              color: 'white'
+            }
+          }}
+        >
+          <div style={{
+            backgroundColor: '#c0392b',
+            color: 'white',
+            padding: '20px',
+            borderRadius: '8px 8px 0 0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
+              Reject Application
+            </h2>
+            <button
+              onClick={closeRejectionModal}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                fontSize: '20px',
+                cursor: 'pointer',
+                padding: '0',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div style={{ padding: '20px' }}>
+            <p style={{ marginBottom: '15px', color: '#ccc' }}>
+              Please provide a reason for rejecting this application:
+            </p>
+            
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              style={{
+                width: '100%',
+                height: '100px',
+                padding: '10px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                color: 'white',
+                fontSize: '14px',
+                resize: 'vertical',
+                fontFamily: 'inherit'
+              }}
+            />
+            
+            {error && (
+              <div style={{
+                color: '#dc3545',
+                fontSize: '14px',
+                marginTop: '10px'
+              }}>
+                {error}
+              </div>
+            )}
+            
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'flex-end',
+              marginTop: '20px'
+            }}>
+              <button
+                onClick={closeRejectionModal}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={rejectApplication}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Reject Application
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="modal-overlay" style={{zIndex: 10000}}>

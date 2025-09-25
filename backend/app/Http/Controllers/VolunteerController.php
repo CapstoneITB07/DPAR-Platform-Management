@@ -40,6 +40,7 @@ class VolunteerController extends Controller
         $volunteer = $associateGroup->volunteers()->create($request->all());
 
         // Log activity for volunteer recruitment
+        $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId(Auth::id());
         ActivityLog::logActivity(
             Auth::id(),
             'volunteer_recruited',
@@ -49,7 +50,8 @@ class VolunteerController extends Controller
                 'volunteer_name' => $volunteer->name,
                 'volunteer_gender' => $volunteer->gender,
                 'volunteer_expertise' => $volunteer->expertise
-            ]
+            ],
+            $directorHistoryId
         );
 
         // Update current director's volunteer count

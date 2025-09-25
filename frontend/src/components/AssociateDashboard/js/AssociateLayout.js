@@ -3,6 +3,7 @@ import '../css/AssociateDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faBullhorn, faUsers, faEnvelope, faChartBar, faSignOutAlt, faBars, faKey, faTimes, faUser, faBuilding, faEye, faEyeSlash, faLock } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import axios from 'axios';
 import Modal from 'react-modal';
 
@@ -36,7 +37,6 @@ function AssociateLayout({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState('/Assets/disaster_logo.png');
   const [imagePreview, setImagePreview] = useState(null);
-  const [newProfileImage, setNewProfileImage] = useState(null);
   const [userDisplayName, setUserDisplayName] = useState('Associate');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -45,6 +45,7 @@ function AssociateLayout({ children }) {
   const [passwordSuggestions, setPasswordSuggestions] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const userId = Number(localStorage.getItem('userId'));
   const userOrganization = localStorage.getItem('userOrganization');
@@ -56,6 +57,7 @@ function AssociateLayout({ children }) {
     email: ''
   });
   const [pendingChanges, setPendingChanges] = useState({});
+  const [hasFormChanges, setHasFormChanges] = useState(false);
   const NOTIF_READ_KEY = `associateNotifRead_${userId}`;
   const [notifications, setNotifications] = useState([]);
   const [editProfileHover, setEditProfileHover] = useState(false);
@@ -72,9 +74,8 @@ function AssociateLayout({ children }) {
 
   const isActive = (route) => location.pathname === route;
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -254,6 +255,13 @@ function AssociateLayout({ children }) {
       ...prev,
       [name]: value
     }));
+    
+    // Check if any form field has changed from original values
+    const hasChanges = Object.keys(profileForm).some(key => {
+      if (key === 'email') return false; // Email is read-only, don't track changes
+      return profileForm[key] !== profileData[key];
+    });
+    setHasFormChanges(hasChanges);
   };
 
   const handleProfileImageChange = (e) => {
@@ -268,7 +276,11 @@ function AssociateLayout({ children }) {
         setProfileError('File size should not exceed 2MB');
         return;
       }
-      setNewProfileImage(file);
+      
+      setProfileForm(prev => ({
+        ...prev,
+        profileImage: file
+      }));
       setProfileError('');
       
       // Show preview
@@ -277,53 +289,24 @@ function AssociateLayout({ children }) {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+      
+      // Mark as having changes when image is selected
+      setHasFormChanges(true);
     } else {
       // Clear preview if no file selected
       setImagePreview(null);
-      setNewProfileImage(null);
+      setProfileForm(prev => ({ ...prev, profileImage: null }));
     }
   };
 
-  const handleProfileUpdate = async () => {
-    if (newProfileImage) {
-      setIsLoading(true);
-      setProfileError('');
-      try {
-        const formData = new FormData();
-        formData.append('profile_picture', newProfileImage);
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
-          }
-        });
-        setProfileSuccess('Profile picture updated successfully');
-        setNewProfileImage(null);
-        // Update the profile image with the server response URL
-        if (response.data.profile_picture_url) {
-          setProfileImage(response.data.profile_picture_url);
-        } else if (imagePreview) {
-          // Fallback to preview if no server URL
-          setProfileImage(imagePreview);
-        }
-        setImagePreview(null); // Clear preview
-      } catch (error) {
-        setProfileError(error.response?.data?.message || 'Failed to update profile picture');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
 
   const handleProfileInfoUpdate = async (e) => {
     e.preventDefault();
     
-    // Check if director name or email has changed
+    // Check if director name has changed (email is read-only, so no need to check)
     const directorChanged = profileForm.director !== originalDirectorValues.director;
-    const emailChanged = profileForm.email !== originalDirectorValues.email;
     
-    if (directorChanged || emailChanged) {
+    if (directorChanged) {
       // Store pending changes and show warning
       setPendingChanges(profileForm);
       setShowDirectorWarning(true);
@@ -341,18 +324,42 @@ function AssociateLayout({ children }) {
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/profile/update`, profileForm, {
-        headers: { Authorization: `Bearer ${token}` }
+      
+      // Create FormData to handle both form fields and file upload
+      const formData = new FormData();
+      formData.append('name', profileForm.name);
+      formData.append('director', profileForm.director);
+      formData.append('type', profileForm.type);
+      formData.append('email', profileForm.email); // Include email even though it's read-only
+      
+      // Add image if selected
+      if (profileForm.profileImage) {
+        formData.append('profile_image', profileForm.profileImage);
+      }
+      
+      const response = await axios.post(`${API_BASE}/api/profile/update`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
-      setProfileSuccess('Profile information updated successfully');
+      
+      setProfileSuccess('Profile updated successfully');
+      
+      // Update profile image immediately if provided in response
+      if (response.data.profile_picture_url) {
+        setProfileImage(response.data.profile_picture_url);
+      }
       // Update the sidebar name immediately
       setUserDisplayName(profileForm.name);
       // Refresh profile data to update UI
       await fetchProfile();
-      // Force a re-render by updating the profile data
-      setProfileForm(prev => ({ ...prev }));
+      // Reset form changes state
+      setHasFormChanges(false);
+      // Clear image selection (preview will be cleared by fetchProfile)
+      setProfileForm(prev => ({ ...prev, profileImage: null }));
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Failed to update organization information');
+      setProfileError(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -382,6 +389,8 @@ function AssociateLayout({ children }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      console.log('Profile response:', response.data); // Debug log
+      
       // Update profile form with current data
       setProfileForm({
         name: response.data.name || '',
@@ -400,6 +409,20 @@ function AssociateLayout({ children }) {
       
       // Update user display name for sidebar
       setUserDisplayName(response.data.name || 'Associate');
+      
+      // Update profile image if provided
+      if (response.data.profile_picture_url) {
+        setProfileImage(response.data.profile_picture_url);
+      } else if (response.data.profile_image_url) {
+        setProfileImage(response.data.profile_image_url);
+      } else if (response.data.logo_url) {
+        setProfileImage(response.data.logo_url);
+      }
+      
+      // Reset form changes state when loading fresh data
+      setHasFormChanges(false);
+      // Clear image preview when loading fresh data
+      setImagePreview(null);
       
       // Store original director values for change detection
       setOriginalDirectorValues({
@@ -624,7 +647,7 @@ function AssociateLayout({ children }) {
                   setIsProfileModalOpen(true); 
                   setActiveTab('profile'); // Reset to profile tab when opening modal
                   setImagePreview(null);
-                  setNewProfileImage(null);
+                  setProfileForm(prev => ({ ...prev, profileImage: null }));
                   setProfileError('');
                   setProfileSuccess('');
                   setPasswordError('');
@@ -1000,26 +1023,6 @@ function AssociateLayout({ children }) {
                       }}>
                         Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)
                       </div>
-                      {newProfileImage && (
-                        <button 
-                          onClick={handleProfileUpdate} 
-                          disabled={isLoading}
-                          style={{
-                            background: '#A11C22',
-                            color: 'white',
-                            border: 'none',
-                            padding: window.innerWidth <= 480 ? '8px 16px' : '10px 20px',
-                            borderRadius: '6px',
-                            cursor: isLoading ? 'not-allowed' : 'pointer',
-                            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                            fontWeight: '500',
-                            opacity: isLoading ? 0.6 : 1,
-                            width: window.innerWidth <= 480 ? '100%' : 'auto'
-                          }}
-                        >
-                          {isLoading ? 'Updating...' : 'Update Profile Picture'}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1084,15 +1087,17 @@ function AssociateLayout({ children }) {
                         type="text"
                         name="type"
                         value={profileForm.type}
-                        onChange={handleProfileFormChange}
-                        placeholder="e.g., Emergency Response, Medical, etc."
+                        readOnly
                         style={{
                           width: '100%',
                           padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
                           border: '1px solid #ddd',
                           borderRadius: '6px',
                           fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          backgroundColor: '#f5f5f5',
+                          color: '#666',
+                          cursor: 'not-allowed'
                         }}
                       />
                     </div>
@@ -1141,32 +1146,34 @@ function AssociateLayout({ children }) {
                         type="email"
                         name="email"
                         value={profileForm.email}
-                        onChange={handleProfileFormChange}
+                        readOnly
                         style={{
                           width: '100%',
                           padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
                           border: '1px solid #ddd',
                           borderRadius: '6px',
                           fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          backgroundColor: '#f5f5f5',
+                          cursor: 'not-allowed'
                         }}
-                        required
+                        title="Email address cannot be changed"
                       />
                     </div>
 
                     <button 
                       type="submit" 
-                      disabled={isLoading}
+                      disabled={isLoading || !hasFormChanges}
                       style={{
-                        background: '#A11C22',
+                        background: hasFormChanges ? '#A11C22' : '#ccc',
                         color: 'white',
                         border: 'none',
                         padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
                         borderRadius: '6px',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        cursor: (isLoading || !hasFormChanges) ? 'not-allowed' : 'pointer',
                         fontSize: window.innerWidth <= 480 ? '12px' : '14px',
                         fontWeight: '500',
-                        opacity: isLoading ? 0.6 : 1,
+                        opacity: (isLoading || !hasFormChanges) ? 0.6 : 1,
                         width: window.innerWidth <= 480 ? '100%' : 'auto'
                       }}
                     >

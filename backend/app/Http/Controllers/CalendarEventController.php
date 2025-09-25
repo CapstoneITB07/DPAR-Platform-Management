@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarEvent;
 use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -64,6 +65,7 @@ class CalendarEventController extends Controller
             // Log activity for event creation (only for associate group leaders)
             $user = Auth::user();
             if ($user && $user->role === 'associate_group_leader') {
+                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
                 ActivityLog::logActivity(
                     $user->id,
                     'event_created',
@@ -74,7 +76,8 @@ class CalendarEventController extends Controller
                         'event_location' => $event->location,
                         'start_date' => $event->start_date,
                         'end_date' => $event->end_date
-                    ]
+                    ],
+                    $directorHistoryId
                 );
             }
 

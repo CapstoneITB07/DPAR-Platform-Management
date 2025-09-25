@@ -6,6 +6,7 @@ use App\Models\AssociateGroup;
 use App\Models\User;
 use App\Models\DirectorHistory;
 use App\Models\DirectorAchievement;
+use App\Models\Volunteer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -97,8 +98,6 @@ class AssociateGroupController extends Controller
             ]);
 
             // Auto-generate a strong password
-            $plainPassword = $this->generateStrongPassword();
-
             // Generate three recovery passcodes
             $recoveryPasscodes = [
                 $this->generateRecoveryPasscode(),
@@ -106,15 +105,16 @@ class AssociateGroupController extends Controller
                 $this->generateRecoveryPasscode()
             ];
 
-            // Create user account
+            // Create user account with a temporary password that must be changed on first login
+            $tempPassword = 'TempPassword' . random_int(1000, 9999); // Simple temp password
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($plainPassword),
-                'temp_password' => $plainPassword, // Store plain text temporarily
+                'password' => Hash::make($tempPassword),
                 'role' => 'associate_group_leader',
                 'organization' => $request->name,
                 'recovery_passcodes' => $recoveryPasscodes,
+                'needs_password_change' => true, // Force password change on first login
             ]);
 
             // Handle logo upload
@@ -161,9 +161,8 @@ class AssociateGroupController extends Controller
                 $group->logo = Storage::url($group->logo);
             }
 
-            // Include the generated password and recovery passcodes in the response for admin viewing
+            // Include the recovery passcodes in the response for admin viewing
             $responseData = $group->load('user')->toArray();
-            $responseData['generated_password'] = $plainPassword;
             $responseData['recovery_passcodes'] = $recoveryPasscodes;
 
             DB::commit();
@@ -178,33 +177,6 @@ class AssociateGroupController extends Controller
         }
     }
 
-    /**
-     * Generate a strong password for new associate accounts
-     */
-    private function generateStrongPassword($length = 12)
-    {
-        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
-        $numbers = '0123456789';
-        $symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-
-        $password = '';
-
-        // Ensure at least one character from each category
-        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
-        $password .= $lowercase[random_int(0, strlen($lowercase) - 1)];
-        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
-        $password .= $symbols[random_int(0, strlen($symbols) - 1)];
-
-        // Fill the rest with random characters
-        $allChars = $uppercase . $lowercase . $numbers . $symbols;
-        for ($i = 4; $i < $length; $i++) {
-            $password .= $allChars[random_int(0, strlen($allChars) - 1)];
-        }
-
-        // Shuffle the password to make it more random
-        return str_shuffle($password);
-    }
 
     /**
      * Generate a recovery passcode for new associate accounts
@@ -252,6 +224,15 @@ class AssociateGroupController extends Controller
 
             // Return the existing recovery passcodes
             $recoveryPasscodes = $group->user->recovery_passcodes ?? [];
+
+            // Log the recovery passcodes being returned
+            Log::info('Fetching recovery passcodes for admin', [
+                'associate_id' => $id,
+                'associate_name' => $group->name,
+                'user_id' => $group->user->id,
+                'recovery_passcodes' => $recoveryPasscodes,
+                'count' => count($recoveryPasscodes)
+            ]);
 
             return response()->json([
                 'associate_name' => $group->name,
@@ -382,41 +363,36 @@ class AssociateGroupController extends Controller
 
             // If director changed, create director history entry for previous director
             if ($directorChanged && $previousDirector) {
-                // End current directorship
-                DirectorHistory::where('associate_group_id', $group->id)
+                // Get the current director history record
+                $currentDirectorHistory = DirectorHistory::where('associate_group_id', $group->id)
                     ->where('is_current', true)
-                    ->update([
-                        'is_current' => false,
-                        'end_date' => now()->toDateString()
-                    ]);
-
-                // Get activity summary for previous director
-                $activitySummary = $this->getDirectorActivitySummary($previousDirector->id);
-
-                // Use the original director name before the update
-                $previousDirectorName = $originalDirectorName; // This is the actual previous director's name
-
-                // Check if previous director already has a history entry to avoid duplicates
-                $existingHistory = DirectorHistory::where('associate_group_id', $group->id)
-                    ->where('director_name', $previousDirectorName)
-                    ->where('director_email', $originalDirectorEmail)
-                    ->where('is_current', false)
                     ->first();
 
-                if (!$existingHistory) {
-                    // Create director history entry for previous director
-                    DirectorHistory::create([
-                        'associate_group_id' => $group->id,
-                        'director_name' => $previousDirectorName,
-                        'director_email' => $originalDirectorEmail,
+                if ($currentDirectorHistory) {
+                    // Update the current record to mark it as former director with end date
+                    $currentDirectorHistory->update([
+                        'is_current' => false,
+                        'end_date' => now()->subDay()->toDateString(), // Set end date to yesterday so activities are properly separated
+                        'director_name' => $originalDirectorName, // Ensure we use the original name
+                        'director_email' => $originalDirectorEmail
+                    ]);
+
+                    // Get activity summary for previous director
+                    $activitySummary = $this->getDirectorActivitySummary($previousDirector->id);
+
+                    // Get the actual volunteer count for the associate group during the previous director's tenure
+                    $previousDirectorVolunteerCount = Volunteer::where('associate_group_id', $group->id)
+                        ->where('created_at', '>=', $currentDirectorHistory->start_date)
+                        ->where('created_at', '<=', now())
+                        ->count();
+
+                    // Update the former director's record with their final stats
+                    $currentDirectorHistory->update([
                         'contributions' => 'Previous director - ' . $activitySummary['contributions_summary'],
-                        'volunteers_recruited' => $activitySummary['volunteers_recruited'],
+                        'volunteers_recruited' => $previousDirectorVolunteerCount,
                         'reports_submitted' => $activitySummary['reports_submitted'],
                         'notifications_responded' => $activitySummary['notifications_created'],
-                        'logins' => $activitySummary['total_activities'],
-                        'start_date' => $previousDirector->created_at->toDateString(),
-                        'end_date' => now()->toDateString(),
-                        'is_current' => false
+                        'logins' => $activitySummary['total_activities']
                     ]);
                 }
 
@@ -430,13 +406,13 @@ class AssociateGroupController extends Controller
                     ->first();
 
                 if (!$existingCurrentHistory) {
-                    // Create director history entry for new director
+                    // Create director history entry for new director with reset counts
                     DirectorHistory::create([
                         'associate_group_id' => $group->id,
                         'director_name' => $validatedData['director'],
                         'director_email' => $validatedData['email'],
                         'contributions' => 'New director - ' . $validatedData['director'],
-                        'volunteers_recruited' => 0,
+                        'volunteers_recruited' => 0, // Start with 0 volunteers
                         'reports_submitted' => 0,
                         'notifications_responded' => 0,
                         'logins' => 0,
@@ -563,7 +539,7 @@ class AssociateGroupController extends Controller
     }
 
     /**
-     * Get director activity summary
+     * Get director activity summary for the previous director's tenure
      */
     private function getDirectorActivitySummary($userId)
     {
@@ -578,10 +554,56 @@ class AssociateGroupController extends Controller
             ];
         }
 
-        $notificationsCount = $user->notifications()->count();
-        $reportsCount = $user->reports()->count();
-        $activitiesCount = $user->activityLogs()->count();
-        $volunteersCount = $user->volunteers()->count();
+        // Get the associate group to find the director history
+        $associateGroup = AssociateGroup::where('user_id', $userId)->first();
+        if (!$associateGroup) {
+            return [
+                'contributions_summary' => 'No associate group found',
+                'volunteers_recruited' => 0,
+                'notifications_created' => 0,
+                'reports_submitted' => 0,
+                'total_activities' => 0
+            ];
+        }
+
+        // Get the current director history to get the tenure period
+        $currentDirectorHistory = DirectorHistory::where('associate_group_id', $associateGroup->id)
+            ->where('is_current', true)
+            ->first();
+
+        if (!$currentDirectorHistory) {
+            // If no current director history, count all activities
+            $notificationsCount = $user->notifications()->count();
+            $reportsCount = $user->reports()->count();
+            $activitiesCount = $user->activityLogs()->count();
+            $volunteersCount = $user->volunteers()->count();
+        } else {
+            // Count activities from the start of current director's tenure to now
+            $startDate = $currentDirectorHistory->start_date;
+
+            $notificationsCount = $user->notifications()
+                ->where('created_at', '>=', $startDate)
+                ->count();
+            $reportsCount = $user->reports()
+                ->where('created_at', '>=', $startDate)
+                ->count();
+            $activitiesCount = $user->activityLogs()
+                ->where('activity_at', '>=', $startDate)
+                ->count();
+            // Get the volunteer count that was saved when the previous director ended
+            $previousDirectorHistory = DirectorHistory::where('associate_group_id', $associateGroup->id)
+                ->where('is_current', false)
+                ->where('end_date', $startDate)
+                ->first();
+
+            if ($previousDirectorHistory) {
+                // Use the saved volunteer count from the previous director's history
+                $volunteersCount = $previousDirectorHistory->volunteers_recruited;
+            } else {
+                // Fallback: count all volunteers if no previous history found
+                $volunteersCount = $user->volunteers()->count();
+            }
+        }
 
         $contributions = [];
         if ($notificationsCount > 0) $contributions[] = "Created {$notificationsCount} notifications";

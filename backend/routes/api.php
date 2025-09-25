@@ -16,6 +16,7 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\VolunteerController;
 use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\DirectorHistoryController;
+use App\Http\Controllers\PendingApplicationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,7 @@ use App\Http\Controllers\DirectorHistoryController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/login/recovery', [AuthController::class, 'loginWithRecoveryPasscode'])->middleware('throttle:5,1');
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');
 
 // Admin recovery account management routes
 Route::middleware(['auth:sanctum', 'role:head_admin'])->group(function () {
@@ -90,6 +92,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/associate-groups/{id}/cleanup-director-history', [AssociateGroupController::class, 'cleanupDirectorHistory'])->middleware('role:head_admin');
     Route::post('/associate-groups/cleanup-all-director-history', [AssociateGroupController::class, 'cleanupAllDirectorHistory'])->middleware('role:head_admin');
     Route::post('/associate-groups/fix-director-fields', [AssociateGroupController::class, 'fixDirectorFields'])->middleware('role:head_admin');
+
+    // Pending Applications routes (Admin only)
+    Route::middleware('role:head_admin')->group(function () {
+        Route::get('/pending-applications', [PendingApplicationController::class, 'index']);
+        Route::get('/pending-applications/{id}', [PendingApplicationController::class, 'show']);
+        Route::post('/pending-applications/{id}/approve', [PendingApplicationController::class, 'approve']);
+        Route::post('/pending-applications/{id}/reject', [PendingApplicationController::class, 'reject']);
+        Route::delete('/pending-applications/{id}', [PendingApplicationController::class, 'destroy']);
+    });
 
     // Director History routes
     Route::get('/associate-groups/{id}/director-history', [DirectorHistoryController::class, 'index']);

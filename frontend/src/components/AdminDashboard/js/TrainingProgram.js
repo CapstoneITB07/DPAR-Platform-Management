@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaChalkboardTeacher } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaChalkboardTeacher, FaCloudUploadAlt } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
@@ -352,7 +352,7 @@ function TrainingProgram() {
             <form className="training-modal-form" onSubmit={handleSubmit}>
               <div>
                 <label className="training-form-label">Program Name</label>
-                <input name="name" value={form.name} onChange={handleChange} required className="training-form-input" />
+                <input name="name" value={form.name} onChange={handleChange} placeholder="Enter training program name here..." required className="training-form-input" />
               </div>
               <div style={{ display: 'flex', gap: 40, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
@@ -370,33 +370,32 @@ function TrainingProgram() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <label className="training-form-label" style={{ marginBottom: 4 }}>Location</label>
-                  <input name="location" value={form.location} onChange={handleChange} required className="training-form-input" />
+                  <input name="location" value={form.location} onChange={handleChange} placeholder="Enter training location here..." required className="training-form-input" />
                 </div>
               </div>
               <div>
                 <label className="training-form-label">Program Description</label>
-                <textarea name="description" value={form.description} onChange={handleChange} required className="training-form-textarea" />
+                <textarea name="description" value={form.description} onChange={handleChange} placeholder="Enter detailed program description here. Include objectives, requirements, schedule, and other important details..." required className="training-form-textarea" />
               </div>
               
               {/* Multiple Photos Upload Section */}
-              <div className="training-upload-section">
-                <label className="training-form-label" style={{ marginBottom: 10, textAlign: 'center' }}>Upload Photos</label>
+              <div>
+                <label className="training-upload-label">Upload Photos</label>
                 <div className="training-upload-container">
                   {/* Photo Previews */}
                   <div className="training-photos-grid">
-                     {form.previews.map((preview, index) => (
-                       <div key={index} className="training-photo-preview">
-                         <img src={preview} alt={`Preview ${index + 1}`} className="training-upload-img" />
-                         <button 
-                           type="button" 
-                           onClick={() => removeExistingPhoto(index)} 
-                           className="training-upload-remove-x"
-                           title="Remove this photo"
-                         >
-                           <FontAwesomeIcon icon={faTimes} />
-                         </button>
-                       </div>
-                     ))}
+                    {form.previews.map((preview, index) => (
+                      <div key={index} className="training-photo-preview">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="training-upload-img" />
+                        <button 
+                          type="button" 
+                          onClick={() => removeExistingPhoto(index)} 
+                          className="training-upload-remove"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
                     {/* Upload Button */}
                     <div className="training-upload-placeholder">
                       <input 
@@ -407,18 +406,19 @@ function TrainingProgram() {
                         onChange={handlePhotoUpload}
                         style={{ display: 'none' }} 
                       />
-                      <label htmlFor="training-photos-upload" className="training-upload-btn">
-                        Choose Photos
+                      <label htmlFor="training-photos-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                        <FaCloudUploadAlt className="upload-icon" />
+                        <span className="upload-text">Upload Photos</span>
                       </label>
                     </div>
                   </div>
-                  {/* Clear All Photos Button (show when there are photos) */}
-                  {form.previews.length > 0 && (
+                  {/* Remove All Photos Button (only show when editing and has existing photos) */}
+                  {editId && form.previews.length > 0 && (
                     <div style={{ textAlign: 'center', marginTop: '10px' }}>
                       <button 
                         type="button" 
                         onClick={() => setForm(prev => ({ ...prev, previews: [] }))}
-                        className="training-clear-all-btn"
+                        className="training-remove-all-btn"
                         style={{
                           background: '#e74c3c',
                           color: 'white',
@@ -429,7 +429,7 @@ function TrainingProgram() {
                           fontSize: '14px'
                         }}
                       >
-                        Clear All Photos
+                        Remove All Photos
                       </button>
                     </div>
                   )}
@@ -465,80 +465,87 @@ function TrainingProgram() {
             const description = program.description || '';
             return (
               <div key={program.id} className="training-card"
+                onClick={() => openFullModal(program)}
+                style={{ cursor: 'pointer' }}
                 onMouseOver={e => { e.currentTarget.classList.add('training-card-hover'); }}
                 onMouseOut={e => { e.currentTarget.classList.remove('training-card-hover'); }}
               >
-                {/* Header */}
-                <div className="training-card-header">
+                {/* Date/Time Row */}
+                <div className="training-datetime-row">
+                  <div>
+                    <span className="training-date-badge">
+                      {program.date ? new Date(program.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'No Date'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="training-time-badge">
+                      {program.location || 'No Location'}
+                    </span>
+                  </div>
                   <div className="training-card-menu">
-                    <button onClick={() => handleMenuToggle(idx)} className="training-card-menu-btn">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMenuToggle(idx);
+                      }} 
+                      className="training-card-menu-btn"
+                    >
                       <FaEllipsisH size={20} />
                     </button>
                     {menuOpenIndex === idx && (
                       <div className="training-card-menu-dropdown">
-                        <div className="training-card-menu-item" onClick={() => openModal(idx)}>Edit</div>
-                        <div className="training-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={() => handleDelete(idx)}>Delete</div>
+                        <div className="training-card-menu-item" onClick={(e) => {
+                          e.stopPropagation();
+                          openModal(idx);
+                        }}>Edit</div>
+                        <div className="training-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(idx);
+                        }}>Delete</div>
                       </div>
                     )}
                   </div>
                 </div>
-                {/* Content */}
-                <div className="training-card-content">
-                  {title && <div className="training-card-title">{title}</div>}
+                {/* Title/Content */}
+                <div className="training-content">
+                  {title && <div className="training-title">{title}</div>}
+                  {description && (
+                    <div className="training-desc">
+                      {program.photos && program.photos.length > 0 
+                        ? description.length > 150 ? description.substring(0, 150) + '...' : description
+                        : description.length > 650 ? description.substring(0, 650) + '...' : description
+                      }
+                      {description.length > (program.photos && program.photos.length > 0 ? 150 : 650) && (
+                        <button 
+                          className="training-see-more-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openFullModal(program);
+                          }}
+                        >
+                          See more
+                        </button>
+                      )}
+                    </div>
+                  )}
                   
-                  {/* Date and Location Section */}
-                  <div className="training-card-meta">
-                    {program.date && (
-                      <div className="training-card-date-label">
-                        <strong>Date:</strong> {program.date}
-                      </div>
-                    )}
-                    {program.location && (
-                      <div className="training-card-location-label">
-                        <strong>Location:</strong> {program.location}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Always show description area, handle empty content */}
-                  <div className="training-card-desc">
-                    {description && description.trim() ? (
-                      <>
-                        <div className="training-text-content">
-                          {description.length > 100 ? description.substring(0, 100) + '...' : description}
-                        </div>
-                        {/* Always show See More button if there's any description */}
-                        <button
-                          className="training-card-see-more"
-                          onClick={() => openFullModal(program)}
-                        >See More</button>
-                      </>
-                    ) : (
-                      <div className="training-text-content" style={{ color: '#999', fontStyle: 'italic' }}>
-                        No description available
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Show photos or default icon */}
-                  <div className="training-photos-display">
-                    {program.photos && program.photos.length > 0 ? (
-                      <>
-                        <img 
-                          src={program.photos[0]} 
-                          alt="Training Program" 
-                          className="training-card-img" 
+                  {/* Show only first photo in card */}
+                  {program.photos && program.photos.length > 0 && (
+                    <div className="training-photos-wrapper">
+                      <div className="training-img-wrapper" style={{ position: 'relative' }}>
+                        <img
+                          src={program.photos[0]}
+                          alt="Training Program"
+                          className="training-img"
                         />
                         {program.photos.length > 1 && (
                           <div className="training-photos-indicator">
                             <span className="training-photos-count">+{program.photos.length - 1} more</span>
                           </div>
                         )}
-                      </>
-                    ) : (
-                      renderDefaultIcon()
-                    )}
-                  </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -548,53 +555,54 @@ function TrainingProgram() {
 
       {/* Full Description Modal with Photo Navigation */}
       {showDescModal && (
-        <div className="training-desc-modal-overlay">
-          <div className="training-desc-modal-card">
-            <button onClick={() => setShowDescModal(false)} className="training-desc-modal-close">&times;</button>
-            <h3 className="training-desc-modal-title">{descModalContent.title}</h3>
+        <div className="announcements-modal" onClick={() => setShowDescModal(false)}>
+          <div className="announcement-full-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="announcement-full-modal-header">
+              <h2>{descModalContent.title}</h2>
+              <div className="announcement-full-modal-timestamp">
+                <span className="announcement-posted-text">
+                  {descModalContent.date && `Date: ${descModalContent.date}`}
+                  {descModalContent.location && ` | Location: ${descModalContent.location}`}
+                </span>
+              </div>
+              <button
+                className="announcement-full-modal-close"
+                onClick={() => setShowDescModal(false)}
+              >
+                ×
+              </button>
+            </div>
             
             {/* Scrollable content container */}
-            <div className="training-desc-modal-content">
-              {/* Date and Location in Modal */}
-              <div className="training-desc-modal-meta">
-                {descModalContent.date && (
-                  <div className="training-desc-modal-date">
-                    <strong>Date:</strong> {descModalContent.date}
-                  </div>
-                )}
-                {descModalContent.location && (
-                  <div className="training-desc-modal-location">
-                    <strong>Location:</strong> {descModalContent.location}
-                  </div>
-                )}
-              </div>
-              
-              <div className="training-desc-modal-desc">
-                <strong>Description:</strong>
-                <p>{descModalContent.description}</p>
+            <div className="announcement-full-modal-content-scrollable">
+              <div className="announcement-full-modal-content-container">
+                <div className="announcement-description-label">Description</div>
+                <div className="announcement-full-modal-description">
+                  {descModalContent.description}
+                </div>
               </div>
               
               {/* Photo Navigation (Instagram/Facebook style) */}
               {descModalContent.photos && descModalContent.photos.length > 0 && (
-                <div className="training-photo-navigation">
-                  <div className="training-photo-container">
-                    <img 
-                      src={descModalContent.photos[currentPhotoIndex]} 
-                      alt={`Photo ${currentPhotoIndex + 1}`} 
-                      className="training-desc-modal-img" 
+                <div className="announcement-photo-navigation">
+                  <div className="announcement-photo-container">
+                    <img
+                      src={descModalContent.photos[currentPhotoIndex]}
+                      alt={`Photo ${currentPhotoIndex + 1}`}
+                      className="announcement-full-modal-img"
                     />
                     
                     {/* Navigation Arrows */}
                     {descModalContent.photos.length > 1 && (
                       <>
                         <button 
-                          className="training-photo-nav-btn training-photo-nav-prev"
+                          className="announcement-photo-nav-btn announcement-photo-nav-prev"
                           onClick={prevPhoto}
                         >
                           <FaChevronLeft />
                         </button>
                         <button 
-                          className="training-photo-nav-btn training-photo-nav-next"
+                          className="announcement-photo-nav-btn announcement-photo-nav-next"
                           onClick={nextPhoto}
                         >
                           <FaChevronRight />
@@ -604,7 +612,7 @@ function TrainingProgram() {
                     
                     {/* Photo Counter */}
                     {descModalContent.photos.length > 1 && (
-                      <div className="training-photo-counter">
+                      <div className="announcement-photo-counter">
                         {currentPhotoIndex + 1} / {descModalContent.photos.length}
                       </div>
                     )}

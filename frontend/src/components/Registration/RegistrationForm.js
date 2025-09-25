@@ -27,10 +27,24 @@ function RegistrationForm({ onSuccess, onCancel }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Special handling for phone number - only allow numbers
+    if (name === 'phone') {
+      // Remove any non-numeric characters
+      const numericValue = value.replace(/\D/g, '');
+      // Only allow if it starts with 09 or is empty
+      if (numericValue === '' || numericValue.startsWith('09')) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: numericValue
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     
     // Clear error when user starts typing
     if (errors[name]) {
@@ -84,15 +98,31 @@ function RegistrationForm({ onSuccess, onCancel }) {
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^09[0-9]{9}$/.test(formData.phone)) {
-      newErrors.phone = 'Phone number must start with 09 and be 11 digits (numbers only)';
+      newErrors.phone = 'Phone number must start with 09 and be 11 digits';
     }
     
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else {
-      const passwordStrength = checkPasswordStrength(formData.password);
-      if (passwordStrength.score < 3) {
-        newErrors.password = 'Password must be strong: include uppercase, lowercase, numbers, and special characters';
+      const passwordErrors = [];
+      if (formData.password.length < 8) {
+        passwordErrors.push('at least 8 characters');
+      }
+      if (!/[A-Z]/.test(formData.password)) {
+        passwordErrors.push('one uppercase letter');
+      }
+      if (!/[a-z]/.test(formData.password)) {
+        passwordErrors.push('one lowercase letter');
+      }
+      if (!/[0-9]/.test(formData.password)) {
+        passwordErrors.push('one number');
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+        passwordErrors.push('one special character');
+      }
+      
+      if (passwordErrors.length > 0) {
+        newErrors.password = `Password must contain ${passwordErrors.join(', ')}`;
       }
     }
     
@@ -104,8 +134,8 @@ function RegistrationForm({ onSuccess, onCancel }) {
     
     if (!formData.description.trim()) {
       newErrors.description = 'Organization description is required';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
+    } else if (formData.description.trim().length < 20) {
+      newErrors.description = 'Description must be at least 20 characters';
     }
     
     if (!formData.logo) {
@@ -114,28 +144,6 @@ function RegistrationForm({ onSuccess, onCancel }) {
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const checkPasswordStrength = (password) => {
-    let score = 0;
-    let feedback = [];
-    
-    if (password.length >= 8) score++;
-    else feedback.push('at least 8 characters');
-    
-    if (/[a-z]/.test(password)) score++;
-    else feedback.push('lowercase letters');
-    
-    if (/[A-Z]/.test(password)) score++;
-    else feedback.push('uppercase letters');
-    
-    if (/[0-9]/.test(password)) score++;
-    else feedback.push('numbers');
-    
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-    else feedback.push('special characters');
-    
-    return { score, feedback };
   };
 
   const handleSubmit = async (e) => {
@@ -259,6 +267,24 @@ function RegistrationForm({ onSuccess, onCancel }) {
           </div>
           
           <div className="form-group">
+            <label htmlFor="description">
+              <FontAwesomeIcon icon={faBuilding} className="form-icon" />
+              Organization Description *
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              className={errors.description ? 'error' : ''}
+              placeholder="Describe your organization's mission, activities, and how it contributes to disaster preparedness and response"
+              rows="4"
+            />
+            {errors.description && <span className="error-text">{errors.description}</span>}
+            <small className="form-help">Minimum 20 characters</small>
+          </div>
+          
+          <div className="form-group">
             <label htmlFor="email">
               <FontAwesomeIcon icon={faEnvelope} className="form-icon" />
               Email Address *
@@ -285,16 +311,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
               id="phone"
               name="phone"
               value={formData.phone}
-              onChange={(e) => {
-                // Only allow numbers
-                const value = e.target.value.replace(/[^0-9]/g, '');
-                if (value.length <= 11) {
-                  setFormData(prev => ({
-                    ...prev,
-                    phone: value
-                  }));
-                }
-              }}
+              onChange={handleInputChange}
               className={errors.phone ? 'error' : ''}
               placeholder="09XXXXXXXXX"
               maxLength="11"
@@ -327,7 +344,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
               </button>
             </div>
             {errors.password && <span className="error-text">{errors.password}</span>}
-            <small className="form-help">Must include uppercase, lowercase, numbers, and special characters</small>
+            <small className="form-help">Must contain: 8+ characters, uppercase, lowercase, number, and special character</small>
           </div>
           
           <div className="form-group">
@@ -354,24 +371,6 @@ function RegistrationForm({ onSuccess, onCancel }) {
               </button>
             </div>
             {errors.password_confirmation && <span className="error-text">{errors.password_confirmation}</span>}
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="description">
-              <FontAwesomeIcon icon={faBuilding} className="form-icon" />
-              Organization Description *
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className={errors.description ? 'error' : ''}
-              placeholder="Describe your organization's mission, activities, and goals"
-              rows="4"
-            />
-            {errors.description && <span className="error-text">{errors.description}</span>}
-            <small className="form-help">Minimum 10 characters</small>
           </div>
           
           <div className="form-group">

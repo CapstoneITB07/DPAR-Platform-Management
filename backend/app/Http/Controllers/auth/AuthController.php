@@ -25,8 +25,7 @@ class AuthController extends Controller
                 'director_name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email|unique:pending_applications,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
-                'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/'],
-                'description' => 'required|string|min:10|max:1000',
+                'password' => 'required|string|min:8|confirmed',
                 'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ], [
                 'organization_name.required' => 'Organization name is required.',
@@ -40,11 +39,7 @@ class AuthController extends Controller
                 'phone.regex' => 'Phone number must start with 09 and contain only numbers.',
                 'password.required' => 'Password is required.',
                 'password.min' => 'Password must be at least 8 characters long.',
-                'password.regex' => 'Password must include uppercase, lowercase, numbers, and special characters.',
                 'password.confirmed' => 'Password confirmation does not match.',
-                'description.required' => 'Organization description is required.',
-                'description.min' => 'Description must be at least 10 characters.',
-                'description.max' => 'Description must not exceed 1000 characters.',
                 'logo.required' => 'Organization logo is required.',
                 'logo.image' => 'Logo must be a valid image file.',
                 'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
@@ -65,7 +60,6 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'description' => $request->description,
                 'logo' => $logoPath,
                 'status' => 'pending'
             ]);

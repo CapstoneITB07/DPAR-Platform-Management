@@ -16,7 +16,6 @@ class PendingApplication extends Model
         'email',
         'phone',
         'password',
-        'description',
         'logo',
         'status',
         'approved_at',

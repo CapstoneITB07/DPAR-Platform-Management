@@ -55,8 +55,6 @@ function AssociateGroups() {
   const [popupError, setPopupError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [associateToDelete, setAssociateToDelete] = useState(null);
 
   const fetchAssociates = async (showNotification = false) => {
     try {
@@ -418,38 +416,23 @@ function AssociateGroups() {
     }
   };
 
-  const handleRemoveAssociate = (associate) => {
-    setAssociateToDelete(associate);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteAssociate = async () => {
-    if (!associateToDelete) return;
-    
+  const handleRemoveAssociate = async (associateId) => {
+    if (!window.confirm('Are you sure you want to remove this associate group?')) return;
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.delete(`${API_BASE}/api/associate-groups/${associateToDelete.id}`, {
+      await axios.delete(`${API_BASE}/api/associate-groups/${associateId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setAssociates(prev => prev.filter(a => a.id !== associateToDelete.id));
-      if (selectedAssociate && selectedAssociate.id === associateToDelete.id) {
+      setAssociates(prev => prev.filter(a => a.id !== associateId));
+      if (selectedAssociate && selectedAssociate.id === associateId) {
         setSelectedAssociate(null);
         setShowProfileModal(false);
       }
       setNotification('Associate group removed successfully!');
       setTimeout(() => setNotification(''), 2000);
-      setShowDeleteModal(false);
-      setAssociateToDelete(null);
     } catch (error) {
       setError('Failed to remove associate group.');
-      setShowDeleteModal(false);
-      setAssociateToDelete(null);
     }
-  };
-
-  const cancelDeleteAssociate = () => {
-    setShowDeleteModal(false);
-    setAssociateToDelete(null);
   };
 
   const navigate = useNavigate();
@@ -608,7 +591,7 @@ function AssociateGroups() {
                   style={{ position: 'absolute', top: 8, right: 8, color: '#dc3545', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveAssociate(associate);
+                    handleRemoveAssociate(associate.id);
                   }}
                 />
               </>
@@ -705,22 +688,22 @@ function AssociateGroups() {
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faBell} />
                                 <span className="stat-label">Notifications:</span>
-                                <span className="stat-value">{history.notification_activities_count || 0}</span>
+                                <span className="stat-value">{history.user.notifications_created || 0}</span>
                               </div>
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faFileAlt} />
                                 <span className="stat-label">Reports:</span>
-                                <span className="stat-value">{history.reports_submitted_count || 0}</span>
+                                <span className="stat-value">{history.user.reports_submitted || 0}</span>
                               </div>
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faSignInAlt} />
                                 <span className="stat-label">System Logins:</span>
-                                <span className="stat-value">{history.login_activities_count || 0}</span>
+                                <span className="stat-value">{history.user.total_activities || 0}</span>
                               </div>
                               <div className="activity-stat">
                                 <FontAwesomeIcon icon={faStar} />
                                 <span className="stat-label">Engagement Score:</span>
-                                <span className="stat-value">{history.system_engagement_score || 0}%</span>
+                                <span className="stat-value">{history.user.system_engagement_score || 0}%</span>
                               </div>
                             </div>
                             

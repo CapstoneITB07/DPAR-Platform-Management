@@ -17,10 +17,13 @@
   min-width: 450px;
   max-width: 600px;
   width: 100%;
+  max-height: 90vh;
   box-shadow: 0 8px 32px rgba(161,28,34,0.13);
   position: relative;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .announcement-modal-header {
   background: #A11C22;
@@ -60,6 +63,29 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #A11C22 #f0f0f0;
+}
+
+/* Custom scrollbar for webkit browsers */
+.announcement-modal-form::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-modal-form::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.announcement-modal-form::-webkit-scrollbar-thumb {
+  background: #A11C22;
+  border-radius: 4px;
+}
+
+.announcement-modal-form::-webkit-scrollbar-thumb:hover {
+  background: #8b1a1f;
 }
 .announcement-form-label {
   font-weight: 600;
@@ -89,30 +115,179 @@
 
 /* Multiple Photos Upload Styles */
 .announcement-upload-container {
-  margin-top: 8px;
+  margin-top: 12px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #e9ecef;
+  transition: all 0.3s ease;
 }
+
+.announcement-upload-container:hover {
+  border-color: #a72828;
+  background: #fff5f5;
+}
+
 .announcement-photos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-  gap: 12px;
-  margin-bottom: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
+
 .announcement-photo-preview {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+.announcement-photo-preview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
 .announcement-upload-img {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
   object-fit: cover;
-  border: 1.5px solid #eee;
+  border: 2px solid #e9ecef;
   background: #f8f8f8;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
 }
-.announcement-upload-remove, .announcement-cancel-btn {
+
+.announcement-upload-img:hover {
+  border-color: #a72828;
+  transform: scale(1.05);
+}
+
+.announcement-upload-remove {
+  background: transparent !important;
+  color: #a72828 !important;
+  border: none !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  width: auto !important;
+  margin: 0 auto !important;
+  white-space: nowrap !important;
+  text-decoration: none !important;
+}
+
+.announcement-upload-remove:hover {
+  color: #7a1a1a !important;
+  text-decoration: underline !important;
+}
+
+.announcement-upload-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px dashed #a72828;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #a72828;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.announcement-upload-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(167, 40, 40, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.announcement-upload-placeholder:hover::before {
+  left: 100%;
+}
+
+.announcement-upload-placeholder:hover {
+  border-color: #7a1a1a;
+  background: #fff5f5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(167, 40, 40, 0.2);
+}
+
+.announcement-upload-placeholder .upload-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.announcement-upload-placeholder .upload-text {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.announcement-upload-btn {
+  background: linear-gradient(135deg, #a72828 0%, #7a1a1a 100%);
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-block;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 2px 8px rgba(167, 40, 40, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.announcement-upload-btn:hover {
+  background: linear-gradient(135deg, #7a1a1a 0%, #5a1414 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(167, 40, 40, 0.4);
+}
+
+.announcement-upload-note {
+  color: #6c757d;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+}
+.announcement-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 20px 40px 30px 40px;
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  flex-shrink: 0;
+}
+.announcement-cancel-btn {
   background: none !important;
   color: #A11C22 !important;
   border: none !important;
@@ -120,62 +295,19 @@
   font-size: 1.1rem !important;
   box-shadow: none !important;
   border-radius: 0 !important;
-  padding: 0 !important;
+  padding: 12px 40px !important;
   cursor: pointer;
   transition: color 0.18s;
 }
-.announcement-upload-remove:hover, .announcement-cancel-btn:hover {
+.announcement-cancel-btn:hover {
   color: #8b1a1f !important;
   background: none !important;
-}
-.announcement-upload-placeholder {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: #f8f8f8;
-  border: 1.5px dashed #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #bbb;
-  font-size: 32px;
-  cursor: pointer;
-  transition: border-color 0.18s, background-color 0.18s;
-}
-.announcement-upload-placeholder:hover {
-  border-color: #A11C22;
-  background-color: #fff5f5;
-}
-.announcement-upload-btn {
-  background: #A11C22;
-  color: #fff;
-  border-radius: 6px;
-  padding: 7px 18px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  display: inline-block;
-  transition: background 0.18s;
-  border: none;
-}
-.announcement-upload-btn:hover {
-  background: #c53030;
-}
-.announcement-upload-note {
-  color: #888;
-  font-size: 13px;
-}
-.announcement-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  margin-top: 10px;
 }
 .announcement-submit-btn {
   background: #A11C22 !important;
   color: #fff !important;
   border: none !important;
-  padding: 10px 22px !important;
+  padding: 12px 40px !important;
   border-radius: 7px !important;
   font-weight: 700 !important;
   font-size: 15px !important;
@@ -190,12 +322,14 @@
 .announcement-list {
   margin-top: 32px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+  grid-template-columns: repeat(4, 1fr);
+  row-gap: 10px;
+  column-gap: 16px;
   width: 100%;
   margin-left: auto;
   margin-right: auto;
 }
+
 .announcement-card {
   background: #fff;
   border-radius: 16px;
@@ -205,39 +339,47 @@
   border: 1.5px solid #f0f0f0;
   display: flex;
   flex-direction: column;
-  min-height: 240px;
+  min-height: 50vh;
   transition: box-shadow 0.18s, transform 0.18s;
   cursor: pointer;
-  margin-bottom: 8px;
+  box-sizing: border-box;
 }
+
 .announcement-card:hover {
   box-shadow: 0 8px 32px rgba(161,28,34,0.16), 0 2px 8px rgba(0,0,0,0.08);
   transform: translateY(-4px) scale(1.01);
-  border: 2px solid #A11C22;
+  border: 2px solid #a72828;
 }
-.announcement-card-header {
+
+.announcement-datetime-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 20px 6px 20px;
+  padding: 6px 20px 4px 20px;
   border-bottom: 1px solid #f0f2f5;
   background: #f7f8fa;
-  min-height: 32px;
+  min-height: 28px;
 }
-.announcement-card-date {
+
+.announcement-date-badge, .announcement-time-badge {
   font-size: 13px;
   color: #888;
   flex: 0 0 auto;
   margin-right: 8px;
   white-space: nowrap;
   align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
+
 .announcement-card-menu {
   position: relative;
   display: flex;
   align-items: flex-start;
   margin-left: 8px;
 }
+
 .announcement-card-menu-btn {
   background: none;
   border: none;
@@ -248,6 +390,7 @@
   margin-top: 0;
   align-self: flex-start;
 }
+
 .announcement-card-menu-dropdown {
   position: absolute;
   right: 0;
@@ -259,104 +402,91 @@
   z-index: 10;
   min-width: 120px;
 }
+
 .announcement-card-menu-item {
   padding: 10px 16px;
   cursor: pointer;
   color: #333;
   border-bottom: 1px solid #f0f2f5;
 }
+
 .announcement-card-menu-item:last-child {
   color: #e74c3c;
   border-bottom: none;
 }
-.announcement-card-content {
-  padding: 18px 20px 10px 20px;
+
+.announcement-content {
+  padding: 14px 20px 8px 20px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.announcement-card-title {
+
+.announcement-title {
   font-weight: 700;
-  font-size: 20px;
+  font-size: 24px;
   margin-bottom: 6px;
   color: #222;
 }
-.announcement-card-desc {
-  font-size: 16px;
+
+.announcement-desc {
+  font-size: 18px;
   color: #444;
-  margin-bottom: 12px;
-  /* Fix for description overflow - add proper text wrapping and truncation */
+  margin-bottom: 8px;
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  line-height: 1.4;
+  line-height: 1.5;
   max-width: 100%;
-  /* Use a simpler approach for truncation that works better with buttons */
-  max-height: 4.2em; /* Approximately 3 lines */
-  /* Temporarily remove overflow hidden to debug */
-  /* overflow: hidden; */
+  text-align: justify;
   position: relative;
-  /* Ensure the container can show the button */
-  padding-bottom: 20px;
-  /* Add display flex to properly align content */
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: center; /* Center the description container in cards */
-}
-
-.announcement-text-content {
-  /* Ensure text flows properly */
-  line-height: 1.4;
-  word-wrap: break-word;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  white-space: pre-line; /* Preserve line breaks and spaces */
-  text-align: center; /* Center the description text in cards */
-  /* Limit height to approximately 3 lines */
   max-height: 4.2em;
   overflow: hidden;
 }
 
-.announcement-card-see-more {
+.announcement-see-more-btn {
   background: none;
-  color: #A11C22;
+  color: #a72828;
   border: none;
-  font-weight: 600;
-  margin-left: 0; /* Remove left margin since we're using flexbox */
+  font-weight: 700;
+  margin-left: 4px;
   cursor: pointer;
-  text-decoration: underline;
-  font-size: 15px;
-  /* Ensure button is visible and properly positioned */
-  display: inline-block;
-  vertical-align: baseline;
+  text-decoration: none;
+  font-size: 14px;
+  display: inline;
   white-space: nowrap;
-  /* Force visibility */
-  visibility: visible !important;
-  opacity: 1 !important;
-  /* Ensure it's not clipped */
-  position: relative;
-  z-index: 1;
-  /* Align button to the right */
-  align-self: flex-end;
-  margin-top: 4px;
+  padding: 0;
+  transition: color 0.2s;
 }
 
-/* Multiple Photos Display in Cards */
-.announcement-photos-display {
-  position: relative;
+.announcement-see-more-btn:hover {
+  background: none;
+  color: #7a1a1a;
+}
+
+/* Multiple Photos Wrapper */
+.announcement-photos-wrapper {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 10px;
 }
 
-.announcement-card-img {
+.announcement-img-wrapper {
   width: 100%;
-  max-height: 200px;
-  object-fit: cover;
+  overflow: hidden;
   border-radius: 10px;
-  margin-top: 0;
-  margin-bottom: 0;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.announcement-img {
+  width: 100%;
+  object-fit: contain;
+  border-radius: 0; 
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* Photo Indicator for Multiple Photos */
@@ -407,22 +537,22 @@
   text-align: center;
 }
 
-/* Description Modal */
-.announcement-desc-modal-overlay {
+/* Full Announcement Modal Styles */
+.announcements-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 2000; /* For announcement modal */
 }
-.announcement-desc-modal-card {
+
+.announcement-full-modal-content {
   background: #fff;
-  padding: 0;
   border-radius: 16px;
   min-width: 450px;
   max-width: 700px;
@@ -433,6 +563,125 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  z-index: 2000; /* Lower than image modal (3000) but higher than other content */
+}
+
+.announcement-full-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #e3e7ed;
+  background: #f8f9fa;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.announcement-full-modal-header h2 {
+  color: #a72828;
+  font-size: 40px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.announcement-full-modal-timestamp {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 0;
+}
+
+.announcement-full-modal-close {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  font-size: 28px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.announcement-full-modal-close:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.announcement-posted-text {
+  font-size: 14px;
+  color: #666;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Scrollable content container for the entire modal */
+.announcement-full-modal-content-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #a72828 #f0f0f0;
+}
+
+/* Custom scrollbar for webkit browsers */
+.announcement-full-modal-content-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-full-modal-content-scrollable::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.announcement-full-modal-content-scrollable::-webkit-scrollbar-thumb {
+  background: #a72828;
+  border-radius: 4px;
+}
+
+.announcement-full-modal-content-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #7a1a1a;
+}
+
+.announcement-full-modal-content-container {
+  background: #fff;
+  border-bottom: none !important;
+}
+
+.announcement-full-modal-description {
+  font-size: 20px;
+  color: #333;
+  margin: 0;
+  padding: 20px 24px 24px 24px; /* Add top padding back since datetime is now in header */
+  line-height: 1.7;
+  /* Fix for description overflow in modal */
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-line; /* Preserve line breaks and spaces */
+  text-align: justify; /* Justified text in modal */
+  text-indent: 2em; /* Indent first line of each paragraph */
+  max-width: 100%;
+  background: #fff;
+}
+
+.announcement-description-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: #a72828;
+  padding: 16px 24px 0 24px;
+  background: #fff;
+  text-align: left;
 }
 
 /* Scrollable content container for the entire modal */
@@ -514,8 +763,9 @@
 /* Photo Navigation System (Instagram/Facebook style) */
 .announcement-photo-navigation {
   margin: 0;
-  padding: 20px 24px 24px 24px;
+  padding: 16px 24px 20px 24px;
   background: #fff;
+  border-bottom: none !important;
 }
 
 .announcement-photo-container {
@@ -525,15 +775,20 @@
   overflow: hidden;
   background: #f8f9fa;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  z-index: 1; /* Ensure proper stacking context */
 }
 
-.announcement-desc-modal-img {
+.announcement-full-modal-img {
   width: 100%;
-  max-height: none; /* Remove height restriction to show full image */
+  max-height: 500px; /* Increased height for better visibility */
   object-fit: contain; /* Show full image without cropping */
   border-radius: 12px;
   margin: 0;
   display: block;
+  cursor: pointer;
+  position: relative;
+  z-index: 1; /* Ensure proper stacking context */
 }
 
 /* Navigation Arrows */
@@ -554,7 +809,7 @@
   color: #333;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   transition: all 0.2s ease;
-  z-index: 3;
+  z-index: 10; /* Higher z-index to appear above other elements */
 }
 
 .announcement-photo-nav-btn:hover {
@@ -582,7 +837,7 @@
   border-radius: 20px;
   font-size: 13px;
   font-weight: 600;
-  z-index: 3;
+  z-index: 10; /* Higher z-index to appear above other elements */
   backdrop-filter: blur(4px);
 }
 
@@ -712,7 +967,40 @@
     min-width: 0;
     max-width: 100vw;
     border-radius: 10px;
-    padding: 12px 4px 10px 4px;
+    min-height: 250px;
+  }
+  
+  .announcement-datetime-row {
+    padding: 6px 20px 4px 20px;
+    min-height: 28px;
+    background: #f7f8fa;
+    border-bottom: 1px solid #f0f2f5;
+    margin: 0;
+    border-radius: 10px 10px 0 0;
+    position: relative;
+    left: -20px;
+    right: -20px;
+    width: calc(100% + 40px);
+  }
+  
+  .announcement-content {
+    padding: 16px 20px 12px 20px;
+  }
+  
+  .announcement-title {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+  
+  .announcement-desc {
+    font-size: 17px;
+    max-height: 4.2em;
+    text-align: justify;
+  }
+  
+  .announcement-img {
+    height: 120px;
+    margin-top: 8px;
   }
   .announcement-modal-card, .announcement-desc-modal-card {
     min-width: 0;
@@ -721,8 +1009,73 @@
     padding: 0;
     border-radius: 10px;
     max-height: 96vh;
-    overflow-y: auto;
+    overflow: hidden;
     box-sizing: border-box;
+  }
+  
+  /* Mobile Modal Improvements */
+  .announcement-full-modal-content {
+    width: 95vw;
+    min-width: unset;
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .announcement-full-modal-header {
+    padding: 16px 16px 12px 16px;
+    gap: 6px;
+  }
+  
+  .announcement-full-modal-close {
+    top: 12px;
+    right: 12px;
+  }
+  
+  .announcement-full-modal-header h2 {
+    font-size: 32px;
+  }
+  
+  .announcement-full-modal-content-scrollable {
+    max-height: 70vh;
+  }
+  
+  .announcement-full-modal-content-container {
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .announcement-full-modal-description {
+    padding: 16px 16px 20px 16px;
+    font-size: 18px;
+  }
+  
+  .announcement-description-label {
+    font-size: 16px;
+    padding: 12px 16px 0 16px;
+  }
+  
+  .announcement-photo-navigation {
+    padding: 12px 16px 16px 16px;
+  }
+  
+  .announcement-photo-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .announcement-photo-nav-prev {
+    left: 12px;
+  }
+  
+  .announcement-photo-nav-next {
+    right: 12px;
+  }
+  
+  .announcement-photo-counter {
+    bottom: 12px;
+    right: 12px;
+    font-size: 12px;
+    padding: 6px 10px;
   }
   .announcement-modal-header {
     padding: 12px 8px 8px 8px;
@@ -734,6 +1087,13 @@
   .announcement-modal-form {
     padding: 12px 8px 8px 8px;
     gap: 10px;
+    flex: 1;
+    overflow-y: auto;
+  }
+  
+  .announcement-modal-actions {
+    padding: 16px 8px 16px 8px;
+    margin-top: 0;
   }
   .announcement-form-label {
     font-size: 14px;
@@ -743,22 +1103,34 @@
     padding: 8px 6px;
     width: 100%;
   }
-  .announcement-photos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 8px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+  .announcement-upload-container {
+    padding: 16px;
+    margin-top: 8px;
   }
   
-  .announcement-upload-img, .announcement-upload-placeholder {
-    width: 80px;
-    height: 80px;
-    font-size: 24px;
-    border-radius: 8px;
+  .announcement-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .announcement-upload-img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .announcement-upload-placeholder {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .announcement-upload-placeholder .upload-icon {
+    font-size: 20px;
+  }
+  
+  .announcement-upload-placeholder .upload-text {
+    font-size: 10px;
   }
   
   .announcement-photo-preview {
@@ -771,16 +1143,19 @@
     border-radius: 8px;
     border: 1px solid #e9ecef;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: 100%;
+    box-sizing: border-box;
   }
   
   .announcement-upload-remove {
-    font-size: 11px;
-    padding: 4px 8px;
-    background: #dc3545;
-    color: white;
-    border-radius: 4px;
+    background: transparent;
+    color: #a72828;
     border: none;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0;
+    border-radius: 0;
+    text-decoration: none;
   }
   
   /* Fix mobile upload button positioning */
@@ -964,7 +1339,7 @@
 
 @media (min-width: 701px) and (max-width: 1024px) {
   .announcement-list {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
     padding: 0 8px;
     margin-top: 14px;

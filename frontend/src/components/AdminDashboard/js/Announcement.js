@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import axios from 'axios';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaBullhorn, FaNewspaper } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaBullhorn, FaNewspaper, FaCloudUploadAlt } from 'react-icons/fa';
 import '../css/announcement.css';
 
 // Notification component
@@ -185,7 +185,8 @@ function Announcement() {
     setDescModalContent({
       title: announcement.title,
       description: announcement.description,
-      photo_urls: announcement.photo_urls || []
+      photo_urls: announcement.photo_urls || [],
+      created_at: announcement.created_at
     });
     setCurrentPhotoIndex(0);
     setShowDescModal(true);
@@ -260,19 +261,19 @@ function Announcement() {
     return text;
   };
 
+  // Function to truncate text by character count for better control
+  const truncateTextByLength = (text, maxLength = 150) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   // Function to check if description needs truncation
-  const needsTruncation = (text, maxLines = 3) => {
+  const needsTruncation = (text, hasImages = false) => {
     if (!text) return false;
-    
-    // Check for multiple paragraphs (filter out empty ones)
-    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
-    if (paragraphs.length > 1) return true;
-    
-    // Check word count and character length for single paragraph
-    const words = text.split(' ');
-    const charCount = text.length;
-    
-    return words.length > 25 || charCount > 120;
+    // Different thresholds for cards with and without images
+    const threshold = hasImages ? 150 : 650;
+    return text.length > threshold;
   };
 
   // Function to render default announcement icon
@@ -307,7 +308,7 @@ function Announcement() {
             <form onSubmit={handleSubmit} className="announcement-modal-form">
               <div>
                 <label className="announcement-form-label">TITLE</label>
-                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="announcement-form-input" required />
+                <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="announcement-form-input" placeholder="Enter announcement title here..." required />
               </div>
               <div>
                 <label className="announcement-form-label">DESCRIPTION</label>
@@ -315,7 +316,7 @@ function Announcement() {
                   value={description} 
                   onChange={e => setDescription(e.target.value)} 
                   className="announcement-form-textarea"
-                  placeholder="Enter your announcement description here. You can use multiple paragraphs by pressing Enter."
+                  placeholder="Enter detailed announcement description here. Include all relevant information, dates, and instructions..."
                   required
                 />
               </div>
@@ -332,6 +333,7 @@ function Announcement() {
                           onClick={() => removeExistingPhoto(index)} 
                           className="announcement-upload-remove"
                         >
+                          {/* icon removed */}
                           Remove
                         </button>
                       </div>
@@ -346,8 +348,9 @@ function Announcement() {
                         onChange={handlePhotoUpload}
                         style={{ display: 'none' }} 
                       />
-                      <label htmlFor="announcement-photos-upload" className="announcement-upload-btn">
-                        Choose Photos
+                      <label htmlFor="announcement-photos-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                        <FaCloudUploadAlt className="upload-icon" />
+                        <span className="upload-text">Upload Photos</span>
                       </label>
                     </div>
                   </div>
@@ -400,83 +403,128 @@ function Announcement() {
         ) : (
           announcements.map(a => (
             <div key={a.id} className="announcement-card"
+              onClick={() => openFullModal(a)}
+              style={{ cursor: 'pointer' }}
               onMouseOver={e => { e.currentTarget.classList.add('announcement-card-hover'); }}
               onMouseOut={e => { e.currentTarget.classList.remove('announcement-card-hover'); }}
             >
-              {/* Header */}
-              <div className="announcement-card-header">
-                <div className="announcement-card-date">{new Date(a.created_at).toLocaleString()}</div>
+              {/* Date/Time Row */}
+              <div className="announcement-datetime-row">
+                <div>
+                  <span className="announcement-date-badge">
+                    {new Date(a.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                </div>
+                <div>
+                  <span className="announcement-time-badge">
+                    {new Date(a.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
                 <div className="announcement-card-menu">
-                  <button onClick={() => handleMenuToggle(a.id)} className="announcement-card-menu-btn">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMenuToggle(a.id);
+                    }} 
+                    className="announcement-card-menu-btn"
+                  >
                     <FaEllipsisH size={20} />
                   </button>
                   {menuOpenId === a.id && (
                     <div className="announcement-card-menu-dropdown">
-                      <div className="announcement-card-menu-item" onClick={() => handleEdit(a)}>Edit</div>
-                      <div className="announcement-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={() => handleDelete(a.id)}>Delete</div>
+                      <div className="announcement-card-menu-item" onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(a);
+                      }}>Edit</div>
+                      <div className="announcement-card-menu-item" style={{ color: '#e74c3c', borderBottom: 'none' }} onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(a.id);
+                      }}>Delete</div>
                     </div>
                   )}
                 </div>
               </div>
-              {/* Content */}
-              <div className="announcement-card-content">
-                {a.title && <div className="announcement-card-title">{a.title}</div>}
+              {/* Title/Content */}
+              <div className="announcement-content">
+                {a.title && <div className="announcement-title">{a.title}</div>}
                 {a.description && (
-                  <div className="announcement-card-desc">
-                    <div className="announcement-text-content">
-                      {truncateDescription(a.description)}
-                    </div>
-                    {needsTruncation(a.description) && (
-                      <button
-                        className="announcement-card-see-more"
-                        onClick={() => openFullModal(a)}
-                      >See More</button>
+                  <div className="announcement-desc">
+                    {a.photo_urls && a.photo_urls.length > 0 
+                      ? truncateTextByLength(a.description, 150)
+                      : truncateTextByLength(a.description, 650)
+                    }
+                    {needsTruncation(a.description, a.photo_urls && a.photo_urls.length > 0) && (
+                      <button 
+                        className="announcement-see-more-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openFullModal(a);
+                        }}
+                      >
+                        See more
+                      </button>
                     )}
                   </div>
                 )}
-                {/* Show photo or default icon */}
-                <div className="announcement-photos-display">
-                  {a.photo_urls && a.photo_urls.length > 0 ? (
-                    <>
-                      <img 
-                        src={a.photo_urls[0]} 
-                        alt="Announcement" 
-                        className="announcement-card-img" 
+                
+                {/* Show only first photo in card */}
+                {a.photo_urls && a.photo_urls.length > 0 && (
+                  <div className="announcement-photos-wrapper">
+                    <div className="announcement-img-wrapper" style={{ position: 'relative' }}>
+                      <img
+                        src={a.photo_urls[0]}
+                        alt="Announcement"
+                        className="announcement-img"
                       />
                       {a.photo_urls.length > 1 && (
                         <div className="announcement-photos-indicator">
                           <span className="announcement-photos-count">+{a.photo_urls.length - 1} more</span>
                         </div>
                       )}
-                    </>
-                  ) : (
-                    renderDefaultIcon()
-                  )}
-                </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))
         )}
       </div>
-      {/* Full Description Modal with Photo Navigation */}
+      {/* Full Announcement Modal */}
       {showDescModal && (
-        <div className="announcement-desc-modal-overlay">
-          <div className="announcement-desc-modal-card">
-            <button onClick={() => setShowDescModal(false)} className="announcement-desc-modal-close">&times;</button>
-            <h3 className="announcement-desc-modal-title">{descModalContent.title}</h3>
+        <div className="announcements-modal" onClick={() => setShowDescModal(false)}>
+          <div className="announcement-full-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="announcement-full-modal-header">
+              <h2>{descModalContent.title}</h2>
+              <div className="announcement-full-modal-timestamp">
+                <span className="announcement-posted-text">
+                  Posted on {new Date(descModalContent.created_at || new Date()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} at {new Date(descModalContent.created_at || new Date()).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <button
+                className="announcement-full-modal-close"
+                onClick={() => setShowDescModal(false)}
+              >
+                ×
+              </button>
+            </div>
             
             {/* Scrollable content container */}
-            <div className="announcement-desc-modal-content">
-              <div className="announcement-desc-modal-desc">{descModalContent.description}</div>
+            <div className="announcement-full-modal-content-scrollable">
+              <div className="announcement-full-modal-content-container">
+                <div className="announcement-description-label">Description</div>
+                <div className="announcement-full-modal-description">
+                  {descModalContent.description}
+                </div>
+              </div>
               
               {/* Photo Navigation (Instagram/Facebook style) */}
               {descModalContent.photo_urls && descModalContent.photo_urls.length > 0 && (
                 <div className="announcement-photo-navigation">
                   <div className="announcement-photo-container">
-                    <img 
-                      src={descModalContent.photo_urls[currentPhotoIndex]} 
-                      alt={`Photo ${currentPhotoIndex + 1}`} 
-                      className="announcement-desc-modal-img" 
+                    <img
+                      src={descModalContent.photo_urls[currentPhotoIndex]}
+                      alt={`Photo ${currentPhotoIndex + 1}`}
+                      className="announcement-full-modal-img"
                     />
                     
                     {/* Navigation Arrows */}

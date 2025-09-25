@@ -1213,4 +1213,55 @@
     font-size: 0.75rem;
     padding: 5px 8px;
   }
+}
+
+/* Registration Modal Styles */
+.registration-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.registration-modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+  animation: modalSlideIn 0.3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.registrationToggle {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.registrationToggleLink {
+  color: #c0392b;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.3s ease;
+}
+
+.registrationToggleLink:hover {
+  color: #a93226;
+  text-decoration: underline;
 } 

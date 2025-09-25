@@ -168,14 +168,12 @@ class ProfileController extends Controller
                     }
                 }
 
-                // Update the associate group name, director, and type
+                // Update the associate group name and director (type cannot be changed)
                 $associateGroup->name = $request->name;
                 if ($request->has('director')) {
                     $associateGroup->director = $request->director; // Store actual director name
                 }
-                if ($request->has('type')) {
-                    $associateGroup->type = $request->type;
-                }
+                // Organization type is not allowed to be changed by associates
                 $associateGroup->save();
             }
 

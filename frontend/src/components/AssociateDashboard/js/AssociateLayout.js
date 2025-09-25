@@ -1084,15 +1084,17 @@ function AssociateLayout({ children }) {
                         type="text"
                         name="type"
                         value={profileForm.type}
-                        onChange={handleProfileFormChange}
-                        placeholder="e.g., Emergency Response, Medical, etc."
+                        readOnly
                         style={{
                           width: '100%',
                           padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
                           border: '1px solid #ddd',
                           borderRadius: '6px',
                           fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          backgroundColor: '#f5f5f5',
+                          color: '#666',
+                          cursor: 'not-allowed'
                         }}
                       />
                     </div>

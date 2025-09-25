@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css'; // Import the CSS file
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 // You might need to import useHistory or useNavigate from react-router-dom for redirection
 // import { useHistory } from 'react-router-dom'; // For react-router-dom v5
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
+import RegistrationForm from '../Registration/RegistrationForm';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,6 +26,10 @@ function LoginPage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [recoveryLoginData, setRecoveryLoginData] = useState(null); // Store recovery login data
   const [isPasswordChangeSuccess, setIsPasswordChangeSuccess] = useState(false); // Track success state
+  const [showRegistration, setShowRegistration] = useState(false); // Show registration form
+  const [showOtpModal, setShowOtpModal] = useState(false); // Show OTP verification modal
+  const [otpData, setOtpData] = useState(null); // Store OTP verification data
+  const [otpCode, setOtpCode] = useState(''); // OTP input
   
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
@@ -181,6 +186,68 @@ function LoginPage() {
     navigate('/login');
   };
 
+  // Function to handle OTP verification
+  const handleOtpVerification = async (e) => {
+    e.preventDefault();
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:8000/api/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: otpData.user_id,
+          otp_code: otpCode
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('OTP verified successfully! Welcome to the system!');
+        
+        // Store token and user data
+        sessionStorage.setItem('authToken', data.token);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userId', data.user.id);
+        if (data.user.organization) {
+          localStorage.setItem('userOrganization', data.user.organization);
+        }
+
+        // Close OTP modal
+        setShowOtpModal(false);
+        setOtpCode('');
+        setOtpData(null);
+
+        // Redirect based on role
+        if (data.user.role === 'head_admin') {
+          navigate('/admin/dashboard');
+        } else if (data.user.role === 'associate_group_leader') {
+          navigate('/associate/dashboard');
+        } else if (data.user.role === 'citizen') {
+          navigate('/citizen/dashboard');
+        } else {
+          navigate('/');
+        }
+      } else {
+        setMessage(data.message || 'Invalid OTP code. Please try again.');
+      }
+    } catch (error) {
+      setMessage('Network error. Please check your connection and try again.');
+      console.error('OTP verification error:', error);
+    }
+  };
+
+  // Function to close OTP modal
+  const closeOtpModal = () => {
+    setShowOtpModal(false);
+    setOtpCode('');
+    setOtpData(null);
+    setMessage('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -205,6 +272,22 @@ function LoginPage() {
         // Handle successful login
         setMessage(data.message || 'Login successful!');
         console.log('Login successful:', data);
+
+        // Check if OTP verification is required
+        if (data.requires_otp) {
+          if (data.application_status === 'pending') {
+            setMessage('Your application is still under review. Please wait for admin approval. The OTP will be sent to your email once the admin approves your application.');
+            return;
+          } else {
+            setOtpData({
+              user_id: data.user_id,
+              email: email
+            });
+            setShowOtpModal(true);
+            setMessage('OTP verification required. Please check your email for the authentication code.');
+            return;
+          }
+        }
 
         // TODO: Assuming your backend returns a token and user data with role
         const token = data.token; // Adjust based on actual backend response structure
@@ -378,6 +461,20 @@ function LoginPage() {
               >
                 <FontAwesomeIcon icon={faKey} />
                 {isRecoveryMode ? ' Use Regular Password' : ' Forgot Password? Use Recovery Passcode'}
+              </a>
+            </div>
+            
+            <div className="registrationToggle">
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowRegistration(true);
+                }}
+                className="registrationToggleLink"
+              >
+                <FontAwesomeIcon icon={faUserPlus} />
+                Don't have an account? Register your organization
               </a>
             </div>
           </form>
@@ -569,6 +666,80 @@ function LoginPage() {
               )}
             </form>
             <button onClick={closeChangePasswordModal} className="closeModalButton">X</button>
+          </div>
+        </div>
+      )}
+
+      {/* Registration Form Modal */}
+      {showRegistration && (
+        <div className="registration-modal-overlay">
+          <div className="registration-modal-content">
+            <button 
+              onClick={() => setShowRegistration(false)} 
+              className="closeModalButton"
+              style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+            <RegistrationForm 
+              onSuccess={() => setShowRegistration(false)}
+              onCancel={() => setShowRegistration(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="changePasswordModal">
+          <div className="modalContent">
+            <div className="passwordChangeHeader">
+              <div className="securityIcon">
+                <FontAwesomeIcon icon={faKey} />
+              </div>
+              <h2>OTP Verification Required</h2>
+            </div>
+            
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ color: '#666', marginBottom: '16px' }}>
+                An authentication code has been sent to your email address.
+                <br />
+                <strong>Note:</strong> The OTP will be sent once the admin approves your application.
+                <br />
+                If the admin has not approved your application yet, you cannot log in.
+              </p>
+            </div>
+
+            <form onSubmit={handleOtpVerification}>
+              <div className="inputGroup">
+                <label htmlFor="otpCode">Enter OTP Code:</label>
+                <input
+                  type="text"
+                  id="otpCode"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  className="passwordInput"
+                  required
+                  placeholder="Enter 6-digit OTP code"
+                  maxLength="6"
+                  style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '2px' }}
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className="signInButton" 
+                disabled={otpCode.length !== 6}
+              >
+                Verify OTP & Continue
+              </button>
+              {message && (
+                <p className={`changePasswordMessage ${message.includes('successfully') ? 'success' : 'error'}`}>
+                  {message}
+                </p>
+              )}
+            </form>
+            <button onClick={closeOtpModal} className="closeModalButton">X</button>
           </div>
         </div>
       )}

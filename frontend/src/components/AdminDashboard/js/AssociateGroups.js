@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey, faTrophy, faMedal, faStar, faCrown, faHandshake, faFileAlt, faSignInAlt, faUserCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey, faTrophy, faMedal, faStar, faCrown, faHandshake, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
@@ -27,6 +27,11 @@ function AssociateGroups() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [pendingApplications, setPendingApplications] = useState([]);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
@@ -51,7 +56,7 @@ function AssociateGroups() {
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState('');
 
-  const fetchAssociates = async () => {
+  const fetchAssociates = async (showNotification = false) => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups`, {
@@ -59,6 +64,10 @@ function AssociateGroups() {
       });
       
       setAssociates(response.data);
+      if (showNotification) {
+        setNotification('Associate groups data refreshed successfully!');
+        setTimeout(() => setNotification(''), 3000);
+      }
     } catch (error) {
       console.error('Error fetching associate groups:', error);
       setError('Failed to fetch associate groups. Please try again later.');
@@ -68,6 +77,13 @@ function AssociateGroups() {
   // Fetch associate groups from the backend
   useEffect(() => {
     fetchAssociates();
+    
+    // Refresh data every 10 seconds to catch profile updates
+    const interval = setInterval(() => {
+      fetchAssociates();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Simulate fetching member count (replace with API call if available)
@@ -113,6 +129,79 @@ function AssociateGroups() {
     setError('');
     setShowPopup(false); // Reset error modal
     setPopupError('');
+  };
+
+  const openApplicationModal = () => {
+    setShowApplicationModal(true);
+    fetchPendingApplications();
+  };
+
+  const closeApplicationModal = () => {
+    setShowApplicationModal(false);
+  };
+
+  const fetchPendingApplications = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/pending-applications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPendingApplications(response.data);
+    } catch (error) {
+      console.error('Error fetching pending applications:', error);
+      setError('Failed to fetch pending applications. Please try again later.');
+    }
+  };
+
+  const approveApplication = async (applicationId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNotification('Application approved successfully! OTP sent to user email.');
+      fetchPendingApplications(); // Refresh the list
+      fetchAssociates(); // Refresh associate groups
+    } catch (error) {
+      console.error('Error approving application:', error);
+      setError('Failed to approve application. Please try again.');
+    }
+  };
+
+  const openRejectionModal = (applicationId) => {
+    setSelectedApplicationId(applicationId);
+    setRejectionReason('');
+    setShowRejectionModal(true);
+  };
+
+  const closeRejectionModal = () => {
+    setShowRejectionModal(false);
+    setRejectionReason('');
+    setSelectedApplicationId(null);
+  };
+
+  const rejectApplication = async () => {
+    if (!rejectionReason || rejectionReason.trim() === '') {
+      setError('Rejection reason is required.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      await axios.post(`${API_BASE}/api/pending-applications/${selectedApplicationId}/reject`, {
+        rejection_reason: rejectionReason.trim()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNotification('Application rejected successfully! Rejection email sent to user.');
+      fetchPendingApplications(); // Refresh the list
+      closeRejectionModal();
+    } catch (error) {
+      console.error('Error rejecting application:', error);
+      setError('Failed to reject application. Please try again.');
+    }
   };
 
   const openEditListMode = () => {
@@ -357,14 +446,14 @@ function AssociateGroups() {
   const getLogoUrl = (logoPath) => {
     if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
     
+    // Handle full URLs (already processed by backend)
+    if (logoPath.startsWith('http')) {
+      return logoPath;
+    }
+    
     // Handle storage URLs
     if (logoPath.startsWith('logos/')) {
       return `${API_BASE}/storage/${logoPath}`;
-    }
-    
-    // Handle full URLs
-    if (logoPath.startsWith('http')) {
-      return logoPath;
     }
     
     // Handle storage paths
@@ -441,7 +530,7 @@ function AssociateGroups() {
         <div>
           {!editListMode && (
             <>
-              <button className="add-associate-btn" onClick={openAddModal}>Add Associate</button>
+              <button className="add-associate-btn" onClick={openApplicationModal}>Application</button>
               <button className="edit-associate-btn" onClick={openEditListMode}>Edit</button>
             </>
           )}
@@ -548,6 +637,7 @@ function AssociateGroups() {
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faUser} className="enhanced-profile-icon" /> <span><b>Director:</b> {selectedGroup.director}</span></div>
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faEnvelope} className="enhanced-profile-icon" /> <span><b>Email:</b> {selectedGroup.email}</span></div>
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faPhone} className="enhanced-profile-icon" /> <span><b>Phone:</b> {selectedGroup.phone || 'N/A'}</span></div>
+              <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faCalendarAlt} className="enhanced-profile-icon" /> <span><b>Date Joined:</b> {selectedGroup.date_joined ? new Date(selectedGroup.date_joined).toLocaleDateString() : 'N/A'}</span></div>
             </div>
             <div className="enhanced-profile-description">{selectedGroup.description}</div>
             <div className="enhanced-profile-stats-grid">
@@ -1253,6 +1343,238 @@ function AssociateGroups() {
             )}
           </div>
           <button className="enhanced-error-btn" onClick={() => setShowPopup(false)}>Close</button>
+        </Modal>
+      )}
+
+      {/* Application Modal */}
+      {showApplicationModal && (
+        <Modal
+          isOpen={showApplicationModal}
+          onRequestClose={closeApplicationModal}
+          className="profile-modal-overlay"
+          overlayClassName="profile-modal-overlay"
+        >
+          <div className="profile-modal-card enhanced-modal" style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}>
+            <div className="profile-modal-header">
+              <h3>Pending Applications</h3>
+              <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeApplicationModal} />
+            </div>
+            
+            <div className="profile-modal-body">
+              {pendingApplications.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  <FontAwesomeIcon icon={faUserCheck} size="3x" style={{ marginBottom: '16px', opacity: 0.5 }} />
+                  <p>No pending applications at the moment.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {pendingApplications.map((application) => (
+                    <div key={application.id} style={{ 
+                      border: '1px solid #ddd', 
+                      borderRadius: '8px', 
+                      padding: '16px',
+                      backgroundColor: '#f9f9f9'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                        <img 
+                          src={getLogoUrl(application.logo)} 
+                          alt={application.organization_name}
+                          style={{ 
+                            width: '60px', 
+                            height: '60px', 
+                            borderRadius: '50%', 
+                            objectFit: 'cover',
+                            border: '2px solid #ddd'
+                          }}
+                          onError={(e) => {
+                            e.target.src = '/Assets/disaster_logo.png';
+                          }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 4px 0', color: '#333' }}>{application.organization_name}</h4>
+                          <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                            <strong>Type:</strong> {application.organization_type}
+                          </p>
+                          <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                            <strong>Director:</strong> {application.director_name}
+                          </p>
+                          <p style={{ margin: '0 0 4px 0', color: '#666', fontSize: '14px' }}>
+                            <strong>Email:</strong> {application.email}
+                          </p>
+                          <p style={{ margin: '0', color: '#666', fontSize: '14px' }}>
+                            <strong>Phone:</strong> {application.phone}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button 
+                          onClick={() => openRejectionModal(application.id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          Reject
+                        </button>
+                        <button 
+                          onClick={() => approveApplication(application.id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          Approve
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {showRejectionModal && (
+        <Modal
+          isOpen={showRejectionModal}
+          onRequestClose={closeRejectionModal}
+          style={{
+            overlay: {
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000
+            },
+            content: {
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              right: 'auto',
+              bottom: 'auto',
+              marginRight: '-50%',
+              transform: 'translate(-50%, -50%)',
+              width: '400px',
+              maxWidth: '90vw',
+              backgroundColor: '#1a1a1a',
+              border: '1px solid #333',
+              borderRadius: '8px',
+              padding: '0',
+              color: 'white'
+            }
+          }}
+        >
+          <div style={{
+            backgroundColor: '#c0392b',
+            color: 'white',
+            padding: '20px',
+            borderRadius: '8px 8px 0 0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
+              Reject Application
+            </h2>
+            <button
+              onClick={closeRejectionModal}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                fontSize: '20px',
+                cursor: 'pointer',
+                padding: '0',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div style={{ padding: '20px' }}>
+            <p style={{ marginBottom: '15px', color: '#ccc' }}>
+              Please provide a reason for rejecting this application:
+            </p>
+            
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              style={{
+                width: '100%',
+                height: '100px',
+                padding: '10px',
+                backgroundColor: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: '4px',
+                color: 'white',
+                fontSize: '14px',
+                resize: 'vertical',
+                fontFamily: 'inherit'
+              }}
+            />
+            
+            {error && (
+              <div style={{
+                color: '#dc3545',
+                fontSize: '14px',
+                marginTop: '10px'
+              }}>
+                {error}
+              </div>
+            )}
+            
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'flex-end',
+              marginTop: '20px'
+            }}>
+              <button
+                onClick={closeRejectionModal}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={rejectApplication}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
+              >
+                Reject Application
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
 

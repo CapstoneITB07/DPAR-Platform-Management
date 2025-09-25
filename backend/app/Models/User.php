@@ -28,6 +28,7 @@ class User extends Authenticatable
         'profile_picture',
         'temp_password',
         'recovery_passcodes',
+        'needs_otp_verification',
     ];
 
     protected $hidden = [
@@ -43,6 +44,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'recovery_passcodes' => 'array',
+        'needs_otp_verification' => 'boolean',
     ];
 
     protected static function booted()

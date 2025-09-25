@@ -8,6 +8,7 @@ use App\Models\Notification;
 use App\Models\NotificationRecipient;
 use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -235,6 +236,7 @@ class NotificationController extends Controller
                 ? 'Accepted notification and provided volunteer selections'
                 : 'Declined notification';
 
+            $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
             ActivityLog::logActivity(
                 $user->id,
                 $activityType,
@@ -243,7 +245,8 @@ class NotificationController extends Controller
                     'notification_id' => $notification->id,
                     'notification_title' => $notification->title,
                     'volunteer_selections' => $request->volunteer_selections
-                ]
+                ],
+                $directorHistoryId
             );
         }
 

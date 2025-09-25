@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Log;
 
 class DirectorHistory extends Model
 {
@@ -43,7 +44,8 @@ class DirectorHistory extends Model
         'total_activities',
         'login_activities_count',
         'system_engagement_score',
-        'activity_logs'
+        'activity_logs',
+        'actual_volunteer_count'
     ];
 
     /**
@@ -57,21 +59,31 @@ class DirectorHistory extends Model
     /**
      * Get the user associated with this director (if any)
      */
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class, 'director_email', 'email');
+        // Get the user from the associate group
+        $associateGroup = $this->associateGroup;
+        if (!$associateGroup) {
+            Log::info('DirectorHistory: No associate group found for director history ID: ' . $this->id);
+            return null;
+        }
+
+        $user = $associateGroup->user;
+        if (!$user) {
+            Log::info('DirectorHistory: No user found in associate group for director history ID: ' . $this->id);
+            return null;
+        }
+
+        return $user;
     }
 
     /**
-     * Get the activity logs for this director
+     * Get the activity logs for this director during their tenure
      */
     public function activityLogs()
     {
-        if (!$this->user) {
-            return collect(); // Return empty collection if no user
-        }
-
-        return ActivityLog::where('user_id', $this->user->id)->get();
+        // Now we can directly get activities by director_history_id
+        return $this->hasMany(ActivityLog::class);
     }
 
     /**
@@ -83,35 +95,68 @@ class DirectorHistory extends Model
     }
 
     /**
-     * Get the reports created by this director
+     * Get the reports created by this director during their tenure
      */
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class, 'user_id', 'user_id');
+        $query = $this->hasMany(Report::class, 'user_id', 'user_id');
+
+        // Filter reports by director's tenure period
+        if ($this->start_date) {
+            $query->where('created_at', '>=', $this->start_date);
+        }
+        if ($this->end_date) {
+            $query->where('created_at', '<=', $this->end_date);
+        }
+
+        return $query;
     }
 
     /**
-     * Get the notifications created by this director
+     * Get the notifications created by this director during their tenure
      */
     public function notifications(): HasMany
     {
-        return $this->hasMany(Notification::class, 'user_id', 'user_id');
+        $query = $this->hasMany(Notification::class, 'user_id', 'user_id');
+
+        // Filter notifications by director's tenure period
+        if ($this->start_date) {
+            $query->where('created_at', '>=', $this->start_date);
+        }
+        if ($this->end_date) {
+            $query->where('created_at', '<=', $this->end_date);
+        }
+
+        return $query;
     }
 
     /**
-     * Get the volunteers recruited by this director
+     * Get the volunteers recruited by this director during their tenure
      */
     public function recruitedVolunteers(): HasMany
     {
-        return $this->hasMany(Volunteer::class, 'recruited_by_director_id');
+        $query = $this->hasMany(Volunteer::class, 'recruited_by_director_id');
+
+        // Filter volunteers by director's tenure period
+        if ($this->start_date) {
+            $query->where('created_at', '>=', $this->start_date . ' 00:00:00');
+        }
+        if ($this->end_date) {
+            $query->where('created_at', '<=', $this->end_date . ' 23:59:59');
+        } else {
+            // For current director, only count volunteers from their start date onwards
+            $query->where('created_at', '>=', $this->start_date . ' 00:00:00');
+        }
+
+        return $query;
     }
 
     /**
-     * Get director activity summary
+     * Get director activity summary during their tenure
      */
     public function getActivitySummary()
     {
-        $user = $this->user;
+        $user = $this->user();
         if (!$user) {
             return [
                 'total_activities' => 0,
@@ -124,10 +169,20 @@ class DirectorHistory extends Model
             ];
         }
 
-        $notificationsCount = $this->notifications()->count();
-        $reportsCount = $this->reports()->count();
-        $activitiesCount = $this->activityLogs()->count();
-        $lastActivity = $this->activityLogs()->latest('activity_at')->first();
+        // Use the date-filtered methods
+        $notificationsCount = $this->getNotificationsCreatedAttribute();
+        $reportsCount = $this->getReportsSubmittedCountAttribute();
+        $activitiesCount = $this->getTotalActivitiesAttribute();
+
+        // Get last activity within tenure period
+        $lastActivityQuery = $user->activityLogs();
+        if ($this->start_date) {
+            $lastActivityQuery->where('activity_at', '>=', $this->start_date);
+        }
+        if ($this->end_date) {
+            $lastActivityQuery->where('activity_at', '<=', $this->end_date);
+        }
+        $lastActivity = $lastActivityQuery->latest('activity_at')->first();
 
         // Calculate system engagement score based on various activities
         $engagementScore = min(
@@ -151,17 +206,26 @@ class DirectorHistory extends Model
     }
 
     /**
-     * Get recent activities for this director
+     * Get recent activities for this director during their tenure
      */
     public function getRecentActivities($limit = 10)
     {
-        $user = $this->user;
+        $user = $this->user();
         if (!$user) {
             return collect();
         }
 
-        return $this->activityLogs()
-            ->with('user')
+        $query = ActivityLog::where('user_id', $user->id);
+
+        // Filter activity logs by director's tenure period
+        if ($this->start_date) {
+            $query->where('activity_at', '>=', $this->start_date);
+        }
+        if ($this->end_date) {
+            $query->where('activity_at', '<=', $this->end_date);
+        }
+
+        return $query->with('user')
             ->orderBy('activity_at', 'desc')
             ->limit($limit)
             ->get()
@@ -177,69 +241,86 @@ class DirectorHistory extends Model
     }
 
     /**
-     * Get notifications created count
+     * Get notifications accepted count during director's tenure
      */
     public function getNotificationsCreatedAttribute()
     {
-        if (!$this->user) {
-            return 0;
-        }
-        return $this->user->notifications ? $this->user->notifications->count() : 0;
+        // Count notification_accepted activities for this director
+        $count = $this->activityLogs()
+            ->where('activity_type', 'notification_accepted')
+            ->count();
+
+        Log::info('DirectorHistory: Notifications accepted count for director ' . $this->director_name . ' (ID: ' . $this->id . '): ' . $count);
+        return $count;
     }
 
     /**
-     * Get notification activities count (accepted/declined notifications)
+     * Get notification activities count (accepted/declined notifications) during director's tenure
      */
     public function getNotificationActivitiesCountAttribute()
     {
-        if (!$this->user) {
+        $user = $this->user();
+        if (!$user) {
             return 0;
         }
-        return $this->user->activityLogs ? $this->user->activityLogs->whereIn('activity_type', ['notification_accepted', 'notification_declined'])->count() : 0;
+
+        $query = $user->activityLogs()->whereIn('activity_type', ['notification_accepted', 'notification_declined']);
+
+        // Filter activity logs by director's tenure period
+        if ($this->start_date) {
+            $query->where('activity_at', '>=', $this->start_date);
+        }
+        if ($this->end_date) {
+            $query->where('activity_at', '<=', $this->end_date);
+        }
+
+        return $query->count();
     }
 
     /**
-     * Get reports submitted count
+     * Get reports submitted count during director's tenure
      */
     public function getReportsSubmittedCountAttribute()
     {
-        if (!$this->user) {
-            return 0;
-        }
-        return $this->user->reports ? $this->user->reports->count() : 0;
+        // Count report_submitted activities for this director
+        return $this->activityLogs()
+            ->where('activity_type', 'report_submitted')
+            ->count();
     }
 
     /**
-     * Get total activities count
+     * Get total activities count during director's tenure
      */
     public function getTotalActivitiesAttribute()
     {
-        if (!$this->user) {
-            return 0;
-        }
-        return $this->user->activityLogs ? $this->user->activityLogs->count() : 0;
+        // Count all activity logs for this director
+        $count = $this->activityLogs()->count();
+        Log::info('DirectorHistory: Total activities count for director ' . $this->director_name . ' (ID: ' . $this->id . '): ' . $count);
+        return $count;
     }
 
     /**
-     * Get login activities count
+     * Get login activities count during director's tenure
      */
     public function getLoginActivitiesCountAttribute()
     {
-        if (!$this->user) {
-            return 0;
-        }
-        return $this->user->activityLogs ? $this->user->activityLogs->where('activity_type', 'login')->count() : 0;
+        // Count login activities for this director
+        return $this->activityLogs()
+            ->where('activity_type', 'login')
+            ->count();
     }
 
     /**
-     * Get system engagement score
+     * Get system engagement score during director's tenure
      */
     public function getSystemEngagementScoreAttribute()
     {
-        if (!$this->user) {
+        $user = $this->user();
+        if (!$user) {
             return 0;
         }
 
+        // These methods now filter by date range automatically
         $notificationsCount = $this->getNotificationsCreatedAttribute();
         $reportsCount = $this->getReportsSubmittedCountAttribute();
         $activitiesCount = $this->getTotalActivitiesAttribute();
@@ -249,22 +330,64 @@ class DirectorHistory extends Model
         $engagementScore = min(
             100,
             ($notificationsCount * 10) +
-            ($reportsCount * 15) +
-            ($activitiesCount * 5) +
-            ($volunteersCount * 20)
+                ($reportsCount * 15) +
+                ($activitiesCount * 5) +
+                ($volunteersCount * 20)
         );
 
         return $engagementScore;
     }
 
     /**
-     * Get activity logs for this director
+     * Get activity logs for this director during their tenure
      */
     public function getActivityLogsAttribute()
     {
-        if (!$this->user) {
-            return [];
+        // Now we can directly get activities by director_history_id
+        return $this->activityLogs()->get()->toArray();
+    }
+
+    /**
+     * Get the actual volunteer count recruited by this director during their tenure
+     */
+    public function getActualVolunteerCountAttribute()
+    {
+        $associateGroup = $this->associateGroup;
+        if (!$associateGroup) {
+            return 0;
         }
-        return $this->user->activityLogs ? $this->user->activityLogs->toArray() : [];
+
+        // Count volunteers for this associate group during the director's tenure
+        $query = Volunteer::where('associate_group_id', $associateGroup->id);
+
+        // Filter by director's tenure period
+        if ($this->start_date) {
+            $query->where('created_at', '>=', $this->start_date . ' 00:00:00');
+        }
+        if ($this->end_date) {
+            $query->where('created_at', '<=', $this->end_date . ' 23:59:59');
+        } else {
+            // For current director, only count volunteers from their start date onwards
+            $query->where('created_at', '>=', $this->start_date . ' 00:00:00');
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * Get the current director history ID for a user
+     */
+    public static function getCurrentDirectorHistoryId($userId)
+    {
+        $associateGroup = AssociateGroup::where('user_id', $userId)->first();
+        if (!$associateGroup) {
+            return null;
+        }
+
+        $currentDirector = self::where('associate_group_id', $associateGroup->id)
+            ->where('is_current', true)
+            ->first();
+
+        return $currentDirector ? $currentDirector->id : null;
     }
 }

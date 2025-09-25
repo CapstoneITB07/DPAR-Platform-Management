@@ -32,8 +32,8 @@ function RegistrationForm({ onSuccess, onCancel }) {
     if (name === 'phone') {
       // Remove any non-numeric characters
       const numericValue = value.replace(/\D/g, '');
-      // Only allow if it starts with 09 or is empty
-      if (numericValue === '' || numericValue.startsWith('09')) {
+      // Allow if empty, starts with 0, or starts with 09
+      if (numericValue === '' || numericValue.startsWith('0')) {
         setFormData(prev => ({
           ...prev,
           [name]: numericValue
@@ -204,12 +204,6 @@ function RegistrationForm({ onSuccess, onCancel }) {
         </div>
         
         <form onSubmit={handleSubmit} className="registration-form">
-          {message && (
-            <div className={`registration-message ${message.includes('successfully') ? 'success' : 'error'}`}>
-              {message}
-            </div>
-          )}
-          
           <div className="form-group">
             <label htmlFor="organization_name">
               <FontAwesomeIcon icon={faBuilding} className="form-icon" />
@@ -394,6 +388,12 @@ function RegistrationForm({ onSuccess, onCancel }) {
             )}
             <small className="form-help">Upload your organization logo (JPEG, PNG, JPG, GIF - Max 2MB)</small>
           </div>
+          
+          {message && (
+            <div className={`registration-message ${message.includes('successfully') ? 'success' : 'error'}`}>
+              {message}
+            </div>
+          )}
           
           <div className="form-actions">
             <button

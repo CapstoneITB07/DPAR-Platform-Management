@@ -71,6 +71,12 @@ class PendingApplicationController extends Controller
             $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $otpExpiresAt = now()->addHours(24); // OTP expires in 24 hours
 
+            // Generate 3 recovery passcodes
+            $recoveryPasscodes = [];
+            for ($i = 0; $i < 3; $i++) {
+                $recoveryPasscodes[] = $this->generateRecoveryPasscode();
+            }
+
             // Create user account
             $user = User::create([
                 'name' => $application->organization_name,
@@ -79,6 +85,7 @@ class PendingApplicationController extends Controller
                 'role' => 'associate_group_leader',
                 'organization' => $application->organization_name,
                 'needs_otp_verification' => true,
+                'recovery_passcodes' => $recoveryPasscodes,
             ]);
 
             // Move logo from pending_logos to logos directory
@@ -106,7 +113,7 @@ class PendingApplicationController extends Controller
                 'name' => $application->organization_name,
                 'type' => $application->organization_type,
                 'director' => $application->director_name,
-                'description' => 'Default description for ' . $application->organization_name,
+                'description' => $application->description ?: 'Default description for ' . $application->organization_name,
                 'logo' => $logoPath,
                 'email' => $application->email,
                 'phone' => $application->phone,
@@ -139,18 +146,57 @@ class PendingApplicationController extends Controller
             try {
                 $brevoService = new BrevoEmailService();
 
+                // Create recovery passcodes text file content
+                $recoveryPasscodesContent = "DPAR Platform - Recovery Passcodes\n";
+                $recoveryPasscodesContent .= "=====================================\n\n";
+                $recoveryPasscodesContent .= "Organization: " . $application->organization_name . "\n";
+                $recoveryPasscodesContent .= "Director: " . $application->director_name . "\n\n";
+                $recoveryPasscodesContent .= "Your Recovery Passcodes (use these if you forget your password):\n\n";
+                foreach ($recoveryPasscodes as $index => $passcode) {
+                    $recoveryPasscodesContent .= ($index + 1) . ". " . $passcode . "\n";
+                }
+                $recoveryPasscodesContent .= "\nImportant Notes:\n";
+                $recoveryPasscodesContent .= "- Each passcode can only be used once\n";
+                $recoveryPasscodesContent .= "- Keep these passcodes secure and do not share them\n";
+                $recoveryPasscodesContent .= "- If you use all three passcodes, contact support for new ones\n\n";
+                $recoveryPasscodesContent .= "Generated on: " . now()->format('Y-m-d H:i:s') . "\n";
+
+                // Create temporary file for attachment
+                $tempFilePath = storage_path('app/temp/recovery_passcodes_' . $application->id . '.txt');
+                if (!file_exists(dirname($tempFilePath))) {
+                    mkdir(dirname($tempFilePath), 0755, true);
+                }
+                file_put_contents($tempFilePath, $recoveryPasscodesContent);
+
                 // Render the email template
                 $htmlContent = view('emails.application-approved', [
                     'organizationName' => $application->organization_name,
                     'otpCode' => $otpCode,
-                    'directorName' => $application->director_name
+                    'directorName' => $application->director_name,
+                    'recoveryPasscodes' => $recoveryPasscodes
                 ])->render();
+
+                // Prepare attachment
+                $attachments = [
+                    [
+                        'content' => base64_encode($recoveryPasscodesContent),
+                        'name' => 'recovery_passcodes.txt',
+                        'type' => 'text/plain'
+                    ]
+                ];
 
                 $result = $brevoService->sendEmail(
                     $application->email,
                     'Your Organization Application Has Been Approved - DPAR Platform',
-                    $htmlContent
+                    $htmlContent,
+                    null,
+                    $attachments
                 );
+
+                // Clean up temporary file
+                if (file_exists($tempFilePath)) {
+                    unlink($tempFilePath);
+                }
 
                 if ($result['success']) {
                     Log::info('OTP email sent successfully via Brevo API', [
@@ -175,7 +221,8 @@ class PendingApplicationController extends Controller
 
             return response()->json([
                 'message' => 'Application approved successfully. OTP sent to user email.',
-                'associate_group' => $associateGroup->load('user')
+                'associate_group' => $associateGroup->load('user'),
+                'recovery_passcodes' => $recoveryPasscodes
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -278,5 +325,32 @@ class PendingApplicationController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Generate a recovery passcode for new associate accounts
+     */
+    private function generateRecoveryPasscode()
+    {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        $passcode = '';
+
+        // Ensure at least one character from each category
+        $passcode .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $passcode .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $passcode .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $passcode .= $symbols[random_int(0, strlen($symbols) - 1)];
+
+        // Fill the rest with random characters
+        $allChars = $uppercase . $lowercase . $numbers . $symbols;
+        for ($i = 4; $i < 10; $i++) { // Recovery passcodes are 10 characters long
+            $passcode .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+
+        return str_shuffle($passcode);
     }
 }

@@ -3,6 +3,7 @@ import '../css/AdminDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import Modal from 'react-modal';
 import axios from 'axios';
 
@@ -37,6 +38,7 @@ function AdminLayout({ children }) {
   const [passwordSuggestions, setPasswordSuggestions] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const ADMIN_NOTIF_RESPONSE_KEY = 'adminNotifResponseViewed';
   const [editProfileHover, setEditProfileHover] = useState(false);
@@ -46,9 +48,8 @@ function AdminLayout({ children }) {
 
   const isActive = (route) => location.pathname === route;
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 

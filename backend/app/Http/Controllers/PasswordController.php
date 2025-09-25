@@ -79,9 +79,28 @@ class PasswordController extends Controller
             // If recovery passcode was used, remove it from the list to prevent reuse
             if ($isRecoveryPasscode) {
                 try {
+                    // Log the current recovery passcodes before removal
+                    Log::info('Recovery passcodes before removal', [
+                        'user_id' => $user->id,
+                        'current_passcodes' => $recoveryPasscodes,
+                        'used_passcode' => $request->current_password
+                    ]);
+
+                    // Remove only the specific passcode that was used
                     $recoveryPasscodes = array_filter($recoveryPasscodes, function ($code) use ($request) {
                         return $code !== $request->current_password;
                     });
+
+                    // Re-index the array to maintain proper JSON structure
+                    $recoveryPasscodes = array_values($recoveryPasscodes);
+
+                    // Log the recovery passcodes after removal
+                    Log::info('Recovery passcodes after removal', [
+                        'user_id' => $user->id,
+                        'remaining_passcodes' => $recoveryPasscodes,
+                        'count' => count($recoveryPasscodes)
+                    ]);
+
                     $user->update([
                         'recovery_passcodes' => $recoveryPasscodes // Laravel will auto-convert array to JSON
                     ]);

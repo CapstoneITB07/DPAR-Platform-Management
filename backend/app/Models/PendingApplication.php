@@ -17,6 +17,7 @@ class PendingApplication extends Model
         'phone',
         'password',
         'logo',
+        'description',
         'status',
         'approved_at',
         'otp_code',

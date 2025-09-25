@@ -29,10 +29,10 @@ class BrevoEmailService
         $this->fromName = env('MAIL_FROM_NAME', 'DPAR Platform');
     }
 
-    public function sendEmail($toEmail, $subject, $htmlContent, $textContent = null)
+    public function sendEmail($toEmail, $subject, $htmlContent, $textContent = null, $attachments = [])
     {
         try {
-            $sendSmtpEmail = new SendSmtpEmail([
+            $emailData = [
                 'sender' => new SendSmtpEmailSender([
                     'name' => $this->fromName,
                     'email' => $this->fromEmail
@@ -45,7 +45,14 @@ class BrevoEmailService
                 'subject' => $subject,
                 'htmlContent' => $htmlContent,
                 'textContent' => $textContent
-            ]);
+            ];
+
+            // Add attachments if provided
+            if (!empty($attachments)) {
+                $emailData['attachment'] = $attachments;
+            }
+
+            $sendSmtpEmail = new SendSmtpEmail($emailData);
 
             $result = $this->apiInstance->sendTransacEmail($sendSmtpEmail);
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use App\Models\PendingApplication;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -26,6 +27,7 @@ class AuthController extends Controller
                 'email' => 'required|string|email|max:255|unique:users,email|unique:pending_applications,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
                 'password' => 'required|string|min:8|confirmed',
+                'description' => 'required|string|min:20',
                 'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ], [
                 'organization_name.required' => 'Organization name is required.',
@@ -40,6 +42,8 @@ class AuthController extends Controller
                 'password.required' => 'Password is required.',
                 'password.min' => 'Password must be at least 8 characters long.',
                 'password.confirmed' => 'Password confirmation does not match.',
+                'description.required' => 'Organization description is required.',
+                'description.min' => 'Description must be at least 20 characters.',
                 'logo.required' => 'Organization logo is required.',
                 'logo.image' => 'Logo must be a valid image file.',
                 'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
@@ -60,6 +64,7 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
+                'description' => $request->description,
                 'logo' => $logoPath,
                 'status' => 'pending'
             ]);
@@ -126,11 +131,13 @@ class AuthController extends Controller
 
             // Log login activity for associates
             if ($user->role === 'associate_group_leader') {
+                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
                 ActivityLog::logActivity(
                     $user->id,
                     'login',
                     'User logged in successfully',
-                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent()]
+                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent()],
+                    $directorHistoryId
                 );
             }
 
@@ -259,11 +266,13 @@ class AuthController extends Controller
 
             // Log login activity for associates
             if ($user->role === 'associate_group_leader') {
+                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
                 ActivityLog::logActivity(
                     $user->id,
                     'login',
                     'User logged in with recovery passcode',
-                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'recovery_passcode']
+                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'recovery_passcode'],
+                    $directorHistoryId
                 );
             }
 
@@ -409,11 +418,13 @@ class AuthController extends Controller
             $token = $user->createToken('auth_token')->plainTextToken;
 
             // Log login activity
+            $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
             ActivityLog::logActivity(
                 $user->id,
                 'login',
                 'User logged in successfully with OTP verification',
-                ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'otp_verification']
+                ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'otp_verification'],
+                $directorHistoryId
             );
 
             return response()->json([

@@ -5,6 +5,7 @@ import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus } f
 // You might need to import useHistory or useNavigate from react-router-dom for redirection
 // import { useHistory } from 'react-router-dom'; // For react-router-dom v5
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
+import { useAuth } from '../../contexts/AuthContext';
 import RegistrationForm from '../Registration/RegistrationForm';
 
 function LoginPage() {
@@ -33,6 +34,20 @@ function LoginPage() {
   
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
+  const { login, isAuthenticated, user, isLoading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated() && user) {
+      if (user.role === 'head_admin') {
+        navigate('/admin/dashboard');
+      } else if (user.role === 'associate_group_leader') {
+        navigate('/associate/announcements');
+      } else if (user.role === 'citizen') {
+        navigate('/citizen');
+      }
+    }
+  }, [isAuthenticated, user, isLoading, navigate]);
 
 
   const toggleRA = () => {
@@ -83,7 +98,7 @@ function LoginPage() {
       
       if (!token) {
         // Fallback to stored token
-        token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        token = localStorage.getItem('authToken');
       }
       
       if (!token) {
@@ -208,13 +223,8 @@ function LoginPage() {
       if (response.ok) {
         setMessage('OTP verified successfully! Welcome to the system!');
         
-        // Store token and user data
-        sessionStorage.setItem('authToken', data.token);
-        localStorage.setItem('userRole', data.user.role);
-        localStorage.setItem('userId', data.user.id);
-        if (data.user.organization) {
-          localStorage.setItem('userOrganization', data.user.organization);
-        }
+        // Use authentication context to handle login
+        await login(data.user, data.token);
 
         // Close OTP modal
         setShowOtpModal(false);
@@ -294,14 +304,8 @@ function LoginPage() {
         const userRole = data.user ? data.user.role : null; // Adjust based on actual backend response structure
         const userId = data.user ? data.user.id : null;
 
-        // Store token in sessionStorage only
-          sessionStorage.setItem('authToken', token);
-        // You might also want to save user details like role
-        localStorage.setItem('userRole', userRole);
-        if (userId) localStorage.setItem('userId', userId);
-        if (data.user && data.user.organization) {
-          localStorage.setItem('userOrganization', data.user.organization);
-        }
+        // Use authentication context to handle login
+        await login(data.user, token);
 
         // If this was a recovery login, show change password modal
         if (isRecoveryMode) {
@@ -357,6 +361,46 @@ function LoginPage() {
     alignItems: 'center',
     justifyContent: 'center',
   };
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="loginPageWrapper" style={bgStyle}>
+        <div className="container">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100vh',
+            fontSize: '18px',
+            color: 'white'
+          }}>
+            Checking authentication...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render login form if already authenticated
+  if (isAuthenticated() && user) {
+    return (
+      <div className="loginPageWrapper" style={bgStyle}>
+        <div className="container">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100vh',
+            fontSize: '18px',
+            color: 'white'
+          }}>
+            Redirecting to dashboard...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="loginPageWrapper" style={bgStyle}>

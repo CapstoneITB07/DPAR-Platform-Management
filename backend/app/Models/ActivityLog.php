@@ -11,6 +11,7 @@ class ActivityLog extends Model
 
     protected $fillable = [
         'user_id',
+        'director_history_id',
         'activity_type',
         'description',
         'metadata',
@@ -27,13 +28,19 @@ class ActivityLog extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function directorHistory()
+    {
+        return $this->belongsTo(DirectorHistory::class);
+    }
+
     /**
      * Log a user activity
      */
-    public static function logActivity($userId, $activityType, $description = null, $metadata = null)
+    public static function logActivity($userId, $activityType, $description = null, $metadata = null, $directorHistoryId = null)
     {
         return self::create([
             'user_id' => $userId,
+            'director_history_id' => $directorHistoryId,
             'activity_type' => $activityType,
             'description' => $description,
             'metadata' => $metadata,

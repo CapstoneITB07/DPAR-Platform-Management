@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -246,6 +247,7 @@ class ReportController extends Controller
 
             // Log activity for associates when submitting reports
             if ($user->role === 'associate_group_leader' && $validatedData['status'] === 'sent') {
+                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
                 ActivityLog::logActivity(
                     $user->id,
                     'report_submitted',
@@ -255,7 +257,8 @@ class ReportController extends Controller
                         'report_title' => $report->title,
                         'has_photos' => !empty($photoPaths),
                         'photo_count' => count($photoPaths)
-                    ]
+                    ],
+                    $directorHistoryId
                 );
             }
 
@@ -370,6 +373,7 @@ class ReportController extends Controller
 
                 // Log activity for associates when submitting draft reports
                 if ($user->role === 'associate_group_leader' && $oldStatus === 'draft' && $request->status === 'sent') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
                     ActivityLog::logActivity(
                         $user->id,
                         'report_submitted',
@@ -378,7 +382,8 @@ class ReportController extends Controller
                             'report_id' => $report->id,
                             'report_title' => $report->title,
                             'was_draft' => true
-                        ]
+                        ],
+                        $directorHistoryId
                     );
                 }
 

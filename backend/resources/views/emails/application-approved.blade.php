@@ -87,6 +87,10 @@
             <strong>Important:</strong> This OTP can only be used once. After successful verification, you will be able to log in to the platform using your registered email and password.
         </div>
 
+        <div class="warning" style="background: #e8f4fd; border-color: #bee5eb; color: #0c5460;">
+            <strong>Recovery Passcodes:</strong> We have also generated 3 recovery passcodes for you in case you forget your password. These have been attached to this email as a text file. Keep them secure and do not share them with anyone. Each passcode can only be used once.
+        </div>
+
         <h3>Next Steps:</h3>
         <ol>
             <li>Go to the DPAR Platform login page</li>

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('phone', 11);
             $table->string('password');
+            $table->text('description')->nullable();
             $table->string('logo')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamp('approved_at')->nullable();

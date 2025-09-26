@@ -16,12 +16,14 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create Head Admin Account
-        User::create([
-            'name' => 'Head Admin',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('password'), // Replace 'password' with a strong password
-            'role' => 'head_admin',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Head Admin',
+                'password' => Hash::make('password'), // Replace 'password' with a strong password
+                'role' => 'head_admin',
+            ]
+        );
 
         // Create 15 Associate Group Leader Accounts with their respective organizations
         $associateLeaders = [
@@ -43,13 +45,15 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($associateLeaders as $leader) {
-            $user = User::create([
-                'name' => $leader['name'],
-                'email' => $leader['email'],
-                'password' => Hash::make('password'),
-                'role' => 'associate_group_leader',
-                'organization' => $leader['organization'],
-            ]);
+            $user = User::firstOrCreate(
+                ['email' => $leader['email']],
+                [
+                    'name' => $leader['name'],
+                    'password' => Hash::make('password'),
+                    'role' => 'associate_group_leader',
+                    'organization' => $leader['organization'],
+                ]
+            );
         }
 
         // Seed associate_groups for each leader

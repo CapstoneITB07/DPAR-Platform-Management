@@ -458,11 +458,6 @@ function AssociateGroups() {
     }
   };
 
-  const cancelDeleteAssociate = () => {
-    setShowDeleteModal(false);
-    setAssociateToDelete(null);
-  };
-
   const navigate = useNavigate();
 
   const handleLogout = () => {

@@ -55,7 +55,11 @@ class AssociateGroupController extends Controller
     public function show($id)
     {
         try {
-            $group = AssociateGroup::with(['user', 'directorHistoriesWithActivities'])->findOrFail($id);
+            $group = AssociateGroup::with(['user', 'directorHistories'])->findOrFail($id);
+            
+            // Load director histories with their achievements separately to avoid the relationship issue
+            $group->load(['directorHistories.achievements']);
+            
             // Add full URL for logos
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
                 $group->logo = Storage::url($group->logo);

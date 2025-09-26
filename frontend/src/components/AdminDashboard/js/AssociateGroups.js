@@ -594,7 +594,7 @@ function AssociateGroups() {
                   style={{ position: 'absolute', top: 8, right: 8, color: '#dc3545', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveAssociate(associate);
+                    handleRemoveAssociate(associate.id);
                   }}
                 />
               </>

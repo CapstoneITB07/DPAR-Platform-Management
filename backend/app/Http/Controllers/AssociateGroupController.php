@@ -56,6 +56,7 @@ class AssociateGroupController extends Controller
     {
         try {
             $group = AssociateGroup::with(['user', 'directorHistoriesWithActivities'])->findOrFail($id);
+
             // Add full URL for logos
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
                 $group->logo = Storage::url($group->logo);

@@ -105,10 +105,23 @@ function AssociateGroups() {
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 
-  const openProfileModal = (associate) => {
-    setSelectedAssociate(associate);
-    setShowProfileModal(true);
-    setEditMode(false);
+  const openProfileModal = async (associate) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/associate-groups/${associate.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setSelectedAssociate(response.data);
+      setShowProfileModal(true);
+      setEditMode(false);
+    } catch (error) {
+      console.error('Error fetching associate details:', error);
+      // Fallback to basic data if detailed fetch fails
+      setSelectedAssociate(associate);
+      setShowProfileModal(true);
+      setEditMode(false);
+    }
   };
 
   const closeProfileModal = () => {
@@ -503,6 +516,7 @@ function AssociateGroups() {
       const response = await axios.get(`${API_BASE}/api/associate-groups/${group.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       setSelectedGroup(response.data);
       setShowModal(true);
     } catch (error) {
@@ -594,7 +608,7 @@ function AssociateGroups() {
                   style={{ position: 'absolute', top: 8, right: 8, color: '#dc3545', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveAssociate(associate);
+                    handleRemoveAssociate(associate.id);
                   }}
                 />
               </>

@@ -2582,11 +2582,30 @@
 
 /* Error text styling */
 .error-text {
-  color: #dc2626;
+  color: #b91c1c;
   font-size: 0.85rem;
   font-weight: 500;
   margin-top: 4px;
   display: block;
+}
+
+/* Duplicate error styling - same as other field errors */
+.duplicate-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Name inputs container styling */
+.name-inputs-container {
+  display: flex;
+  gap: 12px;
+}
+
+.name-inputs-container input {
+  flex: 1;
 }
 
 /* Error state for form inputs - keep normal styling */

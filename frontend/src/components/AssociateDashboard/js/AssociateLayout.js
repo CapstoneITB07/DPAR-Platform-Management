@@ -61,6 +61,15 @@ function AssociateLayout({ children }) {
   const NOTIF_READ_KEY = `associateNotifRead_${userId}`;
   const [notifications, setNotifications] = useState([]);
   const [editProfileHover, setEditProfileHover] = useState(false);
+  
+  // Passcode regeneration states
+  const [showPasscodeRegenModal, setShowPasscodeRegenModal] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [passcodeError, setPasscodeError] = useState('');
+  const [passcodeSuccess, setPasscodeSuccess] = useState('');
+  const [isGeneratingPasscodes, setIsGeneratingPasscodes] = useState(false);
+  const [recoveryPasscodes, setRecoveryPasscodes] = useState([]);
 
   const toggleSidebar = () => {
     console.log('Toggle sidebar called');
@@ -578,6 +587,79 @@ function AssociateLayout({ children }) {
     }
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen]);
+
+  // Check if user has recovery passcodes
+  const checkRecoveryPasscodes = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/user/recovery-passcodes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRecoveryPasscodes(response.data.recovery_passcodes || []);
+    } catch (error) {
+      console.error('Error checking recovery passcodes:', error);
+    }
+  };
+
+  // Check if passcodes are exhausted (less than 1 remaining)
+  const arePasscodesExhausted = () => {
+    return recoveryPasscodes.length < 1;
+  };
+
+  // Send OTP for passcode regeneration
+  const sendOtpForPasscodeRegen = async () => {
+    try {
+      setPasscodeError('');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.post(`${API_BASE}/api/user/send-otp-passcode-regen`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOtpSent(true);
+      setPasscodeSuccess('OTP sent to your email. Please check your inbox.');
+    } catch (error) {
+      setPasscodeError(error.response?.data?.message || 'Failed to send OTP');
+    }
+  };
+
+  // Verify OTP and generate new passcodes
+  const verifyOtpAndGeneratePasscodes = async () => {
+    try {
+      setIsGeneratingPasscodes(true);
+      setPasscodeError('');
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.post(`${API_BASE}/api/user/regenerate-passcodes`, {
+        otp_code: otpCode
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Download the passcodes file
+      const blob = new Blob([response.data.passcodes_content], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recovery_passcodes_${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setPasscodeSuccess('New recovery passcodes generated and downloaded successfully!');
+      setShowPasscodeRegenModal(false);
+      setOtpCode('');
+      setOtpSent(false);
+      await checkRecoveryPasscodes(); // Refresh passcode count
+    } catch (error) {
+      setPasscodeError(error.response?.data?.message || 'Failed to generate new passcodes');
+    } finally {
+      setIsGeneratingPasscodes(false);
+    }
+  };
+
+  // Load recovery passcodes on component mount
+  useEffect(() => {
+    checkRecoveryPasscodes();
+  }, []);
 
   return (
     <div className={`associate-dashboard-fixed-layout${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
@@ -1453,6 +1535,63 @@ function AssociateLayout({ children }) {
                     {isLoading ? 'Changing...' : 'Change Password'}
                   </button>
                 </form>
+
+                {/* Recovery Passcodes Section */}
+                {arePasscodesExhausted() && (
+                  <div style={{
+                    marginTop: '30px',
+                    padding: '20px',
+                    background: '#fff3cd',
+                    border: '1px solid #ffeaa7',
+                    borderRadius: '8px',
+                    borderLeft: '4px solid #ffc107'
+                  }}>
+                    <h4 style={{
+                      margin: '0 0 10px 0',
+                      color: '#856404',
+                      fontSize: window.innerWidth <= 480 ? '14px' : '16px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <FontAwesomeIcon icon={faKey} />
+                      Recovery Passcodes
+                    </h4>
+                    <p style={{
+                      margin: '0 0 15px 0',
+                      color: '#856404',
+                      fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                    }}>
+                      You have no recovery passcodes remaining. Generate new ones to secure your account.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowPasscodeRegenModal(true);
+                        setOtpCode('');
+                        setOtpSent(false);
+                        setPasscodeError('');
+                        setPasscodeSuccess('');
+                      }}
+                      style={{
+                        background: '#ffc107',
+                        color: '#212529',
+                        border: 'none',
+                        padding: window.innerWidth <= 480 ? '10px 16px' : '12px 20px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faKey} />
+                      Generate New Recovery Passcodes
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1583,6 +1722,186 @@ function AssociateLayout({ children }) {
               Confirm Change
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Passcode Regeneration Modal */}
+      <Modal
+        isOpen={showPasscodeRegenModal}
+        onRequestClose={() => setShowPasscodeRegenModal(false)}
+        style={{
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          },
+          content: {
+            position: 'relative',
+            background: 'white',
+            borderRadius: '12px',
+            padding: '0',
+            border: 'none',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+          }
+        }}
+      >
+        <div style={{
+          padding: '30px',
+          textAlign: 'center'
+        }}>
+          <h3 style={{
+            margin: '0 0 20px 0',
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#333'
+          }}>
+            Generate New Recovery Passcodes
+          </h3>
+          
+          <p style={{
+            color: '#666',
+            marginBottom: '25px',
+            lineHeight: '1.5',
+            fontSize: '14px'
+          }}>
+            For security, we'll send an OTP to your email to verify your identity before generating new recovery passcodes.
+          </p>
+
+          {/* Error and Success Messages */}
+          {passcodeError && (
+            <div style={{
+              background: '#ffebee',
+              color: '#c62828',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              border: '1px solid #ffcdd2',
+              fontSize: '14px'
+            }}>
+              {passcodeError}
+            </div>
+          )}
+          {passcodeSuccess && (
+            <div style={{
+              background: '#e8f5e8',
+              color: '#2e7d32',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              border: '1px solid #c8e6c9',
+              fontSize: '14px'
+            }}>
+              {passcodeSuccess}
+            </div>
+          )}
+
+          {!otpSent ? (
+            <div>
+              <button
+                onClick={sendOtpForPasscodeRegen}
+                style={{
+                  background: '#A11C22',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  margin: '0 auto'
+                }}
+              >
+                <FontAwesomeIcon icon={faKey} />
+                Send OTP to Email
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '8px',
+                  fontWeight: '500',
+                  color: '#333',
+                  fontSize: '14px'
+                }}>
+                  Enter OTP Code
+                </label>
+                <input
+                  type="text"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="Enter 6-digit OTP code"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    textAlign: 'center',
+                    letterSpacing: '2px',
+                    fontFamily: 'monospace'
+                  }}
+                  maxLength="6"
+                />
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                gap: '15px',
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
+                <button
+                  onClick={() => {
+                    setShowPasscodeRegenModal(false);
+                    setOtpCode('');
+                    setOtpSent(false);
+                    setPasscodeError('');
+                    setPasscodeSuccess('');
+                  }}
+                  style={{
+                    background: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={verifyOtpAndGeneratePasscodes}
+                  disabled={!otpCode || otpCode.length !== 6 || isGeneratingPasscodes}
+                  style={{
+                    background: isGeneratingPasscodes ? '#ccc' : '#A11C22',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '6px',
+                    cursor: isGeneratingPasscodes ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    opacity: isGeneratingPasscodes ? 0.6 : 1
+                  }}
+                >
+                  {isGeneratingPasscodes ? 'Generating...' : 'Generate Passcodes'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

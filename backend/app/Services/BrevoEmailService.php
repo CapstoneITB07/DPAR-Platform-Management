@@ -79,4 +79,59 @@ class BrevoEmailService
             ];
         }
     }
+
+    public function sendOtpEmail($toEmail, $otpCode, $purpose = 'Verification')
+    {
+        $subject = "DPAR Platform - {$purpose} Code";
+
+        $htmlContent = "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>DPAR Platform - {$purpose} Code</title>
+        </head>
+        <body style='margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;'>
+            <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px;'>
+                <div style='text-align: center; margin-bottom: 30px;'>
+                    <h1 style='color: #A11C22; margin: 0; font-size: 28px;'>DPAR Platform</h1>
+                    <p style='color: #666; margin: 5px 0 0 0; font-size: 16px;'>Disaster Preparedness and Response</p>
+                </div>
+                
+                <div style='background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;'>
+                    <h2 style='color: #333; margin: 0 0 15px 0; font-size: 20px;'>{$purpose} Code</h2>
+                    <p style='color: #666; margin: 0 0 20px 0; line-height: 1.5;'>
+                        Your {$purpose} code is:
+                    </p>
+                    <div style='background-color: #A11C22; color: white; padding: 15px; border-radius: 6px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 3px; margin: 20px 0;'>
+                        {$otpCode}
+                    </div>
+                    <p style='color: #666; margin: 20px 0 0 0; font-size: 14px;'>
+                        This code will expire in 10 minutes. Please do not share this code with anyone.
+                    </p>
+                </div>
+                
+                <div style='text-align: center; color: #666; font-size: 12px; margin-top: 30px;'>
+                    <p>If you did not request this code, please ignore this email.</p>
+                    <p>© " . date('Y') . " DPAR Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>";
+
+        $textContent = "
+DPAR Platform - {$purpose} Code
+
+Your {$purpose} code is: {$otpCode}
+
+This code will expire in 10 minutes. Please do not share this code with anyone.
+
+If you did not request this code, please ignore this email.
+
+© " . date('Y') . " DPAR Platform. All rights reserved.
+        ";
+
+        return $this->sendEmail($toEmail, $subject, $htmlContent, $textContent);
+    }
 }

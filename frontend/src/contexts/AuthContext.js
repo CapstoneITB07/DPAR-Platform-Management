@@ -19,15 +19,10 @@ export const AuthProvider = ({ children }) => {
   const isTokenExpired = (token) => {
     if (!token) return true;
     
-    try {
-      // Decode JWT token to check expiration
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
-      return payload.exp < currentTime;
-    } catch (error) {
-      console.error('Error checking token expiration:', error);
-      return true; // If we can't decode, consider it expired
-    }
+    // Laravel Sanctum tokens are not JWT tokens, so we can't decode them
+    // Instead, we'll rely on the backend to validate the token
+    // For now, we'll assume the token is valid if it exists
+    return false;
   };
 
   // Check for existing authentication on app load

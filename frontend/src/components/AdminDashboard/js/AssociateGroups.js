@@ -1428,126 +1428,89 @@ function AssociateGroups() {
         <Modal
           isOpen={showRejectionModal}
           onRequestClose={closeRejectionModal}
+          className="reject-modal-overlay"
+          overlayClassName="reject-modal-overlay"
           style={{
             overlay: {
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 1000
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             },
             content: {
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
+              position: 'relative',
+              top: 'auto',
+              left: 'auto',
               right: 'auto',
               bottom: 'auto',
-              marginRight: '-50%',
-              transform: 'translate(-50%, -50%)',
-              width: '400px',
+              margin: '0',
+              transform: 'none',
+              width: '450px',
               maxWidth: '90vw',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #333',
-              borderRadius: '8px',
+              maxHeight: '90vh',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
               padding: '0',
-              color: 'white'
+              color: '#1f2937',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              overflow: 'hidden'
             }
           }}
         >
-          <div style={{
-            backgroundColor: '#c0392b',
-            color: 'white',
-            padding: '20px',
-            borderRadius: '8px 8px 0 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
-              Reject Application
-            </h2>
-            <button
-              onClick={closeRejectionModal}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'white',
-                fontSize: '20px',
-                cursor: 'pointer',
-                padding: '0',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ×
-            </button>
-          </div>
-          
-          <div style={{ padding: '20px' }}>
-            <p style={{ marginBottom: '15px', color: '#ccc' }}>
-              Please provide a reason for rejecting this application:
-            </p>
-            
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Enter rejection reason..."
-              style={{
-                width: '100%',
-                height: '100px',
-                padding: '10px',
-                backgroundColor: '#2a2a2a',
-                border: '1px solid #444',
-                borderRadius: '4px',
-                color: 'white',
-                fontSize: '14px',
-                resize: 'vertical',
-                fontFamily: 'inherit'
-              }}
-            />
-            
-            {error && (
-              <div style={{
-                color: '#dc3545',
-                fontSize: '14px',
-                marginTop: '10px'
-              }}>
-                {error}
-              </div>
-            )}
-            
-            <div style={{
-              display: 'flex',
-              gap: '10px',
-              justifyContent: 'flex-end',
-              marginTop: '20px'
-            }}>
+          <div className="reject-modal-container">
+            {/* Header */}
+            <div className="reject-modal-header">
+              <h2 className="reject-modal-title">
+                Reject Application
+              </h2>
               <button
                 onClick={closeRejectionModal}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#6c757d',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
+                className="reject-modal-close"
+                aria-label="Close modal"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            
+            {/* Body */}
+            <div className="reject-modal-body">
+              <p className="reject-modal-description">
+                Please provide a reason for rejecting this application:
+              </p>
+              
+              <div className="reject-modal-textarea-container">
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason..."
+                  className="reject-modal-textarea"
+                  rows="4"
+                />
+              </div>
+              
+              {error && (
+                <div className="reject-modal-error">
+                  <FontAwesomeIcon icon={faTimes} />
+                  {error}
+                </div>
+              )}
+            </div>
+            
+            {/* Footer */}
+            <div className="reject-modal-footer">
+              <button
+                onClick={closeRejectionModal}
+                className="reject-modal-cancel-btn"
               >
                 Cancel
               </button>
               <button
                 onClick={rejectApplication}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
+                className="reject-modal-submit-btn"
               >
+                <FontAwesomeIcon icon={faTimes} />
                 Reject Application
               </button>
             </div>

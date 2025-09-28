@@ -483,7 +483,8 @@
 
 .announcement-img {
   width: 100%;
-  object-fit: contain;
+  height: 200px;
+  object-fit: cover;
   border-radius: 0; 
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -782,7 +783,7 @@
 .announcement-full-modal-img {
   width: 100%;
   max-height: 500px; /* Increased height for better visibility */
-  object-fit: contain; /* Show full image without cropping */
+  object-fit: cover; /* Crop image to fit container */
   border-radius: 12px;
   margin: 0;
   display: block;
@@ -999,7 +1000,8 @@
   }
   
   .announcement-img {
-    height: 120px;
+    height: 150px;
+    object-fit: cover;
     margin-top: 8px;
   }
   .announcement-modal-card, .announcement-desc-modal-card {

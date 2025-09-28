@@ -635,6 +635,7 @@
 
 .training-img {
   width: 100%;
+  height: 200px;
   object-fit: contain;
   border-radius: 0; 
   cursor: pointer;
@@ -1034,7 +1035,8 @@
   }
   
   .training-img {
-    height: 120px;
+    height: 150px;
+    object-fit: contain;
     margin-top: 8px;
   }
   .training-modal-card, .training-desc-modal-card {

@@ -201,7 +201,7 @@
   font-size: clamp(1rem, 2vw, 1.15rem);
   font-weight: 600;
   cursor: pointer;
-  margin-top: 8px;
+  margin-top: 0px;
   transition: all 0.3s ease;
 }
 
@@ -228,8 +228,9 @@
 }
 
 .recoveryToggle {
-  margin-top: 20px;
-  text-align: center;
+  margin-top: 8px;
+  padding-top: 4px;
+  text-align: right;
 }
 
 .recoveryToggleLink {
@@ -241,16 +242,22 @@
   padding: 0;
   border-radius: 0;
   transition: color 0.3s ease;
-  display: inline-block;
-  align-items: unset;
-  justify-content: unset;
-  gap: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   width: auto;
   text-decoration: underline !important;
   font-family: inherit;
   font-weight: inherit;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+.recoveryToggleIcon {
+  font-size: 12px;
+  color: inherit;
+  transition: color 0.3s ease;
 }
 
 .recoveryToggleLink:hover {
@@ -349,13 +356,34 @@
   transform: scale(1.1);
 }
 
+.raButton:hover .raButtonIconBox {
+  border-color: #c0392b;
+  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.2);
+}
+
+.raButton:hover .raButtonIcon {
+  color: #a93226;
+  transform: scale(1.1);
+}
+
 .raButtonIconBox {
   border: 1px solid #ccc; /* Border around icon */
-  padding: 8px; /* Padding around icon */
-  display: inline-block; /* Allow padding/border */
+  padding: 12px; /* Increased padding around icon */
+  display: inline-flex; /* Allow padding/border and center icon */
+  align-items: center;
+  justify-content: center;
   background-color: white; /* White background */
-  border-radius: 6px;
+  border-radius: 8px; /* Slightly larger border radius */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  min-width: 48px; /* Ensure minimum size */
+  min-height: 48px; /* Ensure minimum size */
+}
+
+.raButtonIcon {
+  font-size: 24px; /* Increased icon size */
+  color: #c0392b;
+  transition: all 0.3s ease;
 }
 
 .raPopup {
@@ -553,13 +581,21 @@
   }
   
   .raButton {
-    bottom: 16px;
+    top: 20px;
     left: 16px;
+    bottom: auto;
+    right: auto;
   }
   
   .raPopup {
-    max-width: 90vw;
-    padding: 24px 20px 20px 20px;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-width: 95vw;
+    max-height: 90vh;
+    padding: 20px 16px 16px 16px;
+    overflow-y: auto;
   }
 }
 
@@ -614,19 +650,32 @@
   }
   
   .raButton {
-    bottom: 12px;
+    top: 16px;
     left: 12px;
+    bottom: auto;
+    right: auto;
     font-size: 20px;
   }
   
   .raButtonIconBox {
-    padding: 6px;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .raButtonIcon {
+    font-size: 22px;
   }
   
   .raPopup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
     max-width: 95vw;
     padding: 20px 16px 16px 16px;
     max-height: 85vh;
+    overflow-y: auto;
   }
   
   .raPopup h3 {
@@ -704,19 +753,32 @@
   
   
   .raButton {
-    bottom: 8px;
+    top: 12px;
     left: 8px;
+    bottom: auto;
+    right: auto;
     font-size: 18px;
   }
   
   .raButtonIconBox {
-    padding: 5px;
+    padding: 8px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  
+  .raButtonIcon {
+    font-size: 20px;
   }
   
   .raPopup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
     max-width: 98vw;
     padding: 16px 12px 12px 12px;
     max-height: 90vh;
+    overflow-y: auto;
   }
   
   .raPopup h3 {
@@ -757,8 +819,9 @@
     width: 95vw !important;
     max-width: 99vw !important;
     border-radius: 18px !important;
+    top: 50% !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    transform: translate(-50%, -50%) !important;
   }
 } 
 
@@ -1243,6 +1306,78 @@
   animation: modalSlideIn 0.3s ease-out;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+/* Desktop (1200px and above) */
+@media (min-width: 1200px) {
+  .registration-modal-content {
+    max-width: 700px;
+    padding: 2.5rem;
+  }
+}
+
+/* Laptop (1024px to 1199px) */
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .registration-modal-content {
+    max-width: 650px;
+    padding: 2.2rem;
+  }
+}
+
+/* Tablet Landscape (768px to 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .registration-modal-overlay {
+    padding: 15px;
+  }
+  
+  .registration-modal-content {
+    max-width: 90vw;
+    padding: 1.8rem;
+    max-height: 85vh;
+  }
+}
+
+/* Tablet Portrait (600px to 767px) */
+@media (max-width: 767px) and (min-width: 600px) {
+  .registration-modal-overlay {
+    padding: 12px;
+  }
+  
+  .registration-modal-content {
+    max-width: 95vw;
+    padding: 1.5rem;
+    max-height: 88vh;
+    border-radius: 12px;
+  }
+}
+
+/* Mobile Large (480px to 599px) */
+@media (max-width: 599px) and (min-width: 480px) {
+  .registration-modal-overlay {
+    padding: 8px;
+  }
+  
+  .registration-modal-content {
+    max-width: 98vw;
+    padding: 1.2rem;
+    max-height: 92vh;
+    border-radius: 10px;
+  }
+}
+
+/* Mobile Small (320px to 479px) */
+@media (max-width: 479px) {
+  .registration-modal-overlay {
+    padding: 4px;
+  }
+  
+  .registration-modal-content {
+    max-width: 100vw;
+    padding: 1rem;
+    max-height: 95vh;
+    border-radius: 8px;
+    margin: 0;
+  }
 }
 
 .registrationToggle {

@@ -126,6 +126,224 @@
   text-align: center;
 }
 
+/* File Upload Styles */
+.file-upload-area {
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-upload-area:hover {
+  border-color: #c0392b;
+  background: #fff5f5;
+}
+
+.file-upload-area.drag-over {
+  border-color: #c0392b;
+  background: #fff5f5;
+  transform: scale(1.02);
+}
+
+.file-upload-area.error {
+  border-color: #dc3545;
+  background: #fff5f5;
+}
+
+.file-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-icon {
+  font-size: 48px;
+  color: #c0392b;
+  margin-bottom: 8px;
+}
+
+.file-upload-content h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.file-upload-content p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.browse-link {
+  color: #c0392b;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.file-requirements {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.file-requirements small {
+  color: #888;
+  font-size: 12px;
+}
+
+/* File Preview Styles */
+.file-preview-container {
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 16px;
+  position: relative;
+}
+
+.preview-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #e1e5e9;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.file-icon {
+  color: #c0392b;
+  font-size: 16px;
+}
+
+.file-size {
+  color: #666;
+  font-size: 12px;
+}
+
+.remove-file-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.remove-file-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+/* Password Strength Indicator Styles */
+.password-strength-indicator {
+  margin-top: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.strength-bar {
+  width: 100%;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.strength-fill {
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 3px;
+}
+
+.strength-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.strength-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.strength-score {
+  font-size: 12px;
+  color: #666;
+}
+
+.strength-criteria {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.criteria-item.met {
+  color: #28a745;
+}
+
+.criteria-item.unmet {
+  color: #6c757d;
+}
+
+.criteria-icon {
+  font-weight: bold;
+  font-size: 10px;
+}
+
+/* Legacy logo preview styles for backward compatibility */
 .logo-preview img {
   max-width: 100px;
   max-height: 100px;
@@ -200,25 +418,250 @@
   border-color: #ccc !important;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .registration-form-container {
-    padding: 10px;
+/* Desktop (1200px and above) */
+@media (min-width: 1200px) {
+  .registration-form-header h2 {
+    font-size: 32px;
   }
   
-  .registration-form-card {
-    padding: 20px;
+  .registration-form-header p {
+    font-size: 18px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 14px 18px;
+    font-size: 17px;
+  }
+  
+  .btn {
+    padding: 14px 28px;
+    font-size: 17px;
+  }
+}
+
+/* Laptop (1024px to 1199px) */
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .registration-form-header h2 {
+    font-size: 30px;
+  }
+  
+  .registration-form-header p {
+    font-size: 17px;
+  }
+}
+
+/* Tablet Landscape (768px to 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .registration-form-header h2 {
+    font-size: 26px;
+  }
+  
+  .registration-form-header p {
+    font-size: 16px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 11px 14px;
+    font-size: 15px;
+  }
+  
+  .btn {
+    padding: 11px 22px;
+    font-size: 15px;
+  }
+}
+
+/* Tablet Portrait (600px to 767px) */
+@media (max-width: 767px) and (min-width: 600px) {
+  .registration-form-header {
+    margin-bottom: 25px;
   }
   
   .registration-form-header h2 {
     font-size: 24px;
   }
   
+  .registration-form-header p {
+    font-size: 15px;
+  }
+  
+  .registration-form {
+    gap: 18px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+}
+
+/* Mobile Large (480px to 599px) */
+@media (max-width: 599px) and (min-width: 480px) {
+  .registration-form-header {
+    margin-bottom: 20px;
+  }
+  
+  .registration-form-header h2 {
+    font-size: 22px;
+  }
+  
+  .registration-form-header p {
+    font-size: 14px;
+  }
+  
+  .registration-form {
+    gap: 16px;
+  }
+  
+  .form-group label {
+    font-size: 13px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
   .form-actions {
     flex-direction: column;
+    gap: 10px;
   }
   
   .btn {
     width: 100%;
+    padding: 12px 20px;
+    font-size: 16px;
   }
+}
+
+/* Mobile Small (320px to 479px) */
+@media (max-width: 479px) {
+  .registration-form-header {
+    margin-bottom: 18px;
+  }
+  
+  .registration-form-header h2 {
+    font-size: 20px;
+  }
+  
+  .registration-form-header p {
+    font-size: 13px;
+  }
+  
+  .registration-form {
+    gap: 14px;
+  }
+  
+  .form-group label {
+    font-size: 12px;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+  
+  .btn {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 16px;
+    min-width: unset;
+  }
+  
+  .logo-preview img {
+    max-width: 80px;
+    max-height: 80px;
+  }
+  
+  .file-upload-area {
+    padding: 30px 15px;
+    min-height: 150px;
+  }
+  
+  .upload-icon {
+    font-size: 36px;
+  }
+  
+  .file-upload-content h3 {
+    font-size: 16px;
+  }
+  
+  .file-upload-content p {
+    font-size: 13px;
+  }
+  
+  .file-preview {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .preview-image {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .strength-criteria {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  
+  .strength-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Organization name availability styles */
+.spinning-icon {
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+  color: #007bff;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.availability-text {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+}
+
+.availability-text.available {
+  color: #28a745;
+}
+
+.availability-text.unavailable {
+  color: #dc3545;
+}
+
+.form-group input.success {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.form-group input.success:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
 }

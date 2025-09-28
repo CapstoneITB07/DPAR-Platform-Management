@@ -714,7 +714,7 @@ function AssociateGroups() {
                             <div className="activity-stat">
                               <FontAwesomeIcon icon={faSignInAlt} />
                               <span className="stat-label">System Logins:</span>
-                              <span className="stat-value">{history.total_activities || 0}</span>
+                              <span className="stat-value">{history.login_activities_count || 0}</span>
                             </div>
                             <div className="activity-stat">
                               <FontAwesomeIcon icon={faStar} />

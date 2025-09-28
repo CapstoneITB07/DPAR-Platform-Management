@@ -37,6 +37,20 @@ class VolunteerController extends Controller
             return response()->json(['message' => 'Associate group not found'], 404);
         }
 
+        // Check for duplicate volunteer by name only
+        $existingByName = $associateGroup->volunteers()
+            ->where('name', $request->name)
+            ->first();
+
+        if ($existingByName) {
+            return response()->json([
+                'message' => 'A volunteer with this name already exists',
+                'errors' => [
+                    'duplicate' => 'A volunteer with this name already exists in your group'
+                ]
+            ], 422);
+        }
+
         $volunteer = $associateGroup->volunteers()->create($request->all());
 
         // Log activity for volunteer recruitment
@@ -76,6 +90,21 @@ class VolunteerController extends Controller
             'contact_info' => 'required|string|max:11',
             'expertise' => 'nullable|string',
         ]);
+
+        // Check for duplicate volunteer by name only (excluding current volunteer)
+        $existingByName = $associateGroup->volunteers()
+            ->where('name', $request->name)
+            ->where('id', '!=', $volunteer->id)
+            ->first();
+
+        if ($existingByName) {
+            return response()->json([
+                'message' => 'A volunteer with this name already exists',
+                'errors' => [
+                    'duplicate' => 'A volunteer with this name already exists in your group'
+                ]
+            ], 422);
+        }
 
         $volunteer->update($request->all());
         return response()->json($volunteer);

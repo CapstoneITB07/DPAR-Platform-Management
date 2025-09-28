@@ -5,12 +5,8 @@ import {
   faSearch, 
   faEdit, 
   faTrash, 
-  faTimes, 
-  faPlus, 
   faFilter, 
   faDownload, 
-  faEye,
-  faCheck,
   faTimes as faXmark,
   faUserPlus,
   faSort,
@@ -90,6 +86,7 @@ function VolunteerList() {
   const [confirm, setConfirm] = useState({ open: false, onConfirm: null, message: '' });
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsVolunteer, setDetailsVolunteer] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchVolunteers();
@@ -121,13 +118,68 @@ function VolunteerList() {
       errors.contact_info = 'Contact number must be 11 digits';
     }
     
+    // Check for duplicate volunteer (only when adding new volunteer, not editing)
+    if (!selectedVolunteer) {
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      
+      console.log('Checking for duplicates:', {
+        fullName,
+        existingVolunteers: volunteers.map(v => ({ name: v.name }))
+      });
+      
+      // Check for duplicate by name only
+      const duplicateByName = volunteers.find(volunteer => 
+        volunteer.name.toLowerCase() === fullName.toLowerCase()
+      );
+      
+      console.log('Duplicate check results:', {
+        duplicateByName
+      });
+      
+      if (duplicateByName) {
+        errors.duplicate = 'A volunteer with this name already exists';
+      }
+    }
+    
     setFormErrors(errors);
+    
+    // Auto-scroll to first error if validation fails
+    if (Object.keys(errors).length > 0) {
+      setTimeout(() => {
+        // Try multiple selectors to find the first error
+        let firstErrorElement = document.querySelector('.volunteer-form input.error') || 
+                               document.querySelector('.volunteer-form select.error') ||
+                               document.querySelector('.volunteer-form .error-text');
+        
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        } else {
+          // Fallback: scroll to the modal content
+          const modalContent = document.querySelector('.volunteer-modal-content');
+          if (modalContent) {
+            modalContent.scrollTop = 0;
+          }
+        }
+      }, 200);
+    }
+    
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    console.log('Form submission started');
+    const isValid = validateForm();
+    console.log('Form validation result:', isValid);
+    if (!isValid) {
+      console.log('Form validation failed, not submitting');
+      return;
+    }
+    
+    setIsSubmitting(true);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const dataToSubmit = {
@@ -153,8 +205,15 @@ function VolunteerList() {
       resetForm();
       fetchVolunteers();
     } catch (err) {
-      // setError('Failed to save volunteer');
-      setToast({ message: 'Failed to save volunteer', type: 'error' });
+      // Handle duplicate volunteer error - show in form instead of toast
+      if (err.response && err.response.status === 422 && err.response.data.errors && err.response.data.errors.duplicate) {
+        setFormErrors({ duplicate: err.response.data.errors.duplicate });
+      } else {
+        // For other errors, show in form as well
+        setFormErrors({ submit: 'Failed to save volunteer. Please try again.' });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -164,7 +223,7 @@ function VolunteerList() {
       lastName: '',
       gender: '',
       address: '',
-      contact_info: '',
+      contact_info: '09',
       expertise: ''
     });
     setFormErrors({});
@@ -285,7 +344,22 @@ function VolunteerList() {
     });
 
   const handleContactChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+    let value = e.target.value.replace(/\D/g, '');
+    
+    // Always ensure the value starts with "09"
+    if (value.length === 0) {
+      value = '09';
+    } else if (value.length === 1 && value !== '0') {
+      value = '09';
+    } else if (value.length === 2 && !value.startsWith('09')) {
+      value = '09';
+    } else if (value.length > 2 && !value.startsWith('09')) {
+      value = '09' + value.slice(2);
+    }
+    
+    // Limit to 11 digits total
+    value = value.slice(0, 11);
+    
     setFormData({ ...formData, contact_info: value });
     if (formErrors.contact_info) {
       setFormErrors({ ...formErrors, contact_info: '' });
@@ -593,37 +667,41 @@ function VolunteerList() {
                 </button>
               </div>
               <div className="volunteer-modal-body">
-                <form onSubmit={handleSubmit} className="volunteer-form">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>First Name *</label>
-                      <input
-                        type="text"
-                        value={formData.firstName}
-                        onChange={(e) => {
-                          setFormData({ ...formData, firstName: e.target.value });
-                          if (formErrors.firstName) setFormErrors({ ...formErrors, firstName: '' });
-                        }}
-                        className={formErrors.firstName ? 'error' : ''}
-                        placeholder="Enter first name"
-                      />
-                      {formErrors.firstName && <span className="error-text">{formErrors.firstName}</span>}
-                    </div>
-                    <div className="form-group">
-                      <label>Last Name *</label>
-                      <input
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) => {
-                          setFormData({ ...formData, lastName: e.target.value });
-                          if (formErrors.lastName) setFormErrors({ ...formErrors, lastName: '' });
-                        }}
-                        className={formErrors.lastName ? 'error' : ''}
-                        placeholder="Enter last name"
-                      />
-                      {formErrors.lastName && <span className="error-text">{formErrors.lastName}</span>}
-                    </div>
-                  </div>
+                 <form onSubmit={handleSubmit} className="volunteer-form">
+                   <div className="form-group">
+                     <label>Full Name *</label>
+                     <div className="name-inputs-container">
+                       <input
+                         type="text"
+                         value={formData.firstName}
+                         onChange={(e) => {
+                           setFormData({ ...formData, firstName: e.target.value });
+                           if (formErrors.firstName) setFormErrors({ ...formErrors, firstName: '' });
+                         }}
+                         className={formErrors.firstName ? 'error' : ''}
+                         placeholder="First name"
+                       />
+                       <input
+                         type="text"
+                         value={formData.lastName}
+                         onChange={(e) => {
+                           setFormData({ ...formData, lastName: e.target.value });
+                           if (formErrors.lastName) setFormErrors({ ...formErrors, lastName: '' });
+                         }}
+                         className={formErrors.lastName ? 'error' : ''}
+                         placeholder="Last name"
+                       />
+                     </div>
+                     {(formErrors.firstName || formErrors.lastName) && (
+                       <span className="error-text">{formErrors.firstName || formErrors.lastName}</span>
+                     )}
+                     {formErrors.duplicate && (
+                       <span className="error-text duplicate-error">{formErrors.duplicate}</span>
+                     )}
+                     {formErrors.submit && (
+                       <span className="error-text">{formErrors.submit}</span>
+                     )}
+                   </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label>Gender *</label>
@@ -677,6 +755,7 @@ function VolunteerList() {
                     />
                     {formErrors.address && <span className="error-text">{formErrors.address}</span>}
                   </div>
+                  
                   <div className="volunteer-modal-actions">
                     <button
                       type="button"
@@ -689,9 +768,12 @@ function VolunteerList() {
                     >
                       Close
                     </button>
-                    <button type="submit" className="volunteer-save-btn">
-                      {selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer'}
-                    </button>
+                     <button type="submit" className="volunteer-save-btn" disabled={isSubmitting}>
+                       {isSubmitting 
+                         ? (selectedVolunteer ? 'Updating Volunteer...' : 'Adding Volunteer...')
+                         : (selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer')
+                       }
+                     </button>
                   </div>
                 </form>
               </div>

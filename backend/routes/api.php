@@ -63,6 +63,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/change-password', [PasswordController::class, 'changePassword']);
     Route::post('/admin/change-password', [PasswordController::class, 'adminChangePassword'])->middleware('role:head_admin');
 
+    // User recovery passcode routes
+    Route::get('/user/recovery-passcodes', [PasswordController::class, 'getRecoveryPasscodes']);
+    Route::post('/user/send-otp-passcode-regen', [PasswordController::class, 'sendOtpForPasscodeRegen']);
+    Route::post('/user/regenerate-passcodes', [PasswordController::class, 'regeneratePasscodes']);
+
     // Resource Controllers
     Route::apiResource('/announcements', AnnouncementController::class)->except(['index']);
     Route::apiResource('/notifications', NotificationController::class);

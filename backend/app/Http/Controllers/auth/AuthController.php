@@ -25,12 +25,12 @@ class AuthController extends Controller
             ]);
 
             $organizationName = $request->organization_name;
-            
+
             // Check in pending applications (case-insensitive) - only check non-rejected
             $pendingExists = PendingApplication::whereRaw('LOWER(organization_name) = ?', [strtolower($organizationName)])
                 ->where('status', '!=', 'rejected')
                 ->exists();
-            
+
             // Check in approved users (case-insensitive)
             $approvedExists = User::whereRaw('LOWER(organization) = ?', [strtolower($organizationName)])
                 ->exists();
@@ -49,7 +49,6 @@ class AuthController extends Controller
                 'available' => $isAvailable,
                 'message' => $isAvailable ? 'Organization name is qualified' : 'This organization name is already registered.'
             ]);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation failed',
@@ -73,12 +72,12 @@ class AuthController extends Controller
             ]);
 
             $directorName = $request->director_name;
-            
+
             // Check in pending applications (case-insensitive) - only check non-rejected
             $pendingExists = PendingApplication::whereRaw('LOWER(director_name) = ?', [strtolower($directorName)])
                 ->where('status', '!=', 'rejected')
                 ->exists();
-            
+
             // Check in approved users (case-insensitive)
             $approvedExists = User::whereRaw('LOWER(name) = ?', [strtolower($directorName)])
                 ->exists();
@@ -97,7 +96,6 @@ class AuthController extends Controller
                 'available' => $isAvailable,
                 'message' => $isAvailable ? 'Director name is qualified' : 'This director name is already registered.'
             ]);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation failed',
@@ -121,12 +119,12 @@ class AuthController extends Controller
             ]);
 
             $email = $request->email;
-            
+
             // Check in pending applications (case-insensitive) - only check non-rejected
             $pendingExists = PendingApplication::whereRaw('LOWER(email) = ?', [strtolower($email)])
                 ->where('status', '!=', 'rejected')
                 ->exists();
-            
+
             // Check in approved users (case-insensitive)
             $approvedExists = User::whereRaw('LOWER(email) = ?', [strtolower($email)])
                 ->exists();
@@ -145,7 +143,6 @@ class AuthController extends Controller
                 'available' => $isAvailable,
                 'message' => $isAvailable ? 'Email address is qualified' : 'This email is already registered.'
             ]);
-
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation failed',
@@ -198,7 +195,7 @@ class AuthController extends Controller
             $existingPending = PendingApplication::where('email', $request->email)
                 ->where('status', '!=', 'rejected')
                 ->first();
-            
+
             if ($existingPending) {
                 return response()->json([
                     'message' => 'This email is already registered.',
@@ -283,7 +280,8 @@ class AuthController extends Controller
                 ], 200);
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Create token with 7-day expiration
+            $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
             // Log login activity for associates
             if ($user->role === 'associate_group_leader') {
@@ -418,7 +416,8 @@ class AuthController extends Controller
             // Don't remove the recovery passcode yet - it will be consumed when the password is changed
             // This allows the user to use the same passcode in the change password modal
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Create token with 7-day expiration
+            $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
             // Log login activity for associates
             if ($user->role === 'associate_group_leader') {
@@ -571,7 +570,8 @@ class AuthController extends Controller
 
             $user->update(['needs_otp_verification' => false]);
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Create token with 7-day expiration
+            $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
             // Log login activity
             $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);

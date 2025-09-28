@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use App\Services\BrevoEmailService;
+use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 
 class PasswordController extends Controller
 {
@@ -141,5 +144,155 @@ class PasswordController extends Controller
         ]);
 
         return response()->json(['message' => 'Password changed successfully']);
+    }
+
+    /**
+     * Get user's recovery passcodes
+     */
+    public function getRecoveryPasscodes(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $recoveryPasscodes = $user->recovery_passcodes ?? [];
+
+            return response()->json([
+                'recovery_passcodes' => $recoveryPasscodes,
+                'count' => count($recoveryPasscodes)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting recovery passcodes: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to get recovery passcodes'], 500);
+        }
+    }
+
+    /**
+     * Send OTP for passcode regeneration
+     */
+    public function sendOtpForPasscodeRegen(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            // Generate 6-digit OTP
+            $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+            // Store OTP in cache with 10-minute expiration
+            cache()->put('passcode_regen_otp_' . $user->id, $otpCode, 600);
+
+            // Send OTP via email
+            $brevoService = new BrevoEmailService();
+            $brevoService->sendOtpEmail($user->email, $otpCode, 'Recovery Passcode Regeneration');
+
+            // Log activity
+            ActivityLog::logActivity(
+                $user->id,
+                'passcode_regen_otp_sent',
+                'OTP sent for recovery passcode regeneration',
+                ['email' => $user->email],
+                DirectorHistory::getCurrentDirectorHistoryId($user->id)
+            );
+
+            return response()->json(['message' => 'OTP sent to your email']);
+        } catch (\Exception $e) {
+            Log::error('Error sending OTP for passcode regen: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to send OTP'], 500);
+        }
+    }
+
+    /**
+     * Regenerate recovery passcodes after OTP verification
+     */
+    public function regeneratePasscodes(Request $request)
+    {
+        try {
+            $request->validate([
+                'otp_code' => 'required|string|size:6'
+            ]);
+
+            $user = Auth::user();
+
+            if (!$user) {
+                return response()->json(['message' => 'User not authenticated'], 401);
+            }
+
+            // Verify OTP
+            $storedOtp = cache()->get('passcode_regen_otp_' . $user->id);
+            if (!$storedOtp || $storedOtp !== $request->otp_code) {
+                return response()->json(['message' => 'Invalid or expired OTP code'], 422);
+            }
+
+            // Clear OTP from cache
+            cache()->forget('passcode_regen_otp_' . $user->id);
+
+            // Generate 5 new recovery passcodes
+            $newPasscodes = [];
+            for ($i = 0; $i < 5; $i++) {
+                $newPasscodes[] = $this->generateRecoveryPasscode();
+            }
+
+            // Update user with new passcodes
+            User::where('id', $user->id)->update(['recovery_passcodes' => $newPasscodes]);
+
+            // Create passcodes content for download
+            $passcodesContent = "DPAR Platform - Recovery Passcodes\n";
+            $passcodesContent .= "=====================================\n\n";
+            $passcodesContent .= "Organization: " . $user->organization . "\n";
+            $passcodesContent .= "Director: " . $user->name . "\n\n";
+            $passcodesContent .= "Your Recovery Passcodes (use these if you forget your password):\n\n";
+            foreach ($newPasscodes as $index => $passcode) {
+                $passcodesContent .= ($index + 1) . ". " . $passcode . "\n";
+            }
+            $passcodesContent .= "\nImportant Notes:\n";
+            $passcodesContent .= "- Each passcode can only be used once\n";
+            $passcodesContent .= "- Keep these passcodes secure and do not share them\n";
+            $passcodesContent .= "- If you use all five passcodes, you can generate new ones\n\n";
+            $passcodesContent .= "Generated on: " . now()->format('Y-m-d H:i:s') . "\n";
+
+            // Log activity
+            ActivityLog::logActivity(
+                $user->id,
+                'passcode_regen_success',
+                'Recovery passcodes regenerated successfully',
+                ['passcode_count' => count($newPasscodes)],
+                DirectorHistory::getCurrentDirectorHistoryId($user->id)
+            );
+
+            return response()->json([
+                'message' => 'Recovery passcodes generated successfully',
+                'passcodes_content' => $passcodesContent
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            Log::error('Error regenerating passcodes: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to regenerate passcodes'], 500);
+        }
+    }
+
+    /**
+     * Generate a recovery passcode
+     */
+    private function generateRecoveryPasscode()
+    {
+        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers = '0123456789';
+        $symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        $passcode = '';
+
+        // Ensure at least one character from each category
+        $passcode .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $passcode .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $passcode .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $passcode .= $symbols[random_int(0, strlen($symbols) - 1)];
+
+        // Fill the rest with random characters
+        $allChars = $uppercase . $lowercase . $numbers . $symbols;
+        for ($i = 4; $i < 10; $i++) { // Recovery passcodes are 10 characters long
+            $passcode .= $allChars[random_int(0, strlen($allChars) - 1)];
+        }
+
+        return str_shuffle($passcode);
     }
 }

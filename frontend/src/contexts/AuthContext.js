@@ -15,6 +15,21 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if token is expired
+  const isTokenExpired = (token) => {
+    if (!token) return true;
+    
+    try {
+      // Decode JWT token to check expiration
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      return payload.exp < currentTime;
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return true; // If we can't decode, consider it expired
+    }
+  };
+
   // Check for existing authentication on app load
   useEffect(() => {
     const checkAuth = () => {
@@ -24,12 +39,24 @@ export const AuthProvider = ({ children }) => {
       const storedOrganization = localStorage.getItem('userOrganization');
 
       if (storedToken && storedRole && storedUserId) {
-        setUser({
-          id: storedUserId,
-          role: storedRole,
-          organization: storedOrganization
-        });
-        setToken(storedToken);
+        // Check if token is expired
+        if (isTokenExpired(storedToken)) {
+          console.log('Token expired, logging out...');
+          // Clear expired token data
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userOrganization');
+          setUser(null);
+          setToken(null);
+        } else {
+          setUser({
+            id: storedUserId,
+            role: storedRole,
+            organization: storedOrganization
+          });
+          setToken(storedToken);
+        }
       }
       setIsLoading(false);
     };
@@ -50,8 +77,18 @@ export const AuthProvider = ({ children }) => {
 
     window.addEventListener('storage', handleStorageChange);
 
+    // Set up periodic token validation (check every 5 minutes)
+    const tokenValidationInterval = setInterval(() => {
+      const currentToken = localStorage.getItem('authToken');
+      if (currentToken && isTokenExpired(currentToken)) {
+        console.log('Token expired during session, logging out...');
+        logout();
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      clearInterval(tokenValidationInterval);
     };
   }, []);
 
@@ -108,6 +145,43 @@ export const AuthProvider = ({ children }) => {
     return user && user.role === requiredRole;
   };
 
+  // Enhanced API call function with automatic token validation
+  const makeAuthenticatedRequest = async (url, options = {}) => {
+    const currentToken = localStorage.getItem('authToken');
+    
+    // Check if token is expired before making request
+    if (currentToken && isTokenExpired(currentToken)) {
+      console.log('Token expired before API call, logging out...');
+      await logout();
+      throw new Error('Session expired. Please login again.');
+    }
+
+    const defaultOptions = {
+      headers: {
+        'Authorization': `Bearer ${currentToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    };
+
+    try {
+      const response = await fetch(url, defaultOptions);
+      
+      // Handle 401 Unauthorized responses
+      if (response.status === 401) {
+        console.log('Received 401, token may be expired, logging out...');
+        await logout();
+        throw new Error('Session expired. Please login again.');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -115,7 +189,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    hasRole
+    hasRole,
+    makeAuthenticatedRequest
   };
 
   return (

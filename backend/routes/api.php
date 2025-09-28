@@ -31,6 +31,9 @@ use App\Http\Controllers\PendingApplicationController;
 
 // Authentication Routes
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/check-organization-name', [AuthController::class, 'checkOrganizationName']);
+Route::post('/check-director-name', [AuthController::class, 'checkDirectorName']);
+Route::post('/check-email', [AuthController::class, 'checkEmail']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/login/recovery', [AuthController::class, 'loginWithRecoveryPasscode'])->middleware('throttle:5,1');
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');

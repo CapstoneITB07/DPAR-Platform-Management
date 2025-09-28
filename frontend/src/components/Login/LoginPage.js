@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css'; // Import the CSS file
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus, faQuestionCircle, faArrowLeft, faFileText } from '@fortawesome/free-solid-svg-icons';
 // You might need to import useHistory or useNavigate from react-router-dom for redirection
 // import { useHistory } from 'react-router-dom'; // For react-router-dom v5
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
@@ -456,6 +456,19 @@ function LoginPage() {
                   )}
                 </span>
               </div>
+              <div className="recoveryToggle">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleRecoveryMode();
+                  }}
+                  className="recoveryToggleLink"
+                >
+                  <FontAwesomeIcon icon={faQuestionCircle} className="recoveryToggleIcon" />
+                  Forgot Password?
+                </a>
+              </div>
             </div>
             ) : (
               <div className="inputGroup"> {/* Recovery passcode input group */}
@@ -486,6 +499,19 @@ function LoginPage() {
                     )}
                   </span>
                 </div>
+                <div className="recoveryToggle">
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleRecoveryMode();
+                    }}
+                    className="recoveryToggleLink"
+                  >
+                    <FontAwesomeIcon icon={faArrowLeft} className="recoveryToggleIcon" />
+                    Use Regular Password
+                  </a>
+                </div>
               </div>
             )}
             
@@ -493,20 +519,6 @@ function LoginPage() {
             <button type="submit" className="signInButton">
               {isRecoveryMode ? 'Continue with Recovery Passcode' : 'Sign In'}
             </button>
-            
-            <div className="recoveryToggle">
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleRecoveryMode();
-                }}
-                className={`recoveryToggleLink ${isRecoveryMode ? 'recoveryModeActive' : ''}`}
-              >
-                <FontAwesomeIcon icon={faKey} />
-                {isRecoveryMode ? ' Use Regular Password' : ' Forgot Password? Use Recovery Passcode'}
-              </a>
-            </div>
             
             <div className="registrationToggle">
               <a
@@ -537,7 +549,9 @@ function LoginPage() {
         onClick={toggleRA}
         className="raButton"
       >
-        <div className="raButtonIconBox">📄</div>
+        <div className="raButtonIconBox">
+          <FontAwesomeIcon icon={faFileText} className="raButtonIcon" />
+        </div>
       </button>
       {/* Republic Act Pop-up */}
       {showRA && (

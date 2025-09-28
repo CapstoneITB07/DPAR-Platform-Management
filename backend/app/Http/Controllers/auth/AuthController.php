@@ -16,6 +16,150 @@ use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
+    // Check if organization name is available
+    public function checkOrganizationName(Request $request)
+    {
+        try {
+            $request->validate([
+                'organization_name' => 'required|string|max:255'
+            ]);
+
+            $organizationName = $request->organization_name;
+            
+            // Check in pending applications (case-insensitive) - only check non-rejected
+            $pendingExists = PendingApplication::whereRaw('LOWER(organization_name) = ?', [strtolower($organizationName)])
+                ->where('status', '!=', 'rejected')
+                ->exists();
+            
+            // Check in approved users (case-insensitive)
+            $approvedExists = User::whereRaw('LOWER(organization) = ?', [strtolower($organizationName)])
+                ->exists();
+
+            $isAvailable = !$approvedExists;
+
+            // Log for debugging
+            Log::info('Organization name check', [
+                'organization_name' => $organizationName,
+                'pending_exists' => $pendingExists,
+                'approved_exists' => $approvedExists,
+                'is_available' => $isAvailable
+            ]);
+
+            return response()->json([
+                'available' => $isAvailable,
+                'message' => $isAvailable ? 'Organization name is qualified' : 'This organization name is already registered.'
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Organization name check error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while checking organization name.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Check if director name is available
+    public function checkDirectorName(Request $request)
+    {
+        try {
+            $request->validate([
+                'director_name' => 'required|string|max:255'
+            ]);
+
+            $directorName = $request->director_name;
+            
+            // Check in pending applications (case-insensitive) - only check non-rejected
+            $pendingExists = PendingApplication::whereRaw('LOWER(director_name) = ?', [strtolower($directorName)])
+                ->where('status', '!=', 'rejected')
+                ->exists();
+            
+            // Check in approved users (case-insensitive)
+            $approvedExists = User::whereRaw('LOWER(name) = ?', [strtolower($directorName)])
+                ->exists();
+
+            $isAvailable = !$approvedExists;
+
+            // Log for debugging
+            Log::info('Director name check', [
+                'director_name' => $directorName,
+                'pending_exists' => $pendingExists,
+                'approved_exists' => $approvedExists,
+                'is_available' => $isAvailable
+            ]);
+
+            return response()->json([
+                'available' => $isAvailable,
+                'message' => $isAvailable ? 'Director name is qualified' : 'This director name is already registered.'
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Director name check error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while checking director name.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Check if email is available
+    public function checkEmail(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|string|email|max:255'
+            ]);
+
+            $email = $request->email;
+            
+            // Check in pending applications (case-insensitive) - only check non-rejected
+            $pendingExists = PendingApplication::whereRaw('LOWER(email) = ?', [strtolower($email)])
+                ->where('status', '!=', 'rejected')
+                ->exists();
+            
+            // Check in approved users (case-insensitive)
+            $approvedExists = User::whereRaw('LOWER(email) = ?', [strtolower($email)])
+                ->exists();
+
+            $isAvailable = !$approvedExists;
+
+            // Log for debugging
+            Log::info('Email check', [
+                'email' => $email,
+                'pending_exists' => $pendingExists,
+                'approved_exists' => $approvedExists,
+                'is_available' => $isAvailable
+            ]);
+
+            return response()->json([
+                'available' => $isAvailable,
+                'message' => $isAvailable ? 'Email address is qualified' : 'This email is already registered.'
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Email check error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while checking email.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Register new associate application
     public function register(Request $request)
     {
@@ -24,7 +168,7 @@ class AuthController extends Controller
                 'organization_name' => 'required|string|max:255',
                 'organization_type' => 'required|string|max:255',
                 'director_name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email|unique:pending_applications,email',
+                'email' => 'required|string|email|max:255|unique:users,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
                 'password' => 'required|string|min:8|confirmed',
                 'description' => 'required|string|min:20',
@@ -49,6 +193,18 @@ class AuthController extends Controller
                 'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
                 'logo.max' => 'Logo file size must not exceed 2MB.',
             ]);
+
+            // Check for duplicates in pending applications (excluding rejected)
+            $existingPending = PendingApplication::where('email', $request->email)
+                ->where('status', '!=', 'rejected')
+                ->first();
+            
+            if ($existingPending) {
+                return response()->json([
+                    'message' => 'This email is already registered.',
+                    'errors' => ['email' => ['This email is already registered.']]
+                ], 422);
+            }
 
             // Handle logo upload
             $logoPath = null;

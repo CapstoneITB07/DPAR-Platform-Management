@@ -8,6 +8,72 @@ import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
 import { useAuth } from '../../contexts/AuthContext';
 import RegistrationForm from '../Registration/RegistrationForm';
 
+// Password strength calculation functions
+const getPasswordStrength = (password) => {
+  if (password.length === 0) return { level: 'empty', text: '', percentage: 0 };
+  
+  let score = 0;
+  let level = 'weak';
+  let text = 'Weak';
+  let percentage = 0;
+  
+  // Length check
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  
+  // Character variety checks
+  if (/[a-z]/.test(password)) score += 1;
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/[0-9]/.test(password)) score += 1;
+  if (/[^a-zA-Z0-9]/.test(password)) score += 1;
+  
+  // Determine strength level
+  if (score <= 2) {
+    level = 'weak';
+    text = 'Weak';
+    percentage = 25;
+  } else if (score <= 4) {
+    level = 'fair';
+    text = 'Fair';
+    percentage = 50;
+  } else if (score <= 5) {
+    level = 'good';
+    text = 'Good';
+    percentage = 75;
+  } else {
+    level = 'strong';
+    text = 'Strong';
+    percentage = 100;
+  }
+  
+  return { level, text, percentage };
+};
+
+const getPasswordStrengthDetails = (password) => {
+  return [
+    {
+      text: 'At least 8 characters',
+      met: password.length >= 8
+    },
+    {
+      text: 'Contains lowercase letter',
+      met: /[a-z]/.test(password)
+    },
+    {
+      text: 'Contains uppercase letter',
+      met: /[A-Z]/.test(password)
+    },
+    {
+      text: 'Contains number',
+      met: /[0-9]/.test(password)
+    },
+    {
+      text: 'Contains special character',
+      met: /[^a-zA-Z0-9]/.test(password)
+    }
+  ];
+};
+
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +100,7 @@ function LoginPage() {
   
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
-  const { login, isAuthenticated, user, isLoading } = useAuth();
+  const { login, logout, isAuthenticated, user, isLoading } = useAuth();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -142,6 +208,9 @@ function LoginPage() {
         setIsPasswordChangeSuccess(true);
         setChangePasswordMessage('Password changed successfully! Redirecting...');
         
+        // Now call login to authenticate the user after password change
+        await login(recoveryLoginData.user, recoveryLoginData.token);
+        
         // Clear the modal and redirect after a short delay
         setTimeout(() => {
           setShowChangePasswordModal(false);
@@ -191,12 +260,23 @@ function LoginPage() {
   };
 
   // Function to close change password modal
-  const closeChangePasswordModal = () => {
+  const closeChangePasswordModal = async () => {
     setShowChangePasswordModal(false);
     setNewPassword('');
     setConfirmPassword('');
     setChangePasswordMessage('');
     setIsPasswordChangeSuccess(false);
+    
+    // Clear recovery login data since user is exiting without completing password change
+    setRecoveryLoginData(null);
+    
+    // Call logout to properly clear authentication state and notify backend
+    await logout();
+    
+    // Reset recovery mode to regular login
+    setIsRecoveryMode(false);
+    setRecoveryPasscode('');
+    
     // Redirect to login page if user cancels
     navigate('/login');
   };
@@ -304,10 +384,7 @@ function LoginPage() {
         const userRole = data.user ? data.user.role : null; // Adjust based on actual backend response structure
         const userId = data.user ? data.user.id : null;
 
-        // Use authentication context to handle login
-        await login(data.user, token);
-
-        // If this was a recovery login, show change password modal
+        // If this was a recovery login, show change password modal BEFORE calling login
         if (isRecoveryMode) {
           setRecoveryLoginData({
             token,
@@ -316,8 +393,11 @@ function LoginPage() {
             recoveryPasscode
           });
           setShowChangePasswordModal(true);
-          return; // Don't redirect yet
+          return; // Don't call login yet, wait for password change
         }
+
+        // Use authentication context to handle login (only for regular login)
+        await login(data.user, token);
 
         // Redirect based on role or to a default dashboard
         // This requires react-router-dom setup
@@ -593,67 +673,98 @@ function LoginPage() {
               <h2>Change Your Password</h2>
             </div>
             
-            <div className="passwordRequirements">
-              <h3>Password Requirements:</h3>
-              <ul className="requirementsList">
-                <li className={newPassword.length >= 8 ? 'requirementMet' : 'requirementNotMet'}>
-                  <span className="requirementIcon">{newPassword.length >= 8 ? '✓' : '○'}</span>
-                  At least 8 characters long
-                </li>
-                <li className={newPassword !== '' && /[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword) ? 'requirementMet' : 'requirementNotMet'}>
-                  <span className="requirementIcon">{newPassword !== '' && /[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword) ? '✓' : '○'}</span>
-                  With special characters (0-9, @, #, !, etc.)
-                </li>
-              </ul>
+            <div className="passwordChangeWarning">
+              <FontAwesomeIcon icon={faInfoCircle} className="warningIcon" />
+              <p><strong>Required:</strong> You must change your password to continue. This recovery passcode can only be used once.</p>
             </div>
+            
 
             <form onSubmit={handleChangePassword}>
-              <div className="inputGroup">
-                <label htmlFor="newPassword">New Password:</label>
-                <div className="passwordInputContainer">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    id="newPassword"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="passwordInput"
-                    required
-                    placeholder="Enter new password"
-                    aria-label="New Password"
-                  />
-                  <span
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="passwordToggleIcon"
-                    aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-                    tabIndex={0}
-                    role="button"
-                  >
-                    {showNewPassword ? (
-                      <FontAwesomeIcon icon={faEye} />
-                    ) : (
-                      <FontAwesomeIcon icon={faEyeSlash} />
-                    )}
-                  </span>
-                </div>
-                <div className="passwordStrengthText">
-                  <span><strong>Password Strength: </strong></span>
-                  {newPassword.length < 8 ? 'Weak' : 
-                   (newPassword.length >= 8 && /[0-9@#!$%^&*(),.?":{}|<>]/.test(newPassword)) ? 'Strong' : 'Weak'}
-                </div>
-              </div>
+               <div className="inputGroup">
+                 <label htmlFor="newPassword">New Password:</label>
+                 
+                 {/* Password Requirements - Always visible at the top */}
+                 <div className="passwordRequirements">
+                   <h3>Password Requirements:</h3>
+                   <div className="requirementsList">
+                     {getPasswordStrengthDetails(newPassword).map((detail, index) => (
+                       <div key={index} className={`requirementItem ${detail.met ? 'requirementMet' : 'requirementNotMet'}`}>
+                         <span className="requirementIcon">{detail.met ? '✓' : '○'}</span>
+                         <span className="requirementText">{detail.text}</span>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+                 
+                 <div className="passwordInputContainer">
+                   <input
+                     type={showNewPassword ? 'text' : 'password'}
+                     id="newPassword"
+                     value={newPassword}
+                     onChange={(e) => setNewPassword(e.target.value)}
+                     className={`passwordInput newPasswordField ${
+                       newPassword.length > 0 
+                         ? (newPassword.length >= 8 && /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword) && /[0-9]/.test(newPassword) && /[^a-zA-Z0-9]/.test(newPassword))
+                           ? 'valid' 
+                           : 'invalid'
+                         : ''
+                     }`}
+                     required
+                     placeholder="Enter new password"
+                     aria-label="New Password"
+                   />
+                   <span
+                     onClick={() => setShowNewPassword(!showNewPassword)}
+                     className="passwordToggleIcon"
+                     aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                     tabIndex={0}
+                     role="button"
+                   >
+                     {showNewPassword ? (
+                       <FontAwesomeIcon icon={faEye} />
+                     ) : (
+                       <FontAwesomeIcon icon={faEyeSlash} />
+                     )}
+                   </span>
+                 </div>
+                 
+                 {/* Password Strength Indicator - Only show when user starts typing */}
+                 {newPassword.length > 0 && (
+                   <div className="passwordStrengthIndicator">
+                     <div className="strengthHeader">
+                       <span className="strengthLabel">Password Strength:</span>
+                       <span className={`strengthText ${getPasswordStrength(newPassword).level}`}>
+                         {getPasswordStrength(newPassword).text}
+                       </span>
+                     </div>
+                     <div className="strengthProgressBar">
+                       <div 
+                         className={`strengthFill ${getPasswordStrength(newPassword).level}`}
+                         style={{ width: `${getPasswordStrength(newPassword).percentage}%` }}
+                       ></div>
+                     </div>
+                   </div>
+                 )}
+               </div>
               <div className="inputGroup">
                 <label htmlFor="confirmPassword">Confirm New Password:</label>
-                <div className="passwordInputContainer">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="passwordInput"
-                    required
-                    placeholder="Confirm new password"
-                    aria-label="Confirm New Password"
-                  />
+                 <div className="passwordInputContainer">
+                   <input
+                     type={showConfirmPassword ? 'text' : 'password'}
+                     id="confirmPassword"
+                     value={confirmPassword}
+                     onChange={(e) => setConfirmPassword(e.target.value)}
+                     className={`passwordInput confirmPasswordField ${
+                       confirmPassword.length > 0 
+                         ? (newPassword === confirmPassword && newPassword !== '')
+                           ? 'matching' 
+                           : 'notMatching'
+                         : ''
+                     }`}
+                     required
+                     placeholder="Confirm new password"
+                     aria-label="Confirm New Password"
+                   />
                   <span
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="passwordToggleIcon"
@@ -668,11 +779,13 @@ function LoginPage() {
                     )}
                   </span>
                 </div>
-                <div className="passwordMatchIndicator">
-                  <span className={`passwordMatchText ${newPassword === confirmPassword && newPassword !== '' ? 'passwordMatch' : 'passwordNoMatch'}`}>
-                    {newPassword === confirmPassword && newPassword !== '' ? '✓ Passwords match' : '✗ Passwords do not match'}
-                  </span>
-                </div>
+                {(newPassword.length > 0 || confirmPassword.length > 0) && (
+                  <div className="passwordMatchIndicator">
+                    <span className={`passwordMatchText ${newPassword === confirmPassword && newPassword !== '' ? 'passwordMatch' : 'passwordNoMatch'}`}>
+                      {newPassword === confirmPassword && newPassword !== '' ? '✓ Passwords match' : '✗ Passwords do not match'}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="inputGroup">
                 <label htmlFor="recoveryPasscode">Recovery Passcode (Auto-filled):</label>

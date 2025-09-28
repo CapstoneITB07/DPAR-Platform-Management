@@ -890,79 +890,6 @@
   border-left: 4px solid #dc3545;
 }
 
-/* Password Requirements */
-.passwordRequirements {
-  background: #f8f9fa;
-  border-radius: 6px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e9ecef;
-}
-
-.passwordRequirements h3 {
-  color: #495057;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-}
-
-.passwordRequirements h3::before {
-  content: "🔒";
-  margin-right: 0.5rem;
-  font-size: 1.2rem;
-}
-
-.requirementsList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.requirementsList li {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-}
-
-.requirementsList li:last-child {
-  margin-bottom: 0;
-}
-
-.requirementIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  margin-right: 0.75rem;
-  font-size: 0.8rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-.requirementMet {
-  color: #28a745;
-}
-
-.requirementMet .requirementIcon {
-  background: #28a745;
-  color: white;
-}
-
-.requirementNotMet {
-  color: #6c757d;
-}
-
-.requirementNotMet .requirementIcon {
-  background: #e9ecef;
-  color: #6c757d;
-  border: 2px solid #dee2e6;
-}
 
 /* Recovery Passcode Field */
 .recoveryPasscodeField {
@@ -1047,6 +974,59 @@
   outline: none;
   border-color: #c0392b;
   box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.1);
+}
+
+/* Custom hover effects for password fields */
+.modalContent .passwordInput.newPasswordField {
+  transition: all 0.3s ease;
+}
+
+.modalContent .passwordInput.confirmPasswordField {
+  transition: all 0.3s ease;
+}
+
+/* Green glow for valid new password */
+.modalContent .passwordInput.newPasswordField.valid {
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2), 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+.modalContent .passwordInput.newPasswordField.valid:hover {
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3), 0 0 15px rgba(40, 167, 69, 0.4);
+}
+
+/* Red glow for invalid new password */
+.modalContent .passwordInput.newPasswordField.invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2), 0 0 10px rgba(220, 53, 69, 0.3);
+}
+
+.modalContent .passwordInput.newPasswordField.invalid:hover {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3), 0 0 15px rgba(220, 53, 69, 0.4);
+}
+
+/* Green glow for matching confirm password */
+.modalContent .passwordInput.confirmPasswordField.matching {
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2), 0 0 10px rgba(40, 167, 69, 0.3);
+}
+
+.modalContent .passwordInput.confirmPasswordField.matching:hover {
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3), 0 0 15px rgba(40, 167, 69, 0.4);
+}
+
+/* Red glow for non-matching confirm password */
+.modalContent .passwordInput.confirmPasswordField.notMatching {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2), 0 0 10px rgba(220, 53, 69, 0.3);
+}
+
+.modalContent .passwordInput.confirmPasswordField.notMatching:hover {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3), 0 0 15px rgba(220, 53, 69, 0.4);
 }
 
 .modalContent .passwordToggleIcon {
@@ -1399,4 +1379,286 @@
 .registrationToggleLink:hover {
   color: #a93226;
   text-decoration: underline;
-} 
+}
+
+/* Password Change Warning */
+.passwordChangeWarning {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  color: #856404;
+}
+
+.passwordChangeWarning .warningIcon {
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+  color: #f39c12;
+}
+
+.passwordChangeWarning p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.passwordChangeWarning strong {
+  color: #d68910;
+  font-weight: 600;
+}
+
+/* Enhanced Password Strength Indicator */
+.passwordStrengthIndicator {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.strengthHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.strengthLabel {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.strengthText {
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.strengthText.weak {
+  color: #dc3545;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+.strengthText.fair {
+  color: #fd7e14;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+}
+
+.strengthText.good {
+  color: #20c997;
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+}
+
+.strengthText.strong {
+  color: #28a745;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.strengthProgressBar {
+  width: 100%;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.strengthFill.weak {
+  background: linear-gradient(90deg, #dc3545, #e74c3c);
+}
+
+.strengthFill.fair {
+  background: linear-gradient(90deg, #fd7e14, #ffc107);
+}
+
+.strengthFill.good {
+  background: linear-gradient(90deg, #20c997, #17a2b8);
+}
+
+.strengthFill.strong {
+  background: linear-gradient(90deg, #28a745, #20c997);
+}
+
+.strengthFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.strengthDetails {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.strengthDetail {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.strengthDetail.met {
+  color: #28a745;
+}
+
+.strengthDetail.unmet {
+  color: #6c757d;
+}
+
+.detailIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.strengthDetail.met .detailIcon {
+  background: #28a745;
+  color: white;
+}
+
+.strengthDetail.unmet .detailIcon {
+  background: #e9ecef;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.detailText {
+  font-weight: 500;
+}
+
+/* Responsive design for strength details */
+@media (max-width: 480px) {
+  .strengthDetails {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Password Requirements - Always visible at top */
+.passwordRequirements {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.passwordRequirements h3 {
+  color: #495057;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.passwordRequirements h3::before {
+  content: "🔒";
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.requirementsList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.requirementItem {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.requirementIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.requirementMet {
+  color: #28a745;
+}
+
+.requirementMet .requirementIcon {
+  background: #28a745;
+  color: white;
+}
+
+.requirementNotMet {
+  color: #6c757d;
+}
+
+.requirementNotMet .requirementIcon {
+  background: #e9ecef;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.requirementText {
+  font-weight: 500;
+}
+
+/* Responsive design for requirements */
+@media (max-width: 480px) {
+  .requirementsList {
+    grid-template-columns: 1fr;
+  }
+  
+  .passwordRequirements {
+    padding: 0.75rem;
+  }
+  
+  .passwordRequirements h3 {
+    font-size: 0.95rem;
+  }
+  
+  .requirementItem {
+    font-size: 0.8rem;
+  }
+}

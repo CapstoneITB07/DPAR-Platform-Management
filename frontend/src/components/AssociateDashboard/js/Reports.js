@@ -44,6 +44,46 @@ const formatDateTime = (dateTimeString) => {
   return `${month} ${day}, ${year} ${formattedHours}:${minutes} ${ampm}`;
 };
 
+// Helper function to format datetime for footer as "Mon XX, XXXX at HH:MM AM/PM"
+const formatDateTimeFooter = (dateTimeString) => {
+  if (!dateTimeString) return 'N/A';
+  const date = new Date(dateTimeString);
+  if (isNaN(date.getTime())) return 'N/A';
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const day = date.getDate().toString().padStart(2, '0');
+  const year = date.getFullYear();
+  
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const formattedHours = hours.toString().padStart(2, '0');
+  
+  return `${month} ${day}, ${year} at ${formattedHours}:${minutes} ${ampm}`;
+};
+
+// Helper function to format time as "HH:MM AM/PM" (12-hour format)
+const formatTime = (timeString) => {
+  if (!timeString) return 'N/A';
+  
+  // Handle both "HH:MM" and "HH:MM:SS" formats
+  const timeParts = timeString.split(':');
+  if (timeParts.length < 2) return timeString;
+  
+  let hours = parseInt(timeParts[0]);
+  const minutes = timeParts[1];
+  
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const formattedHours = hours.toString().padStart(2, '0');
+  
+  return `${formattedHours}:${minutes} ${ampm}`;
+};
+
 // Reusable ConfirmModal (copied from VolunteerList.js)
 function ConfirmModal({ open, message, onConfirm, onCancel }) {
   if (!open) return null;
@@ -118,6 +158,11 @@ function Reports() {
   const [viewingReport, setViewingReport] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorModalMessage, setErrorModalMessage] = useState('');
+  const [dateTimeErrors, setDateTimeErrors] = useState({
+    eventDate: '',
+    startTime: '',
+    endTime: ''
+  });
 
   const steps = [
     'Heading',
@@ -137,7 +182,6 @@ function Reports() {
                !!formData.subject?.trim();
       case 1: // Event Details
         return (formData.authorities && formData.authorities.some(auth => auth?.trim())) && 
-               !!formData.dateTime?.trim() &&
                !!formData.place?.trim();
       case 2: // Narration of Events I
         return !!formData.eventName?.trim() && 
@@ -145,7 +189,10 @@ function Reports() {
                !!formData.eventDate?.trim() && 
                !!formData.startTime?.trim() && 
                !!formData.endTime?.trim() && 
-               (formData.organizers && formData.organizers.some(org => org?.trim()));
+               (formData.organizers && formData.organizers.some(org => org?.trim())) &&
+               !dateTimeErrors.eventDate && 
+               !dateTimeErrors.startTime && 
+               !dateTimeErrors.endTime;
       case 3: // Narration of Events II
         return !!formData.eventOverview?.trim() && 
                formData.participants?.some(p => p.name?.trim()) && 
@@ -260,6 +307,11 @@ function Reports() {
       
       return newData;
     });
+
+    // Validate date and time fields
+    if (field === 'eventDate' || field === 'startTime' || field === 'endTime') {
+      validateDateTimeFields(field, value);
+    }
   };
 
   const handleFieldFocus = (fieldName, index = null) => {
@@ -364,6 +416,7 @@ function Reports() {
     setSuccessMessage('');
     setError('');
     setFocusedFields(new Set());
+    setDateTimeErrors({ eventDate: '', startTime: '', endTime: '' });
     setShowCreateModal(true);
   };
 
@@ -798,6 +851,7 @@ function Reports() {
     });
     setCurrentStep(0);
     setCompletedSteps(new Set());
+    setDateTimeErrors({ eventDate: '', startTime: '', endTime: '' });
     setShowCreateModal(true);
   };
 
@@ -898,6 +952,59 @@ function Reports() {
   const showError = (message) => {
     setErrorModalMessage(message);
     setShowErrorModal(true);
+  };
+
+  // Date and time validation functions
+  const validateEventDate = (date) => {
+    if (!date) return '';
+    
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+    
+    if (selectedDate > today) {
+      return 'Event date should be on or before the current date.';
+    }
+    return '';
+  };
+
+  const validateTimeRange = (startTime, endTime, field) => {
+    if (!startTime || !endTime) return '';
+    
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    
+    if (start >= end) {
+      if (field === 'startTime') {
+        return 'Start time must be before end time';
+      } else {
+        return 'End time must be after start time';
+      }
+    }
+    return '';
+  };
+
+  const validateDateTimeFields = (field, value) => {
+    const newErrors = { ...dateTimeErrors };
+    
+    if (field === 'eventDate') {
+      newErrors.eventDate = validateEventDate(value);
+    } else if (field === 'startTime' || field === 'endTime') {
+      const startTime = field === 'startTime' ? value : formData.startTime;
+      const endTime = field === 'endTime' ? value : formData.endTime;
+      
+      if (startTime && endTime) {
+        const startTimeError = validateTimeRange(startTime, endTime, 'startTime');
+        const endTimeError = validateTimeRange(startTime, endTime, 'endTime');
+        newErrors.startTime = startTimeError;
+        newErrors.endTime = endTimeError;
+      } else {
+        newErrors.startTime = '';
+        newErrors.endTime = '';
+      }
+    }
+    
+    setDateTimeErrors(newErrors);
   };
 
   const getStatusColor = (status) => {
@@ -1317,7 +1424,7 @@ function Reports() {
                       </div>
                       <div className="report-form-row">
                         <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
-                          <label>DATE: <span style={{color: '#ef4444'}}>*</span></label>
+                          <label>Report Created: <span style={{color: '#ef4444'}}>*</span></label>
                           <input 
                             type="date" 
                             value={formData.date} 
@@ -1350,11 +1457,7 @@ function Reports() {
                   {currentStep === 1 && (
                     <>
                       <div className="report-form-row">
-                        <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
-                          <label>Date and Time:</label>
-                          <input type="datetime-local" value={formData.dateTime} onChange={e => handleInputChange(e, 'dateTime')} />
-                        </div>
-                        <div className="report-form-group" style={{gridColumn: '2 / span 3'}}>
+                        <div className="report-form-group" style={{gridColumn: '1 / span 4'}}>
                           <label>Place:</label>
                           <input type="text" value={formData.place} onChange={e => handleInputChange(e, 'place')} placeholder="Place of Activity" />
                         </div>
@@ -1486,14 +1589,29 @@ function Reports() {
                         <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
                           <label>Date:</label>
                           <input type="date" value={formData.eventDate} onChange={e => handleInputChange(e, 'eventDate')} />
+                          {dateTimeErrors.eventDate && (
+                            <div style={{color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem'}}>
+                              {dateTimeErrors.eventDate}
+                            </div>
+                          )}
                         </div>
                         <div className="report-form-group" style={{gridColumn: '2 / span 1'}}>
                           <label>Start Time:</label>
                           <input type="time" value={formData.startTime} onChange={e => handleInputChange(e, 'startTime')} />
+                          {dateTimeErrors.startTime && (
+                            <div style={{color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem'}}>
+                              {dateTimeErrors.startTime}
+                            </div>
+                          )}
                         </div>
                         <div className="report-form-group" style={{gridColumn: '3 / span 1'}}>
                           <label>End Time:</label>
                           <input type="time" value={formData.endTime} onChange={e => handleInputChange(e, 'endTime')} />
+                          {dateTimeErrors.endTime && (
+                            <div style={{color: '#ef4444', fontSize: '0.875rem', marginTop: '0.25rem'}}>
+                              {dateTimeErrors.endTime}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="report-form-row">
@@ -1972,9 +2090,10 @@ function Reports() {
                           className="report-modal-draft-btn"
                           type="button"
                           onClick={() => handleSubmit(false)}
+                          disabled={submitting}
                         >
                           <FontAwesomeIcon icon={faSave} />
-                          Save as Draft
+                          {submitting ? 'Drafting...' : 'Save as Draft'}
                         </button>
                       )}
                     </div>
@@ -1991,8 +2110,8 @@ function Reports() {
                         </button>
                       )}
                       {currentStep === steps.length - 1 && (
-                        <button className="report-modal-submit-btn" type="submit">
-                          Submit
+                        <button className="report-modal-submit-btn" type="submit" disabled={submitting}>
+                          {submitting ? 'Submitting...' : 'Submit'}
                         </button>
                       )}
                     </div>
@@ -2025,15 +2144,16 @@ function Reports() {
                       <h3>I. HEADING</h3>
                       <div className="detail-row">
                         <strong>For:</strong>
-                        <span>{viewingReport.data.for || 'N/A'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <strong>Position:</strong>
-                        <span>{viewingReport.data.forPosition || 'N/A'}</span>
+                         <span>
+                           {viewingReport.data.for && viewingReport.data.forPosition 
+                             ? `${viewingReport.data.for} - ${viewingReport.data.forPosition}`
+                             : viewingReport.data.for || viewingReport.data.forPosition || 'N/A'
+                           }
+                         </span>
                       </div>
                       <div className="detail-row">
                         <strong>Date:</strong>
-                        <span>{viewingReport.data.date || 'N/A'}</span>
+                         <span>{viewingReport.data.date ? formatDate(viewingReport.data.date) : 'N/A'}</span>
                       </div>
                       <div className="detail-row">
                         <strong>Subject:</strong>
@@ -2054,10 +2174,6 @@ function Reports() {
                     {/* Event Details Section */}
                     <div className="report-view-section">
                       <h3>II. EVENT DETAILS</h3>
-                      <div className="detail-row">
-                        <strong>Date & Time:</strong>
-                        <span>{viewingReport.data.dateTime || 'N/A'}</span>
-                      </div>
                       <div className="detail-row">
                         <strong>Place:</strong>
                         <span>{viewingReport.data.place || 'N/A'}</span>
@@ -2080,18 +2196,6 @@ function Reports() {
                         <strong>Event Location:</strong>
                         <span>{viewingReport.data.eventLocation || 'N/A'}</span>
                       </div>
-                      <div className="detail-row">
-                        <strong>Event Date:</strong>
-                        <span>{viewingReport.data.eventDate || 'N/A'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <strong>Start Time:</strong>
-                        <span>{viewingReport.data.startTime || 'N/A'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <strong>End Time:</strong>
-                        <span>{viewingReport.data.endTime || 'N/A'}</span>
-                      </div>
                       {viewingReport.data.organizers && viewingReport.data.organizers.length > 0 && (
                         <div className="detail-row">
                           <strong>Organizers:</strong>
@@ -2108,10 +2212,21 @@ function Reports() {
                     <div className="report-view-section">
                       <h3>III. NARRATION OF EVENTS I</h3>
                       <div className="detail-row">
-                        <strong>Event Overview:</strong>
-                        <div className="detail-textarea">
-                          {viewingReport.data.eventOverview || 'N/A'}
+                         <strong>Event Date:</strong>
+                         <span>{viewingReport.data.eventDate ? formatDate(viewingReport.data.eventDate) : 'N/A'}</span>
                         </div>
+                      <div className="detail-row">
+                        <strong>Event Duration:</strong>
+                        <span>
+                          {viewingReport.data.startTime && viewingReport.data.endTime 
+                            ? `${formatTime(viewingReport.data.startTime)} - ${formatTime(viewingReport.data.endTime)}`
+                            : viewingReport.data.startTime 
+                              ? formatTime(viewingReport.data.startTime)
+                              : viewingReport.data.endTime 
+                                ? formatTime(viewingReport.data.endTime)
+                                : 'N/A'
+                          }
+                        </span>
                       </div>
                       {viewingReport.data.participants && viewingReport.data.participants.length > 0 && (
                         <div className="detail-row">
@@ -2129,6 +2244,12 @@ function Reports() {
                         <strong>Training Agenda:</strong>
                         <div className="detail-textarea">
                           {viewingReport.data.trainingAgenda || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="detail-row">
+                        <strong>Event Overview:</strong>
+                        <div className="detail-textarea">
+                          {viewingReport.data.eventOverview || 'N/A'}
                         </div>
                       </div>
                     </div>
@@ -2196,11 +2317,12 @@ function Reports() {
                       <h3>VI. SIGNATORIES</h3>
                       <div className="detail-row">
                         <strong>Prepared By:</strong>
-                        <span>{viewingReport.data.preparedBy || 'N/A'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <strong>Position:</strong>
-                        <span>{viewingReport.data.preparedByPosition || 'N/A'}</span>
+                         <span>
+                           {viewingReport.data.preparedBy && viewingReport.data.preparedByPosition 
+                             ? `${viewingReport.data.preparedBy} - ${viewingReport.data.preparedByPosition}`
+                             : viewingReport.data.preparedBy || viewingReport.data.preparedByPosition || 'N/A'
+                           }
+                         </span>
                       </div>
                       {viewingReport.data.preparedBySignature && (
                         <div className="detail-row">
@@ -2216,14 +2338,15 @@ function Reports() {
                           />
                         </div>
                       )}
-                      <div className="detail-row">
-                        <strong>Approved By:</strong>
-                        <span>{viewingReport.data.approvedBy || 'N/A'}</span>
-                      </div>
-                      <div className="detail-row">
-                        <strong>Position:</strong>
-                        <span>{viewingReport.data.approvedByPosition || 'N/A'}</span>
-                      </div>
+                       <div className="detail-row">
+                         <strong>Approved By:</strong>
+                         <span>
+                           {viewingReport.data.approvedBy && viewingReport.data.approvedByPosition 
+                             ? `${viewingReport.data.approvedBy} - ${viewingReport.data.approvedByPosition}`
+                             : viewingReport.data.approvedBy || viewingReport.data.approvedByPosition || 'N/A'
+                           }
+                         </span>
+                       </div>
                     </div>
 
                     {/* Approval Information */}
@@ -2271,27 +2394,37 @@ function Reports() {
                 )}
               </div>
               
-              {/* Sticky Bottom Report Information */}
-              <div className="report-info-sticky-bottom">
-                <div className="report-info-row">
-                  <div className="report-info-item">
-                    <span className="report-info-label">Status:</span>
-                    <span className={`status-badge status-${viewingReport.status}`}>
-                      {viewingReport.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="report-info-item">
-                    <span className="report-info-label">Created:</span>
-                    <span className="report-info-value">{formatDateTime(viewingReport.created_at)}</span>
-                  </div>
-                  {viewingReport.updated_at && (
-                    <div className="report-info-item">
-                      <span className="report-info-label">Last Updated:</span>
-                      <span className="report-info-value">{formatDateTime(viewingReport.updated_at)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+               {/* Sticky Bottom Report Information */}
+               <div className="report-info-sticky-bottom">
+                 <div className="report-info-row" style={{ gap: '4rem' }}>
+                   <div className="report-info-item">
+                     <span className="report-info-label">Status:</span>
+                     <span className={`status-badge status-${viewingReport.status}`}>
+                       {viewingReport.status.toUpperCase()}
+                     </span>
+                   </div>
+                   <div className="report-info-item">
+                     <span className="report-info-label">Created:</span>
+                     <span className="report-info-value">{formatDateTimeFooter(viewingReport.created_at)}</span>
+                   </div>
+                   {viewingReport.updated_at && (
+                     <div className="report-info-item">
+                       <span className="report-info-label">Last Updated:</span>
+                       <span className="report-info-value">{formatDateTimeFooter(viewingReport.updated_at)}</span>
+                     </div>
+                   )}
+                   {(viewingReport.status === 'sent' || viewingReport.status === 'approved' || viewingReport.status === 'rejected') && (
+                     <div className="report-info-item">
+                       <span className="report-info-label">Submitted:</span>
+                       <span className="report-info-value">
+                         {viewingReport.submitted_at ? formatDateTimeFooter(viewingReport.submitted_at) : 
+                          viewingReport.updated_at ? formatDateTimeFooter(viewingReport.updated_at) : 
+                          formatDateTimeFooter(viewingReport.created_at)}
+                       </span>
+                     </div>
+                   )}
+                 </div>
+               </div>
             </div>
           </div>
         )}

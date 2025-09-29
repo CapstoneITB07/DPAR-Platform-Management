@@ -22,7 +22,7 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { parseISO } from 'date-fns';
 import moment from 'moment';
-import { getLogoUrl } from '../../../utils/url';
+import { getLogoUrl, API_BASE } from '../../../utils/url';
 import Modal from 'react-modal';
 import CertificateModal from './CertificateModal';
 import EventModal from './EventModal';
@@ -148,6 +148,8 @@ function AdminDashboard() {
   const [preserveCalendarEvents, setPreserveCalendarEvents] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState([]);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
+  const [showIndividualSummary, setShowIndividualSummary] = useState(false);
+  const [selectedAssociateSummary, setSelectedAssociateSummary] = useState(null);
 
   const fetchActiveMembers = useCallback(async (period = 'day') => {
     try {
@@ -806,7 +808,7 @@ function AdminDashboard() {
         const logo = associate ? getLogoUrl(associate.logo) : getLogoUrl(null);
         
         return (
-          <div key={evaluation.id} className="evaluation-item">
+          <div key={evaluation.id} className="evaluation-item clickable" onClick={() => handleAssociateClick(evaluation)}>
             <img src={logo} alt="logo" className="associate-logo-small" />
             <div className="evaluation-details">
               <span className="associate-name">
@@ -821,6 +823,9 @@ function AdminDashboard() {
             </div>
             <div className="evaluation-date">
               {format(parseISO(evaluation.created_at), 'MMM dd')}
+            </div>
+            <div className="click-hint">
+              <FontAwesomeIcon icon={faChevronRight} />
             </div>
           </div>
         );
@@ -894,7 +899,7 @@ function AdminDashboard() {
       ariaHideApp={false}
     >
       <div className="all-evaluations-modal-header">
-        <h3>All Evaluations</h3>
+        <h3>All Evaluations with Summaries</h3>
         <button className="all-evaluations-modal-close" onClick={() => setShowAllEvaluations(false)}>&times;</button>
       </div>
       <div className="all-evaluations-list">
@@ -907,8 +912,20 @@ function AdminDashboard() {
         {evaluations.map(evaluation => {
           const associate = associatesPerformance.find(a => a.user_id === evaluation.user_id);
           const logo = associate ? getLogoUrl(associate.logo) : getLogoUrl(null);
+          
+          // Generate a short summary for this evaluation
+          const getPerformanceLevel = (score) => {
+            if (score >= 3.5) return 'Excellent';
+            if (score >= 2.5) return 'Good';
+            if (score >= 1.5) return 'Fair';
+            return 'Poor';
+          };
+          
+          const performanceLevel = getPerformanceLevel(evaluation.total_score);
+          const shortSummary = `${performanceLevel} performance with a score of ${evaluation.total_score}. Click to view detailed analysis.`;
+          
           return (
-            <div key={evaluation.id} className="evaluation-item">
+            <div key={evaluation.id} className="evaluation-item-with-summary clickable" onClick={() => handleAssociateClick(evaluation)}>
               <img src={logo} alt="logo" className="associate-logo-small" />
               <div className="evaluation-details">
                 <span className="associate-name">
@@ -917,12 +934,18 @@ function AdminDashboard() {
                 <span className="organization-name">
                   {evaluation.user ? evaluation.user.organization : 'No Organization'}
                 </span>
+                <div className="evaluation-summary-preview">
+                  {shortSummary}
+                </div>
               </div>
               <div className="evaluation-score" style={{ color: getPerformanceColor(evaluation.total_score) }}>
                 {evaluation.total_score}
               </div>
               <div className="evaluation-date">
                 {format(parseISO(evaluation.created_at), 'MMM dd')}
+              </div>
+              <div className="click-hint">
+                <FontAwesomeIcon icon={faChevronRight} />
               </div>
             </div>
           );
@@ -1113,6 +1136,28 @@ function AdminDashboard() {
     setShowEventsListModal(false);
   };
 
+  const handleAssociateClick = async (evaluation) => {
+    try {
+      // Don't set global loading state - just show a local loading indicator
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/evaluations/summaries`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Find the specific associate's summary
+      const associateSummary = response.data.summaries.find(
+        summary => summary.user_id === evaluation.user_id
+      );
+      
+      if (associateSummary) {
+        setSelectedAssociateSummary(associateSummary);
+        setShowIndividualSummary(true);
+      }
+    } catch (err) {
+      console.error('Error fetching associate summary:', err);
+    }
+  };
+
   if (loading) return (
     <AdminLayout>
       <div className="loading">Loading dashboard data...</div>
@@ -1296,7 +1341,9 @@ function AdminDashboard() {
                 />
               )}
             </div>
-             {/* Members Overview */}
+
+
+            {/* Members Overview */}
             <div className="dashboard-section members-overview">
               <div className="members-overview-header">
                 <h3><FontAwesomeIcon icon={faUsers} /> Active Members</h3>
@@ -1396,6 +1443,120 @@ function AdminDashboard() {
             onEdit={handleEditEvent}
             onDelete={handleEventDeleted}
           />
+        )}
+
+        {/* Individual Associate Summary Modal */}
+        {showIndividualSummary && selectedAssociateSummary && (
+          <Modal
+            isOpen={showIndividualSummary}
+            onRequestClose={() => setShowIndividualSummary(false)}
+            className="associate-summary-modal"
+            overlayClassName="associate-summary-modal-overlay"
+            ariaHideApp={false}
+          >
+            <div className="associate-summary-modal-header">
+              <h3>{selectedAssociateSummary.user_name} - Evaluation Details</h3>
+              <button 
+                className="associate-summary-modal-close" 
+                onClick={() => setShowIndividualSummary(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="associate-summary-modal-body">
+              <div className="detail-section">
+                <h4>Latest Evaluation</h4>
+                <div className="detail-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Total Score:</span>
+                    <span className="detail-value">{selectedAssociateSummary.latest_evaluation.total_score.toFixed(2)}/4.0</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Performance Level:</span>
+                    <span 
+                      className="detail-value"
+                      style={{ color: getPerformanceColor(selectedAssociateSummary.latest_evaluation.performance_level) }}
+                    >
+                      {selectedAssociateSummary.latest_evaluation.performance_level}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Evaluation Date:</span>
+                    <span className="detail-value">
+                      {new Date(selectedAssociateSummary.latest_evaluation.evaluation_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Trend:</span>
+                    <span 
+                      className="detail-value"
+                      style={{ color: selectedAssociateSummary.latest_evaluation.trend === 'improving' ? '#10B981' : selectedAssociateSummary.latest_evaluation.trend === 'declining' ? '#EF4444' : '#6B7280' }}
+                    >
+                      {selectedAssociateSummary.latest_evaluation.trend === 'improving' ? '📈' : selectedAssociateSummary.latest_evaluation.trend === 'declining' ? '📉' : '➡️'} {selectedAssociateSummary.latest_evaluation.trend}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h4>Performance Summary</h4>
+                <div className="performance-summary-detail">
+                  <p>{selectedAssociateSummary.latest_evaluation.performance_summary}</p>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h4>Category Performance</h4>
+                <div className="category-details">
+                  {Object.entries(selectedAssociateSummary.latest_evaluation.category_scores).map(([category, score]) => (
+                    <div key={category} className="category-detail">
+                      <div className="category-header">
+                        <span className="category-title">{category}</span>
+                        <span className="category-score">{score.toFixed(2)}/4.0</span>
+                      </div>
+                      <div className="category-bar">
+                        <div 
+                          className="category-fill" 
+                          style={{ 
+                            width: `${(score / 4) * 100}%`,
+                            backgroundColor: score >= 3 ? '#10B981' : score >= 2 ? '#F59E0B' : '#EF4444'
+                          }}
+                        ></div>
+                      </div>
+                      {selectedAssociateSummary.latest_evaluation.category_descriptions && selectedAssociateSummary.latest_evaluation.category_descriptions[category] && (
+                        <div className="category-description-detail">
+                          <p>{selectedAssociateSummary.latest_evaluation.category_descriptions[category]}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h4>Evaluation History</h4>
+                <div className="history-grid">
+                  <div className="history-item">
+                    <span className="history-label">Total Evaluations:</span>
+                    <span className="history-value">{selectedAssociateSummary.evaluation_history.total_evaluations}</span>
+                  </div>
+                  <div className="history-item">
+                    <span className="history-label">Average Score:</span>
+                    <span className="history-value">{selectedAssociateSummary.evaluation_history.average_score.toFixed(2)}</span>
+                  </div>
+                  <div className="history-item">
+                    <span className="history-label">First Evaluation:</span>
+                    <span className="history-value">{selectedAssociateSummary.evaluation_history.first_evaluation}</span>
+                  </div>
+                  <div className="history-item">
+                    <span className="history-label">Last Evaluation:</span>
+                    <span className="history-value">{selectedAssociateSummary.evaluation_history.last_evaluation}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Modal>
         )}
       </div>
     </AdminLayout>

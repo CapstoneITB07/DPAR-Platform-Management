@@ -92,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/members/active', [MemberController::class, 'getActiveMembers']);
     Route::apiResource('/members', MemberController::class);
     Route::get('/evaluations/statistics', [EvaluationController::class, 'statistics']);
+    Route::get('/evaluations/summaries', [EvaluationController::class, 'summaries']);
     Route::apiResource('/evaluations', EvaluationController::class);
     Route::apiResource('/associate-groups', AssociateGroupController::class);
     Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');

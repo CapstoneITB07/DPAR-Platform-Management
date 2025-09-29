@@ -305,4 +305,222 @@ class EvaluationController extends Controller
             return response()->json(['error' => 'Failed to fetch statistics: ' . $e->getMessage()], 500);
         }
     }
+
+    public function summaries()
+    {
+        try {
+            $evaluations = Evaluation::with(['user:id,name,organization'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $summaries = [];
+            $userEvaluations = [];
+
+            // Group evaluations by user
+            foreach ($evaluations as $evaluation) {
+                $userId = $evaluation->user_id;
+                if (!isset($userEvaluations[$userId])) {
+                    $userEvaluations[$userId] = [
+                        'user' => $evaluation->user,
+                        'evaluations' => []
+                    ];
+                }
+                $userEvaluations[$userId]['evaluations'][] = $evaluation;
+            }
+
+            // Process each user's evaluations
+            foreach ($userEvaluations as $userId => $userData) {
+                $evaluations = $userData['evaluations'];
+                $user = $userData['user'];
+
+                // Get latest evaluation
+                $latestEvaluation = $evaluations[0];
+                $evalData = is_string($latestEvaluation->evaluation_data)
+                    ? json_decode($latestEvaluation->evaluation_data, true)
+                    : $latestEvaluation->evaluation_data;
+
+                // Calculate category averages for latest evaluation
+                $categoryAverages = [];
+                $kpiWeights = [
+                    'Volunteer Participation' => 0.25,
+                    'Task Accommodation and Completion' => 0.30,
+                    'Communication Effectiveness' => 0.15,
+                    'Team Objective Above Self' => 0.30
+                ];
+
+                foreach ($kpiWeights as $category => $weight) {
+                    if (isset($evalData[$category]['scores'])) {
+                        $scores = array_values($evalData[$category]['scores']);
+                        $validScores = array_filter($scores, function ($score) {
+                            return is_numeric($score) && $score > 0;
+                        });
+                        if (!empty($validScores)) {
+                            $categoryAverages[$category] = round(array_sum($validScores) / count($validScores), 2);
+                        } else {
+                            $categoryAverages[$category] = 0;
+                        }
+                    } else {
+                        $categoryAverages[$category] = 0;
+                    }
+                }
+
+                // Calculate trend (compare with previous evaluation if exists)
+                $trend = 'stable';
+                if (count($evaluations) > 1) {
+                    $previousScore = $evaluations[1]->total_score;
+                    $currentScore = $latestEvaluation->total_score;
+                    if ($currentScore > $previousScore + 0.1) {
+                        $trend = 'improving';
+                    } elseif ($currentScore < $previousScore - 0.1) {
+                        $trend = 'declining';
+                    }
+                }
+
+                // Count total evaluations first
+                $totalEvaluations = count($evaluations);
+
+                // Calculate performance level
+                $performanceLevel = 'Poor';
+                if ($latestEvaluation->total_score >= 3.5) {
+                    $performanceLevel = 'Excellent';
+                } elseif ($latestEvaluation->total_score >= 2.5) {
+                    $performanceLevel = 'Good';
+                } elseif ($latestEvaluation->total_score >= 1.5) {
+                    $performanceLevel = 'Fair';
+                }
+
+                // Generate performance summary
+                $performanceSummary = $this->generatePerformanceSummary($categoryAverages, $performanceLevel, $trend, $totalEvaluations);
+
+                // Generate category descriptions
+                $categoryDescriptions = $this->generateCategoryDescriptions($categoryAverages);
+
+                $summaries[] = [
+                    'user_id' => $userId,
+                    'user_name' => $user->name,
+                    'organization' => $user->organization,
+                    'latest_evaluation' => [
+                        'id' => $latestEvaluation->id,
+                        'total_score' => $latestEvaluation->total_score,
+                        'performance_level' => $performanceLevel,
+                        'category_scores' => $categoryAverages,
+                        'evaluation_date' => $latestEvaluation->created_at->format('Y-m-d H:i:s'),
+                        'trend' => $trend,
+                        'performance_summary' => $performanceSummary,
+                        'category_descriptions' => $categoryDescriptions
+                    ],
+                    'evaluation_history' => [
+                        'total_evaluations' => $totalEvaluations,
+                        'average_score' => round(array_sum(array_column($evaluations, 'total_score')) / $totalEvaluations, 2),
+                        'first_evaluation' => end($evaluations)->created_at->format('Y-m-d'),
+                        'last_evaluation' => $latestEvaluation->created_at->format('Y-m-d')
+                    ]
+                ];
+            }
+
+            // Sort by total score descending
+            usort($summaries, function ($a, $b) {
+                return $b['latest_evaluation']['total_score'] <=> $a['latest_evaluation']['total_score'];
+            });
+
+            return response()->json([
+                'summaries' => $summaries,
+                'total_associates' => count($summaries)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in EvaluationController@summaries: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch evaluation summaries: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function generatePerformanceSummary($categoryAverages, $performanceLevel, $trend, $totalEvaluations)
+    {
+        $summary = "This associate demonstrates {$performanceLevel} performance overall. ";
+
+        // Find strongest and weakest categories
+        $maxCategory = array_keys($categoryAverages, max($categoryAverages))[0];
+        $minCategory = array_keys($categoryAverages, min($categoryAverages))[0];
+
+        $maxScore = $categoryAverages[$maxCategory];
+        $minScore = $categoryAverages[$minCategory];
+
+        // Add category insights
+        if ($maxScore >= 3.5) {
+            $summary .= "They excel particularly in {$maxCategory} with a score of {$maxScore}. ";
+        } elseif ($maxScore >= 2.5) {
+            $summary .= "Their strongest area is {$maxCategory} with a score of {$maxScore}. ";
+        }
+
+        if ($minScore < 2.5) {
+            $summary .= "There is room for improvement in {$minCategory} (score: {$minScore}). ";
+        }
+
+        // Add trend information
+        if ($trend === 'improving') {
+            $summary .= "Their performance has been improving over time, showing positive development. ";
+        } elseif ($trend === 'declining') {
+            $summary .= "Recent evaluations show a declining trend that may require attention. ";
+        } else {
+            $summary .= "Their performance has remained stable across evaluations. ";
+        }
+
+        // Add evaluation frequency insight
+        if ($totalEvaluations >= 3) {
+            $summary .= "With {$totalEvaluations} evaluations, this provides a comprehensive view of their performance. ";
+        } elseif ($totalEvaluations == 2) {
+            $summary .= "Based on {$totalEvaluations} evaluations, early patterns are emerging. ";
+        } else {
+            $summary .= "This is their first evaluation, providing an initial performance baseline. ";
+        }
+
+        return trim($summary);
+    }
+
+    private function generateCategoryDescriptions($categoryAverages)
+    {
+        $descriptions = [];
+
+        foreach ($categoryAverages as $category => $score) {
+            $descriptions[$category] = $this->getCategoryDescription($category, $score);
+        }
+
+        return $descriptions;
+    }
+
+    private function getCategoryDescription($category, $score)
+    {
+        $descriptions = [
+            'Volunteer Participation' => [
+                'excellent' => "Demonstrates exceptional volunteer participation both within and outside the coalition. Actively engages in meetings, trainings, and field activities without constant reminders. Shows initiative by suggesting and leading new activities.",
+                'good' => "Shows consistent volunteer participation in coalition activities. Generally participates in meetings and trainings, with occasional need for reminders. Contributes to field activities and shows willingness to help.",
+                'fair' => "Participates in volunteer activities but may require more frequent reminders or encouragement. Shows basic engagement in meetings and trainings, with room for improvement in initiative and consistency.",
+                'poor' => "Limited volunteer participation with frequent absences or lack of engagement. Requires constant reminders to participate in activities. Shows minimal initiative in volunteer work."
+            ],
+            'Task Accommodation and Completion' => [
+                'excellent' => "Consistently meets deadlines and maintains high quality standards. Effectively aligns group workflows with coalition plans. Successfully completes tasks independently and seeks appropriate support when needed.",
+                'good' => "Generally meets deadlines and maintains acceptable quality standards. Works well within group dynamics and completes most tasks with minimal supervision.",
+                'fair' => "Meets basic requirements but may struggle with deadlines or quality consistency. Requires more supervision and guidance to complete tasks effectively.",
+                'poor' => "Frequently misses deadlines or produces substandard work. Requires constant supervision and struggles to complete tasks independently."
+            ],
+            'Communication Effectiveness' => [
+                'excellent' => "Excellent communication skills with clear, respectful interactions. Actively shares knowledge and ideas, provides constructive feedback, and effectively communicates with the public. Seeks and uses feedback to improve performance.",
+                'good' => "Good communication skills with clear and respectful interactions. Participates in discussions and provides feedback when appropriate. Communicates effectively in most situations.",
+                'fair' => "Basic communication skills with room for improvement in clarity and consistency. May struggle with complex discussions or providing constructive feedback.",
+                'poor' => "Poor communication skills with unclear or inappropriate interactions. Difficulty in sharing ideas or providing feedback. May struggle with public communication."
+            ],
+            'Team Objective Above Self' => [
+                'excellent' => "Consistently prioritizes team and coalition objectives over personal interests. Demonstrates strong leadership and supports team members. Shows commitment to collective goals and organizational mission.",
+                'good' => "Generally supports team objectives and works well with others. Shows commitment to group goals with occasional focus on personal interests.",
+                'fair' => "Basic understanding of team objectives but may prioritize personal interests at times. Shows some commitment to group goals but needs improvement in team focus.",
+                'poor' => "Frequently prioritizes personal interests over team objectives. Shows limited commitment to group goals and may hinder team progress."
+            ]
+        ];
+
+        $level = 'poor';
+        if ($score >= 3.5) $level = 'excellent';
+        elseif ($score >= 2.5) $level = 'good';
+        elseif ($score >= 1.5) $level = 'fair';
+
+        return $descriptions[$category][$level] ?? "No specific description available for this category.";
+    }
 }

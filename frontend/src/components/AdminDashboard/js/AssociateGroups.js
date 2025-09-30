@@ -3,7 +3,6 @@ import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faBell, faChartBar, faTimes, faTrash, faPen, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
 
@@ -34,9 +33,6 @@ function AssociateGroups() {
   const [editMode, setEditMode] = useState(false);
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
-  const [memberCount, setMemberCount] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [form, setForm] = useState({ 
     name: '', 
     type: '', 
@@ -93,12 +89,6 @@ function AssociateGroups() {
     return () => clearInterval(interval);
   }, []);
 
-  // Simulate fetching member count (replace with API call if available)
-  useEffect(() => {
-    if (selectedAssociate) {
-      setMemberCount(selectedAssociate.members_count || 0);
-    }
-  }, [selectedAssociate]);
 
   // Set up polling for updates
   useEffect(() => {
@@ -106,19 +96,11 @@ function AssociateGroups() {
       fetchAssociates();
     }, 10000); // Poll every 10 seconds to catch profile updates
     return () => clearInterval(interval);
-  }, [refreshTrigger]);
+  }, []);
 
 
 
   // --- 1. Reset error modal state when opening/closing add modal and after successful submission ---
-  const openAddModal = () => {
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
-    setLogoFile(null);
-    setShowAddModal(true);
-    setShowPopup(false); // Reset error modal
-    setPopupError('');
-  };
-
   const closeAddModal = () => {
     setShowAddModal(false);
     setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '' });
@@ -153,7 +135,7 @@ function AssociateGroups() {
   const approveApplication = async (applicationId) => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
+      await axios.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -437,7 +419,7 @@ function AssociateGroups() {
       setAssociates(prev => prev.filter(a => a.id !== associateToDelete));
       if (selectedAssociate && selectedAssociate.id === associateToDelete) {
         setSelectedAssociate(null);
-        setShowProfileModal(false);
+        setShowModal(false);
       }
       setNotification('Associate group removed successfully!');
       setTimeout(() => setNotification(''), 2000);

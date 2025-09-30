@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faCertificate, faPlus, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faCertificate, faPlus, faChevronLeft, faChevronRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/AdminDashboard.css';
 import {
@@ -148,8 +148,7 @@ function AdminDashboard() {
   const [preserveCalendarEvents, setPreserveCalendarEvents] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState([]);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
-  const [showIndividualSummary, setShowIndividualSummary] = useState(false);
-  const [selectedAssociateSummary, setSelectedAssociateSummary] = useState(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const fetchActiveMembers = useCallback(async (period = 'day') => {
     try {
@@ -808,7 +807,7 @@ function AdminDashboard() {
         const logo = associate ? getLogoUrl(associate.logo) : getLogoUrl(null);
         
         return (
-          <div key={evaluation.id} className="evaluation-item clickable" onClick={() => handleAssociateClick(evaluation)}>
+          <div key={evaluation.id} className="evaluation-item">
             <img src={logo} alt="logo" className="associate-logo-small" />
             <div className="evaluation-details">
               <span className="associate-name">
@@ -823,9 +822,6 @@ function AdminDashboard() {
             </div>
             <div className="evaluation-date">
               {format(parseISO(evaluation.created_at), 'MMM dd')}
-            </div>
-            <div className="click-hint">
-              <FontAwesomeIcon icon={faChevronRight} />
             </div>
           </div>
         );
@@ -925,7 +921,7 @@ function AdminDashboard() {
           const shortSummary = `${performanceLevel} performance with a score of ${evaluation.total_score}. Click to view detailed analysis.`;
           
           return (
-            <div key={evaluation.id} className="evaluation-item-with-summary clickable" onClick={() => handleAssociateClick(evaluation)}>
+            <div key={evaluation.id} className="evaluation-item-with-summary">
               <img src={logo} alt="logo" className="associate-logo-small" />
               <div className="evaluation-details">
                 <span className="associate-name">
@@ -1136,39 +1132,76 @@ function AdminDashboard() {
     setShowEventsListModal(false);
   };
 
-  const handleAssociateClick = async (evaluation) => {
+  const handleGeneratePerformancePDF = async () => {
     try {
-      // Don't set global loading state - just show a local loading indicator
+      setIsGeneratingPDF(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/evaluations/summaries`, {
-        headers: { Authorization: `Bearer ${token}` }
+      
+      const response = await axios.get(`${API_BASE}/api/dashboard/performance-analysis-pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
       });
       
-      // Find the specific associate's summary
-      const associateSummary = response.data.summaries.find(
-        summary => summary.user_id === evaluation.user_id
-      );
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `DPAR_Performance_Analysis_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
-      if (associateSummary) {
-        setSelectedAssociateSummary(associateSummary);
-        setShowIndividualSummary(true);
-      }
     } catch (err) {
-      console.error('Error fetching associate summary:', err);
+      console.error('Error generating PDF:', err);
+      alert('Failed to generate performance analysis PDF. Please try again.');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
+
   if (loading) return (
     <AdminLayout>
-      <div className="loading">Loading dashboard data...</div>
+      <div className="dashboard-loading-container">
+        <div className="loading-content">
+          <div className="simple-loader">
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+          </div>
+          <h3>Loading Dashboard</h3>
+          <p>Analyzing performance data and generating insights...</p>
+          <div className="loading-progress">
+            <div className="progress-bar">
+              <div className="progress-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </AdminLayout>
   );
 
   return (
     <AdminLayout>
       <div className="admin-dashboard">
+        <div className="dashboard-header">
+          <div className="header-left">
         <h2 className="main-header">Dashboard Overview</h2>
         {renderLastUpdate()}
+          </div>
+          <div className="header-right">
+            <button 
+              className="generate-pdf-btn"
+              onClick={handleGeneratePerformancePDF}
+              disabled={isGeneratingPDF}
+            >
+              <FontAwesomeIcon icon={faFilePdf} />
+              {isGeneratingPDF ? 'Generating...' : 'Generate Performance Report'}
+            </button>
+          </div>
+        </div>
         {error && <div className="error-message">{error}</div>}
 
         <div className="performance-column">
@@ -1445,119 +1478,6 @@ function AdminDashboard() {
           />
         )}
 
-        {/* Individual Associate Summary Modal */}
-        {showIndividualSummary && selectedAssociateSummary && (
-          <Modal
-            isOpen={showIndividualSummary}
-            onRequestClose={() => setShowIndividualSummary(false)}
-            className="associate-summary-modal"
-            overlayClassName="associate-summary-modal-overlay"
-            ariaHideApp={false}
-          >
-            <div className="associate-summary-modal-header">
-              <h3>{selectedAssociateSummary.user_name} - Evaluation Details</h3>
-              <button 
-                className="associate-summary-modal-close" 
-                onClick={() => setShowIndividualSummary(false)}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="associate-summary-modal-body">
-              <div className="detail-section">
-                <h4>Latest Evaluation</h4>
-                <div className="detail-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Total Score:</span>
-                    <span className="detail-value">{selectedAssociateSummary.latest_evaluation.total_score.toFixed(2)}/4.0</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Performance Level:</span>
-                    <span 
-                      className="detail-value"
-                      style={{ color: getPerformanceColor(selectedAssociateSummary.latest_evaluation.performance_level) }}
-                    >
-                      {selectedAssociateSummary.latest_evaluation.performance_level}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Evaluation Date:</span>
-                    <span className="detail-value">
-                      {new Date(selectedAssociateSummary.latest_evaluation.evaluation_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Trend:</span>
-                    <span 
-                      className="detail-value"
-                      style={{ color: selectedAssociateSummary.latest_evaluation.trend === 'improving' ? '#10B981' : selectedAssociateSummary.latest_evaluation.trend === 'declining' ? '#EF4444' : '#6B7280' }}
-                    >
-                      {selectedAssociateSummary.latest_evaluation.trend === 'improving' ? '📈' : selectedAssociateSummary.latest_evaluation.trend === 'declining' ? '📉' : '➡️'} {selectedAssociateSummary.latest_evaluation.trend}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="detail-section">
-                <h4>Performance Summary</h4>
-                <div className="performance-summary-detail">
-                  <p>{selectedAssociateSummary.latest_evaluation.performance_summary}</p>
-                </div>
-              </div>
-
-              <div className="detail-section">
-                <h4>Category Performance</h4>
-                <div className="category-details">
-                  {Object.entries(selectedAssociateSummary.latest_evaluation.category_scores).map(([category, score]) => (
-                    <div key={category} className="category-detail">
-                      <div className="category-header">
-                        <span className="category-title">{category}</span>
-                        <span className="category-score">{score.toFixed(2)}/4.0</span>
-                      </div>
-                      <div className="category-bar">
-                        <div 
-                          className="category-fill" 
-                          style={{ 
-                            width: `${(score / 4) * 100}%`,
-                            backgroundColor: score >= 3 ? '#10B981' : score >= 2 ? '#F59E0B' : '#EF4444'
-                          }}
-                        ></div>
-                      </div>
-                      {selectedAssociateSummary.latest_evaluation.category_descriptions && selectedAssociateSummary.latest_evaluation.category_descriptions[category] && (
-                        <div className="category-description-detail">
-                          <p>{selectedAssociateSummary.latest_evaluation.category_descriptions[category]}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="detail-section">
-                <h4>Evaluation History</h4>
-                <div className="history-grid">
-                  <div className="history-item">
-                    <span className="history-label">Total Evaluations:</span>
-                    <span className="history-value">{selectedAssociateSummary.evaluation_history.total_evaluations}</span>
-                  </div>
-                  <div className="history-item">
-                    <span className="history-label">Average Score:</span>
-                    <span className="history-value">{selectedAssociateSummary.evaluation_history.average_score.toFixed(2)}</span>
-                  </div>
-                  <div className="history-item">
-                    <span className="history-label">First Evaluation:</span>
-                    <span className="history-value">{selectedAssociateSummary.evaluation_history.first_evaluation}</span>
-                  </div>
-                  <div className="history-item">
-                    <span className="history-label">Last Evaluation:</span>
-                    <span className="history-value">{selectedAssociateSummary.evaluation_history.last_evaluation}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Modal>
-        )}
       </div>
     </AdminLayout>
   );

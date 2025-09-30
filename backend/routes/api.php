@@ -94,6 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/evaluations/statistics', [EvaluationController::class, 'statistics']);
     Route::get('/evaluations/summaries', [EvaluationController::class, 'summaries']);
     Route::apiResource('/evaluations', EvaluationController::class);
+    Route::get('/dashboard/performance-analysis-pdf', [App\Http\Controllers\DashboardAnalysisController::class, 'generatePerformanceAnalysisPDF']);
     Route::apiResource('/associate-groups', AssociateGroupController::class);
     Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');
     Route::delete('/associate-groups/{id}/password', [AssociateGroupController::class, 'clearTempPassword'])->middleware('role:head_admin');

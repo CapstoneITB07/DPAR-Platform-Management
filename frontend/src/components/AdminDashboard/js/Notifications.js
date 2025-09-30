@@ -24,6 +24,7 @@ function Notifications() {
   });
   const [associates, setAssociates] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectAll, setSelectAll] = useState(false);
   const [filterType, setFilterType] = useState('none');
@@ -37,16 +38,25 @@ function Notifications() {
 
   // Fetch notifications
   useEffect(() => {
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => {
+    const fetchNotifications = async () => {
+      try {
+        setInitialLoading(true);
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${token}` } });
+        const data = await response.json();
         if (Array.isArray(data)) {
           setNotifications(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
         } else {
           setNotifications([]);
         }
-      });
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    
+    fetchNotifications();
   }, [showModal]);
 
   // Fetch associates for selection
@@ -344,6 +354,22 @@ function Notifications() {
     });
     return filtered;
   };
+
+  if (initialLoading) return (
+    <AdminLayout>
+      <div className="dashboard-loading-container">
+        <div className="loading-content">
+          <div className="simple-loader">
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+          </div>
+          <h3>Loading Notifications</h3>
+          <p>Fetching notification data and associate information...</p>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 
   return (
     <AdminLayout>

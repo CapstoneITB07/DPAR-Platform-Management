@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faTrash, faPen, faUser, faLock, faArrowLeft, faArrowRight, faCheck, faEnvelope, faPhone, faKey, faTrophy, faMedal, faStar, faCrown, faHandshake, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faBell, faChartBar, faTimes, faTrash, faPen, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-modal';
@@ -24,7 +24,6 @@ Modal.setAppElement('#root');
 
 function AssociateGroups() {
   const [selectedAssociate, setSelectedAssociate] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
@@ -36,7 +35,8 @@ function AssociateGroups() {
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
   const [memberCount, setMemberCount] = useState(0);
-  const [message, setMessage] = useState('');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [form, setForm] = useState({ 
     name: '', 
     type: '', 
@@ -51,15 +51,16 @@ function AssociateGroups() {
   const [error, setError] = useState('');
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [popupError, setPopupError] = useState('');
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [associateToDelete, setAssociateToDelete] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const fetchAssociates = async (showNotification = false) => {
+  const fetchAssociates = async (showNotification = false, isInitialLoad = false) => {
     try {
+      if (isInitialLoad) setLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/associate-groups`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -73,12 +74,14 @@ function AssociateGroups() {
     } catch (error) {
       console.error('Error fetching associate groups:', error);
       setError('Failed to fetch associate groups. Please try again later.');
+    } finally {
+      if (isInitialLoad) setLoading(false);
     }
   };
 
   // Fetch associate groups from the backend
   useEffect(() => {
-    fetchAssociates();
+    fetchAssociates(false, true); // Initial load with loading state
     fetchPendingApplications(); // Also fetch pending applications for counter
     
     // Refresh data every 5 seconds to catch profile updates
@@ -105,30 +108,7 @@ function AssociateGroups() {
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 
-  const openProfileModal = async (associate) => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups/${associate.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      setSelectedAssociate(response.data);
-      setShowProfileModal(true);
-      setEditMode(false);
-    } catch (error) {
-      console.error('Error fetching associate details:', error);
-      // Fallback to basic data if detailed fetch fails
-      setSelectedAssociate(associate);
-      setShowProfileModal(true);
-      setEditMode(false);
-    }
-  };
 
-  const closeProfileModal = () => {
-    setShowProfileModal(false);
-    setSelectedAssociate(null);
-    setMessage('');
-  };
 
   // --- 1. Reset error modal state when opening/closing add modal and after successful submission ---
   const openAddModal = () => {
@@ -471,13 +451,7 @@ function AssociateGroups() {
     }
   };
 
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userRole');
-    navigate('/');
-  };
 
   const getLogoUrl = (logoPath) => {
     if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
@@ -546,6 +520,22 @@ function AssociateGroups() {
     }
   };
 
+
+  if (loading) return (
+    <AdminLayout>
+      <div className="dashboard-loading-container">
+        <div className="loading-content">
+          <div className="simple-loader">
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+          </div>
+          <h3>Loading Associate Groups</h3>
+          <p>Fetching associate group data and applications...</p>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 
   return (
     <AdminLayout>

@@ -268,7 +268,17 @@ function Evaluation() {
         {error && <div className="error-message">{error}</div>}
 
         {loading ? (
-          <div className="loading">Loading...</div>
+          <div className="dashboard-loading-container">
+            <div className="loading-content">
+              <div className="simple-loader">
+                <div className="loader-dot"></div>
+                <div className="loader-dot"></div>
+                <div className="loader-dot"></div>
+              </div>
+              <h3>Loading Evaluations</h3>
+              <p>Fetching associate groups and evaluation data...</p>
+            </div>
+          </div>
         ) : (
           <div className="associates-grid">
             {sortedAssociates.length > 0 ? (
@@ -371,7 +381,7 @@ function Evaluation() {
                                     type="radio"
                                     name={`${category}_${section}_${index}`}
                                     value={score}
-                                    checked={evaluationData[category]?.scores[`${section}_${index}`] == score}
+                                    checked={evaluationData[category]?.scores[`${section}_${index}`] === score}
                                     onChange={(e) => handleScoreChange(category, section, index, e.target.value)}
                                   />
                                   <span className="radio-custom"></span>

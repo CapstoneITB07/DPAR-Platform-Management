@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaChalkboardTeacher, FaCloudUploadAlt } from 'react-icons/fa';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaCloudUploadAlt } from 'react-icons/fa';
 import axios from 'axios';
 import '../css/TrainingProgram.css';
 
@@ -31,8 +29,8 @@ function TrainingProgram() {
   const [editId, setEditId] = useState(null);
   const [menuOpenIndex, setMenuOpenIndex] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
-  const [expanded, setExpanded] = useState({});
   const [showDescModal, setShowDescModal] = useState(false);
   const [descModalContent, setDescModalContent] = useState({ 
     title: '', 
@@ -47,15 +45,18 @@ function TrainingProgram() {
   const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    fetchPrograms();
+    fetchPrograms(true); // Initial load with loading state
   }, []);
 
-  const fetchPrograms = async () => {
+  const fetchPrograms = async (isInitialLoad = false) => {
     try {
+      if (isInitialLoad) setInitialLoading(true);
       const res = await axios.get('http://localhost:8000/api/training-programs');
       setPrograms(res.data);
     } catch (err) {
       setError('Failed to load training programs');
+    } finally {
+      if (isInitialLoad) setInitialLoading(false);
     }
   };
 
@@ -148,13 +149,6 @@ function TrainingProgram() {
     e.target.value = '';
   };
 
-  const removePhoto = (index) => {
-    setForm(prev => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index),
-      previews: prev.previews.filter((_, i) => i !== index)
-    }));
-  };
 
   const removeExistingPhoto = (index) => {
     setForm(prev => ({
@@ -247,9 +241,6 @@ function TrainingProgram() {
     setMenuOpenIndex(menuOpenIndex === idx ? null : idx);
   };
 
-  const toggleExpand = (id) => {
-    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const openFullModal = (program) => {
     setDescModalContent({
@@ -279,56 +270,23 @@ function TrainingProgram() {
     }
   };
 
-  // Function to truncate description to first line
-  const truncateDescription = (text) => {
-    if (!text) return '';
-    
-    // Split by paragraphs first and filter out empty ones
-    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
-    
-    if (paragraphs.length === 0) return '';
-    
-    // Get the first paragraph
-    const firstParagraph = paragraphs[0];
-    
-    // If first paragraph is short, return it as is
-    if (firstParagraph.length <= 120) return firstParagraph;
-    
-    // Truncate first paragraph to approximately one line
-    const words = firstParagraph.split(' ');
-    const maxWords = 20; // Increased to show more content
-    
-    if (words.length <= maxWords) return firstParagraph;
-    
-    return words.slice(0, maxWords).join(' ') + '...';
-  };
 
-  // Function to check if description needs truncation
-  const needsTruncation = (text) => {
-    if (!text) return false;
-    
-    // Check for multiple paragraphs
-    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
-    if (paragraphs.length > 1) return true;
-    
-    // Check if first paragraph is long enough to need truncation
-    if (paragraphs.length === 1) {
-      const firstParagraph = paragraphs[0];
-      const words = firstParagraph.split(' ');
-      const charCount = firstParagraph.length;
-      
-      return words.length > 15 || charCount > 80;
-    }
-    
-    return false;
-  };
 
-  // Function to render default training program icon
-  const renderDefaultIcon = () => (
-    <div className="training-default-icon">
-      <FaGraduationCap size={40} />
-      <span className="training-default-text">No Image</span>
-    </div>
+
+  if (initialLoading) return (
+    <AdminLayout>
+      <div className="dashboard-loading-container">
+        <div className="loading-content">
+          <div className="simple-loader">
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+          </div>
+          <h3>Loading Training Programs</h3>
+          <p>Fetching training program data and content...</p>
+        </div>
+      </div>
+    </AdminLayout>
   );
 
   return (

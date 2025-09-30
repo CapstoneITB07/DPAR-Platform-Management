@@ -2,7 +2,7 @@
   padding: 2rem 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
-  background: #f7f8fa;
+  background: transparent;
 }
 
 .approval-aor-success-notification {
@@ -527,7 +527,7 @@
   .approval-aor-container {
     padding: 18px 10px;
     max-width: 100vw;
-    background: #f7f8fa;
+    background: transparent;
   }
   .header-section {
     flex-direction: row;

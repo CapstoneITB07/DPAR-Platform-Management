@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import axios from 'axios';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaBullhorn, FaNewspaper, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaCloudUploadAlt } from 'react-icons/fa';
 import '../css/announcement.css';
 
 // Notification component
@@ -22,6 +22,7 @@ function Announcement() {
   const [photos, setPhotos] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editId, setEditId] = useState(null);
@@ -33,11 +34,12 @@ function Announcement() {
   const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    fetchAnnouncements();
+    fetchAnnouncements(true); // Initial load with loading state
   }, []);
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = async (isInitialLoad = false) => {
     try {
+      if (isInitialLoad) setInitialLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const res = await axios.get('http://localhost:8000/api/announcements', {
         headers: { Authorization: `Bearer ${token}` }
@@ -45,6 +47,8 @@ function Announcement() {
       setAnnouncements(res.data);
     } catch (err) {
       setError('Failed to load announcements');
+    } finally {
+      if (isInitialLoad) setInitialLoading(false);
     }
   };
 
@@ -163,10 +167,6 @@ function Announcement() {
     e.target.value = '';
   };
 
-  const removePhoto = (index) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
-    setPreviews(prev => prev.filter((_, i) => i !== index));
-  };
 
   const removeExistingPhoto = (index) => {
     setPreviews(prev => prev.filter((_, i) => i !== index));
@@ -208,58 +208,6 @@ function Announcement() {
     }
   };
 
-  // Function to truncate description to 3 lines while preserving paragraph structure
-  const truncateDescription = (text, maxLines = 3) => {
-    if (!text) return '';
-    
-    // Split by paragraphs first and filter out empty ones
-    const paragraphs = text.split('\n').filter(p => p.trim().length > 0);
-    
-    // If only one paragraph or short text, use word-based truncation
-    if (paragraphs.length === 1) {
-      const words = text.split(' ');
-      const maxWords = 25;
-      
-      if (words.length <= maxWords) return text;
-      return words.slice(0, maxWords).join(' ') + '...';
-    }
-    
-    // For multiple paragraphs, show first paragraph + partial second if needed
-    if (paragraphs.length === 2) {
-      const firstPara = paragraphs[0];
-      const secondPara = paragraphs[1];
-      
-      // If first paragraph is short, include some of second
-      if (firstPara.length < 100) {
-        const words = secondPara.split(' ');
-        const maxWords = 15; // Limit second paragraph words
-        
-        if (words.length <= maxWords) {
-          return `${firstPara}\n\n${secondPara}`;
-        } else {
-          return `${firstPara}\n\n${words.slice(0, maxWords).join(' ')}...`;
-        }
-      } else {
-        // First paragraph is long enough, truncate it
-        const words = firstPara.split(' ');
-        const maxWords = 25;
-        
-        if (words.length <= maxWords) {
-          return firstPara + '...';
-        } else {
-          return words.slice(0, maxWords).join(' ') + '...';
-        }
-      }
-    }
-    
-    // For 3+ paragraphs, show first two paragraphs
-    if (paragraphs.length >= 3) {
-      const firstTwo = paragraphs.slice(0, 2).join('\n\n');
-      return firstTwo + '...';
-    }
-    
-    return text;
-  };
 
   // Function to truncate text by character count for better control
   const truncateTextByLength = (text, maxLength = 150) => {
@@ -276,12 +224,21 @@ function Announcement() {
     return text.length > threshold;
   };
 
-  // Function to render default announcement icon
-  const renderDefaultIcon = () => (
-    <div className="announcement-default-icon">
-      <FaBullhorn size={40} />
-      <span className="announcement-default-text">No Image</span>
-    </div>
+
+  if (initialLoading) return (
+    <AdminLayout>
+      <div className="dashboard-loading-container">
+        <div className="loading-content">
+          <div className="simple-loader">
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+            <div className="loader-dot"></div>
+          </div>
+          <h3>Loading Announcements</h3>
+          <p>Fetching announcement data and content...</p>
+        </div>
+      </div>
+    </AdminLayout>
   );
 
   return (

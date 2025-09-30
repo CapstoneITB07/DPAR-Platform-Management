@@ -1173,11 +1173,6 @@ function AdminDashboard() {
           </div>
           <h3>Loading Dashboard</h3>
           <p>Analyzing performance data and generating insights...</p>
-          <div className="loading-progress">
-            <div className="progress-bar">
-              <div className="progress-fill"></div>
-            </div>
-          </div>
         </div>
       </div>
     </AdminLayout>

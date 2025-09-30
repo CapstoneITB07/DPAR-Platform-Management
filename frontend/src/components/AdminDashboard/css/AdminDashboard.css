@@ -280,13 +280,12 @@
   background: #f4f4f4;
   height: 100vh;
   width: 100vw;
+  max-width: 100vw;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
-/* ApprovalAOR Styles */
-.approval-aor-container {
-  padding: 20px;
-}
+/* ApprovalAOR Styles - Moved to ApprovalAOR.css */
 
 .header-section {
   display: flex;
@@ -505,6 +504,9 @@
 
 .admin-dashboard {
   padding: 20px;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .performance-column {
@@ -2429,15 +2431,52 @@
   }
 }
 
+/* Desktop and larger screens */
+@media (min-width: 1025px) {
+  .admin-dashboard {
+    padding: 20px;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  .performance-column {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .sidebar-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .chart-container, .chart-container-full-width {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+}
+
+/* Tablet breakpoint */
 @media (min-width: 701px) and (max-width: 1024px) {
   .admin-dashboard {
     padding: 18px 18px 32px 18px;
     background: #f7f8fa;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
-  .performance-column, .sidebar-column {
+  .performance-column {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+    margin: 0;
+  }
+  .sidebar-column {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 20px;
     width: 100%;
     margin: 0;
   }
@@ -2460,11 +2499,13 @@
   .chart-container, .chart-container-full-width {
     width: 100%;
     min-width: 0;
-    max-width: 100vw;
+    max-width: 100%;
     padding: 10px 4px;
     border-radius: 12px;
     margin: 0 0 16px 0;
     background: #f8f9fa;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .bar-chart, .line-chart {
     height: 220px !important;
@@ -3116,10 +3157,7 @@
   justify-content: center;
   min-height: 60vh;
   padding: 40px 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  margin: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: transparent;
 }
 
 .simple-loader {
@@ -3182,49 +3220,6 @@
   line-height: 1.5;
 }
 
-.loading-progress {
-  width: 100%;
-  margin-top: 20px;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #A11C22 0%, #dc2626 50%, #ef4444 100%);
-  border-radius: 3px;
-  animation: progress 2s ease-in-out infinite;
-  position: relative;
-}
-
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes progress {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
 
 @media (max-width: 768px) {
   .dashboard-loading-container {

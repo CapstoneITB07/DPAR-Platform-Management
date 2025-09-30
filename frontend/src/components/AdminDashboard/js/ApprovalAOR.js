@@ -385,18 +385,6 @@ function ApprovalAOR() {
 
 
 
-  const formatValue = (value) => {
-    if (value === null || value === undefined) {
-      return '';
-    }
-    if (Array.isArray(value)) {
-      return value.join(', ');
-    }
-    if (typeof value === 'object') {
-      return JSON.stringify(value);
-    }
-    return String(value);
-  };
 
   return (
     <AdminLayout>
@@ -415,7 +403,17 @@ function ApprovalAOR() {
         {error && <div className="error-message">{error}</div>}
 
         {loading ? (
-          <div className="loading">Loading...</div>
+          <div className="dashboard-loading-container">
+            <div className="loading-content">
+              <div className="simple-loader">
+                <div className="loader-dot"></div>
+                <div className="loader-dot"></div>
+                <div className="loader-dot"></div>
+              </div>
+              <h3>Loading Approval Reports</h3>
+              <p>Fetching pending reports and approval data...</p>
+            </div>
+          </div>
         ) : (
           <div className="reports-grid">
             {reports.filter(report => report.status === 'sent').length > 0 ? (

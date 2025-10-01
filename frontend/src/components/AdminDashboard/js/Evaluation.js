@@ -381,7 +381,7 @@ function Evaluation() {
                                     type="radio"
                                     name={`${category}_${section}_${index}`}
                                     value={score}
-                                    checked={evaluationData[category]?.scores[`${section}_${index}`] === score}
+                                    checked={evaluationData[category]?.scores[`${section}_${index}`] == score}
                                     onChange={(e) => handleScoreChange(category, section, index, e.target.value)}
                                   />
                                   <span className="radio-custom"></span>

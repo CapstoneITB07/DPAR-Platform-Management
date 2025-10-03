@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faCalendarAlt, faMapMarkerAlt, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import '../css/EventModal.css';
+import { API_BASE } from '../../../utils/url';
 
 const EventModal = ({ 
   show, 
@@ -111,7 +112,7 @@ const EventModal = ({
 
       if (isEditMode) {
         const response = await axios.put(
-          `http://localhost:8000/api/calendar-events/${event.id}`,
+          `${API_BASE}/api/calendar-events/${event.id}`,
           dataToSend,
           { headers }
         );
@@ -121,7 +122,7 @@ const EventModal = ({
         }
       } else {
         const response = await axios.post(
-          'http://localhost:8000/api/calendar-events',
+          `${API_BASE}/api/calendar-events`,
           dataToSend,
           { headers }
         );
@@ -149,7 +150,7 @@ const EventModal = ({
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.delete(
-        `http://localhost:8000/api/calendar-events/${event.id}`,
+        `${API_BASE}/api/calendar-events/${event.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       

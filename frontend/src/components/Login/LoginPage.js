@@ -7,6 +7,7 @@ import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus, fa
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
 import { useAuth } from '../../contexts/AuthContext';
 import RegistrationForm from '../Registration/RegistrationForm';
+import { API_BASE } from '../../utils/url';
 
 // Password strength calculation functions
 const getPasswordStrength = (password) => {
@@ -175,7 +176,7 @@ function LoginPage() {
 
       console.log('Using token for password change:', token.substring(0, 20) + '...');
 
-      const response = await fetch('http://localhost:8000/api/change-password', {
+      const response = await fetch(`${API_BASE}/api/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -287,7 +288,7 @@ function LoginPage() {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/verify-otp', {
+      const response = await fetch(`${API_BASE}/api/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -343,7 +344,7 @@ function LoginPage() {
     setMessage('');
 
     try {
-      const endpoint = isRecoveryMode ? 'http://localhost:8000/api/login/recovery' : 'http://localhost:8000/api/login';
+      const endpoint = isRecoveryMode ? `${API_BASE}/api/login/recovery` : `${API_BASE}/api/login`;
       const requestBody = isRecoveryMode 
         ? { email, recovery_passcode: recoveryPasscode }
         : { email, password };

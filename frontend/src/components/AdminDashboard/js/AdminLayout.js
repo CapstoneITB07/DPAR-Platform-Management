@@ -7,7 +7,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import Modal from 'react-modal';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../../../utils/url';
 
 function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -386,7 +386,7 @@ function AdminLayout({ children }) {
   };
 
   const fetchNotifications = async () => {
-    const res = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } });
+    const res = await fetch(`${API_BASE}/api/notifications`, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } });
     const data = await res.json();
     const viewed = JSON.parse(localStorage.getItem(ADMIN_NOTIF_RESPONSE_KEY) || '{}');
     let unread = 0;
@@ -414,7 +414,7 @@ function AdminLayout({ children }) {
 
   useEffect(() => {
     if (location.pathname === '/admin/notifications') {
-      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
+      fetch(`${API_BASE}/api/notifications`, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {

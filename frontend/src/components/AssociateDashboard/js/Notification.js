@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
 import dayjs from 'dayjs';
 import '../css/Notification.css';
+import { API_BASE } from '../../../utils/url';
 
 const NOTIF_READ_KEY = 'associateNotifRead';
 
@@ -15,7 +16,7 @@ function NotificationProgress({ notification }) {
       try {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
         // Use the volunteer progress endpoint to get overall progress from all associates
-        const response = await fetch(`http://localhost:8000/api/notifications/${notification.id}/volunteer-progress`, {
+        const response = await fetch(`${API_BASE}/api/notifications/${notification.id}/volunteer-progress`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await response.json();
@@ -117,7 +118,7 @@ function Notification() {
 
     // Add polling to update notifications every 5 seconds
     const interval = setInterval(() => {
-      fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
+      fetch(`${API_BASE}/api/notifications`, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -165,7 +166,7 @@ function Notification() {
         payload.volunteer_selections = selections;
       }
       
-      const res = await fetch(`http://localhost:8000/api/notifications/${id}/respond`, {
+      const res = await fetch(`${API_BASE}/api/notifications/${id}/respond`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +232,7 @@ function Notification() {
       }
 
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:8000/api/notifications/${notificationId}/available-capacity`, {
+      const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/available-capacity`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();

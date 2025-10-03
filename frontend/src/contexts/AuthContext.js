@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE } from '../utils/url';
 
 const AuthContext = createContext();
 
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }) => {
     const currentToken = localStorage.getItem('authToken');
     if (currentToken) {
       try {
-        await fetch('http://localhost:8000/api/logout', {
+        await fetch(`${API_BASE}/api/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${currentToken}`,

@@ -5,6 +5,7 @@ import { faTimes, faCalendarAlt, faMapMarkerAlt, faUser, faClock, faEdit, faTras
 import { format, parseISO } from 'date-fns';
 import axios from 'axios';
 import '../css/EventsListModal.css';
+import { API_BASE } from '../../../utils/url';
 
 const EventsListModal = ({ show, onClose, onEdit, onDelete }) => {
   const [events, setEvents] = useState([]);
@@ -24,7 +25,7 @@ const EventsListModal = ({ show, onClose, onEdit, onDelete }) => {
     setError('');
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8000/api/calendar-events', {
+      const response = await axios.get(`${API_BASE}/api/calendar-events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

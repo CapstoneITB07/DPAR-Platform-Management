@@ -3,7 +3,7 @@ import './RegistrationForm.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuilding, faUser, faEnvelope, faPhone, faImage, faCheck, faEye, faEyeSlash, faUpload, faTimes, faFileImage } from '@fortawesome/free-solid-svg-icons';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../../utils/url';
 
 function RegistrationForm({ onSuccess, onCancel }) {
   const [formData, setFormData] = useState({

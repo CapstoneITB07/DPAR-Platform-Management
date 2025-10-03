@@ -7,7 +7,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import axios from 'axios';
 import Modal from 'react-modal';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../../../utils/url';
 
 function AssociateLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -523,7 +523,7 @@ function AssociateLayout({ children }) {
       const calculateUnreadCount = async () => {
         try {
           const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-          const response = await axios.get('http://localhost:8000/api/notifications', {
+          const response = await axios.get(`${API_BASE}/api/notifications`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           
@@ -547,7 +547,7 @@ function AssociateLayout({ children }) {
     const calculateUnreadCount = async () => {
       try {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await axios.get('http://localhost:8000/api/notifications', {
+        const response = await axios.get(`${API_BASE}/api/notifications`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

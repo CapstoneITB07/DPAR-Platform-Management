@@ -158,7 +158,7 @@ function AdminDashboard() {
         return;
       }
       
-      const response = await axios.get(`http://localhost:8000/api/members/active?period=${period}`, {
+      const response = await axios.get(`${API_BASE}/api/members/active?period=${period}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data && response.data.members && response.data.statistics) {
@@ -595,9 +595,9 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const [evaluationsRes, associatesRes, statisticsRes] = await Promise.all([
-        axios.get('http://localhost:8000/api/evaluations', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:8000/api/associate-groups', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:8000/api/evaluations/statistics', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API_BASE}/api/evaluations`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_BASE}/api/associate-groups`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_BASE}/api/evaluations/statistics`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const allEvaluations = evaluationsRes.data;
@@ -693,7 +693,7 @@ function AdminDashboard() {
   const fetchCalendarEventsOnly = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8000/api/calendar-events', {
+      const response = await axios.get(`${API_BASE}/api/calendar-events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -1059,7 +1059,7 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       // Call backend to delete the event
-      const response = await axios.delete(`http://localhost:8000/api/calendar-events/${eventId}`, {
+      const response = await axios.delete(`${API_BASE}/api/calendar-events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {

@@ -3,6 +3,7 @@ import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
 import '../css/Announcements.css';
 import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { API_BASE } from '../../../utils/url';
 
 const slides = [
   {
@@ -124,7 +125,7 @@ function Announcements() {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const res = await axios.get('http://localhost:8000/api/announcements', {
+      const res = await axios.get(`${API_BASE}/api/announcements`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnnouncements(res.data);

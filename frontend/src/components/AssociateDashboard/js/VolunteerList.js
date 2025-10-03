@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { API_BASE } from '../../../utils/url';
 import { 
   faSearch, 
   faEdit, 
@@ -96,7 +97,7 @@ function VolunteerList() {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8000/api/volunteers', {
+      const response = await axios.get(`${API_BASE}/api/volunteers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setVolunteers(response.data);
@@ -188,13 +189,13 @@ function VolunteerList() {
         contact_info: formData.contact_info.replace(/\D/g, '').slice(0, 11)
       };
       if (selectedVolunteer) {
-        await axios.put(`http://localhost:8000/api/volunteers/${selectedVolunteer.id}`, dataToSubmit, {
+        await axios.put(`${API_BASE}/api/volunteers/${selectedVolunteer.id}`, dataToSubmit, {
           headers: { Authorization: `Bearer ${token}` }
         });
         // setSuccess('Volunteer updated successfully!');
         setToast({ message: 'Volunteer updated successfully!', type: 'success' });
       } else {
-        await axios.post('http://localhost:8000/api/volunteers', dataToSubmit, {
+        await axios.post(`${API_BASE}/api/volunteers`, dataToSubmit, {
           headers: { Authorization: `Bearer ${token}` }
         });
         // setSuccess('Volunteer added successfully!');
@@ -251,7 +252,7 @@ function VolunteerList() {
         setConfirm({ ...confirm, open: false });
         try {
           const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-          await axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
+          await axios.delete(`${API_BASE}/api/volunteers/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setToast({ message: 'Volunteer deleted successfully!', type: 'success' });
@@ -273,7 +274,7 @@ function VolunteerList() {
           const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           await Promise.all(
             selectedVolunteers.map(id =>
-              axios.delete(`http://localhost:8000/api/volunteers/${id}`, {
+              axios.delete(`${API_BASE}/api/volunteers/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               })
             )

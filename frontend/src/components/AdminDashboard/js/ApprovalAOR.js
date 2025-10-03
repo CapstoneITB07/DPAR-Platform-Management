@@ -4,6 +4,7 @@ import axios from 'axios';
 import '../css/ApprovalAOR.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload, faTimes, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
+import { API_BASE } from '../../../utils/url';
 
 // Notification component
 function Notification({ message, type, onClose }) {
@@ -49,8 +50,6 @@ const organizationLogos = {
   'SRG': '/Assets/SRG.png',
   'TF': '/Assets/TF.png'
 };
-
-const API_BASE = 'http://localhost:8000';
 
 const getLogoUrl = (logoPath) => {
   if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
@@ -207,7 +206,7 @@ function ApprovalAOR() {
   const handleGenerateAOR = async (reportId) => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`http://localhost:8000/api/reports/${reportId}/download`, {
+      const response = await axios.get(`${API_BASE}/api/reports/${reportId}/download`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -346,7 +345,7 @@ function ApprovalAOR() {
   };
 
   const handlePhotoClick = (photoPath) => {
-    setSelectedPhoto(`http://localhost:8000/storage/${photoPath}`);
+    setSelectedPhoto(`${API_BASE}/storage/${photoPath}`);
     setShowPhotoModal(true);
   };
 
@@ -627,7 +626,7 @@ function ApprovalAOR() {
                               {value.map((photoPath, idx) => (
                                 <div key={idx} className="photo-item">
                                   <img 
-                                    src={`http://localhost:8000/storage/${photoPath}`}
+                                    src={`${API_BASE}/storage/${photoPath}`}
                                     alt={`Activity Photo ${idx + 1}`}
                                     className="preview-photo"
                                     onClick={() => handlePhotoClick(photoPath)}

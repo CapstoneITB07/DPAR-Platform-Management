@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faBell, faChartBar, faTimes, faTrash, faPen, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
 import Modal from 'react-modal';
+import { API_BASE } from '../../../utils/url';
 
 // Notification component
 function Notification({ message, onClose }) {
@@ -15,8 +16,6 @@ function Notification({ message, onClose }) {
     </div>
   );
 }
-
-const API_BASE = 'http://localhost:8000';
 
 // Set the app element for React Modal
 Modal.setAppElement('#root');

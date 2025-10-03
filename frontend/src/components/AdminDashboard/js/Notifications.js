@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AdminLayout from './AdminLayout';
 import dayjs from 'dayjs';
 import '../css/Notifications.css';
+import { API_BASE } from '../../../utils/url';
 
 // Notification component
 function Notification({ message, onClose }) {
@@ -42,7 +43,7 @@ function Notifications() {
       try {
         setInitialLoading(true);
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${token}` } });
+        const response = await fetch(`${API_BASE}/api/notifications`, { headers: { Authorization: `Bearer ${token}` } });
         const data = await response.json();
         if (Array.isArray(data)) {
           setNotifications(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
@@ -62,7 +63,7 @@ function Notifications() {
   // Fetch associates for selection
   useEffect(() => {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    fetch('http://localhost:8000/api/members', { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${API_BASE}/api/members`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => res.json())
       .then(setAssociates);
   }, []);
@@ -246,7 +247,7 @@ function Notifications() {
         expertise_requirements: form.expertise_requirements,
       };
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const res = await fetch('http://localhost:8000/api/notifications', {
+      const res = await fetch(`${API_BASE}/api/notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +282,7 @@ function Notifications() {
     if (!deleteTargetId) return;
     
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    await fetch(`http://localhost:8000/api/notifications/${deleteTargetId}`, {
+    await fetch(`${API_BASE}/api/notifications/${deleteTargetId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -305,7 +306,7 @@ function Notifications() {
     
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     try {
-      const response = await fetch(`http://localhost:8000/api/notifications/${id}/toggle-hold`, {
+      const response = await fetch(`${API_BASE}/api/notifications/${id}/toggle-hold`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -613,7 +614,7 @@ function VolunteerProgress({ notification }) {
     const fetchProgress = async () => {
       try {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await fetch(`http://localhost:8000/api/notifications/${notification.id}/volunteer-progress`, {
+        const response = await fetch(`${API_BASE}/api/notifications/${notification.id}/volunteer-progress`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await response.json();

@@ -6,6 +6,7 @@ import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChe
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import './CitizenPage.css';
+import { API_BASE } from '../../utils/url';
 
 // Helper for formatting date
 function formatDate(dateStr) {
@@ -94,7 +95,7 @@ function CitizenPage() {
   const fetchPrograms = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:8000/api/training-programs');
+      const res = await axios.get(`${API_BASE}/api/training-programs`);
       setPrograms(res.data);
     } catch (err) {
       setError('Failed to load training programs');
@@ -107,7 +108,7 @@ function CitizenPage() {
   const fetchAssociateGroups = async () => {
     setGroupsLoading(true);
     try {
-      const res = await axios.get('http://localhost:8000/api/associate-groups/public');
+      const res = await axios.get(`${API_BASE}/api/associate-groups/public`);
       setAssociateGroups(res.data);
     } catch (err) {
       setGroupsError('Failed to load associate groups');
@@ -124,7 +125,7 @@ function CitizenPage() {
   const fetchAnnouncements = async () => {
     setAnnLoading(true);
     try {
-      const res = await axios.get('http://localhost:8000/api/announcements');
+      const res = await axios.get(`${API_BASE}/api/announcements`);
       setAnnouncements(res.data);
     } catch (err) {
       setAnnError('Failed to load announcements');
@@ -184,7 +185,7 @@ function CitizenPage() {
     
     // Handle storage URLs
     if (logoPath.startsWith('logos/')) {
-      return `http://localhost:8000/storage/${logoPath}`;
+      return `${API_BASE}/storage/${logoPath}`;
     }
     
     // Handle full URLs
@@ -194,7 +195,7 @@ function CitizenPage() {
     
     // Handle storage paths
     if (logoPath.startsWith('/storage/')) {
-      return `http://localhost:8000${logoPath}`;
+      return `${API_BASE}${logoPath}`;
     }
     
     // Handle asset paths
@@ -204,7 +205,7 @@ function CitizenPage() {
     
     // If it's just a filename, assume it's in storage
     if (!logoPath.includes('/')) {
-      return `http://localhost:8000/storage/logos/${logoPath}`;
+      return `${API_BASE}/storage/logos/${logoPath}`;
     }
     
     return logoPath;

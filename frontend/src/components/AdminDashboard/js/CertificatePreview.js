@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { API_BASE } from '../../../utils/url';
 
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
 const CertificatePreview = ({ data }) => {
   const { name, associate, signatories = [], message, controlNumber } = data || {};
-  const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+  const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || API_BASE;
   const logoSrc = backendBaseUrl + '/Assets/disaster_logo.png';
   const backgroundSrc = backendBaseUrl + '/Assets/background.jpg';
 

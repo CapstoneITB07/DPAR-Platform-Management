@@ -4,7 +4,7 @@ import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/Evaluation.css';
-import { getLogoUrl } from '../../../utils/url';
+import { getLogoUrl, API_BASE } from '../../../utils/url';
 
 // Notification component
 function Notification({ message, onClose }) {
@@ -86,7 +86,6 @@ function Evaluation() {
   const [searchTerm, setSearchTerm] = useState('');
   const [evaluationData, setEvaluationData] = useState({});
   const [notification, setNotification] = useState('');
-  const API_BASE = 'http://localhost:8000';
 
   useEffect(() => {
     fetchAssociates();

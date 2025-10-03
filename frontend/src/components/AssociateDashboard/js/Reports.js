@@ -7,7 +7,7 @@ import '../css/Reports.css';
 import imageCompression from 'browser-image-compression';
 import '../css/VolunteerList.css'; // Import confirm modal styles
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../../../utils/url';
 
 // Helper function to format dates as "Mon xx, XXXX"
 const formatDate = (dateString) => {
@@ -270,7 +270,7 @@ function Reports() {
     setError('');
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const res = await axios.get('http://localhost:8000/api/reports', {
+      const res = await axios.get(`${API_BASE}/api/reports`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -353,7 +353,7 @@ function Reports() {
           setExistingPhotoPaths(prevPaths => {
             // Find the photo path that corresponds to this photo URL
             const photoPath = prevPaths.find(path => {
-              const photoUrl = 'http://localhost:8000/storage/' + path;
+              const photoUrl = `${API_BASE}/storage/` + path;
               return photoUrl === photoToRemove.url;
             });
             if (photoPath) {
@@ -444,7 +444,7 @@ function Reports() {
       if (existingReport) {
         // Simple status update for draft submission
         const response = await axios.put(
-          `http://localhost:8000/api/reports/${existingReport.id}`,
+          `${API_BASE}/api/reports/${existingReport.id}`,
           { status: 'sent' },
           {
             headers: {
@@ -707,8 +707,8 @@ function Reports() {
         }
 
         const url = editingReport 
-          ? `http://localhost:8000/api/reports/${editingReport.id}`
-          : 'http://localhost:8000/api/reports';
+          ? `${API_BASE}/api/reports/${editingReport.id}`
+          : `${API_BASE}/api/reports`;
         
         // For editing reports, use POST with _method=PUT to avoid FormData issues in PUT requests
         const method = editingReport ? 'post' : 'post';
@@ -899,7 +899,7 @@ function Reports() {
         setConfirm({ ...confirm, open: false });
         try {
           const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-          await axios.delete(`http://localhost:8000/api/reports/${id}`, {
+          await axios.delete(`${API_BASE}/api/reports/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           fetchReports();
@@ -1065,7 +1065,7 @@ function Reports() {
           const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           await Promise.all(
             selectedReports.map(id =>
-              axios.delete(`http://localhost:8000/api/reports/${id}`, {
+              axios.delete(`${API_BASE}/api/reports/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               })
             )
@@ -2299,7 +2299,7 @@ function Reports() {
                             {viewingReport.data.photos.map((photo, index) => (
                               <img
                                 key={index}
-                                src={`http://localhost:8000/storage/${photo}`}
+                                src={`${API_BASE}/storage/${photo}`}
                                 alt={`Report photo ${index + 1}`}
                                 className="detail-image"
                                 onError={(e) => {
@@ -2328,7 +2328,7 @@ function Reports() {
                         <div className="detail-row">
                           <strong>Signature:</strong>
                           <img
-                            src={`http://localhost:8000/storage/${viewingReport.data.preparedBySignature}`}
+                            src={`${API_BASE}/storage/${viewingReport.data.preparedBySignature}`}
                             alt="Prepared by signature"
                             className="detail-image"
                             style={{ maxWidth: '200px', maxHeight: '100px' }}

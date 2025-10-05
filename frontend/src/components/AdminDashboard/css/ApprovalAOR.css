@@ -5,6 +5,124 @@
   background: transparent;
 }
 
+/* Report Header Info */
+.report-header-info {
+  text-align: center;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.report-header-info h2 {
+  color: #d32f2f;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.report-header-info p {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Report View Styles */
+.report-view-section {
+  margin-bottom: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #fff;
+}
+
+.report-view-section h3 {
+  color: #d32f2f;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #d32f2f;
+  text-transform: uppercase;
+}
+
+.detail-row {
+  display: flex;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: flex-start;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row strong {
+  min-width: 180px;
+  color: #333;
+  font-weight: 600;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.detail-row span {
+  flex: 1;
+  color: #555;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.detail-list {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0;
+  flex: 1;
+}
+
+.detail-list li {
+  padding: 0.25rem 0;
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.detail-textarea {
+  flex: 1;
+  color: #555;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  background: #f9f9f9;
+  padding: 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.detail-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  flex: 1;
+}
+
+.detail-image {
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.detail-image:hover {
+  transform: scale(1.05);
+}
+
 .approval-aor-success-notification {
   position: fixed;
   top: 48px;

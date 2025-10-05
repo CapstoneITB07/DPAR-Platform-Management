@@ -1,7 +1,6 @@
 /* Notification Container */
 .notification-container {
   padding: 0;
-  background: #f8fafc;
   min-height: 100vh;
   overflow-x: auto;
   width: 100% !important;

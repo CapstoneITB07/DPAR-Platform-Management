@@ -662,7 +662,7 @@ function AssociateLayout({ children }) {
   }, []);
 
   return (
-    <div className={`associate-dashboard-fixed-layout${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: '100vh', background: '#f4f4f4', height: '100vh' }}>
+    <div className={`associate-dashboard-fixed-layout${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: '100vh', height: '100vh' }}>
       <div>
         {sidebarOpen && (
           <div 

@@ -148,6 +148,7 @@ function Reports() {
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [progress, setProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedReports, setSelectedReports] = useState([]);
   const [approvalNotification, setApprovalNotification] = useState('');
@@ -421,7 +422,11 @@ function Reports() {
   };
 
   const handleSubmit = async (shouldSubmit = false, existingReport = null) => {
-    setSubmitting(true);
+    if (shouldSubmit) {
+      setSubmitting(true);
+    } else {
+      setDrafting(true);
+    }
     setSuccessMessage('');
     
     // Declare reportData at the top so it's available throughout the function
@@ -431,7 +436,11 @@ function Reports() {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
         showError('Authentication token not found. Please log in again.');
-        setSubmitting(false);
+        if (shouldSubmit) {
+          setSubmitting(false);
+        } else {
+          setDrafting(false);
+        }
         return;
       }
 
@@ -470,7 +479,11 @@ function Reports() {
           const incompleteSteps = validationResults.filter(result => !result.isComplete).map(result => result.step);
           if (incompleteSteps.length > 0) {
             showError(`Please fill in all required fields in: ${incompleteSteps.join(', ')}`);
-            setSubmitting(false);
+            if (shouldSubmit) {
+              setSubmitting(false);
+            } else {
+              setDrafting(false);
+            }
             return;
           }
         }
@@ -478,7 +491,11 @@ function Reports() {
         // Check if FormData is supported
         if (typeof FormData === 'undefined') {
           showError('FormData is not supported in this browser. Please update your browser.');
-          setSubmitting(false);
+          if (shouldSubmit) {
+            setSubmitting(false);
+          } else {
+            setDrafting(false);
+          }
           return;
         }
 
@@ -494,7 +511,11 @@ function Reports() {
         } catch (error) {
           console.error('FormData.append test failed:', error);
           showError('FormData.append is not working. Please check browser compatibility.');
-          setSubmitting(false);
+          if (shouldSubmit) {
+            setSubmitting(false);
+          } else {
+            setDrafting(false);
+          }
           return;
         }
         
@@ -556,7 +577,11 @@ function Reports() {
             const endTime = new Date(`2000-01-01 ${formData.endTime}`);
             if (startTime >= endTime) {
               showError('The end time should be after the start time. Please check your time entries.');
-              setSubmitting(false);
+              if (shouldSubmit) {
+                setSubmitting(false);
+              } else {
+                setDrafting(false);
+              }
               return;
             }
           }
@@ -580,7 +605,11 @@ function Reports() {
         } catch (error) {
           console.error('Failed to append title:', error);
           showError('Failed to append title to FormData: ' + error.message);
-          setSubmitting(false);
+          if (shouldSubmit) {
+            setSubmitting(false);
+          } else {
+            setDrafting(false);
+          }
           return;
         }
 
@@ -591,7 +620,11 @@ function Reports() {
         } catch (error) {
           console.error('Failed to append description:', error);
           showError('Failed to append description to FormData: ' + error.message);
-          setSubmitting(false);
+          if (shouldSubmit) {
+            setSubmitting(false);
+          } else {
+            setDrafting(false);
+          }
           return;
         }
 
@@ -602,7 +635,11 @@ function Reports() {
         } catch (error) {
           console.error('Failed to append status:', error);
           showError('Failed to append status to FormData: ' + error.message);
-          setSubmitting(false);
+          if (shouldSubmit) {
+            setSubmitting(false);
+          } else {
+            setDrafting(false);
+          }
           return;
         }
 
@@ -613,7 +650,11 @@ function Reports() {
         } catch (error) {
           console.error('Failed to append data:', error);
           showError('Failed to append data to FormData: ' + error.message);
-          setSubmitting(false);
+          if (shouldSubmit) {
+            setSubmitting(false);
+          } else {
+            setDrafting(false);
+          }
           return;
         }
 
@@ -771,7 +812,11 @@ function Reports() {
         showError('Error preparing request: ' + err.message);
       }
     }
-    setSubmitting(false);
+    if (shouldSubmit) {
+      setSubmitting(false);
+    } else {
+      setDrafting(false);
+    }
   };
 
   const handleEdit = (report) => {
@@ -2090,10 +2135,10 @@ function Reports() {
                           className="report-modal-draft-btn"
                           type="button"
                           onClick={() => handleSubmit(false)}
-                          disabled={submitting}
+                          disabled={drafting || submitting}
                         >
                           <FontAwesomeIcon icon={faSave} />
-                          {submitting ? 'Drafting...' : 'Save as Draft'}
+                          {drafting ? 'Drafting...' : 'Save as Draft'}
                         </button>
                       )}
                     </div>
@@ -2110,7 +2155,7 @@ function Reports() {
                         </button>
                       )}
                       {currentStep === steps.length - 1 && (
-                        <button className="report-modal-submit-btn" type="submit" disabled={submitting}>
+                        <button className="report-modal-submit-btn" type="submit" disabled={submitting || drafting}>
                           {submitting ? 'Submitting...' : 'Submit'}
                         </button>
                       )}

@@ -69,6 +69,39 @@ const getLogoUrl = (logoPath) => {
   return logoPath;
 };
 
+// Helper functions for formatting dates and times
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (error) {
+    return dateString;
+  }
+};
+
+const formatTime = (timeString) => {
+  if (!timeString) return 'N/A';
+  try {
+    // Handle both HH:MM and HH:MM:SS formats
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const minute = parseInt(minutes, 10);
+    
+    if (hour === 0 && minute === 0) return '12:00 AM';
+    if (hour === 12 && minute === 0) return '12:00 PM';
+    if (hour === 12) return `12:${minutes} PM`;
+    if (hour > 12) return `${hour - 12}:${minutes} PM`;
+    return `${hour}:${minutes} AM`;
+  } catch (error) {
+    return timeString;
+  }
+};
+
 function ApprovalAOR() {
   const [reports, setReports] = useState([]);
   const [allReports, setAllReports] = useState([]);
@@ -545,203 +578,350 @@ function ApprovalAOR() {
               </div>
               <div className="modal-body">
                 <div className="preview-content">
-                  <div className="preview-details">
-                    <div className="section-header">Report Details</div>
-                    <div className="privacy-note">
-                      <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
-                        Note: Signatures and logos are hidden for privacy. Photos are displayed for review purposes.
-                      </small>
-                    </div>
-                    {Object.entries(selectedReport.data).map(([key, value]) => {
-                      const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
-                      
-                      // Debug logging for complex fields
-                      if (key === 'participants' || key === 'keyOutcomes' || key === 'challenges' || key === 'recommendations') {
-                        console.log(`Field: ${key}`, value);
-                        console.log(`Type:`, typeof value);
-                        console.log(`Is Array:`, Array.isArray(value));
-                        if (Array.isArray(value)) {
-                          console.log(`Array length:`, value.length);
-                          value.forEach((item, idx) => {
-                            console.log(`  Item ${idx}:`, item, `Type:`, typeof item);
-                          });
-                        }
-                      }
-                      
-                      // Helper function to format value with "NONE" for empty fields
-                      const formatValue = (val) => {
-                        if (val === null || val === undefined || val === '' || 
-                            (Array.isArray(val) && val.length === 0) ||
-                            (typeof val === 'object' && Object.keys(val).length === 0)) {
-                          return 'NONE';
-                        }
-                        
-                        // Handle participants array specifically
-                        if (key === 'participants' && Array.isArray(val)) {
-                          if (val.length === 0) return 'NONE';
-                          return val.map((participant, idx) => {
-                            if (typeof participant === 'object' && participant !== null) {
-                              // Handle participant object with name and position
-                              const name = participant.name || participant.Name || 'Unknown';
-                              const position = participant.position || participant.Position || 'Unknown';
-                              return `${name} (${position})`;
-                            } else {
-                              // Handle simple string participants
-                              return String(participant);
-                            }
-                          }).join(', ');
-                        }
-                        
-                        // Handle other arrays
-                        if (Array.isArray(val)) {
-                          return val.map(item => {
-                            if (typeof item === 'object' && item !== null) {
-                              return JSON.stringify(item);
-                            }
-                            return String(item);
-                          }).join(', ');
-                        }
-                        
-                        // Handle objects
-                        if (typeof val === 'object' && val !== null) {
-                          return JSON.stringify(val);
-                        }
-                        
-                        return String(val);
-                      };
+                  {/* Header Information */}
+                  <div className="report-header-info">
+                    <h2>Disaster Preparedness And Response Volunteers Coalition of Laguna</h2>
+                    <p>Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City</p>
+                  </div>
 
-                      // Hide signature fields for privacy
-                      if (key === 'preparedBySignature' || key === 'approvedBySignature' || 
-                          key === 'associateLogo' || key === 'pcgaLogo' || 
-                          key === 'signature' || key === 'logo' || key === 'stamp') {
-                        return null;
-                      }
-
-                      // Handle photos - display as images instead of links
-                      if (key === 'photos' && Array.isArray(value) && value.length > 0) {
-                        return (
-                          <div key={key} className="preview-field-group">
-                            <div className="section-header">Activity Photos ({value.length} photo{value.length !== 1 ? 's' : ''})</div>
-                            <div className="photos-grid">
-                              {value.map((photoPath, idx) => (
-                                <div key={idx} className="photo-item">
-                                  <img 
-                                    src={`${API_BASE}/storage/${photoPath}`}
-                                    alt={`Activity Photo ${idx + 1}`}
-                                    className="preview-photo"
-                                    onClick={() => handlePhotoClick(photoPath)}
-                                    onError={(e) => {
-                                      e.target.style.display = 'none';
-                                      e.target.nextSibling.style.display = 'block';
-                                    }}
-                                  />
-                                  <div className="photo-fallback" style={{ display: 'none' }}>
-                                    <span>Photo {idx + 1} not available</span>
-                                  </div>
-                                  <div className="photo-caption">Photo {idx + 1}</div>
-                                </div>
+                  {selectedReport.data && (
+                    <>
+                      {/* Heading Section */}
+                      <div className="report-view-section">
+                        <h3>I. HEADING</h3>
+                        <div className="detail-row">
+                          <strong>For:</strong>
+                           <span>
+                             {selectedReport.data.for && selectedReport.data.forPosition 
+                               ? `${selectedReport.data.for} - ${selectedReport.data.forPosition}`
+                               : selectedReport.data.for || selectedReport.data.forPosition || 'N/A'
+                             }
+                           </span>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Date:</strong>
+                           <span>{selectedReport.data.date ? formatDate(selectedReport.data.date) : 'N/A'}</span>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Subject:</strong>
+                          <span>{selectedReport.data.subject || 'N/A'}</span>
+                        </div>
+                        {selectedReport.data.authorities && selectedReport.data.authorities.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Authorities:</strong>
+                            <ul className="detail-list">
+                              {selectedReport.data.authorities.map((auth, index) => (
+                                <li key={index}>{auth}</li>
                               ))}
-                            </div>
+                            </ul>
                           </div>
-                        );
-                      }
+                        )}
+                      </div>
 
-                      // Handle participants - display in a readable format
-                      if (key === 'participants' && Array.isArray(value) && value.length > 0) {
-                        return (
-                          <div key={key} className="preview-field-group">
-                            <strong>{formattedKey}:</strong>
-                            <div className="participants-list">
-                              {value.map((participant, idx) => (
-                                <div key={idx} className="participant-item">
-                                  {typeof participant === 'object' && participant !== null ? (
-                                    <>
-                                      <span className="participant-name">
-                                        {participant.name || participant.Name || 'Unknown Name'}
-                                      </span>
-                                      <span className="participant-position">
-                                        ({participant.position || participant.Position || 'Unknown Position'})
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="participant-name">{String(participant)}</span>
-                                  )}
-                                </div>
+                      {/* Event Details Section */}
+                      <div className="report-view-section">
+                        <h3>II. EVENT DETAILS</h3>
+                        <div className="detail-row">
+                          <strong>Place:</strong>
+                          <span>{selectedReport.data.place || 'N/A'}</span>
+                        </div>
+                        {selectedReport.data.personnelInvolved && selectedReport.data.personnelInvolved.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Personnel Involved:</strong>
+                            <ul className="detail-list">
+                              {selectedReport.data.personnelInvolved.map((person, index) => (
+                                <li key={index}>{person}</li>
                               ))}
-                            </div>
+                            </ul>
                           </div>
-                        );
-                      }
-
-                      // Handle arrays like keyOutcomes, challenges, recommendations
-                      if ((key === 'keyOutcomes' || key === 'challenges' || key === 'recommendations') && 
-                          Array.isArray(value) && value.length > 0) {
-                        return (
-                          <div key={key} className="preview-field-group">
-                            <strong>{formattedKey}:</strong>
-                            <div className="preview-value">
-                              {value.join('\n')}
-                            </div>
+                        )}
+                        <div className="detail-row">
+                          <strong>Event Name:</strong>
+                          <span>{selectedReport.data.eventName || 'N/A'}</span>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Event Location:</strong>
+                          <span>{selectedReport.data.eventLocation || 'N/A'}</span>
+                        </div>
+                        {selectedReport.data.organizers && selectedReport.data.organizers.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Organizers:</strong>
+                            <ul className="detail-list">
+                              {selectedReport.data.organizers.map((org, index) => (
+                                <li key={index}>{org}</li>
+                              ))}
+                            </ul>
                           </div>
-                        );
-                      }
+                        )}
+                      </div>
 
-                      // Handle conclusion field to match the design of other three fields
-                      if (key === 'conclusion') {
-                        return (
-                          <div key={key} className="preview-field-group">
-                            <strong>{formattedKey}:</strong>
-                            <div className="preview-value">
-                              {formatValue(value)}
-                            </div>
+                      {/* Narration of Events I Section */}
+                      <div className="report-view-section">
+                        <h3>III. NARRATION OF EVENTS I</h3>
+                        <div className="detail-row">
+                           <strong>Event Date:</strong>
+                           <span>{selectedReport.data.eventDate ? formatDate(selectedReport.data.eventDate) : 'N/A'}</span>
                           </div>
-                        );
-                      }
-
-                      if (key === 'activities' && typeof value === 'object' && value !== null) {
-                        return (
-                          <div key={key} className="preview-field-group">
-                            <strong>{formattedKey}:</strong>
-                            <div className="activities-list">
-                              {Array.isArray(value) && value.length > 0
-                                ? value.map((activity, idx) => (
-                                    <div key={idx} className="activity-item">
-                                      <div className="activity-number">Activity {idx + 1}:</div>
-                                      {Object.entries(activity).map(([k, v]) => (
-                                        <div key={k} className="activity-detail">
-                                          <strong>{k.charAt(0).toUpperCase() + k.slice(1)}:</strong> 
-                                          <span className="activity-value">{formatValue(v)}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ))
-                                : <span className="preview-value">NONE</span>
+                        <div className="detail-row">
+                          <strong>Event Duration:</strong>
+                          <span>
+                            {selectedReport.data.startTime && selectedReport.data.endTime 
+                              ? `${formatTime(selectedReport.data.startTime)} - ${formatTime(selectedReport.data.endTime)}`
+                              : selectedReport.data.startTime 
+                                ? formatTime(selectedReport.data.startTime)
+                                : selectedReport.data.endTime 
+                                  ? formatTime(selectedReport.data.endTime)
+                                  : 'N/A'
                               }
+                          </span>
+                        </div>
+                        {selectedReport.data.participants && selectedReport.data.participants.length > 0 && (
+                          <div className="detail-row">
+                            <strong>Participants:</strong>
+                            <ul className="detail-list">
+                              {selectedReport.data.participants.map((participant, index) => (
+                                <li key={index}>
+                                  {participant.name} - {participant.position}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <div className="detail-row">
+                          <strong>Training Agenda:</strong>
+                          <div className="detail-textarea">
+                            {selectedReport.data.trainingAgenda || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Event Overview:</strong>
+                          <div className="detail-textarea">
+                            {selectedReport.data.eventOverview || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Narration of Events II Section */}
+                      <div className="report-view-section">
+                        <h3>IV. NARRATION OF EVENTS II</h3>
+                        <div className="detail-row">
+                          <strong>Key Outcomes:</strong>
+                          <div className="detail-textarea">
+                            {selectedReport.data.keyOutcomes && selectedReport.data.keyOutcomes.length > 0 
+                              ? selectedReport.data.keyOutcomes.join('\n') 
+                              : 'N/A'}
+                          </div>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Challenges:</strong>
+                          <div className="detail-textarea">
+                            {selectedReport.data.challenges && selectedReport.data.challenges.length > 0 
+                              ? selectedReport.data.challenges.join('\n') 
+                              : 'N/A'}
+                          </div>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Recommendations:</strong>
+                          <div className="detail-textarea">
+                            {selectedReport.data.recommendations && selectedReport.data.recommendations.length > 0 
+                              ? selectedReport.data.recommendations.join('\n') 
+                              : 'N/A'}
+                          </div>
+                        </div>
+                        <div className="detail-row">
+                          <strong>Conclusion:</strong>
+                          <div className="detail-textarea">
+                            {selectedReport.data.conclusion || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Attachments Section */}
+                      {selectedReport.data.photos && selectedReport.data.photos.length > 0 && (
+                        <div className="report-view-section">
+                          <h3>V. ATTACHMENTS</h3>
+                          <div className="detail-row">
+                            <strong>Photos:</strong>
+                            <div className="detail-images">
+                              {selectedReport.data.photos.map((photo, index) => (
+                                <img
+                                  key={index}
+                                  src={`${API_BASE}/storage/${photo}`}
+                                  alt={`Report photo ${index + 1}`}
+                                  className="detail-image"
+                                  onClick={() => handlePhotoClick(photo)}
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              ))}
                             </div>
                           </div>
-                        );
-                      }
+                        </div>
+                      )}
 
-                      if (key === 'associateGroup' && typeof value === 'object' && value !== null) {
-                        return (
-                          <div key={key} className="preview-field-group">
-                            <div className="section-header">Associate Group</div>
-                            <div className="associate-details">
-                              <p><strong>Name:</strong> {formatValue(value.name)}</p>
-                              <p><strong>Director:</strong> {formatValue(value.director)}</p>
-                              <p><strong>Description:</strong> {formatValue(value.description)}</p>
-                            </div>
+                      {/* Signatories Section */}
+                      <div className="report-view-section">
+                        <h3>VI. SIGNATORIES</h3>
+                        <div className="detail-row">
+                          <strong>Prepared By:</strong>
+                           <span>
+                             {selectedReport.data.preparedBy && selectedReport.data.preparedByPosition 
+                               ? `${selectedReport.data.preparedBy} - ${selectedReport.data.preparedByPosition}`
+                               : selectedReport.data.preparedBy || selectedReport.data.preparedByPosition || 'N/A'
+                             }
+                           </span>
+                        </div>
+                        {selectedReport.data.preparedBySignature && (
+                          <div className="detail-row">
+                            <strong>Signature:</strong>
+                            <img
+                              src={`${API_BASE}/storage/${selectedReport.data.preparedBySignature}`}
+                              alt="Prepared by signature"
+                              className="detail-image"
+                              style={{ maxWidth: '200px', maxHeight: '100px' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
                           </div>
-                        );
-                      }
+                        )}
+                        {selectedReport.data.approvedBy && (
+                          <div className="detail-row">
+                            <strong>Approved By:</strong>
+                            <span>
+                              {selectedReport.data.approvedBy && selectedReport.data.approvedByPosition 
+                                ? `${selectedReport.data.approvedBy} - ${selectedReport.data.approvedByPosition}`
+                                : selectedReport.data.approvedBy || selectedReport.data.approvedByPosition || 'N/A'
+                              }
+                            </span>
+                          </div>
+                        )}
+                        {selectedReport.data.approvedBySignature && (
+                          <div className="detail-row">
+                            <strong>Approval Signature:</strong>
+                            <img
+                              src={`${API_BASE}/storage/${selectedReport.data.approvedBySignature}`}
+                              alt="Approved by signature"
+                              className="detail-image"
+                              style={{ maxWidth: '200px', maxHeight: '100px' }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
 
+                  {/* Keep any additional fields that are not in the associate side */}
+                  {Object.entries(selectedReport.data).map(([key, value]) => {
+                    const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+                    
+                    // Skip fields that are already covered in the organized sections or should be hidden
+                    const coveredFields = [
+                      'for', 'forPosition', 'date', 'subject', 'authorities',
+                      'place', 'personnelInvolved', 'eventName', 'eventLocation', 'organizers',
+                      'eventDate', 'startTime', 'endTime', 'participants', 'trainingAgenda', 'eventOverview',
+                      'keyOutcomes', 'challenges', 'recommendations', 'conclusion',
+                      'photos', 'preparedBy', 'preparedByPosition', 'preparedBySignature',
+                      'approvedBy', 'approvedByPosition', 'approvedBySignature',
+                      'dateTime', 'organization', 'associateGroup', 'institutionName', 'address'
+                    ];
+                    
+                    if (coveredFields.includes(key)) {
+                      return null;
+                    }
+
+                    // Helper function to format value with "NONE" for empty fields
+                    const formatValue = (val) => {
+                      if (val === null || val === undefined || val === '' || 
+                          (Array.isArray(val) && val.length === 0) ||
+                          (typeof val === 'object' && Object.keys(val).length === 0)) {
+                        return 'NONE';
+                      }
+                      
+                      // Handle arrays
+                      if (Array.isArray(val)) {
+                        return val.map(item => {
+                          if (typeof item === 'object' && item !== null) {
+                            return JSON.stringify(item);
+                          }
+                          return String(item);
+                        }).join(', ');
+                      }
+                      
+                      // Handle objects
+                      if (typeof val === 'object' && val !== null) {
+                        return JSON.stringify(val);
+                      }
+                      
+                      return String(val);
+                    };
+
+                    // Hide signature fields for privacy
+                    if (key === 'associateLogo' || key === 'pcgaLogo' || 
+                        key === 'signature' || key === 'logo' || key === 'stamp') {
+                      return null;
+                    }
+
+                    if (key === 'activities' && typeof value === 'object' && value !== null) {
                       return (
-                        <div key={key} className="preview-field">
-                          <strong>{formattedKey}:</strong> <span className="preview-value">{formatValue(value)}</span>
+                        <div key={key} className="report-view-section">
+                          <h3>{formattedKey}</h3>
+                          <div className="activities-list">
+                            {Array.isArray(value) && value.length > 0
+                              ? value.map((activity, idx) => (
+                                  <div key={idx} className="activity-item">
+                                    <div className="activity-number">Activity {idx + 1}:</div>
+                                    {Object.entries(activity).map(([k, v]) => (
+                                      <div key={k} className="activity-detail">
+                                        <strong>{k.charAt(0).toUpperCase() + k.slice(1)}:</strong> 
+                                        <span className="activity-value">{formatValue(v)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))
+                              : <span className="preview-value">NONE</span>
+                            }
+                          </div>
                         </div>
                       );
-                    })}
-                  </div>
+                    }
+
+                    if (key === 'associateGroup' && typeof value === 'object' && value !== null) {
+                      return (
+                        <div key={key} className="report-view-section">
+                          <h3>Associate Group</h3>
+                          <div className="associate-details">
+                            <div className="detail-row">
+                              <strong>Name:</strong>
+                              <span>{formatValue(value.name)}</span>
+                            </div>
+                            <div className="detail-row">
+                              <strong>Director:</strong>
+                              <span>{formatValue(value.director)}</span>
+                            </div>
+                            <div className="detail-row">
+                              <strong>Description:</strong>
+                              <span>{formatValue(value.description)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={key} className="report-view-section">
+                        <h3>{formattedKey}</h3>
+                        <div className="detail-row">
+                          <strong>Value:</strong>
+                          <span>{formatValue(value)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                   
                   <div className="preview-actions">
                     {selectedReport.status === 'sent' && (

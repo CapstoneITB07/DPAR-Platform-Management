@@ -37,19 +37,13 @@ function App() {
             } />
 
             {/* Route for the Citizen Page */}
-            <Route path="/citizen/*" element={
-              <Router basename="/citizen">
-                <Routes>
-                  <Route index element={<CitizenPage />} />
-                  <Route path="about" element={<AboutUs />} />
-                  <Route path="mitigation" element={<Mitigation />} />
-                  <Route path="preparedness" element={<Preparedness />} />
-                  <Route path="response" element={<Response />} />
-                  <Route path="recovery" element={<Recovery />} />
-                </Routes>
-              </Router>
-            } />
-            
+            <Route path="/citizen" element={<CitizenPage />} />
+            <Route path="/citizen/about" element={<AboutUs />} />
+            <Route path="/citizen/mitigation" element={<Mitigation />} />
+            <Route path="/citizen/preparedness" element={<Preparedness />} />
+            <Route path="/citizen/response" element={<Response />} />
+            <Route path="/citizen/recovery" element={<Recovery />} />
+
             {/* Admin routes - Protected */}
             <Route path="/admin/dashboard" element={
               <ProtectedRoute requiredRole="head_admin">

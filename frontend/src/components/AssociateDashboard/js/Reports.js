@@ -2458,16 +2458,6 @@ function Reports() {
                        <span className="report-info-value">{formatDateTimeFooter(viewingReport.updated_at)}</span>
                      </div>
                    )}
-                   {(viewingReport.status === 'sent' || viewingReport.status === 'approved' || viewingReport.status === 'rejected') && (
-                     <div className="report-info-item">
-                       <span className="report-info-label">Submitted:</span>
-                       <span className="report-info-value">
-                         {viewingReport.submitted_at ? formatDateTimeFooter(viewingReport.submitted_at) : 
-                          viewingReport.updated_at ? formatDateTimeFooter(viewingReport.updated_at) : 
-                          formatDateTimeFooter(viewingReport.created_at)}
-                       </span>
-                     </div>
-                   )}
                  </div>
                </div>
             </div>

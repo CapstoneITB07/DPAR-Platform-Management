@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->string('phone')->nullable();
             $table->date('date_joined')->nullable();
             $table->integer('members')->default(0);
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');

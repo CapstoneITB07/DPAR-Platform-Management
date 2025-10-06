@@ -60,6 +60,7 @@ class NotificationController extends Controller
                 'description' => $request->description,
                 'created_by' => $user->id,
                 'expertise_requirements' => $request->expertise_requirements,
+                'status' => 'active',
             ]);
 
             // Get associate group leaders

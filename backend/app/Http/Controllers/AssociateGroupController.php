@@ -456,17 +456,7 @@ class AssociateGroupController extends Controller
         try {
             $group = AssociateGroup::with('user')->findOrFail($id);
 
-            // Delete logo if exists
-            if ($group->logo) {
-                $oldPath = str_replace('/storage/', '', $group->logo);
-                Storage::disk('public')->delete($oldPath);
-            }
-
-            // Delete associated user
-            if ($group->user) {
-                $group->user->delete();
-            }
-
+            // Soft delete using Laravel's built-in method
             $group->delete();
 
             DB::commit();

@@ -149,14 +149,6 @@ class AnnouncementController extends Controller
     public function destroy(string $id)
     {
         $announcement = Announcement::findOrFail($id);
-        // Delete photos if they exist
-        if ($announcement->photos && is_array($announcement->photos)) {
-            foreach ($announcement->photos as $photoPath) {
-                if (Storage::disk('public')->exists($photoPath)) {
-                    Storage::disk('public')->delete($photoPath);
-                }
-            }
-        }
         $announcement->delete();
         return response()->json(['message' => 'Announcement deleted.']);
     }

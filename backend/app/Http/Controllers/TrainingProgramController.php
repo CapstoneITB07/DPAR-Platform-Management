@@ -160,17 +160,6 @@ class TrainingProgramController extends Controller
     public function destroy(string $id)
     {
         $program = TrainingProgram::findOrFail($id);
-
-        // Delete photos
-        if ($program->photos) {
-            foreach ($program->photos as $photoUrl) {
-                $path = str_replace(asset('storage/'), '', $photoUrl);
-                if (Storage::disk('public')->exists($path)) {
-                    Storage::disk('public')->delete($path);
-                }
-            }
-        }
-
         $program->delete();
         return response()->json(['message' => 'Training program deleted.']);
     }

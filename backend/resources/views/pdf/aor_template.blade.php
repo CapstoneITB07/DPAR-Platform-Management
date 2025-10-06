@@ -1,3 +1,12 @@
+@php
+// Helper function to preserve formatting in text
+function preserveFormatting($text) {
+if (empty($text)) return '';
+// Convert line breaks to HTML breaks and preserve tabs
+return nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
+}
+@endphp
+
 <!DOCTYPE html>
 <html>
 
@@ -159,10 +168,12 @@
 
         .section-title {
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 14px;
             color: #000;
             text-transform: uppercase;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 3px;
         }
 
         .section p {
@@ -175,15 +186,16 @@
         .content {
             margin-left: 20px;
             font-size: 13px;
-            text-align: justify;
+            text-align: left;
         }
 
         .content p {
-            margin: 4px 0;
+            margin: 6px 0;
             text-indent: 0;
-            text-align: justify;
-            line-height: 1.4;
-            margin-left: 15px;
+            text-align: left;
+            line-height: 1.5;
+            margin-left: 0;
+            white-space: pre-wrap;
         }
 
         .content strong {
@@ -193,11 +205,24 @@
         .date-time-highlight {
             font-weight: bold;
             color: #000;
-            font-size: 14px;
+            font-size: 13px;
             background-color: #f8f9fa;
-            padding: 3px 6px;
+            padding: 2px 6px;
             border-radius: 3px;
-            border-left: 3px solid #007bff;
+            display: inline;
+            white-space: nowrap;
+            border-left: 2px solid #007bff;
+            margin-left: 0;
+        }
+
+        .date-time-value {
+            font-weight: bold;
+            color: #000;
+            font-size: 13px;
+            display: inline;
+            white-space: nowrap;
+            margin-left: 0;
+            padding: 0;
         }
 
         .numbered-list {
@@ -211,16 +236,17 @@
         }
 
         .sub-content {
-            margin-left: 15px;
-            margin-top: 5px;
+            margin-left: 20px;
+            margin-top: 8px;
         }
 
         .sub-content p {
-            margin: 3px 0;
-            text-align: justify;
-            line-height: 1.4;
+            margin: 4px 0;
+            text-align: left;
+            line-height: 1.5;
             text-indent: 0;
-            margin-left: 15px;
+            margin-left: 0;
+            white-space: pre-wrap;
         }
 
         .photo-section {
@@ -479,8 +505,8 @@
     <div class="section">
         <div class="section-title">I. AUTHORITY</div>
         <div class="content">
-            @if(isset($report->data['authority']) && is_array($report->data['authority']) && count($report->data['authority']) > 0)
-            @foreach($report->data['authority'] as $authority)
+            @if(isset($report->data['authorities']) && is_array($report->data['authorities']) && count($report->data['authorities']) > 0)
+            @foreach($report->data['authorities'] as $authority)
             @if(!empty(trim($authority)))
             <p>{{ $authority }}</p>
             @endif
@@ -495,30 +521,42 @@
     <div class="section">
         <div class="section-title">II. DATE, TIME, AND PLACE OF ACTIVITY</div>
         <div class="content">
-            @if(!empty($report->data['dateTime']))
-            <p><strong>Date and Time:</strong>
-                @php
-                $dateTime = $report->data['dateTime'];
-                if (strpos($dateTime, 'T') !== false) {
-                // Convert ISO format (2025-08-08T01:12) to readable format
-                $date = \DateTime::createFromFormat('Y-m-d\TH:i', $dateTime);
+            @if(!empty($report->data['eventDate']) || !empty($report->data['startTime']) || !empty($report->data['endTime']))
+            <p><strong>Date and Time:</strong> @php
+                $dateTimeString = '';
+                if (!empty($report->data['eventDate'])) {
+                $eventDate = $report->data['eventDate'];
+                if (strpos($eventDate, 'T') !== false) {
+                $date = \DateTime::createFromFormat('Y-m-d\TH:i', $eventDate);
                 if ($date) {
-                echo '<span class="date-time-highlight">' . $date->format('d F Y \a\t g:i A') . '</span>'; // e.g., "08 August 2025 at 1:12 AM"
+                $dateTimeString .= $date->format('d F Y');
                 } else {
-                echo '<span class="date-time-highlight">' . $dateTime . '</span>'; // Fallback to original if parsing fails
+                $dateTimeString .= $eventDate;
                 }
                 } else {
-                // If it's already in a readable format, just display it
-                echo '<span class="date-time-highlight">' . $dateTime . '</span>';
+                $dateTimeString .= $eventDate;
+                }
+                }
+
+                if (!empty($report->data['startTime']) || !empty($report->data['endTime'])) {
+                if (!empty($dateTimeString)) {
+                $dateTimeString .= ' | ';
+                }
+                $dateTimeString .= $report->data['startTime'] ?? '';
+                if (!empty($report->data['startTime']) && !empty($report->data['endTime'])) {
+                $dateTimeString .= ' - ';
+                }
+                $dateTimeString .= $report->data['endTime'] ?? '';
                 }
                 @endphp
+                <span class="date-time-value">{{ $dateTimeString }}</span>
             </p>
             @else
             <p><strong>Date and Time:</strong> <span class="date-time-highlight">Not specified</span></p>
             @endif
 
-            @if(!empty($report->data['location']))
-            <p><strong>Place:</strong> {{ $report->data['location'] }}</p>
+            @if(!empty($report->data['place']))
+            <p><strong>Place:</strong> {{ $report->data['place'] }}</p>
             @else
             <p><strong>Place:</strong> Not specified</p>
             @endif
@@ -528,8 +566,8 @@
     <div class="section">
         <div class="section-title">III. PERSONNEL INVOLVED</div>
         <div class="content">
-            @if(isset($report->data['auxiliaryPersonnel']) && is_array($report->data['auxiliaryPersonnel']) && count($report->data['auxiliaryPersonnel']) > 0)
-            @foreach($report->data['auxiliaryPersonnel'] as $person)
+            @if(isset($report->data['personnelInvolved']) && is_array($report->data['personnelInvolved']) && count($report->data['personnelInvolved']) > 0)
+            @foreach($report->data['personnelInvolved'] as $person)
             @if(!empty(trim($person)))
             <p>{{ $person }}</p>
             @endif
@@ -548,46 +586,39 @@
             @endif
 
             @if(!empty($report->data['eventDate']) || !empty($report->data['startTime']) || !empty($report->data['endTime']))
-            <p><strong>Date and Time:</strong>
-                @if(!empty($report->data['eventDate']))
-                @php
+            <p><strong>Date and Time:</strong> @php
+                $dateTimeString = '';
+                if (!empty($report->data['eventDate'])) {
                 $eventDate = $report->data['eventDate'];
                 if (strpos($eventDate, 'T') !== false) {
-                // Convert ISO format to readable format
                 $date = \DateTime::createFromFormat('Y-m-d\TH:i', $eventDate);
                 if ($date) {
-                echo '<span class="date-time-highlight">' . $date->format('d F Y') . '</span>';
+                $dateTimeString .= $date->format('d F Y');
                 } else {
-                echo '<span class="date-time-highlight">' . $eventDate . '</span>';
+                $dateTimeString .= $eventDate;
                 }
                 } else {
-                echo '<span class="date-time-highlight">' . $eventDate . '</span>';
+                $dateTimeString .= $eventDate;
+                }
+                }
+
+                if (!empty($report->data['startTime']) || !empty($report->data['endTime'])) {
+                if (!empty($dateTimeString)) {
+                $dateTimeString .= ' | ';
+                }
+                $dateTimeString .= $report->data['startTime'] ?? '';
+                if (!empty($report->data['startTime']) && !empty($report->data['endTime'])) {
+                $dateTimeString .= ' - ';
+                }
+                $dateTimeString .= $report->data['endTime'] ?? '';
                 }
                 @endphp
-                @endif
-                @if(!empty($report->data['startTime']) || !empty($report->data['endTime']))
-                @if(!empty($report->data['eventDate']))
-                <span> | </span>
-                @endif
-                <span class="date-time-highlight">
-                    @if(!empty($report->data['startTime']))
-                    {{ $report->data['startTime'] }}
-                    @endif
-                    @if(!empty($report->data['startTime']) && !empty($report->data['endTime']))
-                    -
-                    @endif
-                    @if(!empty($report->data['endTime']))
-                    {{ $report->data['endTime'] }}
-                    @endif
-                </span>
-                @endif
+                <span class="date-time-value">{{ $dateTimeString }}</span>
             </p>
             @endif
-
             @if(!empty($report->data['eventLocation']))
             <p><strong>Location:</strong> {{ $report->data['eventLocation'] }}</p>
             @endif
-
             @if(isset($report->data['organizers']) && is_array($report->data['organizers']) && count($report->data['organizers']) > 0)
             <p><strong>Organizers:</strong> {{ implode(', ', array_filter(array_map('trim', $report->data['organizers']))) }}</p>
             @endif
@@ -596,14 +627,14 @@
             @if(!empty($report->data['summary']) || !empty($report->data['eventOverview']))
             <p><strong>Event Overview:</strong></p>
             <div class="sub-content">
-                <p>{{ $report->data['summary'] ?? $report->data['eventOverview'] ?? 'Not provided' }}</p>
+                <p>{!! preserveFormatting($report->data['summary'] ?? $report->data['eventOverview'] ?? 'Not provided') !!}</p>
             </div>
             @endif
 
             @if(!empty($report->data['objective']) || !empty($report->data['trainingAgenda']))
             <p><strong>Training Agenda:</strong></p>
             <div class="sub-content">
-                <p>{{ $report->data['objective'] ?? $report->data['trainingAgenda'] ?? 'Not provided' }}</p>
+                <p>{!! preserveFormatting($report->data['objective'] ?? $report->data['trainingAgenda'] ?? 'Not provided') !!}</p>
             </div>
             @endif
 
@@ -625,7 +656,7 @@
             <div class="sub-content">
                 @foreach($report->data['keyOutcomes'] as $outcome)
                 @if(!empty(trim($outcome)))
-                <p>{{ $outcome }}</p>
+                <p>{!! preserveFormatting($outcome) !!}</p>
                 @endif
                 @endforeach
             </div>
@@ -636,7 +667,7 @@
             <div class="sub-content">
                 @foreach($report->data['challenges'] as $challenge)
                 @if(!empty(trim($challenge)))
-                <p>{{ $challenge }}</p>
+                <p>{!! preserveFormatting($challenge) !!}</p>
                 @endif
                 @endforeach
             </div>
@@ -645,7 +676,7 @@
             @if(!empty($report->data['conclusion']))
             <p><strong>Conclusion:</strong></p>
             <div class="sub-content">
-                <p>{{ $report->data['conclusion'] }}</p>
+                <p>{!! preserveFormatting($report->data['conclusion']) !!}</p>
             </div>
             @endif
         </div>
@@ -657,7 +688,7 @@
             @if(isset($report->data['recommendations']) && is_array($report->data['recommendations']) && count($report->data['recommendations']) > 0)
             @foreach($report->data['recommendations'] as $recommendation)
             @if(!empty(trim($recommendation)))
-            <p>{{ $recommendation }}</p>
+            <p>{!! preserveFormatting($recommendation) !!}</p>
             @endif
             @endforeach
             @else

@@ -1,6 +1,5 @@
 .reports-container {
   padding: 24px;
-  background: #f8fafc;
   min-height: 100vh;
 }
 
@@ -1863,7 +1862,7 @@ button[type="button"]:last-child:hover {
 
 /* View Report Modal Styles */
 .report-view-modal {
-  max-width: 900px;
+  max-width: 1200px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
@@ -2448,7 +2447,7 @@ button[type="button"]:last-child:hover {
   background: #fff;
   border-radius: 18px;
   box-shadow: 0 8px 32px rgba(30,41,59,0.18);
-  max-width: 950px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
   overflow-y: hidden;

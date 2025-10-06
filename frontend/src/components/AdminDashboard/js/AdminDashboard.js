@@ -1132,6 +1132,25 @@ function AdminDashboard() {
     setShowEventsListModal(false);
   };
 
+  // Check if there's meaningful data in the dashboard
+  const hasDashboardData = () => {
+    // Check if there are evaluations
+    const hasEvaluations = evaluations && evaluations.length > 0;
+    
+    // Check if there are associates with performance data
+    const hasAssociatesData = associatesPerformance && associatesPerformance.length > 0;
+    
+    // Check if there's statistics data
+    const hasStatisticsData = statisticsData && statisticsData.overall_stats && 
+      statisticsData.overall_stats.total_evaluations > 0;
+    
+    // Check if there are recent evaluations
+    const hasRecentEvaluations = recentEvaluations && recentEvaluations.length > 0;
+    
+    // Return true if any of these conditions are met
+    return hasEvaluations || hasAssociatesData || hasStatisticsData || hasRecentEvaluations;
+  };
+
   const handleGeneratePerformancePDF = async () => {
     try {
       setIsGeneratingPDF(true);
@@ -1155,7 +1174,17 @@ function AdminDashboard() {
       
     } catch (err) {
       console.error('Error generating PDF:', err);
-      alert('Failed to generate performance analysis PDF. Please try again.');
+      
+      // Provide more specific error messages
+      if (err.response?.status === 500) {
+        alert('Server error while generating PDF. Please check if there is any data available and try again.');
+      } else if (err.response?.status === 401) {
+        alert('Authentication error. Please log in again.');
+      } else if (err.response?.status === 403) {
+        alert('You do not have permission to generate this report.');
+      } else {
+        alert('Failed to generate performance analysis PDF. Please try again.');
+      }
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -1190,7 +1219,12 @@ function AdminDashboard() {
             <button 
               className="generate-pdf-btn"
               onClick={handleGeneratePerformancePDF}
-              disabled={isGeneratingPDF}
+              disabled={isGeneratingPDF || !hasDashboardData()}
+              style={{
+                opacity: !hasDashboardData() ? 0.5 : 1,
+                cursor: !hasDashboardData() ? 'not-allowed' : 'pointer'
+              }}
+              title={!hasDashboardData() ? 'No data available to generate report' : 'Generate performance analysis report'}
             >
               <FontAwesomeIcon icon={faFilePdf} />
               {isGeneratingPDF ? 'Generating...' : 'Generate Performance Report'}

@@ -188,6 +188,13 @@ function Notifications() {
     setLoading(true);
     setError('');
     
+    // Validate that at least one associate is selected
+    if (!form.associate_ids || form.associate_ids.length === 0) {
+      setError('Please select at least one associate to notify');
+      setLoading(false);
+      return;
+    }
+    
     // Validate that expertise requirements are provided
     const hasExpertiseRequirements = form.expertise_requirements && form.expertise_requirements.length > 0;
     

@@ -53,6 +53,36 @@ class DashboardAnalysisService
 
         // Get all users
         $users = User::all();
+        
+        // Handle case where there's no data
+        if ($evaluations->isEmpty() && $associateGroups->isEmpty()) {
+            return [
+                'overall_stats' => [
+                    'total_evaluations' => 0,
+                    'total_associates' => 0,
+                    'total_members' => $users->count(),
+                    'average_score' => 0,
+                    'report_date' => Carbon::now()->format('Y-m-d H:i:s')
+                ],
+                'performance_insights' => [
+                    'overall_performance' => 'No evaluation data available. The system is ready to begin tracking performance once evaluations are conducted.',
+                    'distribution_analysis' => 'No performance data to analyze. Begin conducting evaluations to generate meaningful insights.',
+                    'excellent_performance' => 'No data available for excellence analysis.',
+                    'improvement_needed' => 'No data available for improvement analysis.',
+                    'network_health' => 'No performance data available. Begin systematic evaluation to assess network health.'
+                ],
+                'quarterly_trends' => [],
+                'performance_distribution' => ['excellent' => 0, 'good' => 0, 'fair' => 0, 'poor' => 0],
+                'top_performers' => [],
+                'bottom_performers' => [],
+                'category_analysis' => [],
+                'recommendations' => [
+                    'No evaluation data available. Begin conducting evaluations to generate meaningful performance insights.',
+                    'Establish evaluation protocols and begin systematic assessment of associate group performance.'
+                ],
+                'individual_performance' => []
+            ];
+        }
 
         // Calculate overall statistics
         $totalEvaluations = $evaluations->count();
@@ -297,6 +327,14 @@ class DashboardAnalysisService
 
         // Analyze performance distribution
         $totalEvaluations = array_sum($performanceDistribution);
+        
+        // Check for division by zero
+        if ($totalEvaluations == 0) {
+            $recommendations[] = "No evaluation data available. Begin conducting evaluations to generate meaningful performance insights.";
+            $recommendations[] = "Establish evaluation protocols and begin systematic assessment of associate group performance.";
+            return $recommendations;
+        }
+        
         $excellentPercentage = ($performanceDistribution['excellent'] / $totalEvaluations) * 100;
         $poorPercentage = ($performanceDistribution['poor'] / $totalEvaluations) * 100;
 
@@ -335,7 +373,7 @@ class DashboardAnalysisService
         $fairCount = $performanceDistribution['fair'];
         $poorCount = $performanceDistribution['poor'];
 
-        // Calculate percentages
+        // Calculate percentages with zero division protection
         $excellentPercentage = $totalEvals > 0 ? round(($excellentCount / $totalEvals) * 100, 1) : 0;
         $goodPercentage = $totalEvals > 0 ? round(($goodCount / $totalEvals) * 100, 1) : 0;
         $fairPercentage = $totalEvals > 0 ? round(($fairCount / $totalEvals) * 100, 1) : 0;

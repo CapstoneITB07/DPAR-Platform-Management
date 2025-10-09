@@ -91,7 +91,7 @@ function AssociateLayout({ children }) {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get('http://localhost:8000/api/notifications', {
+      const response = await axios.get(`${API_BASE}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(response.data);

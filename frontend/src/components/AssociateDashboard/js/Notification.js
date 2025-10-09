@@ -101,7 +101,7 @@ function Notification() {
 
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:8000/api/notifications', { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
+    fetch(`${API_BASE}/api/notifications`, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

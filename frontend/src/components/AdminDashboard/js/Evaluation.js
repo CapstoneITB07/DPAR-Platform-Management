@@ -211,7 +211,7 @@ function Evaluation() {
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`http://localhost:8000/api/evaluations`, {
+      await axios.post(`${API_BASE}/api/evaluations`, {
         user_id: selectedAssociate.user_id,
         evaluation_data: evaluationData,
         total_score: calculateTotalScore()

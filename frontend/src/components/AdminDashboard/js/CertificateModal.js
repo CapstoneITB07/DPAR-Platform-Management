@@ -242,8 +242,8 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     setDownloading(true);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
-      const assetBaseUrl = 'http://127.0.0.1:8000/Assets';
+      const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://dparvc.com');
+      const assetBaseUrl = `${process.env.REACT_APP_BACKEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://dparvc.com')}/Assets`;
 
       const selectedAssociateObj = associates.find(a => a.name === localData.associate);
       const logoUrl = selectedAssociateObj
@@ -332,7 +332,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     }
   };
 
-  const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:8000";
+  const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://dparvc.com');
   const selectedAssociateObj = associates.find(a => a.name === localData.associate);
   const logoUrl = selectedAssociateObj
     ? `${backendBaseUrl}${selectedAssociateObj.logo}`

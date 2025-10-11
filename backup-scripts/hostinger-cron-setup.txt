@@ -1,0 +1,175 @@
+##############################################################################
+# HOSTINGER CRON JOB SETUP FOR AUTOMATED BACKUPS
+##############################################################################
+
+IMPORTANT: Setup automated backups on Hostinger by adding these cron jobs
+through the Hostinger Control Panel (hPanel)
+
+===========================================================================
+HOW TO SET UP CRON JOBS ON HOSTINGER:
+===========================================================================
+
+1. Log in to Hostinger hPanel
+2. Go to "Advanced" → "Cron Jobs"
+3. Add the following cron jobs:
+
+---------------------------------------------------------------------------
+CRON JOB 1: Daily Database Backup (Recommended)
+---------------------------------------------------------------------------
+Schedule: Daily at 2:00 AM
+Command: 
+cd /home/yourusername/domains/yourdomain.com/public_html/backend && php artisan db:backup --compress --keep-days=30
+
+Frequency: 
+0 2 * * *
+
+Description: Creates a daily backup at 2 AM with 30-day retention
+
+---------------------------------------------------------------------------
+CRON JOB 2: Weekly Full Backup (Additional Safety)
+---------------------------------------------------------------------------
+Schedule: Every Sunday at 3:00 AM
+Command:
+cd /home/yourusername/domains/yourdomain.com/public_html/backend && php artisan db:backup --compress --keep-days=90
+
+Frequency:
+0 3 * * 0
+
+Description: Weekly backup with 90-day retention
+
+---------------------------------------------------------------------------
+CRON JOB 3: Pre-deployment Backup (Before Updates)
+---------------------------------------------------------------------------
+Manual execution only - Run this command before any major update:
+cd /home/yourusername/domains/yourdomain.com/public_html/backend && php artisan db:backup --compress
+
+===========================================================================
+MANUAL BACKUP METHODS FOR HOSTINGER
+===========================================================================
+
+METHOD 1: Via SSH (if you have SSH access)
+------------------------------------------
+1. SSH into your Hostinger account:
+   ssh username@yourdomain.com
+
+2. Navigate to your project:
+   cd domains/yourdomain.com/public_html
+
+3. Run backup command:
+   php artisan db:backup --compress
+
+METHOD 2: Via phpMyAdmin (Hostinger hPanel)
+-------------------------------------------
+1. Log in to Hostinger hPanel
+2. Go to "Databases" → "phpMyAdmin"
+3. Select your database
+4. Click "Export" tab
+5. Choose "Quick" or "Custom" export
+6. Select "SQL" format
+7. Click "Go" to download
+
+METHOD 3: Using Hostinger File Manager
+--------------------------------------
+1. Access hPanel → "Files" → "File Manager"
+2. Navigate to: domains/yourdomain.com/public_html/backend/storage/app/backups
+3. Download backup files created by artisan commands
+
+===========================================================================
+BACKUP STORAGE RECOMMENDATIONS
+===========================================================================
+
+PRIMARY STORAGE (Hostinger Server):
+- Location: /storage/app/backups/
+- Retention: 30 days (automated cleanup)
+- Purpose: Quick recovery
+
+SECONDARY STORAGE (Download to Local):
+- Frequency: Weekly
+- Method: Download via File Manager or SFTP
+- Location: Your local computer/external drive
+
+OFFSITE STORAGE (Critical - Choose one or more):
+- Google Drive (via rclone)
+- Dropbox (via rclone)
+- Another cloud provider
+- Another server via SFTP
+
+===========================================================================
+BACKUP RESTORATION ON HOSTINGER
+===========================================================================
+
+METHOD 1: Using Laravel Command
+-------------------------------
+1. Upload backup file to: backend/storage/app/backups/
+2. SSH into server
+3. Run: php artisan db:restore backup_filename.sql.gz
+
+METHOD 2: Using phpMyAdmin
+--------------------------
+1. Extract .gz file to .sql
+2. Access phpMyAdmin from hPanel
+3. Select database
+4. Click "Import" tab
+5. Choose file and import
+
+===========================================================================
+TESTING YOUR BACKUP SYSTEM
+===========================================================================
+
+1. List existing backups:
+   php artisan db:backups --stats
+
+2. Create test backup:
+   php artisan db:backup --compress
+
+3. Verify backup file exists:
+   ls -lh storage/app/backups/
+
+4. Test restoration (USE WITH CAUTION - test on staging first):
+   php artisan db:restore backup_filename.sql.gz
+
+===========================================================================
+EMERGENCY RECOVERY CHECKLIST
+===========================================================================
+
+In case of disaster (hack, data loss, corruption):
+
+□ STEP 1: Immediately stop all access to the system
+□ STEP 2: Identify the most recent clean backup
+□ STEP 3: Create a backup of current state (even if corrupted)
+□ STEP 4: Verify backup file integrity
+□ STEP 5: Restore from backup using artisan or phpMyAdmin
+□ STEP 6: Verify data integrity after restoration
+□ STEP 7: Check application logs for issues
+□ STEP 8: Change all passwords and API keys
+□ STEP 9: Investigate and fix security breach
+□ STEP 10: Resume normal operations
+
+===========================================================================
+MONITORING AND ALERTS
+===========================================================================
+
+1. Set up email notifications for backup failures
+2. Regularly verify backup files are being created
+3. Periodically test backup restoration process
+4. Monitor backup storage space
+5. Keep backup logs for audit trail
+
+===========================================================================
+SECURITY BEST PRACTICES
+===========================================================================
+
+1. Encrypt backup files containing sensitive data
+2. Restrict access to backup directory
+3. Use strong database passwords
+4. Regularly update Laravel and dependencies
+5. Enable two-factor authentication on Hostinger account
+6. Keep offline copies of critical backups
+7. Document your backup and recovery procedures
+8. Train team members on recovery process
+
+===========================================================================
+
+For support: contact@yourdomain.com
+Last updated: 2025-10-09
+

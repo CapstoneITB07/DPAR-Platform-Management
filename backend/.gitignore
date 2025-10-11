@@ -24,3 +24,8 @@ Homestead.yaml
 npm-debug.log
 Thumbs.db
 yarn-error.log
+
+# Database Backups
+/storage/app/backups/*.sql
+/storage/app/backups/*.sql.gz
+/storage/app/backups/backup_log.txt

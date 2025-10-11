@@ -1,4 +1,4 @@
-export const API_BASE = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://dparvc.com');
+export const API_BASE = process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://dparvc.com';
 
 export const getLogoUrl = (logoPath) => {
   if (!logoPath) {

@@ -249,7 +249,9 @@
   border: 1.5px solid #f0f0f0;
   display: flex;
   flex-direction: column;
-  min-height: 50vh;
+  height: 100%;
+  min-height: 400px;
+  max-height: calc((100vh - 170px) / 2);
   transition: box-shadow 0.18s, transform 0.18s;
   cursor: pointer;
   box-sizing: border-box;

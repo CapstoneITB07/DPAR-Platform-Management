@@ -74,14 +74,14 @@
 }
 
 .notification-close-icon {
-  color: #fff;
+  color: #fff !important;
   font-size: 2rem;
   cursor: pointer;
   font-weight: bold;
   transition: color 0.2s;
 }
 .notification-close-icon:hover {
-  color: #e0e0e0;
+  color: #fff !important;
 }
 
 .notification-modal-padding {
@@ -1379,7 +1379,7 @@
 .enhanced-close-icon {
   background: none;
   border: none;
-  color: #fff;
+  color: #fff !important;
   font-size: 2.2rem;
   font-weight: 700;
   border-radius: 50%;
@@ -1393,7 +1393,7 @@
 }
 .enhanced-close-icon:hover {
   background: rgba(255,255,255,0.18);
-  color: #ffe3e3;
+  color: #fff !important;
   transform: scale(1.08);
 }
 .enhanced-section-label {

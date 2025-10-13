@@ -58,7 +58,7 @@ function Notifications() {
     };
     
     fetchNotifications();
-  }, [showModal]);
+  }, []); // Remove showModal dependency to prevent reload on modal open/close
 
   // Fetch associates for selection
   useEffect(() => {
@@ -271,6 +271,15 @@ function Notifications() {
       setShowModal(false);
       setNotification('Notification created successfully!');
       setTimeout(() => setNotification(''), 2000);
+      
+      // Refresh notifications list after successful creation
+      const refreshResponse = await fetch(`${API_BASE}/api/notifications`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      const refreshData = await refreshResponse.json();
+      if (Array.isArray(refreshData)) {
+        setNotifications(refreshData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+      }
     } catch (err) {
       setError(err.message);
     } finally {

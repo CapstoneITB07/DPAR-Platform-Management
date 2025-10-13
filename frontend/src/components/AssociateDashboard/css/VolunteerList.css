@@ -42,6 +42,24 @@
   flex: 0 0 auto;
 }
 
+@media (max-width: 1024px) {
+  .controls-row {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .search-container {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    max-width: 400px;
+  }
+  .action-buttons {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 900px) {
   .controls-row {
     flex-direction: column;
@@ -52,6 +70,7 @@
     width: 100%;
     justify-content: flex-start;
     margin-bottom: 8px;
+    max-width: none;
   }
   .action-buttons {
     width: 100%;
@@ -439,6 +458,31 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  max-height: 400px; /* Show approximately 5-6 volunteers with scroll */
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #a72828 #f5f5f5;
+  margin-bottom: 16px;
+}
+
+.table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #a72828;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #7a1a1a;
 }
 
 .volunteer-table {
@@ -454,6 +498,8 @@
   font-weight: 700;
   padding: 12px 10px;
   border-bottom: 2px solid #e5e7eb;
+  height: 48px;
+  vertical-align: middle;
 }
 
 .volunteer-table tr:nth-child(even) {
@@ -468,6 +514,8 @@
   text-align: left;
   padding: 12px 10px;
   border-bottom: 1px solid #f1f5f9;
+  height: 48px;
+  vertical-align: middle;
 }
 
 .volunteer-table th:first-child {
@@ -477,6 +525,7 @@
 .volunteer-table th:last-child {
   border-top-right-radius: 12px;
   text-align: center;
+  background: #f8fafc;
 }
 
 .checkbox-column {
@@ -560,6 +609,9 @@
 
 .actions-cell {
   width: 120px;
+  min-width: 120px;
+  text-align: center;
+  padding: 8px 4px;
 }
 
 .expertise-cell {
@@ -619,6 +671,8 @@
   justify-content: center;
   transition: all 0.2s ease;
   font-size: 12px;
+  margin: 0 3px;
+  flex-shrink: 0;
 }
 
 .view-btn {
@@ -938,6 +992,51 @@
 }
 
 @media (max-width: 480px) {
+  .volunteer-table {
+    min-width: 600px;
+    font-size: 12px;
+  }
+  
+  .volunteer-table th,
+  .volunteer-table td {
+    padding: 6px 4px;
+  }
+  
+  .volunteer-table th:first-child,
+  .volunteer-table td:first-child {
+    min-width: 40px;
+  }
+  
+  .volunteer-table th:last-child,
+  .volunteer-table td:last-child {
+    min-width: 90px;
+  }
+  
+  .volunteer-table th:nth-child(2),
+  .volunteer-table td:nth-child(2) {
+    min-width: 100px;
+  }
+  
+  .volunteer-table th:nth-child(3),
+  .volunteer-table td:nth-child(3) {
+    min-width: 60px;
+  }
+  
+  .volunteer-table th:nth-child(4),
+  .volunteer-table td:nth-child(4) {
+    min-width: 90px;
+  }
+  
+  .volunteer-table th:nth-child(5),
+  .volunteer-table td:nth-child(5) {
+    min-width: 80px;
+  }
+  
+  .volunteer-table th:nth-child(6),
+  .volunteer-table td:nth-child(6) {
+    min-width: 120px;
+  }
+  
   .volunteer-modal-header {
     padding: 8px 8px 8px 12px;
     font-size: 1rem;
@@ -1617,7 +1716,7 @@
   
   .search-container {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   
   .search-bar {
@@ -1645,17 +1744,16 @@
     gap: 10px;
   }
   
-  /* Hide some table columns on mobile */
-  .volunteer-table th:nth-child(3),
-  .volunteer-table td:nth-child(3), /* Gender */
-  .volunteer-table th:nth-child(4),
-  .volunteer-table td:nth-child(4), /* Contact Info */
-  .volunteer-table th:nth-child(5),
-  .volunteer-table td:nth-child(5), /* Expertise */
-  .volunteer-table th:nth-child(6),
-  .volunteer-table td:nth-child(6)  /* Address */
-  {
-    display: none;
+  /* Keep all columns visible but with horizontal scroll */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: 280px; /* Show approximately 5-6 volunteers with scroll */
+    overflow-y: auto;
+  }
+  
+  .volunteer-table {
+    min-width: 600px;
   }
   
   .volunteer-table th,
@@ -1746,7 +1844,7 @@
   }
   
   .search-container {
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   
   .search-bar input {
@@ -1883,7 +1981,7 @@
   }
   
   .search-container {
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   
   .search-bar input {
@@ -2019,7 +2117,7 @@
   }
   
   .search-container {
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
   
   .search-bar input {
@@ -2125,31 +2223,129 @@
   }
 }
 
+/* Tablet and mobile table responsiveness */
+@media (max-width: 1024px) {
+  .table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    -webkit-overflow-scrolling: touch;
+    max-height: 350px; /* Show approximately 5-6 volunteers with scroll */
+    overflow-y: auto;
+  }
+  
+  .volunteer-table {
+    min-width: 800px;
+    font-size: 14px;
+  }
+  
+  .volunteer-table th,
+  .volunteer-table td {
+    padding: 10px 8px;
+    white-space: nowrap;
+  }
+  
+  .volunteer-table th:first-child,
+  .volunteer-table td:first-child {
+    min-width: 50px;
+  }
+  
+  .volunteer-table th:last-child,
+  .volunteer-table td:last-child {
+    min-width: 120px;
+    text-align: center;
+  }
+  
+  .volunteer-table th {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  .volunteer-table th:nth-child(2),
+  .volunteer-table td:nth-child(2) {
+    min-width: 140px;
+  }
+  
+  .volunteer-table th:nth-child(3),
+  .volunteer-table td:nth-child(3) {
+    min-width: 90px;
+  }
+  
+  .volunteer-table th:nth-child(4),
+  .volunteer-table td:nth-child(4) {
+    min-width: 120px;
+  }
+  
+  .volunteer-table th:nth-child(5),
+  .volunteer-table td:nth-child(5) {
+    min-width: 120px;
+  }
+  
+  .volunteer-table th:nth-child(6),
+  .volunteer-table td:nth-child(6) {
+    min-width: 180px;
+  }
+}
+
 /* Enhanced mobile table responsiveness */
 @media (max-width: 768px) {
   .table-container {
     overflow-x: auto;
     border-radius: 8px;
+    -webkit-overflow-scrolling: touch;
+    max-height: 320px; /* Show approximately 5-6 volunteers with scroll */
+    overflow-y: auto;
   }
   
   .volunteer-table {
-    min-width: 600px;
+    min-width: 700px;
+    font-size: 13px;
+  }
+  
+  .volunteer-table th,
+  .volunteer-table td {
+    padding: 8px 6px;
+    white-space: nowrap;
   }
   
   .volunteer-table th:first-child,
   .volunteer-table td:first-child {
-    position: sticky;
-    left: 0;
-    background: inherit;
-    z-index: 1;
+    min-width: 50px;
   }
   
   .volunteer-table th:last-child,
   .volunteer-table td:last-child {
-    position: sticky;
-    right: 0;
-    background: inherit;
-    z-index: 1;
+    min-width: 100px;
+    text-align: center;
+  }
+  
+  .volunteer-table th {
+    font-weight: 600;
+    font-size: 12px;
+  }
+  
+  .volunteer-table th:nth-child(2),
+  .volunteer-table td:nth-child(2) {
+    min-width: 120px;
+  }
+  
+  .volunteer-table th:nth-child(3),
+  .volunteer-table td:nth-child(3) {
+    min-width: 80px;
+  }
+  
+  .volunteer-table th:nth-child(4),
+  .volunteer-table td:nth-child(4) {
+    min-width: 100px;
+  }
+  
+  .volunteer-table th:nth-child(5),
+  .volunteer-table td:nth-child(5) {
+    min-width: 100px;
+  }
+  
+  .volunteer-table th:nth-child(6),
+  .volunteer-table td:nth-child(6) {
+    min-width: 150px;
   }
 }
 
@@ -2184,6 +2380,17 @@
   
   .volunteer-save-btn {
     min-height: 44px;
+  }
+  
+  .actions-cell {
+    min-width: 100px;
+    text-align: center;
+  }
+  
+  .actions-cell .action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
   }
 }
 
@@ -2608,27 +2815,12 @@
 }
 
 /* Error state for form inputs - keep normal styling */
-.volunteer-form input.error,
-.volunteer-form select.error {
-  /* Keep normal border and background - error is shown via text below */
-}
-
 .volunteer-form input.error:focus,
 .volunteer-form select.error:focus {
   /* Use normal blue focus styling */
   border-color: #60a5fa;
   box-shadow: 0 0 0 2px rgba(96,165,250,0.15);
   background-color: #fff;
-}
-
-/* Error state for form groups - keep normal styling */
-.volunteer-form .form-group.has-error label {
-  /* Keep normal label color */
-}
-
-.volunteer-form .form-group.has-error input,
-.volunteer-form .form-group.has-error select {
-  /* Keep normal border and background - error is shown via text below */
 }
 
 .volunteer-form .form-group.has-error input:focus,

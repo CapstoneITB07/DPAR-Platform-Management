@@ -444,11 +444,11 @@ function Reports() {
         return;
       }
 
-      // Debug: Show current user organization
+      // Debug: Show current user organization (remove in production)
       const currentUserOrg = localStorage.getItem('userOrganization');
-      console.log('Current user organization:', currentUserOrg);
-      console.log('User ID:', localStorage.getItem('userId'));
-      console.log('User role:', localStorage.getItem('userRole'));
+      // console.log('Current user organization:', currentUserOrg);
+      // console.log('User ID:', localStorage.getItem('userId'));
+      // console.log('User role:', localStorage.getItem('userRole'));
 
       if (existingReport) {
         // Simple status update for draft submission
@@ -779,7 +779,7 @@ function Reports() {
           }
         });
         
-        console.log('Response received:', response.data);
+        // Response received logged for debugging (remove in production)
         
         if (response.data) {
           setError('');

@@ -446,7 +446,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                           cursor: 'pointer'
                         }}
                       >
-                        Parse Input
+                        Add to Table
                       </button>
                     </div>
 

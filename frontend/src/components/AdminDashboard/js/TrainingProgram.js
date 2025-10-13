@@ -44,6 +44,7 @@ function TrainingProgram() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [fileSizeError, setFileSizeError] = useState('');
 
   useEffect(() => {
     fetchPrograms(true); // Initial load with loading state
@@ -101,6 +102,7 @@ function TrainingProgram() {
     });
     setEditIndex(null);
     setEditId(null);
+    setFileSizeError('');
   };
 
   const handleChange = (e) => {
@@ -127,6 +129,7 @@ function TrainingProgram() {
     const files = Array.from(e.target.files);
     const validFiles = [];
     const newPreviews = [];
+    const oversizedFiles = [];
 
     files.forEach(file => {
       const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
@@ -135,12 +138,20 @@ function TrainingProgram() {
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        // Silently skip files that exceed 2MB without showing alert
+        oversizedFiles.push(file.name);
         return;
       }
       validFiles.push(file);
       newPreviews.push(URL.createObjectURL(file));
     });
+
+    // Show error message for oversized files
+    if (oversizedFiles.length > 0) {
+      setFileSizeError(`The following files exceed the 2MB limit and were not uploaded: ${oversizedFiles.join(', ')}`);
+      setTimeout(() => setFileSizeError(''), 5000); // Clear error after 5 seconds
+    } else {
+      setFileSizeError(''); // Clear any previous errors
+    }
 
     setForm(prev => ({
       ...prev,
@@ -392,7 +403,20 @@ function TrainingProgram() {
                       </button>
                     </div>
                   )}
-                  <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF</small>
+                  <small className="training-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (Max size: 2MB per file)</small>
+                  {fileSizeError && (
+                    <div className="training-file-error" style={{
+                      color: '#e74c3c',
+                      fontSize: '14px',
+                      marginTop: '8px',
+                      padding: '8px',
+                      backgroundColor: '#fdf2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '4px'
+                    }}>
+                      {fileSizeError}
+                    </div>
+                  )}
                 </div>
               </div>
 

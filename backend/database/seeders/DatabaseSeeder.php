@@ -17,13 +17,12 @@ class DatabaseSeeder extends Seeder
     {
         // Create Head Admin Account
         User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'dparvc1@gmail.com'],
             [
                 'name' => 'Head Admin',
                 'password' => Hash::make('password'), // Replace 'password' with a strong password
                 'role' => 'head_admin',
             ]
         );
-
     }
 }

@@ -93,7 +93,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
 
       const data = await response.json();
       
-      console.log('Organization name check response:', data);
+      // Organization name check response logged for debugging (remove in production)
       
       if (response.ok) {
         setNameAvailability({
@@ -131,7 +131,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
 
       const data = await response.json();
       
-      console.log('Director name check response:', data);
+      // Director name check response logged for debugging (remove in production)
       
       if (response.ok) {
         setDirectorNameAvailability({
@@ -169,7 +169,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
 
       const data = await response.json();
       
-      console.log('Email check response:', data);
+      // Email check response logged for debugging (remove in production)
       
       if (response.ok) {
         setEmailAvailability({
@@ -422,6 +422,56 @@ function RegistrationForm({ onSuccess, onCancel }) {
     }));
   };
 
+  // Helper function to scroll to the first field with an error
+  const scrollToFirstError = (errorFields) => {
+    // Define the order of fields as they appear in the form
+    const fieldOrder = [
+      'organization_name',
+      'organization_type', 
+      'director_name',
+      'description',
+      'email',
+      'phone',
+      'password',
+      'password_confirmation',
+      'logo'
+    ];
+    
+    // Find the first field with an error based on the form order
+    const firstErrorField = fieldOrder.find(field => errorFields[field]);
+    
+    if (firstErrorField) {
+      // Try to find the input element by ID first
+      let element = document.getElementById(firstErrorField);
+      
+      // If not found by ID, try to find by name attribute
+      if (!element) {
+        element = document.querySelector(`[name="${firstErrorField}"]`);
+      }
+      
+      // If still not found, try to find the form group container
+      if (!element) {
+        element = document.querySelector(`.form-group:has([name="${firstErrorField}"])`);
+      }
+      
+      if (element) {
+        // Scroll to the element with smooth behavior
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+        
+        // Focus the input field if it's an input element
+        if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+          setTimeout(() => {
+            element.focus();
+          }, 500); // Small delay to allow scroll to complete
+        }
+      }
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -505,6 +555,14 @@ function RegistrationForm({ onSuccess, onCancel }) {
     }
     
     setErrors(newErrors);
+    
+    // If there are errors, scroll to the first one
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        scrollToFirstError(newErrors);
+      }, 100); // Small delay to ensure errors are rendered
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
@@ -545,6 +603,10 @@ function RegistrationForm({ onSuccess, onCancel }) {
       } else {
         if (data.errors) {
           setErrors(data.errors);
+          // Scroll to first error when server returns validation errors
+          setTimeout(() => {
+            scrollToFirstError(data.errors);
+          }, 100);
         } else {
           setMessage(data.message || 'Registration failed. Please try again.');
         }

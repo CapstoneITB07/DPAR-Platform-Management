@@ -149,6 +149,7 @@ function AdminDashboard() {
   const [selectedDayEvents, setSelectedDayEvents] = useState([]);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const fetchActiveMembers = useCallback(async (period = 'day') => {
     try {
@@ -697,7 +698,7 @@ function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Raw calendar events response:', response.data);
+      // Raw calendar events response logged for debugging (remove in production)
       
       if (response.data.success) {
         // Group events by date and count them
@@ -737,7 +738,7 @@ function AdminDashboard() {
         console.log('Processed calendar events with counts:', events);
         setCalendarEvents(events);
       } else {
-        console.log('No events found or API error:', response.data);
+        // No events found or API error logged for debugging (remove in production)
         setCalendarEvents([]);
       }
     } catch (err) {
@@ -1172,6 +1173,14 @@ function AdminDashboard() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
+      // Show success message
+      setShowSuccessMessage(true);
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 3000);
+      
     } catch (err) {
       console.error('Error generating PDF:', err);
       
@@ -1231,6 +1240,14 @@ function AdminDashboard() {
             </button>
           </div>
         </div>
+        {showSuccessMessage && (
+          <div className="success-message-banner">
+            <div className="success-message-content">
+              <span className="success-icon">✓</span>
+              <span className="success-text">Analysis downloaded successfully!</span>
+            </div>
+          </div>
+        )}
         {error && <div className="error-message">{error}</div>}
 
         <div className="performance-column">

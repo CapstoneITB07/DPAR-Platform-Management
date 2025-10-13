@@ -98,6 +98,8 @@ function LoginPage() {
   const [showOtpModal, setShowOtpModal] = useState(false); // Show OTP verification modal
   const [otpData, setOtpData] = useState(null); // Store OTP verification data
   const [otpCode, setOtpCode] = useState(''); // OTP input
+  const [otpAttemptsRemaining, setOtpAttemptsRemaining] = useState(5); // OTP attempts remaining
+  const [otpLockoutTime, setOtpLockoutTime] = useState(0); // OTP lockout time in seconds
   
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
@@ -115,6 +117,25 @@ function LoginPage() {
       }
     }
   }, [isAuthenticated, user, isLoading, navigate]);
+
+  // Countdown timer for OTP lockout
+  useEffect(() => {
+    let interval = null;
+    if (otpLockoutTime > 0) {
+      interval = setInterval(() => {
+        setOtpLockoutTime(otpLockoutTime => {
+          if (otpLockoutTime <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return otpLockoutTime - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [otpLockoutTime]);
 
 
   const toggleRA = () => {
@@ -203,7 +224,7 @@ function LoginPage() {
       }
 
       const data = await response.json();
-      console.log('Change password response data:', data);
+      // Change password response data logged for debugging (remove in production)
 
       if (response.ok) {
         setIsPasswordChangeSuccess(true);
@@ -287,6 +308,12 @@ function LoginPage() {
     e.preventDefault();
     setMessage('');
 
+    // Check if user is in lockout period
+    if (otpLockoutTime > 0) {
+      setMessage(`Please wait ${otpLockoutTime} seconds before trying again.`);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE}/api/verify-otp`, {
         method: 'POST',
@@ -299,10 +326,26 @@ function LoginPage() {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If response is not JSON (e.g., 429 from throttle middleware)
+        if (response.status === 429) {
+          setMessage('Too many failed attempts. Please wait 60 seconds before trying again.');
+          setOtpAttemptsRemaining(0);
+          setOtpLockoutTime(60);
+          return;
+        }
+        throw parseError;
+      }
 
       if (response.ok) {
         setMessage('OTP verified successfully! Welcome to the system!');
+        
+        // Reset attempt counter on success
+        setOtpAttemptsRemaining(5);
+        setOtpLockoutTime(0);
         
         // Use authentication context to handle login
         await login(data.user, data.token);
@@ -323,10 +366,34 @@ function LoginPage() {
           navigate('/');
         }
       } else {
-        setMessage(data.message || 'Invalid OTP code. Please try again.');
+        // Handle different error responses
+        if (response.status === 429) {
+          // Too many attempts - lockout
+          setOtpAttemptsRemaining(data.attempts_remaining || 0);
+          setOtpLockoutTime(data.lockout_remaining || 60);
+          setMessage(data.message || 'Too many failed attempts. Please wait before trying again.');
+        } else if (response.status === 401) {
+          // Invalid OTP
+          setOtpAttemptsRemaining(data.attempts_remaining || 0);
+          setMessage(data.message || 'Invalid OTP code. Please try again.');
+        } else {
+          // Other errors
+          setMessage(data.message || 'An error occurred. Please try again.');
+        }
       }
     } catch (error) {
-      setMessage('Network error. Please check your connection and try again.');
+      // Check if it's a rate limit error (429) that wasn't caught properly
+      if (error.message && error.message.includes('429')) {
+        setMessage('Too many failed attempts. Please wait 60 seconds before trying again.');
+        setOtpAttemptsRemaining(0);
+        setOtpLockoutTime(60);
+      } else if (otpLockoutTime > 0) {
+        // Show lockout message if user is already in lockout
+        setMessage(`Please wait ${otpLockoutTime} seconds before trying again.`);
+      } else {
+        // Only show network error if it's not a lockout situation
+        setMessage('Network error. Please check your connection and try again.');
+      }
       console.error('OTP verification error:', error);
     }
   };
@@ -337,6 +404,8 @@ function LoginPage() {
     setOtpCode('');
     setOtpData(null);
     setMessage('');
+    setOtpAttemptsRemaining(5);
+    setOtpLockoutTime(0);
   };
 
   const handleSubmit = async (e) => {
@@ -357,12 +426,18 @@ function LoginPage() {
         body: JSON.stringify(requestBody),
       });
 
+      // Check for 429 status immediately, as it might not return valid JSON
+      if (response.status === 429) {
+        setMessage('Too many login attempts. Please try again after 60 seconds.');
+        return; // Exit the function early
+      }
+
       const data = await response.json();
 
       if (response.ok) {
         // Handle successful login
         setMessage(data.message || 'Login successful!');
-        console.log('Login successful:', data);
+        // Login successful - data logged for debugging (remove in production)
 
         // Check if OTP verification is required
         if (data.requires_otp) {
@@ -426,8 +501,12 @@ function LoginPage() {
         console.error('Login failed:', data);
       }
     } catch (error) {
-      // Handle network errors
-      setMessage('Network error. Could not connect to backend.');
+      // Handle network errors and rate limiting
+      if (error.message && error.message.includes('429')) {
+        setMessage('Too many login attempts. Please try again after 60 seconds.');
+      } else {
+        setMessage('Network error. Could not connect to backend.');
+      }
       console.error('Network error:', error);
     }
   };
@@ -880,7 +959,42 @@ function LoginPage() {
                 <br />
                 If the admin has not approved your application yet, you cannot log in.
               </p>
+              
+              {/* Attempt Counter Display - Only show when NOT in lockout */}
+              {otpLockoutTime === 0 && (
+                <div style={{ 
+                  marginBottom: '16px', 
+                  padding: '10px', 
+                  backgroundColor: otpAttemptsRemaining <= 2 ? '#fff3cd' : '#d1ecf1', 
+                  border: `1px solid ${otpAttemptsRemaining <= 2 ? '#ffeaa7' : '#bee5eb'}`, 
+                  borderRadius: '6px',
+                  fontSize: '14px'
+                }}>
+                  <p style={{ color: otpAttemptsRemaining <= 2 ? '#856404' : '#0c5460', margin: 0 }}>
+                    🔐 Attempts remaining: <strong>{otpAttemptsRemaining}</strong> out of 5
+                  </p>
+                </div>
+              )}
             </div>
+
+            {/* Lockout Warning */}
+            {otpLockoutTime > 0 && (
+              <div style={{
+                backgroundColor: '#f8d7da',
+                border: '1px solid #f5c6cb',
+                color: '#721c24',
+                padding: '15px',
+                borderRadius: '6px',
+                marginBottom: '20px',
+                textAlign: 'center',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}>
+                ⚠️ Account temporarily locked due to too many failed attempts
+                <br />
+                Please wait <strong>{otpLockoutTime} seconds</strong> before trying again
+              </div>
+            )}
 
             <form onSubmit={handleOtpVerification}>
               <div className="inputGroup">
@@ -895,17 +1009,18 @@ function LoginPage() {
                   placeholder="Enter 6-digit OTP code"
                   maxLength="6"
                   style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '2px' }}
+                  disabled={otpLockoutTime > 0}
                 />
               </div>
               
               <button 
                 type="submit" 
                 className="signInButton" 
-                disabled={otpCode.length !== 6}
+                disabled={otpCode.length !== 6 || otpLockoutTime > 0}
               >
-                Verify OTP & Continue
+                {otpLockoutTime > 0 ? `Wait ${otpLockoutTime}s` : 'Verify OTP & Continue'}
               </button>
-              {message && (
+              {message && !message.includes('wait') && !message.includes('locked') && (
                 <p className={`changePasswordMessage ${message.includes('successfully') ? 'success' : 'error'}`}>
                   {message}
                 </p>

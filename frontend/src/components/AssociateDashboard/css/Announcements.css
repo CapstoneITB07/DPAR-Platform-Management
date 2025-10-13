@@ -623,20 +623,25 @@
   }
   
   .announcement-datetime-row {
-    padding: 6px 20px 4px 20px;
-    min-height: 28px;
+    padding: 12px 16px;
+    min-height: auto;
     background: #f7f8fa;
     border-bottom: 1px solid #f0f2f5;
     margin: 0;
-    border-radius: 16px 16px 0 0;
-    position: relative;
-    left: -20px;
-    right: -20px;
-    width: calc(100% + 40px);
+    border-radius: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   
   .announcement-content {
-    padding: 16px 20px 12px 20px;
+    padding: 60px 20px 12px 20px;
   }
   
   .announcement-title {
@@ -732,20 +737,25 @@
   }
   
   .announcement-datetime-row {
-    padding: 6px 20px 4px 20px;
-    min-height: 28px;
+    padding: 12px 16px;
+    min-height: auto;
     background: #f7f8fa;
     border-bottom: 1px solid #f0f2f5;
     margin: 0;
-    border-radius: 16px 16px 0 0;
-    position: relative;
-    left: -20px;
-    right: -20px;
-    width: calc(100% + 40px);
+    border-radius: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   
   .announcement-content {
-    padding: 16px 20px 12px 20px;
+    padding: 60px 20px 12px 20px;
   }
   
   .announcement-title {
@@ -1003,17 +1013,19 @@
     padding: 20px;
   }
   .announcement-date-badge, .announcement-time-badge {
-    font-size: 13px;
+    font-size: 12px;
     color: #888;
     flex: 0 0 auto;
-    margin-right: 8px;
+    margin-right: 0;
     white-space: nowrap;
     align-self: center;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     text-decoration-thickness: 2px;
     text-underline-offset: 3px;
+    overflow: visible;
+    text-overflow: ellipsis;
   }
 }
 
@@ -1121,25 +1133,41 @@
     transform: scale(0.98) translateY(0px);
   }
   .announcement-datetime-row {
-    padding: 16px;
+    padding: 12px 16px;
     flex-wrap: wrap;
     gap: 8px;
+    min-height: auto;
+    background: #f7f8fa;
+    border-bottom: 1px solid #f0f2f5;
+    border-radius: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1;
   }
   .announcement-date-badge, .announcement-time-badge {
-    font-size: 13px;
+    font-size: 12px;
     color: #888;
     flex: 0 0 auto;
-    margin-right: 8px;
+    margin-right: 0;
     white-space: nowrap;
     align-self: center;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     text-decoration-thickness: 2px;
     text-underline-offset: 3px;
+    overflow: visible;
+    text-overflow: ellipsis;
   }
   .announcement-content {
-    padding: 8px 16px 0 16px;
+    padding: 60px 16px 0 16px;
   }
   .announcement-title {
     font-size: 18px;

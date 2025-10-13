@@ -325,7 +325,7 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
                     cursor: 'pointer'
                   }}
                 >
-                  Parse Input
+                  Add to Table
                 </button>
               </div>
 

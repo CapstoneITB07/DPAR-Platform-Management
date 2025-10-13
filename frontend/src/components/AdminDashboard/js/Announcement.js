@@ -33,6 +33,7 @@ function Announcement() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [fileSizeError, setFileSizeError] = useState('');
 
   useEffect(() => {
     fetchAnnouncements(true); // Initial load with loading state
@@ -148,6 +149,7 @@ function Announcement() {
     const files = Array.from(e.target.files);
     const validFiles = [];
     const newPreviews = [];
+    const oversizedFiles = [];
 
     files.forEach(file => {
       const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
@@ -156,12 +158,20 @@ function Announcement() {
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        // Silently skip files that exceed 2MB without showing alert
+        oversizedFiles.push(file.name);
         return;
       }
       validFiles.push(file);
       newPreviews.push(URL.createObjectURL(file));
     });
+
+    // Show error message for oversized files
+    if (oversizedFiles.length > 0) {
+      setFileSizeError(`The following files exceed the 2MB limit and were not uploaded: ${oversizedFiles.join(', ')}`);
+      setTimeout(() => setFileSizeError(''), 5000); // Clear error after 5 seconds
+    } else {
+      setFileSizeError(''); // Clear any previous errors
+    }
 
     setPhotos(prev => [...prev, ...validFiles]);
     setPreviews(prev => [...prev, ...newPreviews]);
@@ -180,6 +190,7 @@ function Announcement() {
     setPhotos([]);
     setPreviews([]);
     setEditId(null);
+    setFileSizeError('');
   };
 
   const openFullModal = (announcement) => {
@@ -333,7 +344,20 @@ function Announcement() {
                       </button>
                     </div>
                   )}
-                  <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF</small>
+                  <small className="announcement-upload-note">Accepted formats: JPEG, PNG, JPG, GIF (Max size: 2MB per file)</small>
+                  {fileSizeError && (
+                    <div className="announcement-file-error" style={{
+                      color: '#e74c3c',
+                      fontSize: '14px',
+                      marginTop: '8px',
+                      padding: '8px',
+                      backgroundColor: '#fdf2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '4px'
+                    }}>
+                      {fileSizeError}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="announcement-modal-actions">

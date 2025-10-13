@@ -23,6 +23,7 @@ const EventModal = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Helper to format backend date to local input value
@@ -62,34 +63,135 @@ const EventModal = ({
       });
     }
     setError('');
+    setErrors({});
   }, [event, show]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const updatedFormData = {
+      ...formData,
       [name]: value
-    }));
+    };
+    
+    setFormData(updatedFormData);
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    
+    // Real-time validation for date/time fields
+    if (name === 'start_date' || name === 'end_date') {
+      // Small delay to allow both fields to update before validation
+      setTimeout(() => {
+        validateDateTimeLogic(updatedFormData);
+      }, 100);
+    }
+  };
+
+  // Helper function to validate date/time logic in real-time
+  const validateDateTimeLogic = (currentFormData) => {
+    if (currentFormData.start_date && currentFormData.end_date) {
+      const startDateTime = new Date(currentFormData.start_date);
+      const endDateTime = new Date(currentFormData.end_date);
+      
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        
+        // Only check if end date/time is after start date/time
+        if (endDateTime <= startDateTime) {
+          newErrors.end_date = 'End date and time must be after start date and time';
+        } else if (newErrors.end_date === 'End date and time must be after start date and time') {
+          delete newErrors.end_date;
+        }
+        
+        return newErrors;
+      });
+    }
+  };
+
+  // Helper function to scroll to the first field with an error
+  const scrollToFirstError = (errorFields) => {
+    // Define the order of fields as they appear in the form
+    const fieldOrder = [
+      'title',
+      'start_date',
+      'end_date',
+      'location',
+      'description'
+    ];
+    
+    // Find the first field with an error based on the form order
+    const firstErrorField = fieldOrder.find(field => errorFields[field]);
+    
+    if (firstErrorField) {
+      // Try to find the input element by ID first
+      let element = document.getElementById(firstErrorField);
+      
+      // If not found by ID, try to find by name attribute
+      if (!element) {
+        element = document.querySelector(`[name="${firstErrorField}"]`);
+      }
+      
+      // If still not found, try to find the form group container
+      if (!element) {
+        element = document.querySelector(`.form-group:has([name="${firstErrorField}"])`);
+      }
+      
+      if (element) {
+        // Scroll to the element with smooth behavior
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+        
+        // Focus the input field if it's an input element
+        if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+          setTimeout(() => {
+            element.focus();
+          }, 500); // Small delay to allow scroll to complete
+        }
+      }
+    }
   };
 
   const validateForm = () => {
+    const newErrors = {};
+    
     if (!formData.title.trim()) {
-      setError('Title is required');
-      return false;
+      newErrors.title = 'Title is required';
     }
+    
     if (!formData.start_date) {
-      setError('Start date is required');
-      return false;
+      newErrors.start_date = 'Start date is required';
     }
+    
     if (!formData.end_date) {
-      setError('End date is required');
-      return false;
+      newErrors.end_date = 'End date is required';
+    } else if (formData.start_date) {
+      const startDateTime = new Date(formData.start_date);
+      const endDateTime = new Date(formData.end_date);
+      
+      // Only check if end date/time is actually after start date/time
+      if (endDateTime <= startDateTime) {
+        newErrors.end_date = 'End date and time must be after start date and time';
+      }
     }
-    if (new Date(formData.end_date) <= new Date(formData.start_date)) {
-      setError('End date must be after start date');
-      return false;
+    
+    setErrors(newErrors);
+    
+    // If there are errors, scroll to the first one
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        scrollToFirstError(newErrors);
+      }, 100); // Small delay to ensure errors are rendered
     }
-    return true;
+    
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -133,7 +235,17 @@ const EventModal = ({
       }
     } catch (err) {
       console.error('Error saving event:', err);
-      setError(err.response?.data?.message || 'Failed to save event');
+      
+      // Handle validation errors from server
+      if (err.response?.data?.errors) {
+        setErrors(err.response.data.errors);
+        // Scroll to first error when server returns validation errors
+        setTimeout(() => {
+          scrollToFirstError(err.response.data.errors);
+        }, 100);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save event');
+      }
     } finally {
       setLoading(false);
     }
@@ -202,8 +314,10 @@ const EventModal = ({
               value={formData.title}
               onChange={handleInputChange}
               placeholder="Enter event title"
+              className={errors.title ? 'error' : ''}
               required
             />
+            {errors.title && <span className="error-text">{errors.title}</span>}
           </div>
 
           <div className="form-row">
@@ -215,8 +329,10 @@ const EventModal = ({
                 name="start_date"
                 value={formData.start_date}
                 onChange={handleInputChange}
+                className={errors.start_date ? 'error' : ''}
                 required
               />
+              {errors.start_date && <span className="error-text">{errors.start_date}</span>}
             </div>
 
             <div className="form-group">
@@ -227,8 +343,10 @@ const EventModal = ({
                 name="end_date"
                 value={formData.end_date}
                 onChange={handleInputChange}
+                className={errors.end_date ? 'error' : ''}
                 required
               />
+              {errors.end_date && <span className="error-text">{errors.end_date}</span>}
             </div>
           </div>
 
@@ -243,7 +361,9 @@ const EventModal = ({
               value={formData.location}
               onChange={handleInputChange}
               placeholder="Enter event location"
+              className={errors.location ? 'error' : ''}
             />
+            {errors.location && <span className="error-text">{errors.location}</span>}
           </div>
 
           <div className="form-group">
@@ -254,8 +374,10 @@ const EventModal = ({
               value={formData.description}
               onChange={handleInputChange}
               placeholder="Enter event description"
+              className={errors.description ? 'error' : ''}
               rows="4"
             />
+            {errors.description && <span className="error-text">{errors.description}</span>}
           </div>
 
           {isEditMode && event && (

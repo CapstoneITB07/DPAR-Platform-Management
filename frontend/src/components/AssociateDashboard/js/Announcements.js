@@ -313,12 +313,20 @@ function Announcements() {
                     <div className="announcement-datetime-row">
                       <div>
                         <span className="announcement-date-badge">
-                          {new Date(a.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                          {new Date(a.created_at).toLocaleDateString(undefined, { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
                         </span>
                       </div>
                       <div>
                         <span className="announcement-time-badge">
-                          {new Date(a.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(a.created_at).toLocaleTimeString(undefined, { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
                         </span>
                       </div>
                     </div>

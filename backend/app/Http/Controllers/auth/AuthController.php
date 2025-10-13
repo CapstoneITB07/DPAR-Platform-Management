@@ -548,6 +548,31 @@ class AuthController extends Controller
 
             $user = User::findOrFail($request->user_id);
 
+            // Check attempt counter
+            $attemptKey = 'otp_attempts_' . $user->id;
+            $attempts = cache()->get($attemptKey, 0);
+            $maxAttempts = 5;
+
+            if ($attempts >= $maxAttempts) {
+                $lockoutKey = 'otp_lockout_' . $user->id;
+                $lockoutTime = cache()->get($lockoutKey);
+
+                if ($lockoutTime && $lockoutTime > now()) {
+                    $remainingTime = $lockoutTime->diffInSeconds(now());
+                    return response()->json([
+                        'message' => "Too many failed attempts. Please wait {$remainingTime} seconds before trying again.",
+                        'errors' => ['otp_code' => ['Too many failed attempts. Please wait before trying again.']],
+                        'attempts_remaining' => 0,
+                        'lockout_remaining' => $remainingTime
+                    ], 429);
+                } else {
+                    // Reset attempts if lockout period has passed
+                    cache()->forget($attemptKey);
+                    cache()->forget($lockoutKey);
+                    $attempts = 0;
+                }
+            }
+
             // Check if user has a pending application with matching OTP
             $pendingApplication = PendingApplication::where('email', $user->email)
                 ->where('status', 'approved')
@@ -556,9 +581,27 @@ class AuthController extends Controller
                 ->first();
 
             if (!$pendingApplication) {
+                // Increment attempt counter
+                $attempts++;
+                cache()->put($attemptKey, $attempts, 300); // Store for 5 minutes
+
+                $attemptsRemaining = $maxAttempts - $attempts;
+
+                if ($attempts >= $maxAttempts) {
+                    // Set lockout for 1 minute
+                    cache()->put($lockoutKey, now()->addMinutes(1), 60);
+                    return response()->json([
+                        'message' => 'Too many failed attempts. Please wait 60 seconds before trying again.',
+                        'errors' => ['otp_code' => ['Too many failed attempts. Please wait before trying again.']],
+                        'attempts_remaining' => 0,
+                        'lockout_remaining' => 60
+                    ], 429);
+                }
+
                 return response()->json([
                     'message' => 'Invalid or expired OTP code.',
-                    'errors' => ['otp_code' => ['Invalid or expired OTP code.']]
+                    'errors' => ['otp_code' => ['Invalid or expired OTP code.']],
+                    'attempts_remaining' => $attemptsRemaining
                 ], 401);
             }
 
@@ -569,6 +612,10 @@ class AuthController extends Controller
             ]);
 
             $user->update(['needs_otp_verification' => false]);
+
+            // Clear attempt counter on successful verification
+            cache()->forget($attemptKey);
+            cache()->forget($lockoutKey ?? 'otp_lockout_' . $user->id);
 
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;

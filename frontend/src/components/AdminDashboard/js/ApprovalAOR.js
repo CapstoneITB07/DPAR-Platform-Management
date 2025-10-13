@@ -132,13 +132,13 @@ function ApprovalAOR() {
     // Debug: Check current user role
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     if (token) {
-      // Decode JWT token to get user info
+      // Decode JWT token to get user info (remove console.log in production)
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Current user role:', payload.role);
-        console.log('Current user info:', payload);
+        // console.log('Current user role:', payload.role);
+        // console.log('Current user info:', payload);
       } catch (e) {
-        console.log('Could not decode token:', e);
+        // console.log('Could not decode token:', e);
       }
     }
   }, []);
@@ -311,7 +311,7 @@ function ApprovalAOR() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Approve response:', response.data);
+      // Approve response logged for debugging (remove in production)
       await fetchReports(); // Refresh the list after approval
       setShowPreviewModal(false);
       setNotificationWithDebug('Report approved successfully!', 'approve');
@@ -337,7 +337,7 @@ function ApprovalAOR() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Reject response:', response.data);
+      // Reject response logged for debugging (remove in production)
       await fetchReports(); // Refresh the list after rejection
       setShowPreviewModal(false);
       

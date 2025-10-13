@@ -36,11 +36,18 @@ function AdminLayout({ children }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordSuggestions, setPasswordSuggestions] = useState([]);
+  const [hasFormChanges, setHasFormChanges] = useState(false);
+  const [originalProfileValues, setOriginalProfileValues] = useState({
+    name: '',
+    email: ''
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingApplicationsCount, setPendingApplicationsCount] = useState(0);
   const ADMIN_NOTIF_RESPONSE_KEY = 'adminNotifResponseViewed';
+  const ADMIN_APPLICATIONS_VIEWED_KEY = 'adminApplicationsViewed';
   const [editProfileHover, setEditProfileHover] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen(open => !open);
@@ -211,6 +218,8 @@ function AdminLayout({ children }) {
   };
 
   const handleProfileFormChange = (e) => {
+    // Since Name and Email are now read-only, this function is no longer needed
+    // but keeping it for potential future use
     const { name, value } = e.target;
     setProfileForm(prev => ({
       ...prev,
@@ -242,54 +251,20 @@ function AdminLayout({ children }) {
         console.log('Image preview set:', reader.result.substring(0, 50) + '...');
       };
       reader.readAsDataURL(file);
+      
+      // Mark as having changes when image is selected
+      setHasFormChanges(true);
     } else {
       // Clear preview if no file selected
       setImagePreview(null);
       setNewProfileImage(null);
+      
+      // Since Name and Email are read-only, only check for image changes
+      setHasFormChanges(false);
     }
   };
 
-  const handleProfileUpdate = async () => {
-    if (newProfileImage) {
-      setIsLoading(true);
-      setProfileError('');
-      try {
-        const formData = new FormData();
-        formData.append('profile_picture', newProfileImage);
-        
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
-          }
-        });
-        
-        setProfileSuccess('Profile picture updated successfully');
-        
-        console.log('Profile update response:', response.data);
-        console.log('Current imagePreview:', imagePreview ? 'exists' : 'null');
-        
-        // Update the profile image with the server response URL
-        if (response.data.profile_picture_url) {
-          setProfileImage(response.data.profile_picture_url);
-          console.log('Updated profileImage with server URL:', response.data.profile_picture_url);
-        } else if (imagePreview) {
-          // Fallback to preview if no server URL
-          setProfileImage(imagePreview);
-          console.log('Updated profileImage with preview');
-        }
-        setNewProfileImage(null);
-        setImagePreview(null); // Clear preview
-      } catch (error) {
-        setProfileError(error.response?.data?.message || 'Failed to update profile picture');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const handleProfileInfoUpdate = async (e) => {
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setProfileError('');
@@ -297,16 +272,43 @@ function AdminLayout({ children }) {
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/profile/update`, profileForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfileSuccess('Profile information updated successfully');
-      // Refresh profile data to update UI and sidebar name
+      
+      // Only update profile image since Name and Email are read-only
+      if (newProfileImage) {
+        const formData = new FormData();
+        formData.append('profile_picture', newProfileImage);
+        
+        const response = await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        // Profile update response logged for debugging (remove in production)
+        // console.log('Current imagePreview:', imagePreview ? 'exists' : 'null');
+        
+        // Update the profile image with the server response URL
+        if (response.data.profile_picture_url) {
+          setProfileImage(response.data.profile_picture_url);
+          // console.log('Updated profileImage with server URL:', response.data.profile_picture_url);
+        } else if (imagePreview) {
+          // Fallback to preview if no server URL
+          setProfileImage(imagePreview);
+          // console.log('Updated profileImage with preview');
+        }
+        setNewProfileImage(null);
+        setImagePreview(null); // Clear preview
+        
+        setProfileSuccess('Profile picture updated successfully');
+      }
+      
+      // Refresh profile data to update UI
       await fetchProfile();
-      // Force a re-render by updating the profile data
-      setProfileForm(prev => ({ ...prev }));
+      // Reset form changes state
+      setHasFormChanges(false);
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Failed to update profile information');
+      setProfileError(error.response?.data?.message || 'Failed to update profile picture');
     } finally {
       setIsLoading(false);
     }
@@ -366,10 +368,14 @@ function AdminLayout({ children }) {
       const response = await axios.get(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
       
       // Update profile form with current data
-      setProfileForm({
+      const profileData = {
         name: response.data.name || 'Mark Carlo Garcia',
         email: response.data.email || ''
-      });
+      };
+      setProfileForm(profileData);
+      
+      // Store original values for change detection
+      setOriginalProfileValues(profileData);
       
       // Update user display name for sidebar with actual user name
       setUserDisplayName(response.data.name || 'Head Admin');
@@ -380,6 +386,12 @@ function AdminLayout({ children }) {
       } else {
         setProfileImage('/Assets/disaster_logo.png');
       }
+      
+      // Reset form changes state when loading fresh data
+      setHasFormChanges(false);
+      // Clear image preview when loading fresh data
+      setImagePreview(null);
+      setNewProfileImage(null);
     } catch (error) {
       console.error("Failed to fetch profile", error);
     }
@@ -405,10 +417,49 @@ function AdminLayout({ children }) {
     setUnreadCount(unread);
   };
 
+  const fetchPendingApplicationsCount = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/pending-applications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const applications = response.data || [];
+      const viewed = JSON.parse(localStorage.getItem(ADMIN_APPLICATIONS_VIEWED_KEY) || '{}');
+      
+      // Clean up viewed applications that no longer exist
+      const currentAppIds = applications.map(app => app.id);
+      const cleanedViewed = {};
+      Object.keys(viewed).forEach(appId => {
+        if (currentAppIds.includes(parseInt(appId))) {
+          cleanedViewed[appId] = viewed[appId];
+        }
+      });
+      localStorage.setItem(ADMIN_APPLICATIONS_VIEWED_KEY, JSON.stringify(cleanedViewed));
+      
+      // Count only applications that haven't been viewed
+      let unviewedCount = 0;
+      applications.forEach(app => {
+        if (!cleanedViewed[app.id]) {
+          unviewedCount++;
+        }
+      });
+      
+      setPendingApplicationsCount(unviewedCount);
+    } catch (error) {
+      console.error('Error fetching pending applications count:', error);
+      setPendingApplicationsCount(0);
+    }
+  };
+
   useEffect(() => {
     fetchProfile(); // Fetch profile on initial load
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000); // Poll every 15 seconds for notifications
+    fetchPendingApplicationsCount();
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchPendingApplicationsCount();
+    }, 15000); // Poll every 15 seconds for notifications and pending applications
     return () => clearInterval(interval);
   }, []);
 
@@ -431,6 +482,26 @@ function AdminLayout({ children }) {
             localStorage.setItem(ADMIN_NOTIF_RESPONSE_KEY, JSON.stringify(viewed));
             setUnreadCount(0);
           }
+        });
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname === '/admin/associate-groups') {
+      fetch(`${API_BASE}/api/pending-applications`, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const viewed = JSON.parse(localStorage.getItem(ADMIN_APPLICATIONS_VIEWED_KEY) || '{}');
+            data.forEach(app => {
+              viewed[app.id] = true; // Mark as viewed
+            });
+            localStorage.setItem(ADMIN_APPLICATIONS_VIEWED_KEY, JSON.stringify(viewed));
+            setPendingApplicationsCount(0);
+          }
+        })
+        .catch(error => {
+          console.error('Error marking applications as viewed:', error);
         });
     }
   }, [location.pathname]);
@@ -509,6 +580,7 @@ function AdminLayout({ children }) {
                   setProfileSuccess('');
                   setPasswordError('');
                   setPasswordSuccess('');
+                  setHasFormChanges(false);
                   // Only fetch profile if we don't have a recent image update
                   // This prevents overriding a recently updated profile image
                   fetchProfile(); // Refresh profile data when opening modal
@@ -533,7 +605,32 @@ function AdminLayout({ children }) {
           <nav className="sidebar-nav">
             <ul>
               <li className={isActive('/admin/dashboard') ? 'active' : ''} onClick={() => { navigate('/admin/dashboard'); closeSidebar(); }}><FontAwesomeIcon icon={faTachometerAlt} /> DASHBOARD</li>
-              <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => { navigate('/admin/associate-groups'); closeSidebar(); }}><FontAwesomeIcon icon={faUsers} /> ASSOCIATE GROUPS</li>
+              <li className={isActive('/admin/associate-groups') ? 'active' : ''} onClick={() => { navigate('/admin/associate-groups'); closeSidebar(); }} style={{ position: 'relative' }}>
+                <span><FontAwesomeIcon icon={faUsers} /> ASSOCIATE GROUPS</span>
+                {pendingApplicationsCount > 0 && (
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: 2, 
+                    right: 0, 
+                    background: '#ff0000', 
+                    color: 'white', 
+                    borderRadius: '50%', 
+                    padding: '4px 8px', 
+                    fontSize: 12, 
+                    fontWeight: '900',
+                    minWidth: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 3px 8px rgba(255,0,0,0.5), 0 0 0 3px rgba(255,255,255,0.8)',
+                    border: '2px solid #ffffff',
+                    zIndex: 10,
+                    animation: 'pulse 1.5s infinite',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                  }}>{pendingApplicationsCount}</span>
+                )}
+              </li>
               <li className={isActive('/admin/notifications') ? 'active' : ''} onClick={() => { navigate('/admin/notifications'); closeSidebar(); }} style={{ position: 'relative' }}>
                 <span><FontAwesomeIcon icon={faBell} /> NOTIFICATIONS</span>
                     {unreadCount > 0 && (
@@ -886,30 +983,6 @@ function AdminLayout({ children }) {
                       }}>
                         Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)
                       </div>
-                      {newProfileImage && (
-                        <button 
-                          onClick={() => {
-                            console.log('Update button clicked, newProfileImage:', newProfileImage);
-                            console.log('imagePreview exists:', !!imagePreview);
-                            handleProfileUpdate();
-                          }} 
-                          disabled={isLoading}
-                          style={{
-                            background: '#A11C22',
-                            color: 'white',
-                            border: 'none',
-                            padding: window.innerWidth <= 480 ? '8px 16px' : '10px 20px',
-                            borderRadius: '6px',
-                            cursor: isLoading ? 'not-allowed' : 'pointer',
-                            fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                            fontWeight: '500',
-                            opacity: isLoading ? 0.6 : 1,
-                            width: window.innerWidth <= 480 ? '100%' : 'auto'
-                          }}
-                        >
-                          {isLoading ? 'Updating...' : 'Update Profile Picture'}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -929,7 +1002,7 @@ function AdminLayout({ children }) {
                     Profile Information
                   </h3>
                   
-                  <form onSubmit={handleProfileInfoUpdate}>
+                  <form onSubmit={handleProfileUpdate}>
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{
                         display: 'block',
@@ -945,16 +1018,18 @@ function AdminLayout({ children }) {
                         type="text"
                         name="name"
                         value={profileForm.name}
-                        onChange={handleProfileFormChange}
+                        readOnly
                         style={{
                           width: '100%',
                           padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                          border: '1px solid #ddd',
+                          border: '1px solid #e0e0e0',
                           borderRadius: '6px',
                           fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          backgroundColor: '#f8f9fa',
+                          color: '#666',
+                          cursor: 'not-allowed'
                         }}
-                        required
                       />
                     </div>
 
@@ -973,36 +1048,38 @@ function AdminLayout({ children }) {
                         type="email"
                         name="email"
                         value={profileForm.email}
-                        onChange={handleProfileFormChange}
+                        readOnly
                         style={{
                           width: '100%',
                           padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
-                          border: '1px solid #ddd',
+                          border: '1px solid #e0e0e0',
                           borderRadius: '6px',
                           fontSize: window.innerWidth <= 480 ? '12px' : '14px',
-                          boxSizing: 'border-box'
+                          boxSizing: 'border-box',
+                          backgroundColor: '#f8f9fa',
+                          color: '#666',
+                          cursor: 'not-allowed'
                         }}
-                        required
                       />
                     </div>
 
                     <button 
                       type="submit" 
-                      disabled={isLoading}
+                      disabled={isLoading || !hasFormChanges}
                       style={{
-                        background: '#A11C22',
+                        background: hasFormChanges ? '#A11C22' : '#ccc',
                         color: 'white',
                         border: 'none',
                         padding: window.innerWidth <= 480 ? '10px 20px' : '12px 24px',
                         borderRadius: '6px',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        cursor: (isLoading || !hasFormChanges) ? 'not-allowed' : 'pointer',
                         fontSize: window.innerWidth <= 480 ? '12px' : '14px',
                         fontWeight: '500',
-                        opacity: isLoading ? 0.6 : 1,
+                        opacity: (isLoading || !hasFormChanges) ? 0.6 : 1,
                         width: window.innerWidth <= 480 ? '100%' : 'auto'
                       }}
                     >
-                      {isLoading ? 'Updating...' : 'Update Profile Information'}
+                      {isLoading ? 'Updating...' : 'Update Profile Picture'}
                     </button>
                   </form>
                 </div>

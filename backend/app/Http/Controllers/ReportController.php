@@ -29,7 +29,7 @@ class ReportController extends Controller
             $reportData = $report->data;
             if (isset($reportData['photos']) && !empty($reportData['photos'])) {
                 $report->photo_urls = array_map(function ($path) {
-                    return 'http://localhost:8000/storage/' . $path;
+                    return asset('storage/' . $path);
                 }, $reportData['photos']);
             }
         });
@@ -265,7 +265,7 @@ class ReportController extends Controller
             // Add photo URLs to response
             if (!empty($photoPaths)) {
                 $report->photo_urls = array_map(function ($path) {
-                    return 'http://localhost:8000/storage/' . $path;
+                    return asset('storage/' . $path);
                 }, $photoPaths);
             }
 
@@ -328,7 +328,7 @@ class ReportController extends Controller
         $reportData = $report->data;
         if (isset($reportData['photos']) && !empty($reportData['photos'])) {
             $report->photo_urls = array_map(function ($path) {
-                return 'http://localhost:8000/storage/' . $path;
+                return asset('storage/' . $path);
             }, $reportData['photos']);
         }
 
@@ -626,7 +626,7 @@ class ReportController extends Controller
             // Add photo URLs to response
             if (!empty($photoPaths)) {
                 $report->photo_urls = array_map(function ($path) {
-                    return 'http://localhost:8000/storage/' . $path;
+                    return asset('storage/' . $path);
                 }, $photoPaths);
             }
 
@@ -699,7 +699,7 @@ class ReportController extends Controller
                 $reportData = $report->data;
                 if (isset($reportData['photos']) && !empty($reportData['photos'])) {
                     $report->photo_urls = array_map(function ($path) {
-                        return 'http://localhost:8000/storage/' . $path;
+                        return asset('storage/' . $path);
                     }, $reportData['photos']);
                 }
             });

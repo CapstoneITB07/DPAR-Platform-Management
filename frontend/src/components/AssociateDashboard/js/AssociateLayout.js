@@ -398,7 +398,7 @@ function AssociateLayout({ children }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Profile response:', response.data); // Debug log
+      // Profile response logged for debugging (remove in production)
       
       // Update profile form with current data
       setProfileForm({

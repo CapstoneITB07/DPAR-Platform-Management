@@ -231,7 +231,10 @@ function VolunteerList() {
   };
 
   const handleEdit = (volunteer) => {
-    const [firstName = '', lastName = ''] = volunteer.name.split(' ');
+    const nameParts = volunteer.name.trim().split(' ');
+    const lastName = nameParts[nameParts.length - 1] || ''; // Last word is surname
+    const firstName = nameParts.slice(0, -1).join(' ') || ''; // Everything except last word is given names
+    
     setSelectedVolunteer(volunteer);
     setFormData({
       firstName,

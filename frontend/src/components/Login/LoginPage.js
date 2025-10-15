@@ -428,7 +428,7 @@ function LoginPage() {
 
       // Check for 429 status immediately, as it might not return valid JSON
       if (response.status === 429) {
-        setMessage('Too many login attempts. Please try again after 60 seconds.');
+        setMessage('Too many login attempts.');
         return; // Exit the function early
       }
 
@@ -503,7 +503,7 @@ function LoginPage() {
     } catch (error) {
       // Handle network errors and rate limiting
       if (error.message && error.message.includes('429')) {
-        setMessage('Too many login attempts. Please try again after 60 seconds.');
+        setMessage('Too many login attempts.');
       } else {
         setMessage('Network error. Could not connect to backend.');
       }

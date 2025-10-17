@@ -31,6 +31,7 @@ function Notifications() {
   const [filterType, setFilterType] = useState('none');
   const [filterValue, setFilterValue] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
+  const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState('');
   const [toggleLoading, setToggleLoading] = useState({}); // Track loading state for each toggle
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -348,6 +349,18 @@ function Notifications() {
   // Helper to filter notifications
   const filterNotifications = (notifications) => {
     let filtered = notifications;
+    
+    // Filter by search term
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(n => {
+        const searchLower = searchTerm.toLowerCase();
+        const titleMatch = n.title?.toLowerCase().includes(searchLower);
+        const descriptionMatch = n.description?.toLowerCase().includes(searchLower);
+        return titleMatch || descriptionMatch;
+      });
+    }
+    
+    // Filter by date/month
     if (filterType === 'date' && filterValue) {
       filtered = filtered.filter(n => {
         if (!n.created_at) return false;
@@ -361,6 +374,7 @@ function Notifications() {
         return created.format('YYYY-MM') === filterValue;
       });
     }
+    
     // Sort
     filtered = filtered.slice().sort((a, b) => {
       if (sortOrder === 'asc') {
@@ -394,6 +408,14 @@ function Notifications() {
       <h2 className="main-header" style={{ textAlign: 'left', marginLeft: 24 }}>NOTIFICATIONS</h2>
       {/* Filter Bar */}
       <div className="notification-filter-bar">
+        <input 
+          type="text"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder="Search notifications..."
+          className="notification-filter-input"
+          style={{ minWidth: '250px', marginRight: '8px' }}
+        />
         <span className="notification-filter-label">Filters:</span>
         <select 
           value={filterType} 
@@ -428,9 +450,9 @@ function Notifications() {
           <option value="desc">Created Last</option>
           <option value="asc">Created First</option>
         </select>
-        {(filterValue) && (
+        {(filterValue || searchTerm) && (
           <button 
-            onClick={() => { setFilterValue(''); }} 
+            onClick={() => { setFilterValue(''); setSearchTerm(''); }} 
             className="notification-filter-clear"
           >Clear</button>
         )}

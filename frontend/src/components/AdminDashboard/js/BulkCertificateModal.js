@@ -513,12 +513,14 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
                     padding: '12px 24px',
                     fontSize: '1rem',
                     fontWeight: 700,
-                    cursor: 'pointer',
+                    cursor: downloading ? 'not-allowed' : 'pointer',
+                    opacity: downloading ? 0.7 : 1,
                     boxShadow: '0 2px 8px rgba(183,28,28,0.10)',
                     display: 'flex',
                     alignItems: 'center',
                     width: '100%',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    pointerEvents: downloading ? 'none' : 'auto',
                   }}
                   onClick={handleBulkDownload}
                   disabled={downloading}
@@ -532,7 +534,7 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
                   ) : (
                     <>
                       <i className="fa fa-file-pdf-o" style={{ marginRight: 8, fontSize: 16 }} />
-                      Generate Bulk PDF ({recipients.length} certificates)
+                      Generate PDF ({recipients.length} certificate/s)
                     </>
                   )}
                 </button>

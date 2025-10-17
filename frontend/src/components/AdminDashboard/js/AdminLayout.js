@@ -49,6 +49,7 @@ function AdminLayout({ children }) {
   const ADMIN_NOTIF_RESPONSE_KEY = 'adminNotifResponseViewed';
   const ADMIN_APPLICATIONS_VIEWED_KEY = 'adminApplicationsViewed';
   const [editProfileHover, setEditProfileHover] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen(open => !open);
   const closeSidebar = () => setSidebarOpen(false);
@@ -56,8 +57,13 @@ function AdminLayout({ children }) {
   const isActive = (route) => location.pathname === route;
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate('/');
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -664,8 +670,17 @@ function AdminLayout({ children }) {
             </ul>
           </nav>
           <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
-              <button className="logout-button" onClick={handleLogout}>
-                <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+              <button 
+                className="logout-button" 
+                onClick={handleLogout}
+                disabled={loggingOut}
+                style={{
+                  opacity: loggingOut ? 0.7 : 1,
+                  cursor: loggingOut ? 'not-allowed' : 'pointer',
+                  pointerEvents: loggingOut ? 'none' : 'auto'
+                }}
+              >
+                <FontAwesomeIcon icon={faSignOutAlt} /> {loggingOut ? 'Logging out...' : 'Logout'}
               </button>
           </div>
         </nav>

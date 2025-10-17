@@ -49,6 +49,7 @@ function AssociateLayout({ children }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const userId = Number(localStorage.getItem('userId'));
   const userOrganization = localStorage.getItem('userOrganization');
+  const [loggingOut, setLoggingOut] = useState(false);
   
   // Director change warning states
   const [showDirectorWarning, setShowDirectorWarning] = useState(false);
@@ -84,8 +85,13 @@ function AssociateLayout({ children }) {
   const isActive = (route) => location.pathname === route;
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate('/');
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const fetchNotifications = async () => {
@@ -787,8 +793,17 @@ function AssociateLayout({ children }) {
             </ul>
           </nav>
           <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
-            <button className="logout-button" onClick={handleLogout}>
-              <FontAwesomeIcon icon={faSignOutAlt} /> Logout
+            <button 
+              className="logout-button" 
+              onClick={handleLogout}
+              disabled={loggingOut}
+              style={{
+                opacity: loggingOut ? 0.7 : 1,
+                cursor: loggingOut ? 'not-allowed' : 'pointer',
+                pointerEvents: loggingOut ? 'none' : 'auto'
+              }}
+            >
+              <FontAwesomeIcon icon={faSignOutAlt} /> {loggingOut ? 'Logging out...' : 'Logout'}
             </button>
           </div>
         </nav>

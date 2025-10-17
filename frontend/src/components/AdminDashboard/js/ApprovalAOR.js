@@ -118,6 +118,7 @@ function ApprovalAOR() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [generatingAOR, setGeneratingAOR] = useState({}); // Track loading state for each AOR generation
   
   // Filter states for history modal
   const [historyFilters, setHistoryFilters] = useState({
@@ -303,6 +304,9 @@ function ApprovalAOR() {
   };
 
   const handleGenerateAOR = async (reportId) => {
+    // Set loading state for this specific report
+    setGeneratingAOR(prev => ({ ...prev, [reportId]: true }));
+    
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const response = await axios.get(`${API_BASE}/api/reports/${reportId}/download`, {
@@ -324,6 +328,9 @@ function ApprovalAOR() {
       }, 2000);
     } catch (err) {
       setError('Failed to generate AOR');
+    } finally {
+      // Clear loading state for this report
+      setGeneratingAOR(prev => ({ ...prev, [reportId]: false }));
     }
   };
 
@@ -669,8 +676,32 @@ function ApprovalAOR() {
                       <button 
                         className="generate-btn"
                         onClick={() => handleGenerateAOR(report.id)}
+                        disabled={generatingAOR[report.id]}
+                        style={{
+                          opacity: generatingAOR[report.id] ? 0.7 : 1,
+                          cursor: generatingAOR[report.id] ? 'not-allowed' : 'pointer',
+                          pointerEvents: generatingAOR[report.id] ? 'none' : 'auto'
+                        }}
                       >
-                        <FontAwesomeIcon icon={faDownload} /> Generate AOR
+                        {generatingAOR[report.id] ? (
+                          <>
+                            <span className="generating-spinner" style={{
+                              display: 'inline-block',
+                              width: '14px',
+                              height: '14px',
+                              border: '2px solid #fff',
+                              borderTop: '2px solid transparent',
+                              borderRadius: '50%',
+                              animation: 'spin 1s linear infinite',
+                              marginRight: '8px'
+                            }}></span>
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faDownload} /> Generate AOR
+                          </>
+                        )}
                       </button>
                     </div>
                     ));

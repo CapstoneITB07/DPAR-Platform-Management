@@ -655,10 +655,12 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                     padding: '10px 22px',
                     fontSize: '1rem',
                     fontWeight: 700,
-                    cursor: 'pointer',
+                    cursor: downloading ? 'not-allowed' : 'pointer',
+                    opacity: downloading ? 0.7 : 1,
                     boxShadow: '0 2px 8px rgba(183,28,28,0.10)',
                     display: 'flex',
                     alignItems: 'center',
+                    pointerEvents: downloading ? 'none' : 'auto',
                   }}
                   onClick={handleDownload}
                   disabled={downloading}
@@ -672,7 +674,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                   ) : (
                     <>
                       <i className="fa fa-file-pdf-o" style={{ marginRight: 8, fontSize: 16 }} />
-                      {isBulkMode ? `Generate Bulk PDF (${recipients.length} certificates)` : 'Download PDF'}
+                      {isBulkMode ? `Generate PDF (${recipients.length} certificate/s)` : 'Generate PDF'}
                     </>
                   )}
                 </button>

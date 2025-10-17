@@ -493,7 +493,6 @@ function Announcement() {
             {/* Scrollable content container */}
             <div className="announcement-full-modal-content-scrollable">
               <div className="announcement-full-modal-content-container">
-                <div className="announcement-description-label">Description</div>
                 <div className="announcement-full-modal-description">
                   {descModalContent.description}
                 </div>

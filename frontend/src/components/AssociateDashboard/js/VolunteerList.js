@@ -823,6 +823,11 @@ function VolunteerList() {
               onClick={() => setShowModal(true)}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
+              disabled={isSubmitting}
+              style={{
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting ? 0.6 : 1
+              }}
             >
               <FontAwesomeIcon icon={faUserPlus} />
               Add <span className="add-volunteer-text"> Volunteer</span>
@@ -959,6 +964,11 @@ function VolunteerList() {
                               onTouchStart={handleTouchStart}
                               onTouchEnd={handleTouchEnd}
                               title="Edit"
+                              disabled={isSubmitting}
+                              style={{
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                opacity: isSubmitting ? 0.5 : 1
+                              }}
                             >
                               <FontAwesomeIcon icon={faEdit} />
                             </button>
@@ -968,6 +978,11 @@ function VolunteerList() {
                               onTouchStart={handleTouchStart}
                               onTouchEnd={handleTouchEnd}
                               title="Delete"
+                              disabled={isSubmitting}
+                              style={{
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                                opacity: isSubmitting ? 0.5 : 1
+                              }}
                             >
                               <FontAwesomeIcon icon={faTrash} />
                             </button>
@@ -988,15 +1003,23 @@ function VolunteerList() {
 
         {/* Add/Edit Modal */}
         {showModal && (
-          <div className="volunteer-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="volunteer-modal-overlay" onClick={() => !isSubmitting && setShowModal(false)}>
             <div className="volunteer-modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="volunteer-modal-header">
                 <span>{selectedVolunteer ? 'Edit Volunteer' : 'Add New Volunteer'}</span>
-                <button className="volunteer-modal-close" onClick={() => {
-                  setShowModal(false);
-                  setSelectedVolunteer(null);
-                  resetForm();
-                }}>
+                <button 
+                  className="volunteer-modal-close" 
+                  onClick={() => {
+                    setShowModal(false);
+                    setSelectedVolunteer(null);
+                    resetForm();
+                  }}
+                  disabled={isSubmitting}
+                  style={{
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    opacity: isSubmitting ? 0.6 : 1
+                  }}
+                >
                   &times;
                 </button>
               </div>
@@ -1099,10 +1122,23 @@ function VolunteerList() {
                         setSelectedVolunteer(null);
                         resetForm();
                       }}
+                      disabled={isSubmitting}
+                      style={{
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        opacity: isSubmitting ? 0.6 : 1
+                      }}
                     >
                       Close
                     </button>
-                     <button type="submit" className="volunteer-save-btn" disabled={isSubmitting}>
+                     <button 
+                       type="submit" 
+                       className="volunteer-save-btn" 
+                       disabled={isSubmitting}
+                       style={{
+                         cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                         opacity: isSubmitting ? 0.6 : 1
+                       }}
+                     >
                        {isSubmitting 
                          ? (selectedVolunteer ? 'Updating Volunteer...' : 'Adding Volunteer...')
                          : (selectedVolunteer ? 'Update Volunteer' : 'Add Volunteer')

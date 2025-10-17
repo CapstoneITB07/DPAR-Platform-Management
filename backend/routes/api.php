@@ -34,7 +34,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/check-organization-name', [AuthController::class, 'checkOrganizationName']);
 Route::post('/check-director-name', [AuthController::class, 'checkDirectorName']);
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,10');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,10');
 Route::post('/login/recovery', [AuthController::class, 'loginWithRecoveryPasscode'])->middleware('throttle:5,1');
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');
 
@@ -95,6 +95,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/evaluations/summaries', [EvaluationController::class, 'summaries']);
     Route::apiResource('/evaluations', EvaluationController::class);
     Route::get('/dashboard/performance-analysis-pdf', [App\Http\Controllers\DashboardAnalysisController::class, 'generatePerformanceAnalysisPDF']);
+    Route::get('/dashboard/individual-performance-analysis-pdf/{userId}', [App\Http\Controllers\DashboardAnalysisController::class, 'generateIndividualPerformanceAnalysisPDF']);
     Route::apiResource('/associate-groups', AssociateGroupController::class);
     Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');
     Route::delete('/associate-groups/{id}/password', [AssociateGroupController::class, 'clearTempPassword'])->middleware('role:head_admin');

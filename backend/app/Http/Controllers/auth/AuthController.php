@@ -280,6 +280,9 @@ class AuthController extends Controller
                 ], 200);
             }
 
+            // Revoke all existing tokens for this user (industry standard for security)
+            $user->tokens()->delete();
+
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
@@ -415,6 +418,9 @@ class AuthController extends Controller
 
             // Don't remove the recovery passcode yet - it will be consumed when the password is changed
             // This allows the user to use the same passcode in the change password modal
+
+            // Revoke all existing tokens for this user (industry standard for security)
+            $user->tokens()->delete();
 
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
@@ -616,6 +622,9 @@ class AuthController extends Controller
             // Clear attempt counter on successful verification
             cache()->forget($attemptKey);
             cache()->forget($lockoutKey ?? 'otp_lockout_' . $user->id);
+
+            // Revoke all existing tokens for this user (industry standard for security)
+            $user->tokens()->delete();
 
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;

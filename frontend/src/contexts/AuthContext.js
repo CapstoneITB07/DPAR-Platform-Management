@@ -66,8 +66,19 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setToken(null);
       } else if (e.key === 'authToken' && e.newValue && e.oldValue === null) {
-        // New token was set in another tab, reload to get the new auth state
-        window.location.reload();
+        // New token was set in another tab, update local state without reload
+        setToken(e.newValue);
+        // Update user data from localStorage
+        const storedRole = localStorage.getItem('userRole');
+        const storedUserId = localStorage.getItem('userId');
+        const storedOrganization = localStorage.getItem('userOrganization');
+        if (storedRole && storedUserId) {
+          setUser({
+            id: storedUserId,
+            role: storedRole,
+            organization: storedOrganization
+          });
+        }
       }
     };
 
@@ -166,9 +177,15 @@ export const AuthProvider = ({ children }) => {
       
       // Handle 401 Unauthorized responses
       if (response.status === 401) {
-        console.log('Received 401, token may be expired, logging out...');
+        console.log('Received 401, token may be expired or revoked, logging out...');
         await logout();
-        throw new Error('Session expired. Please login again.');
+        throw new Error('Session expired or revoked. Please login again.');
+      }
+      
+      // Handle 429 Too Many Requests (rate limiting)
+      if (response.status === 429) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Too many requests. Please try again later.');
       }
       
       return response;

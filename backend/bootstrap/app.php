@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class, // Add this line
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'throttle.login' => \App\Http\Middleware\ThrottleLoginAttempts::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

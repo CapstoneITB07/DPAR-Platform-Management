@@ -1242,10 +1242,13 @@
 /* Associate Selector Styles */
 .associate-selector {
   margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .associate-select {
-  width: 100%;
+  flex: 1;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -3308,6 +3311,43 @@
   font-size: 16px;
 }
 
+.generate-individual-pdf-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+.generate-individual-pdf-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(5, 150, 105, 0.4);
+}
+
+.generate-individual-pdf-btn:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.generate-individual-pdf-btn svg {
+  font-size: 14px;
+}
+
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
@@ -3336,6 +3376,25 @@
     justify-content: center;
     padding: 15px 20px;
     font-size: 13px;
+  }
+  
+  .generate-individual-pdf-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 12px;
+    margin-left: 0;
+    margin-top: 8px;
+  }
+  
+  .associate-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .associate-select {
+    width: 100%;
   }
 }
 

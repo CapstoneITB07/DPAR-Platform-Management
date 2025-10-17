@@ -39,4 +39,31 @@ class DashboardAnalysisController extends Controller
             ], 500);
         }
     }
+
+    public function generateIndividualPerformanceAnalysisPDF(Request $request, $userId)
+    {
+        try {
+            Log::info('Generating individual performance analysis PDF for user: ' . $userId);
+
+            $pdfContent = $this->dashboardAnalysisService->generateIndividualPerformanceAnalysisPDF($userId);
+
+            // Get user name for filename
+            $user = \App\Models\User::find($userId);
+            $userName = $user ? str_replace(' ', '_', $user->name) : 'Unknown_User';
+
+            $filename = 'DPAR_Individual_Performance_' . $userName . '_' . date('Y-m-d_H-i-s') . '.pdf';
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Content-Length', strlen($pdfContent));
+        } catch (\Exception $e) {
+            Log::error('Error generating individual performance analysis PDF: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'error' => 'Failed to generate individual performance analysis PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

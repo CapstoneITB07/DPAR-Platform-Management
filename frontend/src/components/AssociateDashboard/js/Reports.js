@@ -116,9 +116,9 @@ function Reports() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
-    forName: '',
-    forPosition: '',
-    date: '',
+    forName: 'Aux. Lt. Michael G. Caparas',
+    forPosition: 'DPARVC Founder',
+    date: new Date().toISOString().split('T')[0],
     subject: '',
     authorities: [''],
     dateTime: '',
@@ -141,8 +141,8 @@ function Reports() {
     preparedBy: '',
     preparedByPosition: '',
     preparedBySignature: null,
-    approvedBy: '',
-    approvedByPosition: ''
+    approvedBy: 'Aux. Lt. Michael G. Caparas',
+    approvedByPosition: 'DPARVC Founder'
   });
 
   const [completedSteps, setCompletedSteps] = useState(new Set());
@@ -174,13 +174,21 @@ function Reports() {
     'Signatories'
   ];
 
+  const formatDateDisplay = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString + 'T00:00:00'); // Add time to avoid timezone issues
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return `${month}. ${day}, ${year}`;
+  };
+
   const isStepComplete = useCallback((stepIndex) => {
     switch (stepIndex) {
       case 0: // Heading
-        return !!formData.forName?.trim() && 
-               !!formData.forPosition?.trim() && 
-               !!formData.date?.trim() && 
-               !!formData.subject?.trim();
+        // forName, forPosition, and date are now static/auto-filled, so only check subject
+        return !!formData.subject?.trim();
       case 1: // Event Details
         return (formData.authorities && formData.authorities.some(auth => auth?.trim())) && 
                !!formData.place?.trim();
@@ -405,12 +413,12 @@ function Reports() {
     setEditingReport(null);
     setExistingPhotoPaths([]);
     setFormData({
-      forName: '', forPosition: '', date: '', subject: '',
+      forName: 'Aux. Lt. Michael G. Caparas', forPosition: 'DPARVC Founder', date: new Date().toISOString().split('T')[0], subject: '',
       authorities: [''], dateTime: '', place: '', personnelInvolved: [''],
       eventName: '', eventLocation: '', eventDate: '', startTime: '', endTime: '', organizers: [''],
       eventOverview: '', participants: [{name: '', position: ''}], trainingAgenda: '', keyOutcomes: [''], challenges: [''], recommendations: [''], conclusion: '',
       photos: [],
-      preparedBy: '', preparedByPosition: '', preparedBySignature: null, approvedBy: '', approvedByPosition: ''
+      preparedBy: '', preparedByPosition: '', preparedBySignature: null, approvedBy: 'Aux. Lt. Michael G. Caparas', approvedByPosition: 'DPARVC Founder'
     });
     setCurrentStep(0);
     setCompletedSteps(new Set());
@@ -866,9 +874,9 @@ function Reports() {
     console.log('report.title:', report.title);
 
     setFormData({
-      forName: reportData.for || report.forName || '',
-      forPosition: reportData.forPosition || report.forPosition || '',
-      date: reportData.date || report.date || '',
+      forName: 'Aux. Lt. Michael G. Caparas',
+      forPosition: 'DPARVC Founder',
+      date: reportData.date || report.date || new Date().toISOString().split('T')[0],
       subject: subjectValue,
       authorities: reportData.authorities || (report.authorities ? report.authorities.split(',') : ['']),
       dateTime: reportData.dateTime || report.dateTime || '',
@@ -891,8 +899,8 @@ function Reports() {
       preparedBy: reportData.preparedBy || report.preparedBy || '',
       preparedByPosition: reportData.preparedByPosition || report.preparedByPosition || '',
       preparedBySignature: reportData.preparedBySignature || report.preparedBySignature || null,
-      approvedBy: reportData.approvedBy || report.approvedBy || '',
-      approvedByPosition: reportData.approvedByPosition || report.approvedByPosition || ''
+      approvedBy: 'Aux. Lt. Michael G. Caparas',
+      approvedByPosition: 'DPARVC Founder'
     });
     setCurrentStep(0);
     setCompletedSteps(new Set());
@@ -904,9 +912,9 @@ function Reports() {
     setEditingReport(null);
     setExistingPhotoPaths([]);
     setFormData({
-      forName: '', 
-      forPosition: '', 
-      date: '', 
+      forName: 'Aux. Lt. Michael G. Caparas', 
+      forPosition: 'DPARVC Founder', 
+      date: new Date().toISOString().split('T')[0], 
       subject: '', 
       authorities: [''], 
       dateTime: '', 
@@ -929,8 +937,8 @@ function Reports() {
       preparedBy: '',
       preparedByPosition: '',
       preparedBySignature: null,
-      approvedBy: '',
-      approvedByPosition: ''
+      approvedBy: 'Aux. Lt. Michael G. Caparas',
+      approvedByPosition: 'DPARVC Founder'
     });
   };
 
@@ -1348,6 +1356,11 @@ function Reports() {
                                     handleSubmit(true, report);
                                   }}
                                   title="Send"
+                                  disabled={submitting || drafting}
+                                  style={{
+                                    cursor: (submitting || drafting) ? 'not-allowed' : 'pointer',
+                                    opacity: (submitting || drafting) ? 0.5 : 1
+                                  }}
                                 >
                                   <FontAwesomeIcon icon={faPaperPlane} />
                                 </button>
@@ -1440,28 +1453,26 @@ function Reports() {
                           }}>
                           <input 
                             type="text" 
-                            value={formData.forName} 
-                            onChange={e => handleInputChange(e, 'forName')} 
-                              onFocus={() => handleFieldFocus('forName')}
-                              onBlur={() => handleFieldBlur('forName')}
-                            placeholder="Recipient Name" 
+                            value="Aux. Lt. Michael G. Caparas"
+                            readOnly
                             style={{
-                                flex: 2,
-                                minWidth: 0,
-                                borderColor: shouldShowValidationError('forName', null, formData.forName) ? '#ef4444' : '#e2e8f0'
+                              flex: 2,
+                              minWidth: 0,
+                              backgroundColor: '#f8fafc',
+                              cursor: 'not-allowed',
+                              color: '#000000'
                             }}
                           />
                           <input 
                             type="text" 
-                            value={formData.forPosition} 
-                            onChange={e => handleInputChange(e, 'forPosition')} 
-                              onFocus={() => handleFieldFocus('forPosition')}
-                              onBlur={() => handleFieldBlur('forPosition')}
-                            placeholder="Position" 
+                            value="DPARVC Founder"
+                            readOnly
                             style={{
-                                flex: 1,
-                                minWidth: 0,
-                                borderColor: shouldShowValidationError('forPosition', null, formData.forPosition) ? '#ef4444' : '#e2e8f0'
+                              flex: 1,
+                              minWidth: 0,
+                              backgroundColor: '#f8fafc',
+                              cursor: 'not-allowed',
+                              color: '#000000'
                             }}
                           />
                         </div>
@@ -1471,13 +1482,13 @@ function Reports() {
                         <div className="report-form-group" style={{gridColumn: '1 / span 1'}}>
                           <label>Report Created: <span style={{color: '#ef4444'}}>*</span></label>
                           <input 
-                            type="date" 
-                            value={formData.date} 
-                            onChange={e => handleInputChange(e, 'date')} 
-                            onFocus={() => handleFieldFocus('date')}
-                            onBlur={() => handleFieldBlur('date')}
+                            type="text" 
+                            value={formatDateDisplay(formData.date || new Date().toISOString().split('T')[0])}
+                            readOnly
                             style={{
-                              borderColor: shouldShowValidationError('date', null, formData.date) ? '#ef4444' : '#e2e8f0'
+                              backgroundColor: '#f8fafc',
+                              cursor: 'not-allowed',
+                              color: '#000000'
                             }}
                           />
                         </div>
@@ -2098,30 +2109,28 @@ function Reports() {
                           }}>
                           <input 
                             type="text" 
-                            value={formData.approvedBy} 
-                            onChange={e => handleInputChange(e, 'approvedBy')} 
-                              onFocus={() => handleFieldFocus('approvedBy')}
-                              onBlur={() => handleFieldBlur('approvedBy')}
-                            placeholder="Name of person who approved the report" 
+                            value="Aux. Lt. Michael G. Caparas"
+                            readOnly
                             style={{
-                                flex: 1,
-                                minWidth: 0,
-                                borderColor: shouldShowValidationError('approvedBy', null, formData.approvedBy) ? '#ef4444' : '#e2e8f0'
-                              }}
-                            />
-                            <input 
-                              type="text" 
-                              value={formData.approvedByPosition} 
-                              onChange={e => handleInputChange(e, 'approvedByPosition')} 
-                              onFocus={() => handleFieldFocus('approvedByPosition')}
-                              onBlur={() => handleFieldBlur('approvedByPosition')}
-                              placeholder="Position" 
-                              style={{
-                                flex: 1,
-                                minWidth: 0,
-                                borderColor: shouldShowValidationError('approvedByPosition', null, formData.approvedByPosition) ? '#ef4444' : '#e2e8f0'
-                              }}
-                            />
+                              flex: 1,
+                              minWidth: 0,
+                              backgroundColor: '#f8fafc',
+                              cursor: 'not-allowed',
+                              color: '#000000'
+                            }}
+                          />
+                          <input 
+                            type="text" 
+                            value="DPARVC Founder"
+                            readOnly
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              backgroundColor: '#f8fafc',
+                              cursor: 'not-allowed',
+                              color: '#000000'
+                            }}
+                          />
                           </div>
                         </div>
                       </div>
@@ -2136,6 +2145,10 @@ function Reports() {
                           type="button"
                           onClick={() => handleSubmit(false)}
                           disabled={drafting || submitting}
+                          style={{
+                            cursor: (drafting || submitting) ? 'not-allowed' : 'pointer',
+                            opacity: (drafting || submitting) ? 0.6 : 1
+                          }}
                         >
                           <FontAwesomeIcon icon={faSave} />
                           {drafting ? 'Drafting...' : 'Save as Draft'}
@@ -2155,7 +2168,15 @@ function Reports() {
                         </button>
                       )}
                       {currentStep === steps.length - 1 && (
-                        <button className="report-modal-submit-btn" type="submit" disabled={submitting || drafting}>
+                        <button 
+                          className="report-modal-submit-btn" 
+                          type="submit" 
+                          disabled={submitting || drafting}
+                          style={{
+                            cursor: (submitting || drafting) ? 'not-allowed' : 'pointer',
+                            opacity: (submitting || drafting) ? 0.6 : 1
+                          }}
+                        >
                           {submitting ? 'Submitting...' : 'Submit'}
                         </button>
                       )}

@@ -15,6 +15,18 @@ function Notification({ message, onClose }) {
   );
 }
 
+// Format date to "Mon. XX, XXXX" format
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  } catch (error) {
+    return dateString;
+  }
+};
+
 function TrainingProgram() {
   const [programs, setPrograms] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -422,7 +434,18 @@ function TrainingProgram() {
 
               <div className="training-modal-actions">
                 <button type="button" onClick={closeModal} className="training-cancel-btn">Cancel</button>
-                <button type="submit" disabled={loading} className="training-submit-btn">{loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}</button>
+                <button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="training-submit-btn"
+                  style={{
+                    opacity: loading ? 0.7 : 1,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    pointerEvents: loading ? 'none' : 'auto'
+                  }}
+                >
+                  {loading ? (editId ? 'Saving...' : 'Adding...') : (editId ? 'Save' : 'Add')}
+                </button>
               </div>
             </form>
           </div>
@@ -544,7 +567,7 @@ function TrainingProgram() {
               <h2>{descModalContent.title}</h2>
               <div className="announcement-full-modal-timestamp">
                 <span className="announcement-posted-text">
-                  {descModalContent.date && `Date: ${descModalContent.date}`}
+                  {descModalContent.date && `Date: ${formatDate(descModalContent.date)}`}
                   {descModalContent.location && ` | Location: ${descModalContent.location}`}
                 </span>
               </div>
@@ -559,7 +582,6 @@ function TrainingProgram() {
             {/* Scrollable content container */}
             <div className="announcement-full-modal-content-scrollable">
               <div className="announcement-full-modal-content-container">
-                <div className="announcement-description-label">Description</div>
                 <div className="announcement-full-modal-description">
                   {descModalContent.description}
                 </div>

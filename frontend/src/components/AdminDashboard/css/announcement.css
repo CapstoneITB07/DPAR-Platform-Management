@@ -671,7 +671,6 @@
   overflow-wrap: break-word;
   white-space: pre-line; /* Preserve line breaks and spaces */
   text-align: justify; /* Justified text in modal */
-  text-indent: 2em; /* Indent first line of each paragraph */
   max-width: 100%;
   background: #fff;
 }

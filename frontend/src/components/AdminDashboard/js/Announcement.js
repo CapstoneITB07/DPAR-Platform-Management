@@ -362,7 +362,18 @@ function Announcement() {
               </div>
               <div className="announcement-modal-actions">
                 <button type="button" onClick={clearForm} className="announcement-cancel-btn">Cancel</button>
-                <button type="submit" disabled={loading} className="announcement-submit-btn">{loading ? (editId ? 'Saving...' : 'Posting...') : (editId ? 'Save' : 'Post')}</button>
+                <button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="announcement-submit-btn"
+                  style={{
+                    opacity: loading ? 0.7 : 1,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    pointerEvents: loading ? 'none' : 'auto'
+                  }}
+                >
+                  {loading ? (editId ? 'Saving...' : 'Posting...') : (editId ? 'Save' : 'Post')}
+                </button>
               </div>
             </form>
           </div>

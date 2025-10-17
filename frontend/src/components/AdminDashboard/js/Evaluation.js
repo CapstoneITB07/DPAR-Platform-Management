@@ -86,6 +86,7 @@ function Evaluation() {
   const [searchTerm, setSearchTerm] = useState('');
   const [evaluationData, setEvaluationData] = useState({});
   const [notification, setNotification] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchAssociates();
@@ -209,6 +210,7 @@ function Evaluation() {
       return;
     }
 
+    setSubmitting(true);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/evaluations`, {
@@ -232,6 +234,8 @@ function Evaluation() {
       } else {
         setError('Failed to submit evaluation');
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -420,12 +424,17 @@ function Evaluation() {
                     Cancel
                   </button>
                   <button
-                    className={`submit-btn ${validateEvaluation().length > 0 ? 'disabled' : ''}`}
+                    className={`submit-btn ${validateEvaluation().length > 0 || submitting ? 'disabled' : ''}`}
                     onClick={handleSubmitEvaluation}
-                    disabled={validateEvaluation().length > 0}
+                    disabled={validateEvaluation().length > 0 || submitting}
+                    style={{
+                      opacity: submitting ? 0.7 : 1,
+                      cursor: (validateEvaluation().length > 0 || submitting) ? 'not-allowed' : 'pointer',
+                      pointerEvents: submitting ? 'none' : 'auto'
+                    }}
                   >
                     <FontAwesomeIcon icon={faSave} /> 
-                    {validateEvaluation().length > 0 ? 'Complete All Criteria' : 'Submit Evaluation'}
+                    {submitting ? 'Submitting...' : (validateEvaluation().length > 0 ? 'Complete All Criteria' : 'Submit Evaluation')}
                   </button>
                 </div>
               </div>

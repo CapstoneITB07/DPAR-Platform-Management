@@ -118,12 +118,78 @@ function ApprovalAOR() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  
+  // Filter states for history modal
+  const [historyFilters, setHistoryFilters] = useState({
+    organization: '',
+    searchTerm: '',
+    dateFrom: '',
+    dateTo: ''
+  });
 
   // Create a wrapper for setNotification to add debugging
   const setNotificationWithDebug = (message, type = 'success') => {
     console.log(`Setting notification: "${message}" with type: "${type}"`);
     setNotification(message);
     setNotificationType(type);
+  };
+
+  // Filter functions for history modal
+  const handleFilterChange = (filterType, value) => {
+    setHistoryFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setHistoryFilters({
+      organization: '',
+      searchTerm: '',
+      dateFrom: '',
+      dateTo: ''
+    });
+  };
+
+  const getFilteredReports = () => {
+    let filtered = allReports.filter(report => report.status === 'approved');
+
+    // Filter by organization
+    if (historyFilters.organization) {
+      filtered = filtered.filter(report => 
+        report.user?.organization?.toLowerCase().includes(historyFilters.organization.toLowerCase())
+      );
+    }
+
+    // Filter by search term (title)
+    if (historyFilters.searchTerm) {
+      filtered = filtered.filter(report => 
+        report.title?.toLowerCase().includes(historyFilters.searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by date range
+    if (historyFilters.dateFrom) {
+      filtered = filtered.filter(report => 
+        new Date(report.created_at) >= new Date(historyFilters.dateFrom)
+      );
+    }
+
+    if (historyFilters.dateTo) {
+      filtered = filtered.filter(report => 
+        new Date(report.created_at) <= new Date(historyFilters.dateTo)
+      );
+    }
+
+    return filtered;
+  };
+
+  // Get unique organizations for filter dropdown
+  const getUniqueOrganizations = () => {
+    const organizations = allReports
+      .filter(report => report.status === 'approved' && report.user?.organization)
+      .map(report => report.user.organization);
+    return [...new Set(organizations)].sort();
   };
 
   useEffect(() => {
@@ -513,13 +579,78 @@ function ApprovalAOR() {
                 </button>
               </div>
               <div className="modal-body">
+                {/* Filter Section */}
+                <div className="history-filters">
+                  <div className="filter-row">
+                    <div className="filter-group">
+                      <label htmlFor="organization-filter">Organization:</label>
+                      <select
+                        id="organization-filter"
+                        value={historyFilters.organization}
+                        onChange={(e) => handleFilterChange('organization', e.target.value)}
+                        className="filter-select"
+                      >
+                        <option value="">All Organizations</option>
+                        {getUniqueOrganizations().map(org => (
+                          <option key={org} value={org}>{org}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                      <label htmlFor="search-filter">Search:</label>
+                      <input
+                        id="search-filter"
+                        type="text"
+                        placeholder="Search by title..."
+                        value={historyFilters.searchTerm}
+                        onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="filter-row">
+                    <div className="filter-group">
+                      <label htmlFor="date-from">From Date:</label>
+                      <input
+                        id="date-from"
+                        type="date"
+                        value={historyFilters.dateFrom}
+                        onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                    
+                    <div className="filter-group">
+                      <label htmlFor="date-to">To Date:</label>
+                      <input
+                        id="date-to"
+                        type="date"
+                        value={historyFilters.dateTo}
+                        onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                    
+                    <div className="filter-group">
+                      <button 
+                        onClick={clearFilters}
+                        className="clear-filters-btn"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="history-list">
                   {(() => {
-                    const approvedReports = allReports.filter(report => report.status === 'approved');
-                    console.log('Approved reports in history:', approvedReports.length);
-                    console.log('Approved reports:', approvedReports);
+                    const filteredReports = getFilteredReports();
+                    console.log('Filtered reports in history:', filteredReports.length);
+                    console.log('Filtered reports:', filteredReports);
                     
-                    return approvedReports.map(report => (
+                    return filteredReports.map(report => (
                     <div key={report.id} className="history-item">
                       <img 
                         src={getOrganizationLogo(report)}
@@ -544,10 +675,10 @@ function ApprovalAOR() {
                     </div>
                     ));
                   })()}
-                  {allReports.filter(report => report.status === 'approved').length === 0 && (
+                  {getFilteredReports().length === 0 && (
                     <div className="no-approved-reports">
-                      <p>No approved reports found.</p>
-                      <p>Reports will appear here after they are approved.</p>
+                      <p>No reports found matching your filters.</p>
+                      <p>Try adjusting your search criteria or clear filters to see all approved reports.</p>
                     </div>
                   )}
                 </div>

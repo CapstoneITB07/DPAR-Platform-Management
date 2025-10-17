@@ -605,8 +605,26 @@
 
   .org-label {
     font-size: 1rem;
-    padding: 0.3rem 0.6rem;
-    margin-bottom: 0.6rem;
+  }
+
+  /* Filter responsive styles */
+  .history-filters {
+    padding: 15px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-group {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .clear-filters-btn {
+    align-self: stretch;
+    width: 100%;
   }
 
   .modal-content {
@@ -1002,6 +1020,76 @@
 
 .delete-selected-btn:hover {
   background: #c82333;
+}
+
+/* History Filters */
+.history-filters {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.filter-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  flex: 1;
+}
+
+.filter-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 5px;
+}
+
+.filter-select,
+.filter-input {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  outline: none;
+  border-color: #A11C22;
+  box-shadow: 0 0 0 2px rgba(161, 28, 34, 0.1);
+}
+
+.clear-filters-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-end;
+  height: fit-content;
+}
+
+.clear-filters-btn:hover {
+  background: #5a6268;
 }
 
 .history-list {

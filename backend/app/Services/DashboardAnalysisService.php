@@ -40,10 +40,41 @@ class DashboardAnalysisService
         return $dompdf->output();
     }
 
+    public function generateIndividualPerformanceAnalysisPDF($userId)
+    {
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isPhpEnabled', true);
+        $options->set('defaultFont', 'Arial');
+        $options->set('isFontSubsettingEnabled', true);
+        $options->set('defaultMediaType', 'print');
+        $options->set('defaultPaperSize', 'A4');
+        $options->set('defaultPaperOrientation', 'portrait');
+        $options->set('isRemoteEnabled', true);
+        $options->set('chroot', base_path());
+
+        $dompdf = new Dompdf($options);
+
+        // Gather individual performance data
+        $individualData = $this->gatherIndividualDashboardData($userId);
+
+        // Generate HTML content
+        $html = $this->generateIndividualAnalysisHTML($individualData);
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
+    }
+
     private function gatherDashboardData()
     {
-        // Get all evaluations with user data
-        $evaluations = Evaluation::with(['user:id,name,organization'])
+        // Get evaluations ONLY for associate group leaders (associates)
+        $evaluations = Evaluation::with(['user:id,name,organization,role'])
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'associate_group_leader');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -51,16 +82,16 @@ class DashboardAnalysisService
         $associateGroups = AssociateGroup::with(['user:id,name,organization'])
             ->get();
 
-        // Get all users
-        $users = User::all();
-        
+        // Get only associate group leaders (associates)
+        $associateUsers = User::where('role', 'associate_group_leader')->get();
+
         // Handle case where there's no data
         if ($evaluations->isEmpty() && $associateGroups->isEmpty()) {
             return [
                 'overall_stats' => [
                     'total_evaluations' => 0,
                     'total_associates' => 0,
-                    'total_members' => $users->count(),
+                    'total_members' => $associateUsers->count(),
                     'average_score' => 0,
                     'report_date' => Carbon::now()->format('Y-m-d H:i:s')
                 ],
@@ -87,7 +118,7 @@ class DashboardAnalysisService
         // Calculate overall statistics
         $totalEvaluations = $evaluations->count();
         $totalAssociates = $associateGroups->count();
-        $totalMembers = $users->count();
+        $totalMembers = $associateUsers->count();
 
         // Calculate average performance
         $averageScore = $evaluations->avg('total_score') ?? 0;
@@ -327,14 +358,14 @@ class DashboardAnalysisService
 
         // Analyze performance distribution
         $totalEvaluations = array_sum($performanceDistribution);
-        
+
         // Check for division by zero
         if ($totalEvaluations == 0) {
             $recommendations[] = "No evaluation data available. Begin conducting evaluations to generate meaningful performance insights.";
             $recommendations[] = "Establish evaluation protocols and begin systematic assessment of associate group performance.";
             return $recommendations;
         }
-        
+
         $excellentPercentage = ($performanceDistribution['excellent'] / $totalEvaluations) * 100;
         $poorPercentage = ($performanceDistribution['poor'] / $totalEvaluations) * 100;
 
@@ -434,6 +465,269 @@ class DashboardAnalysisService
         }
 
         return $insights;
+    }
+
+    private function gatherIndividualDashboardData($userId)
+    {
+        // Get user information
+        $user = User::where('id', $userId)
+            ->where('role', 'associate_group_leader')
+            ->first();
+
+        if (!$user) {
+            throw new \Exception('User not found or not an associate group leader');
+        }
+
+        // Get all evaluations for this specific user
+        $evaluations = Evaluation::with(['user:id,name,organization,role'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get associate group information
+        $associateGroup = AssociateGroup::where('user_id', $userId)->first();
+
+
+        // Handle case where there's no evaluation data
+        if ($evaluations->isEmpty()) {
+            return [
+                'user_info' => [
+                    'id' => $user->id,
+                    'name' => $associateGroup ? $associateGroup->director : $user->name,
+                    'organization' => $associateGroup ? $associateGroup->name : $user->organization,
+                    'email' => $associateGroup ? $associateGroup->email : $user->email,
+                    'phone' => $associateGroup ? ($associateGroup->phone ?? 'Not provided') : ($user->phone ?? 'Not provided'),
+                    'date_joined' => $associateGroup ? $associateGroup->created_at->format('Y-m-d') : 'Unknown',
+                    'group_type' => $associateGroup ? $associateGroup->type : 'Not specified',
+                    'group_description' => $associateGroup ? (html_entity_decode($associateGroup->description ?: 'No description provided', ENT_QUOTES, 'UTF-8')) : 'No description available'
+                ],
+                'overall_stats' => [
+                    'total_evaluations' => 0,
+                    'average_score' => 0,
+                    'latest_score' => 0,
+                    'performance_level' => 'No Data',
+                    'report_date' => Carbon::now()->format('Y-m-d H:i:s')
+                ],
+                'performance_insights' => [
+                    'overall_performance' => 'No evaluation data available for this associate. The system is ready to begin tracking performance once evaluations are conducted.',
+                    'trend_analysis' => 'No performance data to analyze. Begin conducting evaluations to generate meaningful insights.',
+                    'strengths' => 'No data available for strengths analysis.',
+                    'improvement_areas' => 'No data available for improvement analysis.',
+                    'recommendations' => 'No evaluation data available. Begin conducting evaluations to generate meaningful performance insights.'
+                ],
+                'quarterly_trends' => [],
+                'performance_distribution' => ['excellent' => 0, 'good' => 0, 'fair' => 0, 'poor' => 0],
+                'category_analysis' => [],
+                'evaluation_history' => [],
+                'performance_timeline' => []
+            ];
+        }
+
+        // Calculate overall statistics
+        $totalEvaluations = $evaluations->count();
+        $averageScore = $evaluations->avg('total_score') ?? 0;
+        $latestScore = $evaluations->first()->total_score;
+        $performanceLevel = $this->getPerformanceLevel($latestScore);
+
+        // Calculate performance trends (last 4 quarters)
+        $quarterlyData = $this->calculateIndividualQuarterlyTrends($evaluations);
+
+        // Calculate performance distribution
+        $performanceDistribution = $this->calculatePerformanceDistribution($evaluations);
+
+        // Calculate category performance
+        $categoryAnalysis = $this->analyzeCategoryPerformance($evaluations);
+
+        // Generate individual performance insights
+        $performanceInsights = $this->calculateIndividualPerformanceInsights($evaluations, $averageScore, $performanceDistribution);
+
+        // Get evaluation history
+        $evaluationHistory = $this->getEvaluationHistory($evaluations);
+
+        // Get performance timeline
+        $performanceTimeline = $this->getPerformanceTimeline($evaluations);
+
+        return [
+            'user_info' => [
+                'id' => $user->id,
+                'name' => $associateGroup ? $associateGroup->director : $user->name,
+                'organization' => $associateGroup ? $associateGroup->name : $user->organization,
+                'email' => $associateGroup ? $associateGroup->email : $user->email,
+                'phone' => $associateGroup ? ($associateGroup->phone ?? 'Not provided') : ($user->phone ?? 'Not provided'),
+                'date_joined' => $associateGroup ? $associateGroup->created_at->format('Y-m-d') : 'Unknown',
+                'group_type' => $associateGroup ? $associateGroup->type : 'Not specified',
+                'group_description' => $associateGroup ? (html_entity_decode($associateGroup->description ?: 'No description provided', ENT_QUOTES, 'UTF-8')) : 'No description available'
+            ],
+            'overall_stats' => [
+                'total_evaluations' => $totalEvaluations,
+                'average_score' => round($averageScore, 2),
+                'latest_score' => $latestScore,
+                'performance_level' => $performanceLevel,
+                'report_date' => Carbon::now()->format('Y-m-d H:i:s')
+            ],
+            'performance_insights' => $performanceInsights,
+            'quarterly_trends' => $quarterlyData,
+            'performance_distribution' => $performanceDistribution,
+            'category_analysis' => $categoryAnalysis,
+            'evaluation_history' => $evaluationHistory,
+            'performance_timeline' => $performanceTimeline
+        ];
+    }
+
+    private function calculateIndividualQuarterlyTrends($evaluations)
+    {
+        $quarters = [];
+        $currentYear = Carbon::now()->year;
+
+        for ($i = 3; $i >= 0; $i--) {
+            $quarterStart = Carbon::create($currentYear, ($i * 3) + 1, 1);
+            $quarterEnd = $quarterStart->copy()->addMonths(2)->endOfMonth();
+
+            $quarterEvaluations = $evaluations->filter(function ($evaluation) use ($quarterStart, $quarterEnd) {
+                $evalDate = Carbon::parse($evaluation->created_at);
+                return $evalDate->between($quarterStart, $quarterEnd);
+            });
+
+            $quarters[] = [
+                'quarter' => 'Q' . ($i + 1),
+                'average_score' => $quarterEvaluations->avg('total_score') ?? 0,
+                'total_evaluations' => $quarterEvaluations->count(),
+                'period' => $quarterStart->format('M Y') . ' - ' . $quarterEnd->format('M Y')
+            ];
+        }
+
+        return array_reverse($quarters);
+    }
+
+    private function calculateIndividualPerformanceInsights($evaluations, $averageScore, $performanceDistribution)
+    {
+        $totalEvals = $evaluations->count();
+        $excellentCount = $performanceDistribution['excellent'];
+        $goodCount = $performanceDistribution['good'];
+        $fairCount = $performanceDistribution['fair'];
+        $poorCount = $performanceDistribution['poor'];
+
+        // Calculate percentages with zero division protection
+        $excellentPercentage = $totalEvals > 0 ? round(($excellentCount / $totalEvals) * 100, 1) : 0;
+        $goodPercentage = $totalEvals > 0 ? round(($goodCount / $totalEvals) * 100, 1) : 0;
+        $fairPercentage = $totalEvals > 0 ? round(($fairCount / $totalEvals) * 100, 1) : 0;
+        $poorPercentage = $totalEvals > 0 ? round(($poorCount / $totalEvals) * 100, 1) : 0;
+
+        $insights = [];
+
+        // Overall performance analysis
+        if ($averageScore >= 3.5) {
+            $insights['overall_performance'] = 'This associate demonstrates exceptional performance with an average score of ' . $averageScore . '/4.0. The consistent high performance indicates outstanding commitment to disaster preparedness activities and serves as an exemplary model for other groups in the network.';
+        } elseif ($averageScore >= 3.0) {
+            $insights['overall_performance'] = 'This associate shows strong performance with an average score of ' . $averageScore . '/4.0. The results indicate effective engagement in disaster preparedness initiatives with consistent delivery of quality outcomes.';
+        } elseif ($averageScore >= 2.5) {
+            $insights['overall_performance'] = 'This associate demonstrates moderate performance with an average score of ' . $averageScore . '/4.0. While there is room for improvement, the results show active participation in disaster preparedness activities with potential for growth and development.';
+        } else {
+            $insights['overall_performance'] = 'This associate shows performance below expectations with an average score of ' . $averageScore . '/4.0. This indicates significant opportunities for improvement and suggests the need for targeted support and capacity building initiatives.';
+        }
+
+        // Trend analysis
+        if ($totalEvals >= 2) {
+            $recentScores = $evaluations->take(2)->pluck('total_score');
+            $trend = $recentScores[0] - $recentScores[1];
+
+            if ($trend > 0.2) {
+                $insights['trend_analysis'] = 'The performance trend shows strong improvement with a recent increase of ' . round($trend, 2) . ' points. This indicates effective implementation of improvement strategies and growing engagement in disaster preparedness activities.';
+            } elseif ($trend > 0) {
+                $insights['trend_analysis'] = 'The performance trend shows modest improvement with a recent increase of ' . round($trend, 2) . ' points. This suggests steady progress in disaster preparedness capabilities.';
+            } elseif ($trend > -0.2) {
+                $insights['trend_analysis'] = 'The performance trend shows relatively stable performance with minimal change (' . round($trend, 2) . ' points). This indicates consistent engagement levels in disaster preparedness activities.';
+            } else {
+                $insights['trend_analysis'] = 'The performance trend shows declining performance with a recent decrease of ' . round(abs($trend), 2) . ' points. This suggests the need for immediate attention and support to reverse the negative trajectory.';
+            }
+        } else {
+            $insights['trend_analysis'] = 'Insufficient data for trend analysis. More evaluations are needed to identify performance patterns and trends.';
+        }
+
+        // Strengths analysis
+        $strengths = [];
+        if ($excellentPercentage >= 30) {
+            $strengths[] = 'Exceptional performance consistency with ' . $excellentPercentage . '% of evaluations in the excellent range';
+        }
+        if ($goodPercentage >= 40) {
+            $strengths[] = 'Strong performance reliability with ' . $goodPercentage . '% of evaluations in the good range';
+        }
+        if ($averageScore >= 3.0) {
+            $strengths[] = 'Above-average overall performance indicating effective disaster preparedness capabilities';
+        }
+
+        $insights['strengths'] = !empty($strengths) ? implode('. ', $strengths) . '.' : 'No significant strengths identified. Focus on improvement areas to enhance performance.';
+
+        // Improvement areas
+        $improvements = [];
+        if ($poorPercentage >= 25) {
+            $improvements[] = 'Significant improvement needed with ' . $poorPercentage . '% of evaluations in the poor range';
+        }
+        if ($fairPercentage >= 40) {
+            $improvements[] = 'Moderate improvement opportunities with ' . $fairPercentage . '% of evaluations in the fair range';
+        }
+        if ($averageScore < 2.5) {
+            $improvements[] = 'Overall performance below expectations requiring comprehensive support and development';
+        }
+
+        $insights['improvement_areas'] = !empty($improvements) ? implode('. ', $improvements) . '.' : 'Performance is generally satisfactory. Continue current practices while seeking opportunities for excellence.';
+
+        // Recommendations
+        $recommendations = [];
+        if ($averageScore >= 3.5) {
+            $recommendations[] = 'Consider this associate as a mentor for other groups to share best practices';
+            $recommendations[] = 'Recognize exceptional performance and consider for leadership opportunities';
+        } elseif ($averageScore >= 3.0) {
+            $recommendations[] = 'Continue current practices while identifying opportunities for excellence';
+            $recommendations[] = 'Consider peer-to-peer learning with top-performing associates';
+        } elseif ($averageScore >= 2.5) {
+            $recommendations[] = 'Provide targeted training in areas of weakness';
+            $recommendations[] = 'Increase engagement with network activities and best practices';
+        } else {
+            $recommendations[] = 'Develop comprehensive improvement plan with specific goals and timelines';
+            $recommendations[] = 'Provide intensive support and mentoring from experienced associates';
+        }
+
+        $insights['recommendations'] = implode('. ', $recommendations) . '.';
+
+        return $insights;
+    }
+
+    private function getEvaluationHistory($evaluations)
+    {
+        $history = [];
+
+        foreach ($evaluations as $evaluation) {
+            $evalData = is_string($evaluation->evaluation_data)
+                ? json_decode($evaluation->evaluation_data, true)
+                : $evaluation->evaluation_data;
+
+            $history[] = [
+                'id' => $evaluation->id,
+                'date' => $evaluation->created_at->format('Y-m-d'),
+                'total_score' => $evaluation->total_score,
+                'performance_level' => $this->getPerformanceLevel($evaluation->total_score),
+                'evaluation_data' => $evalData,
+                'notes' => $evaluation->notes ?? 'No additional notes'
+            ];
+        }
+
+        return $history;
+    }
+
+    private function getPerformanceTimeline($evaluations)
+    {
+        $timeline = [];
+
+        foreach ($evaluations as $evaluation) {
+            $timeline[] = [
+                'date' => $evaluation->created_at->format('Y-m-d'),
+                'score' => $evaluation->total_score,
+                'performance_level' => $this->getPerformanceLevel($evaluation->total_score)
+            ];
+        }
+
+        return $timeline;
     }
 
     private function analyzeQuarterlyTrends($quarterlyData)
@@ -980,6 +1274,438 @@ class DashboardAnalysisService
 
             <div class="footer">
                 <p>This report was automatically generated by the DPAR Platform Management System</p>
+                <p>For questions or additional analysis, please contact the system administrator</p>
+            </div>
+        </body>
+        </html>';
+
+        return $html;
+    }
+
+    private function generateIndividualAnalysisHTML($data)
+    {
+        $html = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Individual Performance Analysis Report - ' . $data['user_info']['name'] . '</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                    line-height: 1.6;
+                }
+                .header {
+                    text-align: center;
+                    border-bottom: 3px solid #A11C22;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+                .header h1 {
+                    color: #A11C22;
+                    margin: 0;
+                    font-size: 24px;
+                }
+                .header h2 {
+                    color: #666;
+                    margin: 5px 0 0 0;
+                    font-size: 18px;
+                    font-weight: normal;
+                }
+                .header p {
+                    color: #666;
+                    margin: 5px 0 0 0;
+                    font-size: 14px;
+                }
+                .section {
+                    margin-bottom: 30px;
+                    page-break-inside: avoid;
+                }
+                .section h2 {
+                    color: #A11C22;
+                    border-bottom: 2px solid #A11C22;
+                    padding-bottom: 10px;
+                    margin-bottom: 20px;
+                    font-size: 20px;
+                }
+                .section h3 {
+                    color: #333;
+                    margin-bottom: 15px;
+                    font-size: 16px;
+                }
+                .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+                .stat-card {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 15px;
+                    text-align: center;
+                }
+                .stat-value {
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #A11C22;
+                    margin-bottom: 5px;
+                }
+                .stat-label {
+                    font-size: 12px;
+                    color: #666;
+                    text-transform: uppercase;
+                }
+                .performance-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .performance-table th,
+                .performance-table td {
+                    border: 1px solid #dee2e6;
+                    padding: 12px;
+                    text-align: left;
+                }
+                .performance-table th {
+                    background: #A11C22;
+                    color: white;
+                    font-weight: bold;
+                }
+                .performance-table tr:nth-child(even) {
+                    background: #f8f9fa;
+                }
+                .excellent { color: #28a745; font-weight: bold; }
+                .good { color: #17a2b8; font-weight: bold; }
+                .fair { color: #ffc107; font-weight: bold; }
+                .poor { color: #dc3545; font-weight: bold; }
+                .insights-container {
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-left: 4px solid #A11C22;
+                }
+                .insight-section {
+                    margin-bottom: 25px;
+                    padding: 15px;
+                    background: white;
+                    border-radius: 6px;
+                    border: 1px solid #e5e7eb;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                }
+                .insight-section h3 {
+                    color: #A11C22;
+                    font-size: 16px;
+                    font-weight: 700;
+                    margin: 0 0 10px 0;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                .insight-section p {
+                    color: #374151;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    margin: 0;
+                }
+                .trend-chart {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }
+                .quarter-data {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    padding: 10px;
+                    background: white;
+                    border-radius: 4px;
+                }
+                .category-analysis {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 15px;
+                }
+                .category-card {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 15px;
+                }
+                .category-title {
+                    font-weight: bold;
+                    color: #A11C22;
+                    margin-bottom: 10px;
+                }
+                .category-score {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #333;
+                }
+                .user-info {
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                }
+                .user-info h3 {
+                    color: #A11C22;
+                    margin-top: 0;
+                }
+                .user-info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 15px;
+                }
+                .user-info-item {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .user-info-label {
+                    font-size: 12px;
+                    color: #666;
+                    text-transform: uppercase;
+                    margin-bottom: 5px;
+                }
+                .user-info-value {
+                    font-weight: bold;
+                    color: #333;
+                }
+                .footer {
+                    margin-top: 40px;
+                    padding-top: 20px;
+                    border-top: 1px solid #dee2e6;
+                    text-align: center;
+                    color: #666;
+                    font-size: 12px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Individual Performance Analysis Report</h1>
+                <h2>' . $data['user_info']['name'] . '</h2>
+                <p>Generated on: ' . $data['overall_stats']['report_date'] . '</p>
+            </div>
+
+            <div class="section">
+                <h2>Associate Information</h2>
+                <div class="user-info">
+                    <h3>Profile Details</h3>
+                    <div class="user-info-grid">
+                        <div class="user-info-item">
+                            <div class="user-info-label">Name</div>
+                            <div class="user-info-value">' . $data['user_info']['name'] . '</div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label">Organization</div>
+                            <div class="user-info-value">' . $data['user_info']['organization'] . '</div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label">Email</div>
+                            <div class="user-info-value">' . $data['user_info']['email'] . '</div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label">Phone</div>
+                            <div class="user-info-value">' . $data['user_info']['phone'] . '</div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label">Date Joined</div>
+                            <div class="user-info-value">' . $data['user_info']['date_joined'] . '</div>
+                        </div>
+                        <div class="user-info-item">
+                            <div class="user-info-label">Group Type</div>
+                            <div class="user-info-value">' . $data['user_info']['group_type'] . '</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div class="user-info-label">Group Description</div>
+                        <div class="user-info-value" style="margin-top: 5px;">' . htmlspecialchars($data['user_info']['group_description'] ?: 'No description provided', ENT_QUOTES, 'UTF-8') . '</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Performance Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">' . $data['overall_stats']['total_evaluations'] . '</div>
+                        <div class="stat-label">Total Evaluations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">' . $data['overall_stats']['average_score'] . '</div>
+                        <div class="stat-label">Average Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">' . $data['overall_stats']['latest_score'] . '</div>
+                        <div class="stat-label">Latest Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">' . $data['overall_stats']['performance_level'] . '</div>
+                        <div class="stat-label">Performance Level</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Performance Analysis and Insights</h2>
+                <div class="insights-container">
+                    <div class="insight-section">
+                        <h3>Overall Performance Assessment</h3>
+                        <p>' . $data['performance_insights']['overall_performance'] . '</p>
+                    </div>
+                    
+                    <div class="insight-section">
+                        <h3>Performance Trend Analysis</h3>
+                        <p>' . $data['performance_insights']['trend_analysis'] . '</p>
+                    </div>
+                    
+                    <div class="insight-section">
+                        <h3>Key Strengths</h3>
+                        <p>' . $data['performance_insights']['strengths'] . '</p>
+                    </div>
+                    
+                    <div class="insight-section">
+                        <h3>Areas for Improvement</h3>
+                        <p>' . $data['performance_insights']['improvement_areas'] . '</p>
+                    </div>
+                    
+                    <div class="insight-section">
+                        <h3>Recommendations</h3>
+                        <p>' . $data['performance_insights']['recommendations'] . '</p>
+                    </div>
+                </div>
+            </div>';
+
+        // Add performance distribution if there are evaluations
+        if ($data['overall_stats']['total_evaluations'] > 0) {
+            $html .= '
+            <div class="section">
+                <h2>Performance Distribution Analysis</h2>
+                <p>The performance distribution provides insights into the consistency and quality of this associate\'s performance across all evaluations.</p>
+                
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Performance Level</th>
+                            <th>Score Range</th>
+                            <th>Count</th>
+                            <th>Percentage</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+
+            $totalEvals = array_sum($data['performance_distribution']);
+            $performanceLevels = [
+                'Excellent' => ['range' => '3.5 - 4.0', 'count' => $data['performance_distribution']['excellent'], 'description' => 'Outstanding performance with exceptional commitment to disaster preparedness initiatives'],
+                'Good' => ['range' => '2.5 - 3.4', 'count' => $data['performance_distribution']['good'], 'description' => 'Strong performance demonstrating consistent engagement and effective contribution'],
+                'Fair' => ['range' => '1.5 - 2.4', 'count' => $data['performance_distribution']['fair'], 'description' => 'Adequate performance with room for improvement and growth opportunities'],
+                'Poor' => ['range' => '0.0 - 1.4', 'count' => $data['performance_distribution']['poor'], 'description' => 'Performance below expectations, requiring immediate attention and support']
+            ];
+
+            foreach ($performanceLevels as $level => $info) {
+                $percentage = $totalEvals > 0 ? round(($info['count'] / $totalEvals) * 100, 1) : 0;
+                $html .= '<tr>
+                    <td class="' . strtolower($level) . '">' . $level . '</td>
+                    <td>' . $info['range'] . '</td>
+                    <td>' . $info['count'] . '</td>
+                    <td>' . $percentage . '%</td>
+                    <td>' . $info['description'] . '</td>
+                </tr>';
+            }
+
+            $html .= '</tbody>
+                </table>
+            </div>';
+
+            // Add quarterly trends if available
+            if (!empty($data['quarterly_trends'])) {
+                $html .= '
+                <div class="section">
+                    <h2>Performance Trends Analysis</h2>
+                    <p>Understanding performance trends over time helps identify patterns of improvement, consistency, and areas that may require additional attention.</p>
+                    
+                    <div class="trend-chart">
+                        <h3>Quarterly Performance Analysis</h3>
+                        <p>The following data shows the progression of performance scores across four quarters, revealing the development trajectory of this associate in disaster preparedness activities.</p>';
+
+                foreach ($data['quarterly_trends'] as $quarter) {
+                    $html .= '<div class="quarter-data">
+                        <span><strong>' . $quarter['quarter'] . ' (' . $quarter['period'] . ')</strong></span>
+                        <span>Average Score: <strong>' . round($quarter['average_score'], 2) . '</strong> | Evaluations: ' . $quarter['total_evaluations'] . '</span>
+                    </div>';
+                }
+
+                $html .= '</div>
+                </div>';
+            }
+
+            // Add category analysis if available
+            if (!empty($data['category_analysis'])) {
+                $html .= '
+                <div class="section">
+                    <h2>Category Performance Analysis</h2>
+                    <p>Understanding performance across different evaluation categories provides insights into specific strengths and areas for improvement within the disaster preparedness framework.</p>
+                    
+                    <div class="category-analysis">';
+
+                foreach ($data['category_analysis'] as $category => $analysis) {
+                    $html .= '<div class="category-card">
+                        <div class="category-title">' . $category . '</div>
+                        <div class="category-score">' . $analysis['average_score'] . '/4.0</div>
+                        <div>Performance Level: <span class="' . strtolower($analysis['performance_level']) . '">' . $analysis['performance_level'] . '</span></div>
+                        <div>Evaluations: ' . $analysis['total_evaluations'] . '</div>
+                    </div>';
+                }
+
+                $html .= '</div>
+                </div>';
+            }
+
+            // Add evaluation history if available
+            if (!empty($data['evaluation_history'])) {
+                $html .= '
+                <div class="section">
+                    <h2>Evaluation History</h2>
+                    <p>This comprehensive history provides detailed information about each evaluation conducted for this associate, including scores, performance levels, and additional notes.</p>
+                    
+                    <table class="performance-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Total Score</th>
+                                <th>Performance Level</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+
+                foreach ($data['evaluation_history'] as $evaluation) {
+                    $html .= '<tr>
+                        <td>' . $evaluation['date'] . '</td>
+                        <td>' . $evaluation['total_score'] . '</td>
+                        <td class="' . strtolower($evaluation['performance_level']) . '">' . $evaluation['performance_level'] . '</td>
+                        <td>' . $evaluation['notes'] . '</td>
+                    </tr>';
+                }
+
+                $html .= '</tbody>
+                    </table>
+                </div>';
+            }
+        }
+
+        $html .= '
+            <div class="footer">
+                <p>This individual performance report was automatically generated by the DPAR Platform Management System</p>
                 <p>For questions or additional analysis, please contact the system administrator</p>
             </div>
         </body>

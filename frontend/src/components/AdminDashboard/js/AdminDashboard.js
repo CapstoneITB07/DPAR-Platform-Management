@@ -150,6 +150,8 @@ function AdminDashboard() {
   const [selectedDayDate, setSelectedDayDate] = useState(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [isGeneratingIndividualPDF, setIsGeneratingIndividualPDF] = useState(false);
+  const [showIndividualSuccessMessage, setShowIndividualSuccessMessage] = useState(false);
   const [userName, setUserName] = useState('Admin');
 
   // Fetch user profile to get the admin's name
@@ -1219,6 +1221,71 @@ function AdminDashboard() {
     }
   };
 
+  const handleGenerateIndividualPerformancePDF = async () => {
+    if (!selectedAssociate) {
+      alert('Please select an associate first to generate their individual performance report.');
+      return;
+    }
+
+    try {
+      setIsGeneratingIndividualPDF(true);
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      
+      // Get the user_id from the selected associate data
+      const selectedAssociateData = associatesPerformance.find(a => a.id === selectedAssociate);
+      if (!selectedAssociateData || !selectedAssociateData.user_id) {
+        alert('Unable to find user information for the selected associate.');
+        return;
+      }
+      
+      const response = await axios.get(`${API_BASE}/api/dashboard/individual-performance-analysis-pdf/${selectedAssociateData.user_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Use the already retrieved associate data for filename
+      const associateName = selectedAssociateData.name.replace(/\s+/g, '_');
+      
+      link.download = `DPAR_Individual_Performance_${associateName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      // Show success message
+      setShowIndividualSuccessMessage(true);
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setShowIndividualSuccessMessage(false);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Error generating individual PDF:', err);
+      
+      // Provide more specific error messages
+      if (err.response?.status === 500) {
+        alert('Server error while generating individual performance PDF. Please check if there is any data available for this associate and try again.');
+      } else if (err.response?.status === 401) {
+        alert('Authentication error. Please log in again.');
+      } else if (err.response?.status === 403) {
+        alert('You do not have permission to generate this report.');
+      } else if (err.response?.status === 404) {
+        alert('Associate not found or no evaluation data available for this associate.');
+      } else {
+        alert('Failed to generate individual performance analysis PDF. Please try again.');
+      }
+    } finally {
+      setIsGeneratingIndividualPDF(false);
+    }
+  };
+
 
   if (loading) return (
     <AdminLayout>
@@ -1265,6 +1332,14 @@ function AdminDashboard() {
             <div className="success-message-content">
               <span className="success-icon">✓</span>
               <span className="success-text">Analysis downloaded successfully!</span>
+            </div>
+          </div>
+        )}
+        {showIndividualSuccessMessage && (
+          <div className="success-message-banner">
+            <div className="success-message-content">
+              <span className="success-icon">✓</span>
+              <span className="success-text">Individual performance report downloaded successfully!</span>
             </div>
           </div>
         )}
@@ -1352,6 +1427,19 @@ function AdminDashboard() {
                   </option>
                 ))}
               </select>
+              <button
+                className="generate-individual-pdf-btn"
+                onClick={handleGenerateIndividualPerformancePDF}
+                disabled={isGeneratingIndividualPDF || !selectedAssociate}
+                style={{
+                  opacity: !selectedAssociate ? 0.5 : 1,
+                  cursor: !selectedAssociate ? 'not-allowed' : 'pointer'
+                }}
+                title={!selectedAssociate ? 'Please select an associate first' : 'Generate individual performance report for selected associate'}
+              >
+                <FontAwesomeIcon icon={faFilePdf} />
+                {isGeneratingIndividualPDF ? 'Generating...' : 'Generate Individual Performance'}
+              </button>
             </div>
             {/* Charts Grid */}
             <div className="charts-grid">

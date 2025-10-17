@@ -129,6 +129,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/volunteers/{volunteer}', [VolunteerController::class, 'update']);
     Route::delete('/volunteers/{volunteer}', [VolunteerController::class, 'destroy']);
     Route::get('/volunteers/count', [VolunteerController::class, 'count']);
+    Route::post('/volunteers/import-excel', [VolunteerController::class, 'importExcel']);
+    Route::get('/volunteers/download-template', [VolunteerController::class, 'downloadTemplate']);
 
     // Calendar Events routes
     Route::apiResource('/calendar-events', CalendarEventController::class);

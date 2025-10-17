@@ -15,7 +15,13 @@ import {
   faSortDown,
   faVenusMars,
   faPhone,
-  faMapMarkerAlt
+  faMapMarkerAlt,
+  faFileExcel,
+  faUpload,
+  faFileDownload,
+  faCheckCircle,
+  faExclamationTriangle,
+  faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
 import AssociateLayout from './AssociateLayout';
 import '../css/VolunteerList.css';
@@ -57,6 +63,298 @@ function ConfirmModal({ open, message, onConfirm, onCancel }) {
   );
 }
 
+// Excel Import Modal Component
+function ExcelImportModal({ open, onClose, onImportSuccess }) {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [importResults, setImportResults] = useState(null);
+  const [error, setError] = useState('');
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      // Clear previous errors
+      setError('');
+      
+      // Get file extension
+      const fileName = selectedFile.name.toLowerCase();
+      const allowedExtensions = ['.csv'];
+      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      // Validate file type and extension
+      const allowedTypes = [
+        'text/csv', // .csv
+        'application/csv', // .csv alternative
+        'text/plain', // .csv sometimes detected as plain text
+        'application/vnd.ms-excel' // Some systems detect CSV as this
+      ];
+      
+      // More flexible validation - check extension first, then MIME type
+      if (!hasValidExtension && !allowedTypes.includes(selectedFile.type)) {
+        setError('Please select a CSV file. You can convert Excel files to CSV using "Save As" > "CSV (Comma delimited)"');
+        return;
+      }
+      
+      // Validate file size (10MB max)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        return;
+      }
+      
+      // Check if file is empty
+      if (selectedFile.size === 0) {
+        setError('The selected file is empty');
+        return;
+      }
+      
+      setFile(selectedFile);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) {
+      setError('Please select a file to upload');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+    setImportResults(null);
+
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post(`${API_BASE}/api/volunteers/import-excel`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setImportResults(response.data.results);
+      
+      if (response.data.results.success > 0) {
+        onImportSuccess();
+      }
+
+    } catch (err) {
+      if (err.response && err.response.data) {
+        setError(err.response.data.error || err.response.data.message || 'Upload failed');
+      } else {
+        setError('Upload failed. Please try again.');
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const downloadTemplate = async () => {
+    try {
+      setError(''); // Clear any previous errors
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/volunteers/download-template`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        responseType: 'blob'
+      });
+
+      // Check if response is actually a blob (file) or an error JSON
+      if (response.data.type && response.data.type.includes('application/json')) {
+        // If it's JSON, it's likely an error response
+        const text = await response.data.text();
+        const errorData = JSON.parse(text);
+        setError(errorData.message || 'Failed to download template');
+        return;
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'volunteer_import_template.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      console.error('Template download error:', err);
+      if (err.response && err.response.data) {
+        if (err.response.data.message) {
+          setError(err.response.data.message);
+        } else {
+          setError('Failed to download template');
+        }
+      } else {
+        setError('Failed to download template. Please try again.');
+      }
+    }
+  };
+
+  const resetModal = () => {
+    setFile(null);
+    setError('');
+    setImportResults(null);
+    setUploading(false);
+  };
+
+  const handleClose = () => {
+    resetModal();
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="modal-overlay excel-import-overlay" style={{zIndex: 10001}}>
+      <div className="excel-import-modal">
+        <div className="modal-header">
+          <h3>
+            <FontAwesomeIcon icon={faFileExcel} />
+            Import Volunteers from Excel
+          </h3>
+          <button className="modal-close" onClick={handleClose}>&times;</button>
+        </div>
+        
+        <div className="modal-body">
+          {!importResults ? (
+            <>
+              <div className="import-instructions">
+                <div className="instruction-item">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                  <span>Only CSV files are accepted for import</span>
+                </div>
+                <div className="instruction-item">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                  <span>Download the CSV template file to see the required format</span>
+                </div>
+                <div className="instruction-item">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                  <span>Fill in volunteer information and upload the file</span>
+                </div>
+                <div className="instruction-item">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                  <span>Address should include complete address with city</span>
+                </div>
+                <div className="instruction-item">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                  <span>Maximum file size: 10MB</span>
+                </div>
+              </div>
+
+              <div className="template-section">
+                <button className="download-template-btn" onClick={downloadTemplate}>
+                  <FontAwesomeIcon icon={faFileDownload} />
+                  Download Template
+                </button>
+              </div>
+
+              <div className="file-upload-section">
+                <div className="file-input-wrapper">
+                  <input
+                    type="file"
+                    id="excel-file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    className="file-input"
+                  />
+                  <label htmlFor="excel-file" className="file-input-label">
+                    <FontAwesomeIcon icon={faUpload} />
+                    {file ? file.name : 'Choose CSV File'}
+                  </label>
+                </div>
+              </div>
+
+              {error && (
+                <div className="error-message">
+                  <FontAwesomeIcon icon={faExclamationTriangle} />
+                  {error}
+                </div>
+              )}
+
+              <div className="modal-footer">
+                <button className="cancel-btn" onClick={handleClose}>
+                  Cancel
+                </button>
+                <button 
+                  className="upload-btn" 
+                  onClick={handleUpload}
+                  disabled={!file || uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <div className="spinner"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faUpload} />
+                      Upload & Import
+                    </>
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="import-results">
+              <div className="results-header">
+                <h4>Import Results</h4>
+              </div>
+              
+              <div className="results-summary">
+                <div className="result-item success">
+                  <FontAwesomeIcon icon={faCheckCircle} />
+                  <span>Successfully imported: {importResults.success} volunteers</span>
+                </div>
+                
+                {importResults.duplicates > 0 && (
+                  <div className="result-item warning">
+                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    <span>Duplicates skipped: {importResults.duplicates}</span>
+                  </div>
+                )}
+                
+                {importResults.errors.length > 0 && (
+                  <div className="result-item error">
+                    <FontAwesomeIcon icon={faExclamationTriangle} />
+                    <span>Errors: {importResults.errors.length} rows</span>
+                  </div>
+                )}
+              </div>
+
+              {importResults.errors.length > 0 && (
+                <div className="errors-details">
+                  <h5>Error Details:</h5>
+                  <div className="errors-list">
+                    {importResults.errors.slice(0, 10).map((error, index) => (
+                      <div key={index} className="error-item">
+                        <strong>Row {error.row}:</strong> {Object.values(error.errors).flat().join(', ')}
+                      </div>
+                    ))}
+                    {importResults.errors.length > 10 && (
+                      <div className="error-item">
+                        ... and {importResults.errors.length - 10} more errors
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="modal-footer">
+                <button className="close-btn" onClick={handleClose}>
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VolunteerList() {
   const [volunteers, setVolunteers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +386,8 @@ function VolunteerList() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsVolunteer, setDetailsVolunteer] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Add state for Excel import modal
+  const [showExcelImportModal, setShowExcelImportModal] = useState(false);
 
   useEffect(() => {
     fetchVolunteers();
@@ -401,15 +701,27 @@ function VolunteerList() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Gender', 'Contact Info', 'Expertise', 'Address'];
+    const headers = ['Name', 'Gender', 'Contact Info', 'Address', 'Expertise'];
+    
+    // Helper function to escape CSV values
+    const escapeCsvValue = (value) => {
+      if (value === null || value === undefined) return '';
+      const stringValue = String(value);
+      // If value contains comma, quote, or newline, wrap in quotes and escape internal quotes
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return '"' + stringValue.replace(/"/g, '""') + '"';
+      }
+      return stringValue;
+    };
+    
     const csvContent = [
       headers.join(','),
       ...filteredVolunteers.map(v => [
-        v.name,
-        v.gender,
-        v.contact_info,
-        v.expertise,
-        v.address
+        escapeCsvValue(v.name),
+        escapeCsvValue(v.gender),
+        escapeCsvValue(v.contact_info),
+        escapeCsvValue(v.address),
+        escapeCsvValue(v.expertise)
       ].join(','))
     ].join('\n');
 
@@ -437,6 +749,15 @@ function VolunteerList() {
           message={confirm.message}
           onConfirm={confirm.onConfirm}
           onCancel={() => setConfirm({ ...confirm, open: false })}
+        />
+        <ExcelImportModal
+          open={showExcelImportModal}
+          onClose={() => setShowExcelImportModal(false)}
+          onImportSuccess={() => {
+            setShowExcelImportModal(false);
+            fetchVolunteers();
+            setToast({ message: 'Volunteers imported successfully!', type: 'success' });
+          }}
         />
         {/* Header Row: Title and Count */}
         <div className="header-row">
@@ -487,6 +808,15 @@ function VolunteerList() {
             >
               <FontAwesomeIcon icon={faDownload} />
               Export
+            </button>
+            <button 
+              className="import-excel-btn" 
+              onClick={() => setShowExcelImportModal(true)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <FontAwesomeIcon icon={faFileExcel} />
+              Import Excel
             </button>
             <button 
               className="add-member-btn" 

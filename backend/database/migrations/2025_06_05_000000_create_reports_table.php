@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('photo_path')->nullable();
             $table->longText('data')->nullable(); // Changed from json to longText for larger data storage
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');

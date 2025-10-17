@@ -16,25 +16,25 @@ const slides = [
     icon: <FaCheckDouble size={140} color="#a72828" />, // Changed to slight red
     title: "Mitigation",
     subtitle: "Minimize Risk and Damage",
-    desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
+    desc: "Reducing or preventing the impact of potential disasters through proactive measures."
   },
   {
     icon: <FaSnowflake size={140} color="#a72828" />, // Changed to slight red
     title: "Preparedness",
     subtitle: "Get Ready for the Unexpected",
-    desc: "Tips for keeping your family safe during cold weather emergencies."
+    desc: "Planning and training communities to effectively respond when disasters strike."
   },
   {
     icon: <FaShieldAlt size={140} color="#a72828" />, // Changed to slight red
     title: "Response",
     subtitle: "Together, We Are Stronger",
-    desc: "Building resilient communities through preparedness and cooperation."
+    desc: "Taking immediate action to save lives, protect property, and provide essential relief."
   },
   {
     icon: <FaWater size={140} color="#a72828" />, // Changed to slight red
     title: "Recovery",
     subtitle: "Rebuilding and Restoring",
-    desc: "DPAR is dedicated to ensuring communities are prepared for disasters and equipped to respond effectively when emergencies occur."
+    desc: "Restoring normal conditions and rebuilding communities after the disaster."
   }
 ];
 

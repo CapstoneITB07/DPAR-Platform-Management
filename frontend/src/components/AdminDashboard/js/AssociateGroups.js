@@ -52,6 +52,8 @@ function AssociateGroups() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [associateToDelete, setAssociateToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [approvingId, setApprovingId] = useState(null); // Track which application is being approved
+  const [rejectingId, setRejectingId] = useState(null); // Track which application is being rejected
 
   const fetchAssociates = async (showNotification = false, isInitialLoad = false) => {
     try {
@@ -132,6 +134,7 @@ function AssociateGroups() {
   };
 
   const approveApplication = async (applicationId) => {
+    setApprovingId(applicationId);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
@@ -145,6 +148,8 @@ function AssociateGroups() {
     } catch (error) {
       console.error('Error approving application:', error);
       setError('Failed to approve application. Please try again.');
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -166,6 +171,7 @@ function AssociateGroups() {
       return;
     }
 
+    setRejectingId(selectedApplicationId);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       await axios.post(`${API_BASE}/api/pending-applications/${selectedApplicationId}/reject`, {
@@ -181,6 +187,8 @@ function AssociateGroups() {
     } catch (error) {
       console.error('Error rejecting application:', error);
       setError('Failed to reject application. Please try again.');
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -1358,31 +1366,37 @@ function AssociateGroups() {
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button 
                           onClick={() => openRejectionModal(application.id)}
+                          disabled={approvingId === application.id || rejectingId === application.id}
                           style={{
                             padding: '8px 16px',
                             backgroundColor: '#dc3545',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '14px'
+                            cursor: (approvingId === application.id || rejectingId === application.id) ? 'not-allowed' : 'pointer',
+                            opacity: (approvingId === application.id || rejectingId === application.id) ? 0.7 : 1,
+                            fontSize: '14px',
+                            pointerEvents: (approvingId === application.id || rejectingId === application.id) ? 'none' : 'auto'
                           }}
                         >
                           Reject
                         </button>
                         <button 
                           onClick={() => approveApplication(application.id)}
+                          disabled={approvingId === application.id || rejectingId === application.id}
                           style={{
                             padding: '8px 16px',
                             backgroundColor: '#28a745',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '14px'
+                            cursor: (approvingId === application.id || rejectingId === application.id) ? 'not-allowed' : 'pointer',
+                            opacity: (approvingId === application.id || rejectingId === application.id) ? 0.7 : 1,
+                            fontSize: '14px',
+                            pointerEvents: (approvingId === application.id || rejectingId === application.id) ? 'none' : 'auto'
                           }}
                         >
-                          Approve
+                          {approvingId === application.id ? 'Approving...' : 'Approve'}
                         </button>
                       </div>
                     </div>
@@ -1480,9 +1494,15 @@ function AssociateGroups() {
               <button
                 onClick={rejectApplication}
                 className="reject-modal-submit-btn"
+                disabled={rejectingId !== null}
+                style={{
+                  opacity: rejectingId !== null ? 0.7 : 1,
+                  cursor: rejectingId !== null ? 'not-allowed' : 'pointer',
+                  pointerEvents: rejectingId !== null ? 'none' : 'auto'
+                }}
               >
                 <FontAwesomeIcon icon={faTimes} />
-                Reject Application
+                {rejectingId !== null ? 'Rejecting...' : 'Reject Application'}
               </button>
             </div>
           </div>

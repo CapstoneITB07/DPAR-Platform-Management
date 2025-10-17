@@ -100,6 +100,8 @@ function LoginPage() {
   const [otpCode, setOtpCode] = useState(''); // OTP input
   const [otpAttemptsRemaining, setOtpAttemptsRemaining] = useState(5); // OTP attempts remaining
   const [otpLockoutTime, setOtpLockoutTime] = useState(0); // OTP lockout time in seconds
+  const [signingIn, setSigningIn] = useState(false); // Track signing in state
+  const [verifyingOtp, setVerifyingOtp] = useState(false); // Track OTP verification state
   
   // const history = useHistory(); // For react-router-dom v5
   const navigate = useNavigate(); // For react-router-dom v6
@@ -314,6 +316,7 @@ function LoginPage() {
       return;
     }
 
+    setVerifyingOtp(true);
     try {
       const response = await fetch(`${API_BASE}/api/verify-otp`, {
         method: 'POST',
@@ -395,6 +398,8 @@ function LoginPage() {
         setMessage('Network error. Please check your connection and try again.');
       }
       console.error('OTP verification error:', error);
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
@@ -411,6 +416,7 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
+    setSigningIn(true);
 
     try {
       const endpoint = isRecoveryMode ? `${API_BASE}/api/login/recovery` : `${API_BASE}/api/login`;
@@ -508,6 +514,8 @@ function LoginPage() {
         setMessage('Network error. Could not connect to backend.');
       }
       console.error('Network error:', error);
+    } finally {
+      setSigningIn(false);
     }
   };
 
@@ -676,8 +684,17 @@ function LoginPage() {
             )}
             
             
-            <button type="submit" className="signInButton">
-              {isRecoveryMode ? 'Continue with Recovery Passcode' : 'Sign In'}
+            <button 
+              type="submit" 
+              className="signInButton"
+              disabled={signingIn}
+              style={{
+                opacity: signingIn ? 0.7 : 1,
+                cursor: signingIn ? 'not-allowed' : 'pointer',
+                pointerEvents: signingIn ? 'none' : 'auto'
+              }}
+            >
+              {signingIn ? 'Signing in...' : (isRecoveryMode ? 'Continue with Recovery Passcode' : 'Sign In')}
             </button>
             
             <div className="registrationToggle">
@@ -1016,9 +1033,14 @@ function LoginPage() {
               <button 
                 type="submit" 
                 className="signInButton" 
-                disabled={otpCode.length !== 6 || otpLockoutTime > 0}
+                disabled={otpCode.length !== 6 || otpLockoutTime > 0 || verifyingOtp}
+                style={{
+                  opacity: verifyingOtp ? 0.7 : 1,
+                  cursor: (otpCode.length !== 6 || otpLockoutTime > 0 || verifyingOtp) ? 'not-allowed' : 'pointer',
+                  pointerEvents: verifyingOtp ? 'none' : 'auto'
+                }}
               >
-                {otpLockoutTime > 0 ? `Wait ${otpLockoutTime}s` : 'Verify OTP & Continue'}
+                {verifyingOtp ? 'Verifying OTP...' : (otpLockoutTime > 0 ? `Wait ${otpLockoutTime}s` : 'Verify OTP & Continue')}
               </button>
               {message && !message.includes('wait') && !message.includes('locked') && (
                 <p className={`changePasswordMessage ${message.includes('successfully') ? 'success' : 'error'}`}>

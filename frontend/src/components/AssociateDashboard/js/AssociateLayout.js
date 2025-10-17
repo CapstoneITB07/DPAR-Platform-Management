@@ -830,6 +830,21 @@ function AssociateLayout({ children }) {
         </div>
       </div>
       <div className={`main-content${sidebarOpen ? ' sidebar-open' : ''}`} style={{ minHeight: 'calc(100vh - 56px)', background: 'transparent' }}>
+        {/* Welcome Banner - Only show on dashboard (announcements page) */}
+        {location.pathname === '/associate/announcements' && (
+          <div className="welcome-banner">
+            <div className="welcome-banner-content">
+              <div className="welcome-banner-left">
+                <div className="welcome-banner-icon">
+                  <FontAwesomeIcon icon={faBuilding} />
+                </div>
+                <div className="welcome-banner-text">
+                  <h3>Welcome, {userDisplayName}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {children}
       </div>
       

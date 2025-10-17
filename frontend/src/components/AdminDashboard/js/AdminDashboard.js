@@ -150,6 +150,25 @@ function AdminDashboard() {
   const [selectedDayDate, setSelectedDayDate] = useState(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [userName, setUserName] = useState('Admin');
+
+  // Fetch user profile to get the admin's name
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) return;
+      
+      const response = await axios.get(`${API_BASE}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && response.data.name) {
+        setUserName(response.data.name);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  }, []);
 
   const fetchActiveMembers = useCallback(async (period = 'day') => {
     try {
@@ -681,7 +700,8 @@ function AdminDashboard() {
   useEffect(() => {
     fetchDashboardData();
     fetchCalendarEventsOnly();
-  }, [fetchDashboardData]);
+    fetchUserProfile();
+  }, [fetchDashboardData, fetchUserProfile]);
 
   // Fetch active members after initial data is loaded
   useEffect(() => {
@@ -1249,6 +1269,20 @@ function AdminDashboard() {
           </div>
         )}
         {error && <div className="error-message">{error}</div>}
+
+        {/* Welcome Banner */}
+        <div className="welcome-banner">
+          <div className="welcome-banner-content">
+            <div className="welcome-banner-left">
+              <div className="welcome-banner-icon">
+                <FontAwesomeIcon icon={faUsers} />
+              </div>
+              <div className="welcome-banner-text">
+                <h3>Welcome, {userName}</h3>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="performance-column">
           {/* Performance Metrics */}

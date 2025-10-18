@@ -47,7 +47,7 @@ const CertificatePreview = ({ data }) => {
   const recipientName = name || associate || 'Certificate Recipient';
   const displayMessage =
     message ||
-    `This certificate is proudly presented to ${recipientName} in recognition of their exemplary performance and unwavering dedication to volunteer disaster response activities.`;
+    `This certificate is proudly presented in recognition of exemplary performance and unwavering dedication to volunteer disaster response activities.`;
 
   const validSignatories = Array.isArray(signatories) && signatories.length > 0
     ? signatories

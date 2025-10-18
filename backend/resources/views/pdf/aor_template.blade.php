@@ -469,8 +469,8 @@ return nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'));
 
             <div class="header-text">
                 <h1 class="{{ $institutionSizeClass }}">{{ $report->data['institutionName'] ?? 'Disaster Preparedness And Response Volunteers Coalition of Laguna' }}</h1>
+                <p>Brgy. Banaybanay, Cabuyao City, Laguna</p>
                 <h2 class="{{ $textSizeClass }}">{{ $displayAssociateName }}</h2>
-                <p>{{ $report->data['address'] ?? 'Blk 63 Lot 21 Aventine Hills BF Resort Village, Las Pinas City' }}</p>
             </div>
 
             <!-- Right Logo - Automatically determined Associate Logo -->

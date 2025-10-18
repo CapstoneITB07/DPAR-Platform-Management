@@ -17,9 +17,9 @@ class ReportController extends Controller
     {
         $user = Auth::user();
 
-        // Admin can view all reports, regular users can only view their own
+        // Admin can view all reports including soft-deleted ones, regular users can only view their own
         if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
-            $reports = Report::with('user')->orderBy('created_at', 'desc')->get();
+            $reports = Report::withTrashed()->with('user')->orderBy('created_at', 'desc')->get();
         } else {
             $reports = Report::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
         }

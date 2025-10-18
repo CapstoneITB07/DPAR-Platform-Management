@@ -31,6 +31,7 @@
   gap: 10px;
   flex: 1 1 auto;
   justify-content: flex-start;
+  min-width: 0;
 }
 
 .action-buttons {
@@ -155,13 +156,17 @@
   box-shadow: 0 1px 4px rgba(30,41,59,0.04);
   padding: 2px 0;
   border: 1px solid #e2e8f0;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .search-bar input {
   padding: 10px 12px 10px 36px;
   border: none;
   border-radius: 8px;
-  width: 200px;
+  width: 100%;
+  min-width: 200px;
+  max-width: 100%;
   font-size: 15px;
   background: transparent;
   color: #1e293b;

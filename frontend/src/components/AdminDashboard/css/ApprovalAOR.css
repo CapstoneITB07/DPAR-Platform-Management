@@ -1174,6 +1174,13 @@
   margin-top: 5px;
 }
 
+.history-status.deleted {
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 0.8em;
+  margin-top: 5px;
+}
+
 .generate-btn {
   background: #A11C22;
   color: #fff;

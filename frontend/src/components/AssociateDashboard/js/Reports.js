@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane, faEye, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import '../css/Reports.css';
 import imageCompression from 'browser-image-compression';
 import '../css/VolunteerList.css'; // Import confirm modal styles
@@ -992,6 +992,37 @@ function Reports() {
     }
   };
 
+    const handleDownloadPDF = async (reportId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      const response = await axios.get(`${API_BASE}/api/reports/${reportId}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AOR_Report_${reportId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      if (error.response?.status === 403) {
+        showError('Only approved reports can be downloaded as PDF.');
+      } else if (error.response?.status === 404) {
+        showError('Report not found.');
+      } else {
+        showError('Failed to download PDF. Please try again.');
+      }
+    }
+  };
+
   const handleCloseViewModal = () => {
     setShowViewModal(false);
     setViewingReport(null);
@@ -1378,7 +1409,38 @@ function Reports() {
                                 <FontAwesomeIcon icon={faTrash} />
                               </button>
                             )}
-                            {report.status !== 'draft' && report.status !== 'rejected' && (
+                            {report.status === 'approved' && (
+                              <>
+                                <button
+                                  className="action-btn download-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadPDF(report.id);
+                                  }}
+                                  title="Download PDF"
+                                  style={{
+                                    width: 'auto',
+                                    padding: '8px 12px',
+                                    gap: '6px',
+                                    minWidth: '100px'
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faFilePdf} />
+                                  <span style={{ fontSize: '12px', fontWeight: '600' }}>PDF</span>
+                                </button>
+                                <button
+                                  className="action-btn delete-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(report.id);
+                                  }}
+                                  title="Delete"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                              </>
+                            )}
+                            {report.status !== 'draft' && report.status !== 'rejected' && report.status !== 'approved' && (
                               <button
                                 className="action-btn delete-btn"
                                 onClick={(e) => {

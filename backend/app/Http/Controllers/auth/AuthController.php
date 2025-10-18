@@ -554,13 +554,16 @@ class AuthController extends Controller
 
             $user = User::findOrFail($request->user_id);
 
-            // Check attempt counter
-            $attemptKey = 'otp_attempts_' . $user->id;
+            // Generate device identifier from IP and User-Agent
+            $deviceId = md5($request->ip() . $request->userAgent());
+
+            // Check attempt counter with device identifier
+            $attemptKey = 'otp_attempts_' . $user->id . '_' . $deviceId;
             $attempts = cache()->get($attemptKey, 0);
             $maxAttempts = 5;
 
             if ($attempts >= $maxAttempts) {
-                $lockoutKey = 'otp_lockout_' . $user->id;
+                $lockoutKey = 'otp_lockout_' . $user->id . '_' . $deviceId;
                 $lockoutTime = cache()->get($lockoutKey);
 
                 if ($lockoutTime && $lockoutTime > now()) {
@@ -621,7 +624,7 @@ class AuthController extends Controller
 
             // Clear attempt counter on successful verification
             cache()->forget($attemptKey);
-            cache()->forget($lockoutKey ?? 'otp_lockout_' . $user->id);
+            cache()->forget($lockoutKey);
 
             // Revoke all existing tokens for this user (industry standard for security)
             $user->tokens()->delete();

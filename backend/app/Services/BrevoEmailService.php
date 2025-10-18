@@ -24,7 +24,32 @@ class BrevoEmailService
         }
 
         $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', $apiKey);
-        $this->apiInstance = new TransactionalEmailsApi(new Client(), $config);
+        
+        // Configure Guzzle client with SSL verification settings
+        // Auto-detect: disable SSL verification only on Windows in local development
+        // Production (Linux) will have proper CA certificates and use SSL verification
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        $isLocal = env('APP_ENV') === 'local' || env('APP_DEBUG') === true;
+        
+        // Allow manual override via environment variable
+        // Default: true for production/Linux, false for Windows local development
+        $sslVerify = env('BREVO_SSL_VERIFY', !($isWindows && $isLocal));
+        
+        $guzzleConfig = [
+            'verify' => $sslVerify,
+            'timeout' => 30,
+        ];
+        
+        // Log SSL verification status for debugging
+        Log::info('Brevo Email Service initialized', [
+            'ssl_verify' => $sslVerify,
+            'os' => PHP_OS,
+            'is_windows' => $isWindows,
+            'is_local' => $isLocal,
+            'app_env' => env('APP_ENV')
+        ]);
+        
+        $this->apiInstance = new TransactionalEmailsApi(new Client($guzzleConfig), $config);
         $this->fromEmail = env('MAIL_FROM_ADDRESS', 'dparvc1@gmail.com');
         $this->fromName = env('MAIL_FROM_NAME', 'DPAR Platform');
     }

@@ -37,14 +37,6 @@ class AuthController extends Controller
 
             $isAvailable = !$approvedExists;
 
-            // Log for debugging
-            Log::info('Organization name check', [
-                'organization_name' => $organizationName,
-                'pending_exists' => $pendingExists,
-                'approved_exists' => $approvedExists,
-                'is_available' => $isAvailable
-            ]);
-
             return response()->json([
                 'available' => $isAvailable,
                 'message' => $isAvailable ? 'Organization name is qualified' : 'This organization name is already registered.'
@@ -273,12 +265,25 @@ class AuthController extends Controller
 
             // Check if user needs OTP verification (first-time login after approval)
             if ($user->role === 'associate_group_leader' && $user->needs_otp_verification) {
+                Log::info('User requires OTP verification', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'needs_otp_verification' => $user->needs_otp_verification
+                ]);
                 return response()->json([
                     'message' => 'OTP verification required. Please check your email for the authentication code.',
                     'requires_otp' => true,
                     'user_id' => $user->id
                 ], 200);
             }
+
+            // Log successful login for debugging
+            Log::info('User login successful', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+                'needs_otp_verification' => $user->needs_otp_verification
+            ]);
 
             // Revoke all existing tokens for this user (industry standard for security)
             $user->tokens()->delete();
@@ -559,11 +564,11 @@ class AuthController extends Controller
 
             // Check attempt counter with device identifier
             $attemptKey = 'otp_attempts_' . $user->id . '_' . $deviceId;
+            $lockoutKey = 'otp_lockout_' . $user->id . '_' . $deviceId;
             $attempts = cache()->get($attemptKey, 0);
             $maxAttempts = 5;
 
             if ($attempts >= $maxAttempts) {
-                $lockoutKey = 'otp_lockout_' . $user->id . '_' . $deviceId;
                 $lockoutTime = cache()->get($lockoutKey);
 
                 if ($lockoutTime && $lockoutTime > now()) {
@@ -621,7 +626,6 @@ class AuthController extends Controller
             ]);
 
             $user->update(['needs_otp_verification' => false]);
-
             // Clear attempt counter on successful verification
             cache()->forget($attemptKey);
             cache()->forget($lockoutKey);

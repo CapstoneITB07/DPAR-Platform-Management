@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Services\PushNotificationService;
 
 class ReportController extends Controller
 {
@@ -244,6 +245,15 @@ class ReportController extends Controller
 
             // Create the report
             $report = Report::create($reportDataToStore);
+
+            // Send push notification to admin when report is submitted (not draft)
+            if ($validatedData['status'] === 'sent') {
+                try {
+                    PushNotificationService::notifyAdminNewReport($report);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send report submission push notification: ' . $e->getMessage());
+                }
+            }
 
             // Log activity for associates when submitting reports
             if ($user->role === 'associate_group_leader' && $validatedData['status'] === 'sent') {
@@ -736,6 +746,13 @@ class ReportController extends Controller
             $report->approved_by = $user->id;
             $report->save();
 
+            // Send push notification to associate about approval
+            try {
+                PushNotificationService::notifyAssociateReportApproved($report);
+            } catch (\Exception $e) {
+                Log::error('Failed to send report approval push notification: ' . $e->getMessage());
+            }
+
             Log::info('Report approved', [
                 'report_id' => $id,
                 'approved_by' => $user->id,
@@ -782,6 +799,13 @@ class ReportController extends Controller
             $report->rejected_by = $user->id;
             $report->rejection_reason = $validated['rejection_reason'];
             $report->save();
+
+            // Send push notification to associate about rejection
+            try {
+                PushNotificationService::notifyAssociateReportRejected($report);
+            } catch (\Exception $e) {
+                Log::error('Failed to send report rejection push notification: ' . $e->getMessage());
+            }
 
             Log::info('Report rejected', [
                 'report_id' => $id,

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\AssociateGroup;
 use App\Models\DirectorHistory;
 use App\Services\BrevoEmailService;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -217,6 +218,10 @@ class PendingApplicationController extends Controller
                 ]);
             }
 
+            // Send push notification to admin about the approval/new application
+            // This is actually a new application being submitted, so we should notify when it's created
+            // But we can send a notification here too if needed
+            
             DB::commit();
 
             return response()->json([

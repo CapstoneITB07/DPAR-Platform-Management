@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Announcement;
 use Illuminate\Support\Facades\Storage;
+use App\Services\PushNotificationService;
 
 class AnnouncementController extends Controller
 {
@@ -62,6 +63,15 @@ class AnnouncementController extends Controller
             }, $photoPaths);
         } else {
             $announcement->photo_urls = [];
+        }
+
+        // Send push notifications for new announcement
+        try {
+            PushNotificationService::notifyAssociatesNewAnnouncement($announcement);
+            PushNotificationService::notifyCitizensNewAnnouncement($announcement);
+        } catch (\Exception $e) {
+            // Log error but don't fail the announcement creation
+            \Illuminate\Support\Facades\Log::error('Failed to send announcement push notifications: ' . $e->getMessage());
         }
 
         return response()->json($announcement, 201);

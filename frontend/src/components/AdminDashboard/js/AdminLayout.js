@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import '../css/AdminDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding, faLock, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding, faLock, faEye, faEyeSlash, faBellSlash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import Modal from 'react-modal';
 import axios from 'axios';
 
 import { API_BASE } from '../../../utils/url';
+import { 
+  isPushNotificationSupported, 
+  subscribeToPushNotifications, 
+  unsubscribeFromPushNotifications,
+  isPushNotificationSubscribed 
+} from '../../../utils/pushNotifications';
 
 function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -50,6 +56,8 @@ function AdminLayout({ children }) {
   const ADMIN_APPLICATIONS_VIEWED_KEY = 'adminApplicationsViewed';
   const [editProfileHover, setEditProfileHover] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
+  const [pushNotificationsSupported, setPushNotificationsSupported] = useState(false);
 
   const toggleSidebar = () => setSidebarOpen(open => !open);
   const closeSidebar = () => setSidebarOpen(false);
@@ -462,12 +470,40 @@ function AdminLayout({ children }) {
     fetchProfile(); // Fetch profile on initial load
     fetchNotifications();
     fetchPendingApplicationsCount();
+    checkPushNotificationStatus();
     const interval = setInterval(() => {
       fetchNotifications();
       fetchPendingApplicationsCount();
     }, 15000); // Poll every 15 seconds for notifications and pending applications
     return () => clearInterval(interval);
   }, []);
+
+  const checkPushNotificationStatus = async () => {
+    const supported = isPushNotificationSupported();
+    setPushNotificationsSupported(supported);
+    
+    if (supported) {
+      const subscribed = await isPushNotificationSubscribed();
+      setPushNotificationsEnabled(subscribed);
+    }
+  };
+
+  const togglePushNotifications = async () => {
+    try {
+      if (pushNotificationsEnabled) {
+        await unsubscribeFromPushNotifications();
+        setPushNotificationsEnabled(false);
+        alert('Push notifications disabled successfully');
+      } else {
+        await subscribeToPushNotifications();
+        setPushNotificationsEnabled(true);
+        alert('Push notifications enabled successfully! You will receive notifications even when not using the app.');
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      alert('Failed to toggle push notifications. ' + error.message);
+    }
+  };
 
   useEffect(() => {
     if (location.pathname === '/admin/notifications') {
@@ -670,6 +706,40 @@ function AdminLayout({ children }) {
             </ul>
           </nav>
           <div className="sidebar-footer" style={{ marginTop: 'auto', marginBottom: 24 }}>
+              {pushNotificationsSupported && (
+                <button 
+                  className="push-notification-toggle" 
+                  onClick={togglePushNotifications}
+                  style={{
+                    width: '100%',
+                    padding: '12px 20px',
+                    marginBottom: '12px',
+                    background: pushNotificationsEnabled ? '#28a745' : '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.02)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <FontAwesomeIcon icon={pushNotificationsEnabled ? faBell : faBellSlash} />
+                  {pushNotificationsEnabled ? 'Push Notifications ON' : 'Push Notifications OFF'}
+                </button>
+              )}
               <button 
                 className="logout-button" 
                 onClick={handleLogout}

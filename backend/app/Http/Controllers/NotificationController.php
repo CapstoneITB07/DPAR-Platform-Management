@@ -11,6 +11,7 @@ use App\Models\ActivityLog;
 use App\Models\DirectorHistory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\PushNotificationService;
 
 class NotificationController extends Controller
 {
@@ -70,13 +71,27 @@ class NotificationController extends Controller
             }
             $associates = $query->get();
 
+            $associateIds = [];
             foreach ($associates as $associate) {
                 NotificationRecipient::create([
                     'notification_id' => $notification->id,
                     'user_id' => $associate->id,
                 ]);
+                $associateIds[] = $associate->id;
             }
+            
             DB::commit();
+            
+            // Send push notifications to associates (after commit, so notification is saved even if push fails)
+            if (!empty($associateIds)) {
+                try {
+                    PushNotificationService::notifyAssociatesNewNotification($notification, $associateIds);
+                } catch (\Exception $e) {
+                    // Log error but don't fail the notification creation
+                    Log::error('Failed to send push notifications: ' . $e->getMessage());
+                }
+            }
+            
             return response()->json(['message' => 'Notification created and sent.', 'notification' => $notification], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -229,6 +244,14 @@ class NotificationController extends Controller
             'volunteer_selections' => $request->volunteer_selections,
             'responded_at' => now(),
         ]);
+
+        // Send push notification to admin about response
+        try {
+            PushNotificationService::notifyAdminNotificationResponse($notification, $recipient);
+        } catch (\Exception $e) {
+            // Log error but don't fail the response
+            Log::error('Failed to send push notification to admin: ' . $e->getMessage());
+        }
 
         // Log activity for associates
         if ($user->role === 'associate_group_leader') {

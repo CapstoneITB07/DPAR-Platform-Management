@@ -214,6 +214,13 @@ class AuthController extends Controller
                 'status' => 'pending'
             ]);
 
+            // Send push notification to admin about new application
+            try {
+                \App\Services\PushNotificationService::notifyAdminNewApplication($application);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send new application push notification: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'message' => 'Application submitted successfully. Please wait for admin approval.',
                 'application_id' => $application->id

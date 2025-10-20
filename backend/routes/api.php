@@ -17,6 +17,7 @@ use App\Http\Controllers\VolunteerController;
 use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\DirectorHistoryController;
 use App\Http\Controllers\PendingApplicationController;
+use App\Http\Controllers\PushNotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,11 @@ Route::get('/announcements', [AnnouncementController::class, 'index']);
 
 // Public GET route for associate groups
 Route::get('/associate-groups/public', [AssociateGroupController::class, 'publicIndex']);
+
+// Push Notification Routes
+Route::post('/push/subscribe', [PushNotificationController::class, 'subscribe']);
+Route::post('/push/unsubscribe', [PushNotificationController::class, 'unsubscribe']);
+Route::post('/push/toggle', [PushNotificationController::class, 'toggleSubscription']);
 
 // Protected Routes (require authentication)
 Route::middleware('auth:sanctum')->group(function () {
@@ -135,6 +141,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Calendar Events routes
     Route::apiResource('/calendar-events', CalendarEventController::class);
+
+    // Push Notification Status
+    Route::get('/push/status', [PushNotificationController::class, 'getStatus']);
+    Route::post('/push/test', [PushNotificationController::class, 'sendTest']);
 });
 
 // Public Training Programs API

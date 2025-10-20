@@ -31,24 +31,11 @@ self.addEventListener('install', event => {
 
 // Cache and return requests
 self.addEventListener('fetch', event => {
-  // Use a network-first strategy for API calls
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // If the network request is successful, clone it and cache it
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-          return response;
-        })
-        .catch(() => {
-          // If the network request fails, try to get it from the cache
-          return caches.match(event.request);
-        })
-    );
+  // Don't cache API calls or non-GET requests (POST, PUT, DELETE, etc.)
+  // Only GET requests can be cached - POST/PUT/DELETE cannot be cached
+  if (event.request.url.includes('/api/') || event.request.method !== 'GET') {
+    // Just fetch without caching
+    event.respondWith(fetch(event.request));
     return;
   }
 
@@ -99,5 +86,76 @@ self.addEventListener('activate', event => {
         })
       );
     })
+  );
+});
+
+// Push notification event handler
+self.addEventListener('push', event => {
+  console.log('Push notification received:', event);
+  
+  let notificationData = {
+    title: 'DPAR Notification',
+    body: 'You have a new notification',
+    icon: '/Assets/disaster_logo.png',
+    badge: '/Assets/disaster_logo.png',
+    data: {
+      url: '/'
+    }
+  };
+
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        data: data.data || notificationData.data,
+        tag: data.data?.type || 'default',
+        requireInteraction: false,
+        vibrate: [200, 100, 200]
+      };
+    } catch (error) {
+      console.error('Error parsing push notification data:', error);
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      data: notificationData.data,
+      tag: notificationData.tag,
+      requireInteraction: notificationData.requireInteraction,
+      vibrate: notificationData.vibrate
+    })
+  );
+});
+
+// Notification click event handler
+self.addEventListener('notificationclick', event => {
+  console.log('Notification clicked:', event);
+  
+  event.notification.close();
+  
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(windowClients => {
+        // Check if there's already a window open
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // If no window is open, open a new one
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
   );
 }); 

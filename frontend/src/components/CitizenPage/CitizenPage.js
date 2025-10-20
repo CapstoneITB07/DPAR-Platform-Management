@@ -2,11 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../logo.svg';
 import axios from 'axios';
-import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight, FaBell, FaBellSlash } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import './CitizenPage.css';
 import { API_BASE } from '../../utils/url';
+import { 
+  isPushNotificationSupported, 
+  subscribeToPushNotifications, 
+  unsubscribeFromPushNotifications,
+  isPushNotificationSubscribed 
+} from '../../utils/pushNotifications';
 
 // Helper for formatting date
 function formatDate(dateStr) {
@@ -90,7 +96,35 @@ function CitizenPage() {
   useEffect(() => {
     fetchPrograms();
     fetchAssociateGroups();
+    checkPushNotificationStatus();
   }, []);
+
+  const checkPushNotificationStatus = async () => {
+    const supported = isPushNotificationSupported();
+    setPushNotificationsSupported(supported);
+    
+    if (supported) {
+      const subscribed = await isPushNotificationSubscribed();
+      setPushNotificationsEnabled(subscribed);
+    }
+  };
+
+  const togglePushNotifications = async () => {
+    try {
+      if (pushNotificationsEnabled) {
+        await unsubscribeFromPushNotifications();
+        setPushNotificationsEnabled(false);
+        alert('Push notifications disabled successfully');
+      } else {
+        await subscribeToPushNotifications();
+        setPushNotificationsEnabled(true);
+        alert('Push notifications enabled successfully! You will receive announcements and training program updates even when not on the site.');
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      alert('Failed to toggle push notifications. ' + error.message);
+    }
+  };
 
   const fetchPrograms = async () => {
     setLoading(true);
@@ -178,6 +212,11 @@ function CitizenPage() {
 
   // Track which announcement is expanded
   const [expandedAnn, setExpandedAnn] = useState({});
+
+  // Push notification states
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
+  const [pushNotificationsSupported, setPushNotificationsSupported] = useState(false);
+  const [showPushButton, setShowPushButton] = useState(true);
 
   // Helper function to get logo URL (similar to AssociateGroups.js)
   const getLogoUrl = (logoPath) => {
@@ -878,6 +917,44 @@ function CitizenPage() {
           </div>
         </div>
       )}
+      {/* Floating Push Notification Button */}
+      {pushNotificationsSupported && showPushButton && (
+        <button
+          className="citizen-push-notification-fab"
+          onClick={togglePushNotifications}
+          style={{
+            position: 'fixed',
+            bottom: '30px',
+            right: '30px',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: pushNotificationsEnabled ? '#28a745' : '#6c757d',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            transition: 'all 0.3s ease',
+            zIndex: 1000,
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.1)';
+            e.target.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+          }}
+          title={pushNotificationsEnabled ? 'Push Notifications ON - Click to disable' : 'Push Notifications OFF - Click to enable'}
+        >
+          {pushNotificationsEnabled ? <FaBell /> : <FaBellSlash />}
+        </button>
+      )}
+
       {/* Footer always at the bottom */}
       <footer className="citizen-footer">
         <div className="citizen-footer-text">

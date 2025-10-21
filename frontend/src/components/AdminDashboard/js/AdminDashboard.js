@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faCertificate, faPlus, faChevronLeft, faChevronRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/AdminDashboard.css';
 import {
   Chart as ChartJS,
@@ -160,7 +160,7 @@ function AdminDashboard() {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) return;
       
-      const response = await axios.get(`${API_BASE}/api/profile`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -180,7 +180,7 @@ function AdminDashboard() {
         return;
       }
       
-      const response = await axios.get(`${API_BASE}/api/members/active?period=${period}`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/members/active?period=${period}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data && response.data.members && response.data.statistics) {
@@ -617,9 +617,9 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const [evaluationsRes, associatesRes, statisticsRes] = await Promise.all([
-        axios.get(`${API_BASE}/api/evaluations`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE}/api/associate-groups`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_BASE}/api/evaluations/statistics`, { headers: { Authorization: `Bearer ${token}` } })
+        axiosInstance.get(`${API_BASE}/api/evaluations`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosInstance.get(`${API_BASE}/api/associate-groups`, { headers: { Authorization: `Bearer ${token}` } }),
+        axiosInstance.get(`${API_BASE}/api/evaluations/statistics`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const allEvaluations = evaluationsRes.data;
@@ -716,7 +716,7 @@ function AdminDashboard() {
   const fetchCalendarEventsOnly = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/calendar-events`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/calendar-events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -1082,7 +1082,7 @@ function AdminDashboard() {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       // Call backend to delete the event
-      const response = await axios.delete(`${API_BASE}/api/calendar-events/${eventId}`, {
+      const response = await axiosInstance.delete(`${API_BASE}/api/calendar-events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -1179,7 +1179,7 @@ function AdminDashboard() {
       setIsGeneratingPDF(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
-      const response = await axios.get(`${API_BASE}/api/dashboard/performance-analysis-pdf`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/dashboard/performance-analysis-pdf`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -1238,7 +1238,7 @@ function AdminDashboard() {
         return;
       }
       
-      const response = await axios.get(`${API_BASE}/api/dashboard/individual-performance-analysis-pdf/${selectedAssociateData.user_id}`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/dashboard/individual-performance-analysis-pdf/${selectedAssociateData.user_id}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });

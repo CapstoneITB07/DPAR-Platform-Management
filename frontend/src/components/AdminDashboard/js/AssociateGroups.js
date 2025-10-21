@@ -3,7 +3,7 @@ import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faBell, faChartBar, faTimes, faTrash, faPen, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import Modal from 'react-modal';
 import { API_BASE } from '../../../utils/url';
 
@@ -59,7 +59,7 @@ function AssociateGroups() {
     try {
       if (isInitialLoad) setLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/associate-groups`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -123,7 +123,7 @@ function AssociateGroups() {
   const fetchPendingApplications = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/pending-applications`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/pending-applications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPendingApplications(response.data);
@@ -137,7 +137,7 @@ function AssociateGroups() {
     setApprovingId(applicationId);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
+      await axiosInstance.post(`${API_BASE}/api/pending-applications/${applicationId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -174,7 +174,7 @@ function AssociateGroups() {
     setRejectingId(selectedApplicationId);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/pending-applications/${selectedApplicationId}/reject`, {
+      await axiosInstance.post(`${API_BASE}/api/pending-applications/${selectedApplicationId}/reject`, {
         rejection_reason: rejectionReason.trim()
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -310,22 +310,13 @@ function AssociateGroups() {
       formData.append('date_joined', form.date_joined);
       if (logoFile) formData.append('logo', logoFile);
       
-      const response = await axios.post(`${API_BASE}/api/associate-groups`, formData, {
+      const response = await axiosInstance.post(`${API_BASE}/api/associate-groups`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       
       if (response.status === 201 || response.status === 200) {
-        // Show success message with recovery passcodes
-        const recoveryPasscodes = response.data.recovery_passcodes || [];
-        
         setNotification(`Associate group added successfully!`);
-        
-        // Show recovery passcodes in a modal for admin to copy
-        const recoveryPasscodesText = recoveryPasscodes.length > 0 
-          ? `\n\nRecovery Passcodes:\n${recoveryPasscodes.map((code, index) => `${index + 1}. ${code}`).join('\n')}\n\nPlease copy these codes and provide them to the associate group leader.`
-          : '';
-        
-        setPopupError(`Associate created successfully!${recoveryPasscodesText}\n\nPlease copy these recovery passcodes and provide them to the associate group leader.`);
+        setPopupError(`Associate created successfully!`);
         setShowPopup(true);
         
         setShowAddModal(false);
@@ -375,7 +366,7 @@ function AssociateGroups() {
       formData.append('date_joined', form.date_joined);
       if (logoFile) formData.append('logo', logoFile);
       
-      const response = await axios.post(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
+      const response = await axiosInstance.post(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       
@@ -420,7 +411,7 @@ function AssociateGroups() {
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.delete(`${API_BASE}/api/associate-groups/${associateToDelete}`, {
+      await axiosInstance.delete(`${API_BASE}/api/associate-groups/${associateToDelete}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAssociates(prev => prev.filter(a => a.id !== associateToDelete));
@@ -476,7 +467,7 @@ function AssociateGroups() {
   const handleGroupClick = async (group) => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups/${group.id}`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/associate-groups/${group.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -489,25 +480,6 @@ function AssociateGroups() {
   };
 
 
-  const handleViewRecoveryPasscodes = async (associateId) => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups/${associateId}/recovery-passcodes`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const recoveryPasscodes = response.data.recovery_passcodes || [];
-      if (recoveryPasscodes.length > 0) {
-        const recoveryPasscodesText = `\n\nCurrent Recovery Passcodes:\n${recoveryPasscodes.map((code, index) => `${index + 1}. ${code}`).join('\n')}\n\nThese are the current recovery passcodes for this associate.`;
-        setPopupError(`Associate Recovery Passcodes:${recoveryPasscodesText}`);
-      } else {
-        setPopupError('No recovery passcodes available for this associate.');
-      }
-      setShowPopup(true);
-    } catch (error) {
-      setError('Failed to fetch recovery passcodes.');
-    }
-  };
 
 
   if (loading) return (
@@ -570,16 +542,6 @@ function AssociateGroups() {
                     e.stopPropagation();
                     handleEditAssociate(associate);
                   }}
-                />
-                <FontAwesomeIcon
-                  icon={faKey}
-                  className="recovery-passcode-icon"
-                  style={{ position: 'absolute', top: 8, left: 40, color: '#28a745', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewRecoveryPasscodes(associate.id);
-                  }}
-                  title="View Recovery Passcodes"
                 />
                 <FontAwesomeIcon
                   icon={faTrash}
@@ -1227,64 +1189,6 @@ function AssociateGroups() {
                 </div>
                 <p style={{ color: '#555', fontSize: '0.95rem' }}>
                   Copy this password to provide to the associate group leader.
-                </p>
-              </>
-            ) : popupError.includes('Associate Recovery Passcodes:') ? (
-              <>
-                <p style={{ color: '#28a745', marginBottom: 16, fontWeight: 500 }}>
-                  Current Recovery Passcodes
-                </p>
-                <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '2px solid #28a745' }}>
-                  <p style={{ fontWeight: 600, color: '#28a745', marginBottom: '8px' }}>Recovery Passcodes:</p>
-                  <div style={{ marginBottom: '8px' }}>
-                    {popupError.split('Current Recovery Passcodes:')[1]?.split('\n\n')[0]?.split('\n').filter(line => line.trim() && line.includes('.'))?.map((line, index) => (
-                      <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <code style={{ 
-                          background: '#fff', 
-                          padding: '6px 10px', 
-                          borderRadius: '4px', 
-                          border: '1px solid #ddd',
-                          fontFamily: 'monospace',
-                          fontSize: '12px',
-                          flex: 1
-                        }}>
-                          {line.split('. ')[1]}
-                        </code>
-                        <button 
-                          onClick={(e) => {
-                            navigator.clipboard.writeText(line.split('. ')[1]);
-                            // Show temporary feedback
-                            const btn = e.target;
-                            const originalText = btn.textContent;
-                            btn.textContent = 'Copied!';
-                            btn.style.background = '#28a745';
-                            setTimeout(() => {
-                              btn.textContent = originalText;
-                              btn.style.background = '#007bff';
-                            }, 2000);
-                          }}
-                          style={{ 
-                            background: '#007bff', 
-                            color: '#fff', 
-                            border: 'none', 
-                            padding: '6px 10px', 
-                            borderRadius: '4px', 
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            fontSize: '11px'
-                          }}
-                        >
-                          Copy
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', marginBottom: 0 }}>
-                    ⚠️ These are the current recovery passcodes for this associate. They can be used for password recovery.
-                  </p>
-                </div>
-                <p style={{ color: '#555', fontSize: '0.95rem' }}>
-                  These recovery passcodes can be used by the associate if they forget their password.
                 </p>
               </>
             ) : (

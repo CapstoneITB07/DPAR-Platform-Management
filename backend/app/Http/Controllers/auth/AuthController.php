@@ -270,6 +270,9 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            // Enhanced security: Check for account lockout and progressive delays
+            $this->checkAccountSecurity($user, $request);
+
             // Check if the user's associate group has been soft deleted BEFORE password validation
             if ($user->role === 'associate_group_leader') {
                 // Use withTrashed() to include soft-deleted records and check if it's trashed
@@ -306,11 +309,16 @@ class AuthController extends Controller
 
             // Now check password
             if (!Hash::check($request->password, $user->password)) {
+                // Record failed login attempt with enhanced security
+                $this->recordFailedLoginAttempt($user, $request);
                 return response()->json([
                     'message' => 'Invalid credentials.',
                     'errors' => ['email' => ['Invalid credentials.']]
                 ], 401);
             }
+
+            // Clear failed attempts on successful login
+            $this->clearFailedAttempts($user, $request);
 
             // Check if user needs OTP verification (first-time login after approval)
             if ($user->role === 'associate_group_leader' && $user->needs_otp_verification) {
@@ -751,6 +759,153 @@ class AuthController extends Controller
                 'message' => 'An error occurred during OTP verification.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Enhanced security: Check account lockout and progressive delays
+     */
+    private function checkAccountSecurity($user, $request)
+    {
+        $ipAddress = $request->ip();
+        $userAgent = $request->userAgent();
+        $deviceId = md5($ipAddress . $userAgent);
+
+        // Check for account lockout
+        $lockoutKey = 'account_lockout_' . $user->id;
+        $lockoutUntil = cache()->get($lockoutKey);
+
+        if ($lockoutUntil && now()->lt($lockoutUntil)) {
+            $remainingMinutes = now()->diffInMinutes($lockoutUntil, false);
+            throw new \Exception("Account temporarily locked due to too many failed login attempts. Please try again in {$remainingMinutes} minutes.");
+        }
+
+        // Check for progressive delays
+        $attemptKey = 'login_attempts_' . $user->id . '_' . $deviceId;
+        $attempts = cache()->get($attemptKey, 0);
+
+        if ($attempts > 0) {
+            // Progressive delay: 2^attempts minutes (2, 4, 8, 16, 32 minutes)
+            $delayMinutes = min(pow(2, $attempts), 32); // Cap at 32 minutes
+            $delayKey = 'login_delay_' . $user->id . '_' . $deviceId;
+            $delayUntil = cache()->get($delayKey);
+
+            if ($delayUntil && now()->lt($delayUntil)) {
+                $remainingSeconds = now()->diffInSeconds($delayUntil, false);
+                throw new \Exception("Please wait {$remainingSeconds} seconds before attempting to login again.");
+            }
+        }
+
+        // Monitor suspicious IP patterns
+        $this->monitorSuspiciousActivity($user, $request);
+    }
+
+    /**
+     * Record failed login attempt with enhanced security
+     */
+    private function recordFailedLoginAttempt($user, $request)
+    {
+        $ipAddress = $request->ip();
+        $userAgent = $request->userAgent();
+        $deviceId = md5($ipAddress . $userAgent);
+
+        // Increment failed attempts
+        $attemptKey = 'login_attempts_' . $user->id . '_' . $deviceId;
+        $attempts = cache()->get($attemptKey, 0) + 1;
+        cache()->put($attemptKey, $attempts, now()->addHours(24)); // Store for 24 hours
+
+        // Set progressive delay
+        $delayMinutes = min(pow(2, $attempts), 32); // Cap at 32 minutes
+        $delayKey = 'login_delay_' . $user->id . '_' . $deviceId;
+        cache()->put($delayKey, now()->addMinutes($delayMinutes), now()->addMinutes($delayMinutes));
+
+        // Log suspicious activity
+        Log::warning('Failed login attempt', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+            'attempt_number' => $attempts,
+            'delay_minutes' => $delayMinutes
+        ]);
+
+        // Check for account lockout (5 attempts = 24 hour lockout)
+        if ($attempts >= 5) {
+            $lockoutKey = 'account_lockout_' . $user->id;
+            $lockoutDuration = 24 * 60; // 24 hours in minutes
+            cache()->put($lockoutKey, now()->addMinutes($lockoutDuration), now()->addMinutes($lockoutDuration));
+
+            Log::critical('Account locked due to repeated failed login attempts', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip_address' => $ipAddress,
+                'attempts' => $attempts,
+                'lockout_duration' => $lockoutDuration
+            ]);
+        }
+
+        // Monitor for suspicious patterns
+        $this->monitorSuspiciousActivity($user, $request);
+    }
+
+    /**
+     * Clear failed attempts on successful login
+     */
+    private function clearFailedAttempts($user, $request)
+    {
+        $ipAddress = $request->ip();
+        $userAgent = $request->userAgent();
+        $deviceId = md5($ipAddress . $userAgent);
+
+        $attemptKey = 'login_attempts_' . $user->id . '_' . $deviceId;
+        $delayKey = 'login_delay_' . $user->id . '_' . $deviceId;
+        $lockoutKey = 'account_lockout_' . $user->id;
+
+        cache()->forget($attemptKey);
+        cache()->forget($delayKey);
+        cache()->forget($lockoutKey);
+    }
+
+    /**
+     * Monitor suspicious activity patterns
+     */
+    private function monitorSuspiciousActivity($user, $request)
+    {
+        $ipAddress = $request->ip();
+        $userAgent = $request->userAgent();
+
+        // Track IPs attempting the same account
+        $ipTrackingKey = 'suspicious_ips_' . $user->id;
+        $suspiciousIps = cache()->get($ipTrackingKey, []);
+
+        if (!in_array($ipAddress, $suspiciousIps)) {
+            $suspiciousIps[] = $ipAddress;
+            cache()->put($ipTrackingKey, $suspiciousIps, now()->addDays(7)); // Store for 7 days
+        }
+
+        // Alert if multiple IPs are attempting the same account
+        if (count($suspiciousIps) > 3) {
+            Log::critical('Multiple IPs attempting same account', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'suspicious_ips' => $suspiciousIps,
+                'current_ip' => $ipAddress,
+                'user_agent' => $userAgent
+            ]);
+        }
+
+        // Track rapid login attempts from same IP
+        $rapidAttemptsKey = 'rapid_attempts_' . $ipAddress;
+        $rapidAttempts = cache()->get($rapidAttemptsKey, 0) + 1;
+        cache()->put($rapidAttemptsKey, $rapidAttempts, now()->addMinutes(5));
+
+        if ($rapidAttempts > 10) { // More than 10 attempts in 5 minutes
+            Log::warning('Rapid login attempts detected', [
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'attempts' => $rapidAttempts,
+                'target_email' => $user->email
+            ]);
         }
     }
 }

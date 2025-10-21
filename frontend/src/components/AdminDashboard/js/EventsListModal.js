@@ -3,7 +3,7 @@ import Modal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faCalendarAlt, faMapMarkerAlt, faUser, faClock, faEdit, faTrash, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { format, parseISO } from 'date-fns';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/EventsListModal.css';
 import { API_BASE } from '../../../utils/url';
 
@@ -25,7 +25,7 @@ const EventsListModal = ({ show, onClose, onEdit, onDelete }) => {
     setError('');
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/calendar-events`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/calendar-events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

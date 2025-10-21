@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaCloudUploadAlt } from 'react-icons/fa';
 import '../css/announcement.css';
 import { API_BASE } from '../../../utils/url';
@@ -43,7 +43,7 @@ function Announcement() {
     try {
       if (isInitialLoad) setInitialLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const res = await axios.get(`${API_BASE}/api/announcements`, {
+      const res = await axiosInstance.get(`${API_BASE}/api/announcements`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnnouncements(res.data);
@@ -78,13 +78,13 @@ function Announcement() {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (editId) {
         // Edit mode
-        await axios.post(`${API_BASE}/api/announcements/${editId}?_method=PUT`, formData, {
+        await axiosInstance.post(`${API_BASE}/api/announcements/${editId}?_method=PUT`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
         });
         setNotification('Announcement updated successfully!');
       } else {
         // Create mode
-        await axios.post(`${API_BASE}/api/announcements`, formData, {
+        await axiosInstance.post(`${API_BASE}/api/announcements`, formData, {
           headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
         });
         setNotification('Announcement created successfully!');
@@ -127,7 +127,7 @@ function Announcement() {
   const confirmDelete = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.delete(`${API_BASE}/api/announcements/${deleteId}`, {
+      await axiosInstance.delete(`${API_BASE}/api/announcements/${deleteId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchAnnouncements();

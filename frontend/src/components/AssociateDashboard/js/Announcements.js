@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
-import axios from 'axios';
+import axios from '../../../utils/axiosConfig';
 import '../css/Announcements.css';
 import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { API_BASE } from '../../../utils/url';

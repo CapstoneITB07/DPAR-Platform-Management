@@ -105,7 +105,6 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociat
     Route::apiResource('/associate-groups', AssociateGroupController::class);
     Route::get('/associate-groups/{id}/password', [AssociateGroupController::class, 'getPassword'])->middleware('role:head_admin');
     Route::delete('/associate-groups/{id}/password', [AssociateGroupController::class, 'clearTempPassword'])->middleware('role:head_admin');
-    Route::get('/associate-groups/{id}/recovery-passcodes', [AssociateGroupController::class, 'getRecoveryPasscodes'])->middleware('role:head_admin');
     Route::post('/associate-groups/{id}/cleanup-director-history', [AssociateGroupController::class, 'cleanupDirectorHistory'])->middleware('role:head_admin');
     Route::post('/associate-groups/cleanup-all-director-history', [AssociateGroupController::class, 'cleanupAllDirectorHistory'])->middleware('role:head_admin');
     Route::post('/associate-groups/fix-director-fields', [AssociateGroupController::class, 'fixDirectorFields'])->middleware('role:head_admin');

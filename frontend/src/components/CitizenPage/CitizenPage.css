@@ -236,7 +236,7 @@
   max-width: 1200px;
   margin: 60px auto 0 auto;
   border-radius: 16px;
-  padding: 0 0 32px 0;
+  padding: 0;
   opacity: 1;
   transition: opacity 0.35s;
   position: relative;

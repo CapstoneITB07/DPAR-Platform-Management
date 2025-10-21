@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Modal from 'react-modal';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/BulkCertificateModal.css';
 
 const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCertificateDataChange }) => {
@@ -223,7 +223,7 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
         ? `${assetBaseUrl}/${selectedAssociateObj.logo.replace('/Assets/', '')}`
         : `${assetBaseUrl}/disaster_logo.png`;
 
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `${backendBaseUrl}/api/certificates/bulk`,
         {
           recipients: recipients,

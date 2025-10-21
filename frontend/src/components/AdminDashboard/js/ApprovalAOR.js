@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/ApprovalAOR.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDownload, faTimes, faCheck, faBan } from '@fortawesome/free-solid-svg-icons';
@@ -217,7 +217,7 @@ function ApprovalAOR() {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
       // Fetch all reports instead of just submitted ones
-      const response = await axios.get(`${API_BASE}/api/reports`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/reports`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -230,7 +230,7 @@ function ApprovalAOR() {
         response.data.map(async (report) => {
           if (report.user_id) {
             try {
-              const groupResponse = await axios.get(`${API_BASE}/api/associate-groups`, {
+              const groupResponse = await axiosInstance.get(`${API_BASE}/api/associate-groups`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               const associateGroup = groupResponse.data.find(group => group.user_id === report.user_id);
@@ -309,7 +309,7 @@ function ApprovalAOR() {
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/reports/${reportId}/download`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/reports/${reportId}/download`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -342,13 +342,13 @@ function ApprovalAOR() {
     try {
       // Fetch the latest data for this report before showing the modal
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const reportResponse = await axios.get(`${API_BASE}/api/reports/${report.id}`, {
+      const reportResponse = await axiosInstance.get(`${API_BASE}/api/reports/${report.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       // Fetch the latest associate group data
       if (reportResponse.data.user_id) {
-        const groupResponse = await axios.get(`${API_BASE}/api/associate-groups`, {
+        const groupResponse = await axiosInstance.get(`${API_BASE}/api/associate-groups`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const associateGroup = groupResponse.data.find(group => group.user_id === reportResponse.data.user_id);
@@ -380,7 +380,7 @@ function ApprovalAOR() {
       console.log('Attempting to approve report:', reportId);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
-      const response = await axios.put(`${API_BASE}/api/reports/${reportId}/approve`, {}, {
+      const response = await axiosInstance.put(`${API_BASE}/api/reports/${reportId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -404,7 +404,7 @@ function ApprovalAOR() {
       console.log('Attempting to reject report:', reportId);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
-      const response = await axios.put(`${API_BASE}/api/reports/${reportId}/reject`, {
+      const response = await axiosInstance.put(`${API_BASE}/api/reports/${reportId}/reject`, {
         rejection_reason: rejectionReason
       }, {
         headers: { Authorization: `Bearer ${token}` }

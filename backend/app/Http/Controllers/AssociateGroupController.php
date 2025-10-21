@@ -165,9 +165,8 @@ class AssociateGroupController extends Controller
                 $group->logo = Storage::url($group->logo);
             }
 
-            // Include the recovery passcodes in the response for admin viewing
+            // Return the group data without recovery passcodes
             $responseData = $group->load('user')->toArray();
-            $responseData['recovery_passcodes'] = $recoveryPasscodes;
 
             DB::commit();
             return response()->json($responseData, 201);
@@ -209,48 +208,6 @@ class AssociateGroupController extends Controller
         return str_shuffle($passcode);
     }
 
-    /**
-     * View existing recovery passcodes for an associate group
-     */
-    public function getRecoveryPasscodes($id)
-    {
-        try {
-            $group = AssociateGroup::with('user')->findOrFail($id);
-
-            // Check if user is admin (you may need to adjust this based on your auth system)
-            if (!Auth::user() || Auth::user()->role !== 'head_admin') {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
-
-            if (!$group->user) {
-                return response()->json(['message' => 'No user account found for this associate group.'], 404);
-            }
-
-            // Return the existing recovery passcodes
-            $recoveryPasscodes = $group->user->recovery_passcodes ?? [];
-
-            // Log the recovery passcodes being returned
-            Log::info('Fetching recovery passcodes for admin', [
-                'associate_id' => $id,
-                'associate_name' => $group->name,
-                'user_id' => $group->user->id,
-                'recovery_passcodes' => $recoveryPasscodes,
-                'count' => count($recoveryPasscodes)
-            ]);
-
-            return response()->json([
-                'associate_name' => $group->name,
-                'email' => $group->email,
-                'recovery_passcodes' => $recoveryPasscodes
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error fetching recovery passcodes: ' . $e->getMessage());
-            return response()->json([
-                'message' => 'Failed to fetch recovery passcodes',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 
     public function update(Request $request, $id)
     {

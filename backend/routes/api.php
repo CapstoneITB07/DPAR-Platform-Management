@@ -57,7 +57,7 @@ Route::post('/push/unsubscribe', [PushNotificationController::class, 'unsubscrib
 Route::post('/push/toggle', [PushNotificationController::class, 'toggleSubscription']);
 
 // Protected Routes (require authentication)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociate::class])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Profile routes

@@ -182,6 +182,18 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Session expired or revoked. Please login again.');
       }
       
+      // Handle 403 Forbidden responses (invalid account)
+      if (response.status === 403) {
+        const errorData = await response.json();
+        if (errorData.error === 'Invalid account' || 
+            errorData.message?.includes('Invalid account') ||
+            (errorData.errors && errorData.errors.email && errorData.errors.email.includes('Invalid account'))) {
+          console.log('Invalid account, logging out...');
+          await logout();
+          throw new Error('Invalid account. Contact the administrator.');
+        }
+      }
+      
       // Handle 429 Too Many Requests (rate limiting)
       if (response.status === 429) {
         const errorText = await response.text();

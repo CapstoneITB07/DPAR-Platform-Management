@@ -104,4 +104,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(CalendarEvent::class, 'created_by');
     }
+
+    /**
+     * Get the associate group for this user
+     */
+    public function associateGroup()
+    {
+        return $this->hasOne(AssociateGroup::class);
+    }
 }

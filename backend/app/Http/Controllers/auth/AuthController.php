@@ -250,7 +250,7 @@ class AuthController extends Controller
 
             $user = User::where('email', $request['email'])->first();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
+            if (!$user) {
                 // Check if there's a pending application with this email
                 $pendingApplication = PendingApplication::where('email', $request['email'])
                     ->where('status', 'pending')
@@ -264,6 +264,48 @@ class AuthController extends Controller
                     ], 200);
                 }
 
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['email' => ['Invalid credentials.']]
+                ], 401);
+            }
+
+            // Check if the user's associate group has been soft deleted BEFORE password validation
+            if ($user->role === 'associate_group_leader') {
+                // Use withTrashed() to include soft-deleted records and check if it's trashed
+                $associateGroup = \App\Models\AssociateGroup::withTrashed()
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                // Debug logging
+                Log::info('Soft delete check for user', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'associate_group_found' => $associateGroup ? true : false,
+                    'associate_group_deleted_at' => $associateGroup ? $associateGroup->deleted_at : null,
+                    'is_trashed' => $associateGroup ? $associateGroup->trashed() : false
+                ]);
+
+                if ($associateGroup && $associateGroup->trashed()) {
+                    // Revoke all existing tokens for this user
+                    $user->tokens()->delete();
+
+                    Log::info('Blocking login for soft-deleted associate', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'associate_group_id' => $associateGroup->id,
+                        'deleted_at' => $associateGroup->deleted_at
+                    ]);
+
+                    return response()->json([
+                        'message' => 'Invalid account. Contact the administrator.',
+                        'error' => 'Invalid account'
+                    ], 403);
+                }
+            }
+
+            // Now check password
+            if (!Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'message' => 'Invalid credentials.',
                     'errors' => ['email' => ['Invalid credentials.']]
@@ -362,6 +404,23 @@ class AuthController extends Controller
                     'message' => 'User not found.',
                     'errors' => ['email' => ['User not found.']]
                 ], 404);
+            }
+
+            // Check if the user's associate group has been soft deleted
+            if ($user->role === 'associate_group_leader') {
+                $associateGroup = \App\Models\AssociateGroup::withTrashed()
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if ($associateGroup && $associateGroup->trashed()) {
+                    // Revoke all existing tokens for this user
+                    $user->tokens()->delete();
+
+                    return response()->json([
+                        'message' => 'Invalid account. Contact the administrator.',
+                        'error' => 'Invalid account'
+                    ], 403);
+                }
             }
 
             // Check if user is temporarily locked out due to too many failed attempts
@@ -565,6 +624,23 @@ class AuthController extends Controller
             ]);
 
             $user = User::findOrFail($request->user_id);
+
+            // Check if the user's associate group has been soft deleted
+            if ($user->role === 'associate_group_leader') {
+                $associateGroup = \App\Models\AssociateGroup::withTrashed()
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if ($associateGroup && $associateGroup->trashed()) {
+                    // Revoke all existing tokens for this user
+                    $user->tokens()->delete();
+
+                    return response()->json([
+                        'message' => 'Invalid account. Contact the administrator.',
+                        'errors' => ['user_id' => ['Invalid account.']]
+                    ], 403);
+                }
+            }
 
             // Generate device identifier from IP and User-Agent
             $deviceId = md5($request->ip() . $request->userAgent());

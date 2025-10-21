@@ -19,7 +19,7 @@ class AssociateGroupController extends Controller
     public function index()
     {
         try {
-            $groups = AssociateGroup::with('user')->get();
+            $groups = AssociateGroup::with('user')->whereNull('deleted_at')->get();
             // Add full URLs for logos
             foreach ($groups as $group) {
                 if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {
@@ -37,6 +37,7 @@ class AssociateGroupController extends Controller
     {
         try {
             $groups = AssociateGroup::select('id', 'name', 'type', 'director', 'description', 'logo', 'email', 'phone')
+                ->whereNull('deleted_at')
                 ->get();
 
             // Add full URLs for logos
@@ -55,7 +56,9 @@ class AssociateGroupController extends Controller
     public function show($id)
     {
         try {
-            $group = AssociateGroup::with(['user', 'directorHistoriesWithActivities'])->findOrFail($id);
+            $group = AssociateGroup::with(['user', 'directorHistoriesWithActivities'])
+                ->whereNull('deleted_at')
+                ->findOrFail($id);
 
             // Add full URL for logos
             if ($group->logo && !str_starts_with($group->logo, '/Assets/')) {

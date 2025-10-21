@@ -874,7 +874,7 @@ function VolunteerList() {
           </div>
         ) : (
           <>
-            <div className="table-container">
+            <div className={`table-container ${filteredVolunteers.length > 10 ? 'scrollable' : ''}`}>
               <table className="volunteer-table">
                 <thead>
                   <tr>
@@ -994,6 +994,15 @@ function VolunteerList() {
                 </tbody>
               </table>
             </div>
+            
+            {/* Scroll indicator when there are more than 10 volunteers */}
+            {filteredVolunteers.length > 10 && (
+              <div className="scroll-indicator">
+                <FontAwesomeIcon icon={faInfoCircle} />
+                <span>Scroll to see more volunteers ({filteredVolunteers.length} total)</span>
+              </div>
+            )}
+            
             {/* Mobile volunteer count */}
             <div className="volunteer-count-mobile">
               {filteredVolunteers.length} volunteer(s)
@@ -1006,7 +1015,17 @@ function VolunteerList() {
           <div className="volunteer-modal-overlay" onClick={() => !isSubmitting && setShowModal(false)}>
             <div className="volunteer-modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="volunteer-modal-header">
-                <span>{selectedVolunteer ? 'Edit Volunteer' : 'Add New Volunteer'}</span>
+                <div className="modal-header-content">
+                  <div className="modal-header-icon">
+                    <FontAwesomeIcon icon={selectedVolunteer ? faEdit : faUserPlus} />
+                  </div>
+                  <span className="modal-header-title">
+                    {selectedVolunteer ? 'Edit Volunteer' : 'Add New Volunteer'}
+                  </span>
+                  <span className="modal-header-mobile-text">
+                    {selectedVolunteer ? 'Edit' : 'Add'}
+                  </span>
+                </div>
                 <button 
                   className="volunteer-modal-close" 
                   onClick={() => {
@@ -1114,22 +1133,6 @@ function VolunteerList() {
                   </div>
                   
                   <div className="volunteer-modal-actions">
-                    <button
-                      type="button"
-                      className="modal-close-btn-mobile"
-                      onClick={() => {
-                        setShowModal(false);
-                        setSelectedVolunteer(null);
-                        resetForm();
-                      }}
-                      disabled={isSubmitting}
-                      style={{
-                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                        opacity: isSubmitting ? 0.6 : 1
-                      }}
-                    >
-                      Close
-                    </button>
                      <button 
                        type="submit" 
                        className="volunteer-save-btn" 
@@ -1155,8 +1158,14 @@ function VolunteerList() {
           <div className="volunteer-modal-overlay" onClick={() => setShowDetailsModal(false)}>
             <div className="view-modal" onClick={e => e.stopPropagation()}>
               <div className="volunteer-modal-header">
-                <span>Member Details</span>
-                <button className="volunteer-modal-close" style={{position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)'}} onClick={() => setShowDetailsModal(false)}>&times;</button>
+                <div className="modal-header-content">
+                  <div className="modal-header-icon">
+                    <FontAwesomeIcon icon={faUserPlus} />
+                  </div>
+                  <span className="modal-header-title">Member Details</span>
+                  <span className="modal-header-mobile-text">View</span>
+                </div>
+                <button className="volunteer-modal-close" onClick={() => setShowDetailsModal(false)}>&times;</button>
               </div>
               <div className="volunteer-details-card">
                 <div className="profile-name">{detailsVolunteer.name}</div>
@@ -1183,6 +1192,7 @@ function VolunteerList() {
                   </div>
 
                 </div>
+                
               </div>
             </div>
           </div>

@@ -1588,8 +1588,8 @@ function AdminDashboard() {
                         }}
                       />
                       <div className="member-details">
-                        <span className="member-name">{member.name}</span>
-                        <span className="member-org">{member.organization}</span>
+                        <span className="member-name">{member.organization_name || member.name}</span>
+                        <span className="member-org">{member.director || member.organization}</span>
                       </div>
                     </div>
                     <div className="member-stats">

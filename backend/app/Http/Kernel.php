@@ -41,5 +41,6 @@ class Kernel extends HttpKernel
         'throttle.login' => \App\Http\Middleware\ThrottleLoginAttempts::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'check.soft.deleted' => \App\Http\Middleware\CheckSoftDeletedAssociate::class,
     ];
 }

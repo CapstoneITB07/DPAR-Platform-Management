@@ -18,23 +18,26 @@ class MemberController extends Controller
             $members = DB::table('users')
                 ->leftJoin('associate_groups', 'users.id', '=', 'associate_groups.user_id')
                 ->where('users.role', 'associate_group_leader')
+                ->whereNull('associate_groups.deleted_at')
                 ->select([
                     'users.id',
-                    'users.name',
+                    'users.name as user_name',
                     'users.organization',
                     'users.email',
                     'associate_groups.logo',
                     'associate_groups.type',
                     'associate_groups.director',
+                    'associate_groups.name as organization_name',
                     'associate_groups.description',
                     'associate_groups.phone',
                 ])
-                ->orderBy('users.name')
+                ->orderBy('associate_groups.name')
                 ->get();
 
             // Get volunteer counts for each associate group
             foreach ($members as $member) {
                 $volunteerCount = \App\Models\AssociateGroup::where('user_id', $member->id)
+                    ->whereNull('deleted_at')
                     ->withCount('volunteers')
                     ->first();
                 $member->members_count = $volunteerCount ? $volunteerCount->volunteers_count : 0;
@@ -43,6 +46,8 @@ class MemberController extends Controller
             // Process logo URLs
             foreach ($members as $member) {
                 if ($member->logo && !str_starts_with($member->logo, '/Assets/')) {
+                    $member->logo = url('storage/' . $member->logo);
+                } elseif ($member->logo && str_starts_with($member->logo, '/Assets/')) {
                     $member->logo = url($member->logo);
                 }
             }
@@ -77,22 +82,24 @@ class MemberController extends Controller
         try {
             $period = $request->get('period', 'day'); // day, week, month
 
-            // Get all associate group leaders
+            // Get all associate group leaders (excluding soft-deleted)
             $members = DB::table('users')
                 ->leftJoin('associate_groups', 'users.id', '=', 'associate_groups.user_id')
                 ->where('users.role', 'associate_group_leader')
+                ->whereNull('associate_groups.deleted_at')
                 ->select([
                     'users.id',
-                    'users.name',
+                    'users.name as user_name',
                     'users.organization',
                     'users.email',
                     'associate_groups.logo',
                     'associate_groups.type',
                     'associate_groups.director',
+                    'associate_groups.name as organization_name',
                     'associate_groups.description',
                     'associate_groups.phone',
                 ])
-                ->orderBy('users.name')
+                ->orderBy('associate_groups.name')
                 ->get();
 
             Log::info('Found ' . $members->count() . ' associate users');
@@ -113,6 +120,7 @@ class MemberController extends Controller
 
                     // Get volunteer count
                     $volunteerCount = \App\Models\AssociateGroup::where('user_id', $member->id)
+                        ->whereNull('deleted_at')
                         ->withCount('volunteers')
                         ->first();
                     $member->members_count = $volunteerCount ? $volunteerCount->volunteers_count : 0;
@@ -129,6 +137,8 @@ class MemberController extends Controller
             // Process logo URLs
             foreach ($members as $member) {
                 if ($member->logo && !str_starts_with($member->logo, '/Assets/')) {
+                    $member->logo = url('storage/' . $member->logo);
+                } elseif ($member->logo && str_starts_with($member->logo, '/Assets/')) {
                     $member->logo = url($member->logo);
                 }
             }

@@ -78,12 +78,17 @@ class DashboardAnalysisService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get all associate groups
+        // Get all associate groups (excluding soft-deleted)
         $associateGroups = AssociateGroup::with(['user:id,name,organization'])
+            ->whereNull('deleted_at')
             ->get();
 
-        // Get only associate group leaders (associates)
-        $associateUsers = User::where('role', 'associate_group_leader')->get();
+        // Get only associate group leaders (associates) with active associate groups
+        $associateUsers = User::where('role', 'associate_group_leader')
+            ->whereHas('associateGroup', function ($query) {
+                $query->whereNull('deleted_at');
+            })
+            ->get();
 
         // Handle case where there's no data
         if ($evaluations->isEmpty() && $associateGroups->isEmpty()) {

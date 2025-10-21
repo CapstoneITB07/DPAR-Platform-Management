@@ -2,6 +2,8 @@
 .volunteer-list-container {
   padding: 24px;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header and Controls Row Layout */
@@ -462,13 +464,16 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  max-height: 400px; /* Show approximately 5-6 volunteers with scroll */
-  overflow-y: auto;
-  overflow-x: auto;
+  height: 600px !important; /* Fixed height to ensure scrolling works */
+  max-height: 600px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
   scrollbar-width: thin;
   scrollbar-color: #a72828 #f5f5f5;
   margin-bottom: 16px;
+  position: relative;
+  display: block;
+  flex-shrink: 0; /* Prevent flex shrinking */
 }
 
 .table-container::-webkit-scrollbar {
@@ -490,11 +495,51 @@
   background: #7a1a1a;
 }
 
+/* Scroll indicator for when there are more items */
+.table-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.8));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.table-container.scrollable::after {
+  opacity: 1;
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.scroll-indicator svg {
+  color: #a72828;
+  font-size: 16px;
+}
+
 .volunteer-table {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
   background: #fff;
+  position: relative;
+  table-layout: fixed;
 }
 
 .volunteer-table th {
@@ -505,6 +550,10 @@
   border-bottom: 2px solid #e5e7eb;
   height: 48px;
   vertical-align: middle;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .volunteer-table tr:nth-child(even) {
@@ -580,6 +629,16 @@
 
 .volunteer-table tr.selected:hover {
   background: #f8d7da;
+}
+
+/* Ensure proper table scrolling */
+.volunteer-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  background: #fff;
+  position: relative;
+  table-layout: fixed;
 }
 
 /* Table Cells */
@@ -801,6 +860,47 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  gap: 12px;
+}
+
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.modal-header-icon svg {
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.modal-header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  display: block; /* Show on desktop */
+}
+
+.modal-header-mobile-text {
+  display: none; /* Hide on desktop */
 }
 
 .volunteer-modal-header span {
@@ -900,51 +1000,86 @@
   padding: 24px 32px 0 32px;
 }
 
-.view-modal .volunteer-modal-header {
-  background: #a51d1d;
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 700;
-  padding: 20px 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 14px 14px 0 0;
-  position: relative;
-}
-
-.view-modal .volunteer-modal-header span {
-  font-weight: 700;
-  text-align: left;
-  font-size: 1.5rem;
-  flex: 1;
-}
-
-.view-modal .volunteer-modal-close {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 2rem;
-  cursor: pointer;
-  line-height: 1;
-  margin-right: -4px;
-  position: absolute;
-  right: 24px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  border-radius: 50%;
-}
-
-.view-modal .volunteer-modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-50%) scale(1.1);
-}
+  .view-modal .volunteer-modal-header {
+    background: #a51d1d;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 14px 14px 0 0;
+    position: relative;
+    gap: 8px;
+  }
+  
+  .view-modal .modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto; /* Don't grow, don't shrink, auto size */
+    min-width: 0;
+    justify-content: flex-start; /* Align to left */
+  }
+  
+  .view-modal .modal-header-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .view-modal .modal-header-icon svg {
+    font-size: 1rem;
+  }
+  
+  .view-modal .modal-header-title {
+    font-weight: 700;
+    text-align: left;
+    font-size: 1.1rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: none; /* Hide title on mobile */
+  }
+  
+  .view-modal .modal-header-mobile-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    display: block; /* Show on mobile */
+  }
+  
+  .view-modal .volunteer-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+    margin: 0;
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    flex-shrink: 0;
+    padding: 4px;
+    margin-left: auto; /* Push to the right */
+    position: relative;
+    z-index: 1;
+  }
+  
+  .view-modal .volunteer-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05); /* Reduce scale to prevent overflow */
+  }
 
 .detail-row {
   display: grid;
@@ -1043,23 +1178,69 @@
   }
   
   .volunteer-modal-header {
-    padding: 8px 8px 8px 12px;
+    padding: 12px 16px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  
+  .modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto; /* Don't grow, don't shrink, auto size */
+    min-width: 0;
+    justify-content: flex-start; /* Align to left */
+  }
+  
+  .modal-header-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .modal-header-icon svg {
     font-size: 1rem;
   }
-  .volunteer-modal-header span {
-    font-size: 1rem;
-    min-width: 100%;
-    flex: 1 1 0;
-    white-space: normal; /* allow wrapping */
-    overflow: visible;
-    text-overflow: unset;
+  
+  .modal-header-title {
+    font-size: 1.1rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     padding: 0;
+    margin: 0;
+    display: none; /* Hide title on mobile */
+  }
+  
+  .modal-header-mobile-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    display: block; /* Show on mobile */
   }
   .volunteer-modal-close {
-    font-size: 1.5rem;
-    margin-left: 8px;
-    padding: 0;
-    right: 10px;
+    font-size: 1.8rem;
+    margin: 0;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto; /* Push to the right */
+    position: relative;
+    z-index: 1;
+  }
+  
+  .volunteer-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05); /* Reduce scale to prevent overflow */
   }
   
   .view-modal {
@@ -1695,6 +1876,32 @@
     padding: 12px;
   }
   
+  /* Mobile button layout - separate Add button */
+  .controls-row .action-buttons {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    display: flex !important;
+  }
+  
+  .controls-row .action-buttons .add-member-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+    order: 3 !important;
+    flex: none !important;
+  }
+  
+  .controls-row .action-buttons .export-btn,
+  .controls-row .action-buttons .import-excel-btn {
+    flex: 1 !important;
+    order: 1 !important;
+    margin-right: 6px !important;
+  }
+  
+  .controls-row .action-buttons .import-excel-btn {
+    margin-right: 0 !important;
+  }
+  
   .header-section {
     flex-direction: row;
     align-items: center;
@@ -1731,6 +1938,25 @@
   .action-buttons {
     gap: 6px;
     justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  
+  /* Separate Add button on mobile */
+  .action-buttons .add-member-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+    order: 3 !important; /* Move to end */
+  }
+  
+  .action-buttons .export-btn,
+  .action-buttons .import-excel-btn {
+    flex: 1 !important;
+    order: 1 !important; /* Keep Export and Import together */
+    margin-right: 6px !important;
+  }
+  
+  .action-buttons .import-excel-btn {
+    margin-right: 0 !important;
   }
   
   .add-member-btn,
@@ -1784,10 +2010,13 @@
   .volunteer-modal-content {
     width: 95%;
     margin: 10px;
+    max-height: 95vh;
+    overflow-y: auto;
   }
   
   .volunteer-modal-body {
     padding: 20px;
+    padding-bottom: 10px; /* Reduce bottom padding to prevent white space */
   }
   
   .volunteer-form .form-row {
@@ -1870,6 +2099,25 @@
   .action-buttons {
     justify-content: flex-end;
     gap: 4px;
+    flex-wrap: wrap;
+  }
+  
+  /* Ensure Add button is separated on small screens too */
+  .action-buttons .add-member-btn {
+    width: 100% !important;
+    margin-top: 6px !important;
+    order: 3 !important;
+  }
+  
+  .action-buttons .export-btn,
+  .action-buttons .import-excel-btn {
+    flex: 1 !important;
+    order: 1 !important;
+    margin-right: 4px !important;
+  }
+  
+  .action-buttons .import-excel-btn {
+    margin-right: 0 !important;
   }
   
   .add-member-btn,
@@ -2007,6 +2255,25 @@
   .action-buttons {
     justify-content: flex-end;
     gap: 3px;
+    flex-wrap: wrap;
+  }
+  
+  /* Ensure Add button is separated on very small screens */
+  .action-buttons .add-member-btn {
+    width: 100% !important;
+    margin-top: 4px !important;
+    order: 3 !important;
+  }
+  
+  .action-buttons .export-btn,
+  .action-buttons .import-excel-btn {
+    flex: 1 !important;
+    order: 1 !important;
+    margin-right: 3px !important;
+  }
+  
+  .action-buttons .import-excel-btn {
+    margin-right: 0 !important;
   }
   
   .add-member-btn,
@@ -2402,15 +2669,20 @@
 /* Improved modal responsiveness */
 @media (max-width: 768px) {
   .volunteer-modal-overlay {
-    padding: 10px;
+    padding: 0; /* Remove padding to prevent white space */
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .volunteer-modal-content {
     max-height: 95vh;
+    margin: 10px;
   }
   
   .volunteer-modal-body {
     max-height: 60vh;
+    overflow-y: auto;
   }
   
   .view-modal {
@@ -2679,7 +2951,7 @@
     display: none !important;
   }
   .volunteer-count-mobile {
-    display: block !important;
+    display: none !important;
     text-align: center;
     color: #3b82f6;
     font-size: 0.95rem;
@@ -2745,30 +3017,25 @@
 }
 @media (max-width: 480px) {
   .volunteer-modal-close {
-    display: none !important;
+    display: block !important;
+    font-size: 1.8rem;
+    margin-left: 8px;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
   }
-  .modal-close-btn-mobile {
-    display: block;
-    width: 100%;
-    margin: 12px 0 0 0;
-    background: #e5e7eb;
-    color: #222;
-    border: none;
-    border-radius: 12px;
-    padding: 12px 10px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    box-shadow: none;
+  
+  .volunteer-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
   }
+  
   .volunteer-modal-actions {
     flex-direction: column;
     gap: 12px;
   }
-  .volunteer-save-btn,
-  .modal-close-btn-mobile {
+  
+  .volunteer-save-btn {
     width: 100%;
     border-radius: 12px;
     font-size: 1rem;
@@ -2778,13 +3045,6 @@
     margin: 0;
     text-align: center;
     display: block;
-  }
-  .modal-close-btn-mobile {
-    background: #e5e7eb;
-    color: #222;
-    border: none;
-  }
-  .volunteer-save-btn {
     background: #a51d1d;
     color: #fff;
     border: none;
@@ -3470,5 +3730,32 @@
   .excel-import-modal .modal-footer button {
     padding: 6px;
     font-size: 0.7rem;
+  }
+}
+
+/* Force mobile button layout - highest priority */
+@media (max-width: 768px) {
+  .volunteer-list-container .controls-row .action-buttons {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    display: flex !important;
+  }
+  
+  .volunteer-list-container .controls-row .action-buttons .add-member-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+    order: 3 !important;
+    flex: none !important;
+  }
+  
+  .volunteer-list-container .controls-row .action-buttons .export-btn,
+  .volunteer-list-container .controls-row .action-buttons .import-excel-btn {
+    flex: 1 !important;
+    order: 1 !important;
+    margin-right: 6px !important;
+  }
+  
+  .volunteer-list-container .controls-row .action-buttons .import-excel-btn {
+    margin-right: 0 !important;
   }
 }

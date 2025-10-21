@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faCalendarAlt, faMapMarkerAlt, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/EventModal.css';
 import { API_BASE } from '../../../utils/url';
 
@@ -213,7 +213,7 @@ const EventModal = ({
       const headers = { Authorization: `Bearer ${token}` };
 
       if (isEditMode) {
-        const response = await axios.put(
+        const response = await axiosInstance.put(
           `${API_BASE}/api/calendar-events/${event.id}`,
           dataToSend,
           { headers }
@@ -223,7 +223,7 @@ const EventModal = ({
           onClose();
         }
       } else {
-        const response = await axios.post(
+        const response = await axiosInstance.post(
           `${API_BASE}/api/calendar-events`,
           dataToSend,
           { headers }
@@ -261,7 +261,7 @@ const EventModal = ({
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.delete(
+      const response = await axiosInstance.delete(
         `${API_BASE}/api/calendar-events/${event.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );

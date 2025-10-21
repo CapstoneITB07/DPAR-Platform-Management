@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import AssociateLayout from './AssociateLayout';
-import axios from 'axios';
+import axios from '../../../utils/axiosConfig';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight, faSave, faXmark, faSearch, faTimes, faPlus, faEdit, faCheck, faTrash, faPaperPlane, faEye, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import '../css/Reports.css';

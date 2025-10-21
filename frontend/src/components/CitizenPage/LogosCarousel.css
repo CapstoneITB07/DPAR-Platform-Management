@@ -1,0 +1,525 @@
+/* Netflix-Style Cinematic Carousel */
+.netflix-carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px 0;
+  background: transparent;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* Carousel Title */
+.netflix-carousel-title {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 0 20px;
+}
+
+.netflix-carousel-title h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #8B1409;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.logos-carousel-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: #888;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* Netflix-style Controls */
+.netflix-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.netflix-control-btn {
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: all;
+  backdrop-filter: blur(10px);
+  font-size: 20px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.netflix-control-btn:hover {
+  background: rgba(165, 42, 26, 0.9);
+  border-color: #a52a1a;
+  transform: scale(1.1);
+  opacity: 1;
+  box-shadow: 0 8px 25px rgba(165, 42, 26, 0.4);
+}
+
+.netflix-control-btn:active {
+  transform: scale(0.95);
+}
+
+.netflix-control-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(165, 42, 26, 0.5);
+}
+
+/* Netflix-style Logo Row */
+.netflix-logos-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 20px 40px;
+  position: relative;
+  height: 200px;
+  perspective: 1000px;
+}
+
+.netflix-logo-item {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Center Logo (Main Focus) */
+.netflix-logo-item.center {
+  transform: scale(1.1) translateZ(30px);
+  z-index: 10;
+}
+
+.netflix-logo-item.center .netflix-logo-img {
+  width: 150px;
+  height: 150px;
+  border: 3px solid #a52a1a;
+  box-shadow: 
+    0 15px 30px rgba(165, 42, 26, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Side Logos (Visible but smaller) */
+.netflix-logo-item.side {
+  transform: scale(0.7) translateZ(15px);
+  opacity: 0.8;
+  z-index: 5;
+}
+
+.netflix-logo-item.side .netflix-logo-img {
+  width: 100px;
+  height: 100px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Edge Logos (Partially visible) */
+.netflix-logo-item.edge {
+  transform: scale(0.5) translateZ(5px);
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.netflix-logo-item.edge .netflix-logo-img {
+  width: 80px;
+  height: 80px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Logo Images */
+.netflix-logo-img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: #1a1a1a;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.netflix-logo-img::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.1), rgba(139, 20, 9, 0.05));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.netflix-logo-item:hover .netflix-logo-img {
+  transform: scale(1.05);
+  box-shadow: 
+    0 15px 30px rgba(165, 42, 26, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.netflix-logo-item:hover .netflix-logo-img::before {
+  opacity: 1;
+}
+
+/* Center Logo Label */
+.netflix-logo-label {
+  position: relative;
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out 0.4s forwards;
+  text-align: center !important;
+  min-width: 100px;
+  letter-spacing: 0.3px;
+  width: auto;
+  max-width: 150px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure the text content is perfectly centered */
+.netflix-logo-label {
+  text-indent: 0 !important;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Progress Indicator */
+.netflix-progress {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
+  padding: 0 20px;
+}
+
+.netflix-progress-track {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.netflix-progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.netflix-progress-dot:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(1.2);
+}
+
+.netflix-progress-dot.active {
+  background: #a52a1a;
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px rgba(165, 42, 26, 0.3);
+}
+
+.netflix-progress-dot:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(165, 42, 26, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .netflix-carousel-container {
+    max-width: 95vw;
+    padding: 50px 0;
+  }
+  
+  .netflix-carousel-title h2 {
+    font-size: 2.2rem;
+  }
+  
+  .netflix-logos-row {
+    gap: 30px;
+    padding: 15px 30px;
+    height: 180px;
+  }
+  
+  .netflix-logo-item.center .netflix-logo-img {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .netflix-logo-item.side .netflix-logo-img {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .netflix-logo-item.edge .netflix-logo-img {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  .netflix-carousel-container {
+    padding: 40px 0;
+  }
+  
+  .netflix-carousel-title h2 {
+    font-size: 2rem;
+  }
+  
+  .netflix-logos-row {
+    gap: 20px;
+    padding: 10px 20px;
+    height: 150px;
+  }
+  
+  .netflix-logo-item.center .netflix-logo-img {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .netflix-logo-item.side .netflix-logo-img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .netflix-logo-item.edge .netflix-logo-img {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .netflix-control-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 12px;
+  }
+  
+  .netflix-controls {
+    padding: 0 15px;
+  }
+  
+  .netflix-logo-label {
+    font-size: 11px;
+    padding: 6px 12px;
+    margin-top: 6px;
+    min-width: 80px;
+    text-align: center !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .netflix-carousel-container {
+    padding: 30px 0;
+  }
+  
+  .netflix-carousel-title h2 {
+    font-size: 1.8rem;
+  }
+  
+  .netflix-logos-row {
+    gap: 15px;
+    padding: 8px 10px;
+    height: 120px;
+  }
+  
+  .netflix-logo-item.center .netflix-logo-img {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .netflix-logo-item.side .netflix-logo-img {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .netflix-logo-item.edge .netflix-logo-img {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .netflix-control-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 10px;
+  }
+  
+  .netflix-controls {
+    padding: 0 10px;
+  }
+  
+  .netflix-logo-label {
+    font-size: 10px;
+    padding: 5px 10px;
+    margin-top: 5px;
+    min-width: 70px;
+    max-width: 120px;
+    text-align: center !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .netflix-progress-dot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .netflix-logo-item,
+  .netflix-logo-img,
+  .netflix-control-btn,
+  .netflix-progress-dot {
+    transition: none;
+  }
+  
+  .netflix-logo-label {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .netflix-carousel-container {
+    background: transparent;
+  }
+  
+  .netflix-logo-img {
+    border-color: #fff;
+  }
+  
+  .netflix-control-btn {
+    background: #000;
+    color: #fff;
+    border-color: #fff;
+  }
+  
+  .netflix-progress-dot {
+    background: #fff;
+  }
+  
+  .netflix-progress-dot.active {
+    background: #a52a1a;
+  }
+}
+
+/* Print styles */
+@media print {
+  .netflix-controls,
+  .netflix-progress {
+    display: none;
+  }
+  
+  .netflix-carousel-container {
+    background: transparent;
+    box-shadow: none;
+  }
+  
+  .netflix-logos-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 16px;
+    height: auto;
+    padding: 20px;
+  }
+  
+  .netflix-logo-item {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  
+  .netflix-logo-img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}
+
+/* Loading animation */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.netflix-carousel-container {
+  animation: slideInFromBottom 0.8s ease-out;
+}
+
+/* Subtle glow effect for center logo */
+.netflix-logo-item.center .netflix-logo-img {
+  animation: subtleGlow 3s ease-in-out infinite;
+}
+
+@keyframes subtleGlow {
+  0%, 100% {
+    box-shadow: 
+      0 20px 40px rgba(165, 42, 26, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 25px 50px rgba(165, 42, 26, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+}

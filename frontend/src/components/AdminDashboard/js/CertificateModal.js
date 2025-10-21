@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CertificatePreview from './CertificatePreview';
 import Modal from 'react-modal';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/CertificateModal.css';
 
 const CertificateModal = ({ show, onClose, associates, certificateData, onCertificateDataChange }) => {
@@ -256,7 +256,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
 
       if (isBulkMode) {
         // Bulk generation
-        const response = await axios.post(
+        const response = await axiosInstance.post(
           `${backendBaseUrl}/api/certificates/bulk`,
           {
             recipients: recipients,
@@ -288,7 +288,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
         window.URL.revokeObjectURL(url);
       } else {
         // Single generation
-        const response = await axios.post(
+        const response = await axiosInstance.post(
           `${backendBaseUrl}/api/certificates`,
           {
             name: localData.name,

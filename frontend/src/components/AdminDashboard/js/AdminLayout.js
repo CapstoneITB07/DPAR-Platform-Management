@@ -5,7 +5,7 @@ import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, fa
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import Modal from 'react-modal';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 
 import { API_BASE } from '../../../utils/url';
 import { 
@@ -115,7 +115,7 @@ function AdminLayout({ children }) {
 
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/change-password`, passwordForm, {
+      await axiosInstance.post(`${API_BASE}/api/change-password`, passwordForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPasswordSuccess('Password changed successfully');
@@ -292,7 +292,7 @@ function AdminLayout({ children }) {
         const formData = new FormData();
         formData.append('profile_picture', newProfileImage);
         
-        const response = await axios.post(`${API_BASE}/api/profile/update-picture`, formData, {
+        const response = await axiosInstance.post(`${API_BASE}/api/profile/update-picture`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`
@@ -379,7 +379,7 @@ function AdminLayout({ children }) {
   const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await axiosInstance.get(`${API_BASE}/api/profile`, { headers: { Authorization: `Bearer ${token}` } });
       
       // Update profile form with current data
       const profileData = {
@@ -434,7 +434,7 @@ function AdminLayout({ children }) {
   const fetchPendingApplicationsCount = async () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/pending-applications`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/pending-applications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

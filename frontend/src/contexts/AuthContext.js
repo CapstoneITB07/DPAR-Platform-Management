@@ -16,19 +16,25 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if token is expired
-  const isTokenExpired = (token) => {
+  // Check if token is expired by validating with backend
+  const validateTokenWithBackend = async (token) => {
     if (!token) return true;
     
-    // Laravel Sanctum tokens are not JWT tokens, so we can't decode them
-    // Instead, we'll rely on the backend to validate the token
-    // For now, we'll assume the token is valid if it exists
-    return false;
+    try {
+      const response = await fetch(`${API_BASE}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Return true if token is invalid (401/403), false if valid
+      return response.status === 401 || response.status === 403;
+    } catch (error) {
+      // If request fails, consider token invalid
+      return true;
+    }
   };
 
   // Check for existing authentication on app load
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const storedToken = localStorage.getItem('authToken');
       const storedRole = localStorage.getItem('userRole');
       const storedUserId = localStorage.getItem('userId');
@@ -36,7 +42,8 @@ export const AuthProvider = ({ children }) => {
 
       if (storedToken && storedRole && storedUserId) {
         // Check if token is expired
-        if (isTokenExpired(storedToken)) {
+        const isInvalid = await validateTokenWithBackend(storedToken);
+        if (isInvalid) {
           console.log('Token expired, logging out...');
           // Clear expired token data
           localStorage.removeItem('authToken');
@@ -85,11 +92,14 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('storage', handleStorageChange);
 
     // Set up periodic token validation (check every 5 minutes)
-    const tokenValidationInterval = setInterval(() => {
+    const tokenValidationInterval = setInterval(async () => {
       const currentToken = localStorage.getItem('authToken');
-      if (currentToken && isTokenExpired(currentToken)) {
-        console.log('Token expired during session, logging out...');
-        logout();
+      if (currentToken) {
+        const isInvalid = await validateTokenWithBackend(currentToken);
+        if (isInvalid) {
+          console.log('Token invalid during session, logging out...');
+          logout();
+        }
       }
     }, 5 * 60 * 1000); // Check every 5 minutes
 
@@ -157,10 +167,13 @@ export const AuthProvider = ({ children }) => {
     const currentToken = localStorage.getItem('authToken');
     
     // Check if token is expired before making request
-    if (currentToken && isTokenExpired(currentToken)) {
-      console.log('Token expired before API call, logging out...');
-      await logout();
-      throw new Error('Session expired. Please login again.');
+    if (currentToken) {
+      const isInvalid = await validateTokenWithBackend(currentToken);
+      if (isInvalid) {
+        console.log('Token expired before API call, logging out...');
+        await logout();
+        throw new Error('Session expired. Please login again.');
+      }
     }
 
     const defaultOptions = {

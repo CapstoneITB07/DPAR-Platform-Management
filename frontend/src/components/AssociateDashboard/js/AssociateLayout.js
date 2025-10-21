@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faBullhorn, faUsers, faEnvelope, faChartBar, faSignOutAlt, faBars, faKey, faTimes, faUser, faBuilding, faEye, faEyeSlash, faLock, faBell, faBellSlash } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../../../utils/axiosConfig';
 import Modal from 'react-modal';
 
 import { API_BASE } from '../../../utils/url';

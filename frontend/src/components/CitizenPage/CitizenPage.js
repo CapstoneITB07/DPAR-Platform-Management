@@ -6,6 +6,7 @@ import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChe
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import './CitizenPage.css';
+import LogosCarousel from './LogosCarousel';
 import { API_BASE } from '../../utils/url';
 import { 
   isPushNotificationSupported, 
@@ -412,7 +413,7 @@ function CitizenPage() {
           </li>
         </ul>
       </nav>
-      {/* Main Content: Dynamic Organization Logos */}
+      {/* Main Content: Dynamic Organization Logos Carousel */}
       <div className="citizen-logos-container" style={logosBgStyle}>
         {groupsLoading ? (
           <div className="citizen-loading-message">Loading organizations...</div>
@@ -421,23 +422,19 @@ function CitizenPage() {
         ) : associateGroups.length === 0 ? (
           <div className="citizen-no-data-message">No organizations available.</div>
         ) : (
-          <div className="citizen-logos-row">
-            {associateGroups.map(group => (
-              <img
-                key={group.id}
-                src={getLogoUrl(group.logo)}
-                alt={group.name}
-                className="citizen-logo-img"
-                onClick={() => handleGroupClick(group)}
-                style={{ cursor: 'pointer' }}
-                onError={(e) => {
-                  console.error('Error loading image:', e.target.src);
-                  e.target.src = `${window.location.origin}/Assets/disaster_logo.png`;
-                }}
-                title={`Click to view ${group.name} details`}
-              />
-            ))}
-          </div>
+          <LogosCarousel 
+            logos={associateGroups.map(group => ({
+              id: group.id,
+              name: group.name,
+              logo: getLogoUrl(group.logo),
+              // Include all group data for the modal
+              director: group.director,
+              type: group.type,
+              members_count: group.members_count,
+              description: group.description
+            }))}
+            onLogoClick={handleGroupClick}
+          />
         )}
       </div>
 

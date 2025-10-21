@@ -33,19 +33,11 @@ class CheckSoftDeletedAssociate
                 // Revoke all tokens for this user
                 $user->tokens()->delete();
 
-                // Log out the user
-                Auth::logout();
-
-                // Return a response indicating the account has been deactivated
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'message' => 'Invalid account. Contact the administrator.',
-                        'error' => 'Invalid account'
-                    ], 403);
-                }
-
-                // For web requests, redirect to login with message
-                return redirect('/')->with('error', 'Invalid account. Contact the administrator.');
+                // Return 401 response (Unauthorized)
+                return response()->json([
+                    'message' => 'Invalid account. Contact the administrator.',
+                    'error' => 'Invalid account'
+                ], 401);
             }
         }
 

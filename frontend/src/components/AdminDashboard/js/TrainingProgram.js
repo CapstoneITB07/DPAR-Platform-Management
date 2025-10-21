@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaCloudUploadAlt } from 'react-icons/fa';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import '../css/TrainingProgram.css';
 import { API_BASE } from '../../../utils/url';
 
@@ -65,7 +65,7 @@ function TrainingProgram() {
   const fetchPrograms = async (isInitialLoad = false) => {
     try {
       if (isInitialLoad) setInitialLoading(true);
-      const res = await axios.get(`${API_BASE}/api/training-programs`);
+      const res = await axiosInstance.get(`${API_BASE}/api/training-programs`);
       setPrograms(res.data);
     } catch (err) {
       setError('Failed to load training programs');
@@ -216,12 +216,12 @@ function TrainingProgram() {
 
     try {
       if (editId) {
-        await axios.post(`${API_BASE}/api/training-programs/${editId}?_method=PUT`, formData, {
+        await axiosInstance.post(`${API_BASE}/api/training-programs/${editId}?_method=PUT`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setNotification('Training program updated successfully!');
       } else {
-        const response = await axios.post(`${API_BASE}/api/training-programs`, formData, {
+        const response = await axiosInstance.post(`${API_BASE}/api/training-programs`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         setNotification('Training program added successfully!');
@@ -245,7 +245,7 @@ function TrainingProgram() {
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`${API_BASE}/api/training-programs/${deleteId}`);
+      await axiosInstance.delete(`${API_BASE}/api/training-programs/${deleteId}`);
       fetchPrograms();
       setNotification('Training program deleted successfully!');
       setTimeout(() => setNotification(''), 2000);

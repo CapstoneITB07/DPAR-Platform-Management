@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import axios from 'axios';
+import axiosInstance from '../../../utils/axiosConfig';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/Evaluation.css';
@@ -96,7 +96,7 @@ function Evaluation() {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/associate-groups`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAssociates(response.data);
@@ -111,7 +111,7 @@ function Evaluation() {
     // Fetch the latest data for this associate before showing the modal
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/associate-groups/${associate.id}`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/associate-groups/${associate.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSelectedAssociate(response.data);
@@ -213,7 +213,7 @@ function Evaluation() {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      await axios.post(`${API_BASE}/api/evaluations`, {
+      await axiosInstance.post(`${API_BASE}/api/evaluations`, {
         user_id: selectedAssociate.user_id,
         evaluation_data: evaluationData,
         total_score: calculateTotalScore()

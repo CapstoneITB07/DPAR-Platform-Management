@@ -55,6 +55,9 @@ Route::get('/associate-groups/public', [AssociateGroupController::class, 'public
 Route::post('/push/subscribe', [PushNotificationController::class, 'subscribe']);
 Route::post('/push/unsubscribe', [PushNotificationController::class, 'unsubscribe']);
 Route::post('/push/toggle', [PushNotificationController::class, 'toggleSubscription']);
+Route::post('/push/test', [PushNotificationController::class, 'sendTest']); // Public test endpoint
+Route::post('/push/clear-old', [PushNotificationController::class, 'clearOldSubscriptions']); // Clear old subscriptions
+Route::post('/push/clear-all', [PushNotificationController::class, 'clearAllSubscriptions']); // Clear ALL subscriptions
 
 // Protected Routes (require authentication)
 Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociate::class])->group(function () {
@@ -143,7 +146,6 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociat
 
     // Push Notification Status
     Route::get('/push/status', [PushNotificationController::class, 'getStatus']);
-    Route::post('/push/test', [PushNotificationController::class, 'sendTest']);
 });
 
 // Public Training Programs API

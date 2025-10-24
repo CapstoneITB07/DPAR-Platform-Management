@@ -1,12 +1,13 @@
 import { API_BASE } from './url';
 
 // VAPID public key - This should match the one in your backend .env file
-const VAPID_PUBLIC_KEY = 'BNGQ05i2r7H-i_ETy7zYmExOFwJrH6og7K5Sv5AVCQyhxt3V0S77_YKM0vJFRi4BVhmJj4c-HU3RSos26harte0';
+const VAPID_PUBLIC_KEY = 'BNMzH3lCgVKnnwEQxktiw8FqqWFg2y64RZnvXYYRrQrdtdveo7sM0DQyDfxr1D-X_pmIvxoedWOzANGo_uHYe9U';
 
 /**
- * Convert base64 VAPID public key to Uint8Array
+ * Convert base64url VAPID public key to Uint8Array
  */
 function urlBase64ToUint8Array(base64String) {
+  // Add padding if needed
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/\-/g, '+')
@@ -19,6 +20,20 @@ function urlBase64ToUint8Array(base64String) {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+/**
+ * Convert ArrayBuffer to base64url string
+ */
+function arrayBufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  // Convert to base64url format
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 /**
@@ -70,7 +85,13 @@ export async function subscribeToPushNotifications() {
     // Register service worker if not already registered
     let registration;
     if ('serviceWorker' in navigator) {
-      registration = await navigator.serviceWorker.ready;
+      try {
+        registration = await navigator.serviceWorker.register('/service-worker.js');
+        await navigator.serviceWorker.ready;
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+        throw new Error('Service Worker registration failed');
+      }
     } else {
       throw new Error('Service Worker is not supported');
     }
@@ -106,8 +127,8 @@ export async function subscribeToPushNotifications() {
       body: JSON.stringify({
         endpoint: subscription.endpoint,
         keys: {
-          p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))),
-          auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth'))))
+          p256dh: arrayBufferToBase64Url(subscription.getKey('p256dh')),
+          auth: arrayBufferToBase64Url(subscription.getKey('auth'))
         }
       })
     });

@@ -52,6 +52,12 @@ class MemberController extends Controller
                 }
             }
 
+            // Transform the data to include a consistent 'name' field for frontend compatibility
+            $members = $members->map(function ($member) {
+                $member->name = $member->organization_name ?: $member->user_name;
+                return $member;
+            });
+
             return response()->json($members);
         } catch (\Exception $e) {
             return response()->json([
@@ -142,6 +148,12 @@ class MemberController extends Controller
                     $member->logo = url($member->logo);
                 }
             }
+
+            // Transform the data to include a consistent 'name' field for frontend compatibility
+            $members = $members->map(function ($member) {
+                $member->name = $member->organization_name ?: $member->user_name;
+                return $member;
+            });
 
             // Calculate statistics
             $totalAssociates = $members->count();

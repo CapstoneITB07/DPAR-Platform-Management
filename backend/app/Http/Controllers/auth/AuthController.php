@@ -780,21 +780,9 @@ class AuthController extends Controller
             throw new \Exception("Account temporarily locked due to too many failed login attempts. Please try again in {$remainingMinutes} minutes.");
         }
 
-        // Check for progressive delays
-        $attemptKey = 'login_attempts_' . $user->id . '_' . $deviceId;
-        $attempts = cache()->get($attemptKey, 0);
-
-        if ($attempts > 0) {
-            // Progressive delay: 2^attempts minutes (2, 4, 8, 16, 32 minutes)
-            $delayMinutes = min(pow(2, $attempts), 32); // Cap at 32 minutes
-            $delayKey = 'login_delay_' . $user->id . '_' . $deviceId;
-            $delayUntil = cache()->get($delayKey);
-
-            if ($delayUntil && now()->lt($delayUntil)) {
-                $remainingSeconds = now()->diffInSeconds($delayUntil, false);
-                throw new \Exception("Please wait {$remainingSeconds} seconds before attempting to login again.");
-            }
-        }
+        // Check for progressive delays (disabled for better UX)
+        // Note: Progressive delays are disabled to allow users to retry login attempts
+        // The route-level throttling (5 attempts in 10 minutes) provides sufficient protection
 
         // Monitor suspicious IP patterns
         $this->monitorSuspiciousActivity($user, $request);
@@ -814,10 +802,8 @@ class AuthController extends Controller
         $attempts = cache()->get($attemptKey, 0) + 1;
         cache()->put($attemptKey, $attempts, now()->addHours(24)); // Store for 24 hours
 
-        // Set progressive delay
-        $delayMinutes = min(pow(2, $attempts), 32); // Cap at 32 minutes
-        $delayKey = 'login_delay_' . $user->id . '_' . $deviceId;
-        cache()->put($delayKey, now()->addMinutes($delayMinutes), now()->addMinutes($delayMinutes));
+        // Progressive delay disabled for better UX
+        // Users can retry immediately, protected by route-level throttling
 
         // Log suspicious activity
         Log::warning('Failed login attempt', [

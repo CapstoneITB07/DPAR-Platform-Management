@@ -41,7 +41,8 @@ class PushNotificationService
      */
     private static function isConfigured()
     {
-        return !empty(env('VAPID_PUBLIC_KEY')) && !empty(env('VAPID_PRIVATE_KEY'));
+        $vapidConfig = config('services.vapid');
+        return !empty($vapidConfig['public_key']) && !empty($vapidConfig['private_key']);
     }
 
     /**

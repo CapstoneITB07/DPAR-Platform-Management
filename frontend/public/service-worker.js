@@ -106,6 +106,8 @@ self.addEventListener('push', event => {
   if (event.data) {
     try {
       const data = event.data.json();
+      console.log('Parsed notification data:', data);
+      
       notificationData = {
         title: data.title || notificationData.title,
         body: data.body || notificationData.body,
@@ -120,6 +122,8 @@ self.addEventListener('push', event => {
       console.error('Error parsing push notification data:', error);
     }
   }
+
+  console.log('Showing notification with data:', notificationData);
 
   event.waitUntil(
     self.registration.showNotification(notificationData.title, {
@@ -140,15 +144,19 @@ self.addEventListener('notificationclick', event => {
   
   event.notification.close();
   
-  const urlToOpen = event.notification.data?.url || '/';
+  // Fix: Extract URL from the correct data structure
+  // Backend sends: data.data.url, so we need to access it properly
+  const urlToOpen = event.notification.data?.data?.url || event.notification.data?.url || '/';
+  
+  console.log('Redirecting to:', urlToOpen);
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(windowClients => {
-        // Check if there's already a window open
+        // Check if there's already a window open with the target URL
         for (let i = 0; i < windowClients.length; i++) {
           const client = windowClients[i];
-          if (client.url === urlToOpen && 'focus' in client) {
+          if (client.url.includes(urlToOpen) && 'focus' in client) {
             return client.focus();
           }
         }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\TrainingProgram;
 use Illuminate\Support\Facades\Storage;
+use App\Services\PushNotificationService;
 
 class TrainingProgramController extends Controller
 {
@@ -67,6 +68,14 @@ class TrainingProgramController extends Controller
             }, $photoUrls);
         } else {
             $program->photo_urls = [];
+        }
+
+        // Send push notifications for new training program
+        try {
+            PushNotificationService::notifyNewTrainingProgram($program);
+        } catch (\Exception $e) {
+            // Log error but don't fail the training program creation
+            \Illuminate\Support\Facades\Log::error('Failed to send training program push notifications: ' . $e->getMessage());
         }
 
         return response()->json($program, 201);

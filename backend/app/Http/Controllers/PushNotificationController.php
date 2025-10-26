@@ -286,15 +286,37 @@ class PushNotificationController extends Controller
                 ]
             ];
 
-            // For localhost development, use a simple fallback
-            Log::info('Localhost development mode - using fallback notification method');
+            // Create WebPush instance with VAPID authentication
+            $webPush = new WebPush($authConfigs[0]); // Use first auth config
+            $webPush->setAutomaticPadding(false);
+            $webPush->setDefaultOptions([
+                'TTL' => 300,
+                'urgency' => 'normal'
+            ]);
 
-            // Just log the notification for now
-            Log::info('Notification: ' . $title . ' - ' . $body);
-            Log::info('Would send to: ' . substr($subscription->endpoint, 0, 50) . '...');
+            // Create subscription object
+            $webPushSubscription = Subscription::create([
+                'endpoint' => $subscription->endpoint,
+                'publicKey' => $subscription->public_key,
+                'authToken' => $subscription->auth_token,
+                'contentEncoding' => $subscription->content_encoding,
+            ]);
 
-            // Return true to indicate "success" for development
-            return true;
+            // Queue and send notification
+            $webPush->queueNotification($webPushSubscription, $payload);
+            $results = $webPush->flush();
+
+            foreach ($results as $result) {
+                if ($result->isSuccess()) {
+                    Log::info('Push notification sent successfully to: ' . $result->getEndpoint());
+                    return true;
+                } else {
+                    Log::error('Push notification failed: ' . $result->getReason());
+                    return false;
+                }
+            }
+
+            return false;
         } catch (\Exception $e) {
             Log::error('Error in sendDirectNotification: ' . $e->getMessage());
             return false;
@@ -367,6 +389,64 @@ class PushNotificationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to clear all subscriptions'
+            ], 500);
+        }
+    }
+
+    /**
+     * Debug subscription status and VAPID configuration
+     */
+    public function debugSubscriptions(Request $request)
+    {
+        try {
+            $userId = $request->user() ? $request->user()->id : null;
+
+            // Get all subscriptions
+            $allSubscriptions = PushSubscription::all();
+            $userSubscriptions = $userId ? PushSubscription::where('user_id', $userId)->get() : collect();
+
+            // Check VAPID configuration
+            $vapidConfig = config('services.vapid');
+            $vapidConfigured = !empty($vapidConfig['public_key']) && !empty($vapidConfig['private_key']);
+
+            // Get subscription statistics
+            $stats = [
+                'total_subscriptions' => $allSubscriptions->count(),
+                'enabled_subscriptions' => $allSubscriptions->where('is_enabled', true)->count(),
+                'user_subscriptions' => $userSubscriptions->count(),
+                'vapid_configured' => $vapidConfigured,
+                'vapid_public_key' => $vapidConfigured ? substr($vapidConfig['public_key'], 0, 20) . '...' : 'Not configured',
+                'vapid_subject' => $vapidConfig['subject'] ?? 'Not set'
+            ];
+
+            return response()->json([
+                'success' => true,
+                'stats' => $stats,
+                'all_subscriptions' => $allSubscriptions->map(function ($sub) {
+                    return [
+                        'id' => $sub->id,
+                        'user_id' => $sub->user_id,
+                        'endpoint' => substr($sub->endpoint, 0, 50) . '...',
+                        'is_enabled' => $sub->is_enabled,
+                        'created_at' => $sub->created_at,
+                        'user_agent' => $sub->user_agent
+                    ];
+                }),
+                'user_subscriptions' => $userSubscriptions->map(function ($sub) {
+                    return [
+                        'id' => $sub->id,
+                        'endpoint' => substr($sub->endpoint, 0, 50) . '...',
+                        'is_enabled' => $sub->is_enabled,
+                        'created_at' => $sub->created_at
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error debugging subscriptions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to debug subscriptions',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

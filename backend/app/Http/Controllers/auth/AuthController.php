@@ -804,6 +804,7 @@ class AuthController extends Controller
 
         // Progressive delay disabled for better UX
         // Users can retry immediately, protected by route-level throttling
+        $delayMinutes = 0; // No delay since progressive delay is disabled
 
         // Log suspicious activity
         Log::warning('Failed login attempt', [

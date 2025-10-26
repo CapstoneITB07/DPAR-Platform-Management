@@ -146,6 +146,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociat
 
     // Push Notification Status
     Route::get('/push/status', [PushNotificationController::class, 'getStatus']);
+    Route::get('/push/debug', [PushNotificationController::class, 'debugSubscriptions']);
 });
 
 // Public Training Programs API

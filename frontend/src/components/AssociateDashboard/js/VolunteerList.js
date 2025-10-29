@@ -369,7 +369,8 @@ function VolunteerList() {
   const [filters, setFilters] = useState({
     type: '',
     expertise: '',
-    gender: ''
+    gender: '',
+    age: ''
   });
   const [formData, setFormData] = useState({
     firstName: '',
@@ -632,7 +633,24 @@ function VolunteerList() {
                           volunteer.contact_info.includes(searchTerm);
       const matchesExpertise = !filters.expertise || volunteer.expertise === filters.expertise;
       const matchesGender = !filters.gender || volunteer.gender === filters.gender;
-      return matchesSearch && matchesExpertise && matchesGender;
+      
+      // Check age filter (Old vs New)
+      let matchesAge = true;
+      if (filters.age) {
+        if (volunteer.created_at) {
+          const createdDate = new Date(volunteer.created_at);
+          const now = new Date();
+          const daysDiff = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+          
+          if (filters.age === 'New') {
+            matchesAge = daysDiff <= 30; // New = created within last 30 days
+          } else if (filters.age === 'Old') {
+            matchesAge = daysDiff > 30; // Old = created more than 30 days ago
+          }
+        }
+      }
+      
+      return matchesSearch && matchesExpertise && matchesGender && matchesAge;
     })
     .sort((a, b) => {
       if (!sortConfig.key) return 0;
@@ -701,6 +719,9 @@ function VolunteerList() {
   };
 
   const exportToCSV = () => {
+    // Only export selected volunteers
+    if (selectedVolunteers.length === 0) return;
+    
     const headers = ['Name', 'Gender', 'Contact Info', 'Address', 'Expertise'];
     
     // Helper function to escape CSV values
@@ -714,9 +735,12 @@ function VolunteerList() {
       return stringValue;
     };
     
+    // Filter to only selected volunteers
+    const volunteersToExport = volunteers.filter(v => selectedVolunteers.includes(v.id));
+    
     const csvContent = [
       headers.join(','),
-      ...filteredVolunteers.map(v => [
+      ...volunteersToExport.map(v => [
         escapeCsvValue(v.name),
         escapeCsvValue(v.gender),
         escapeCsvValue(v.contact_info),
@@ -789,25 +813,33 @@ function VolunteerList() {
             </button>
           </div>
           <div className="action-buttons">
-            {selectedVolunteers.length > 0 && (
-              <button 
-                className="bulk-delete-btn" 
-                onClick={handleBulkDelete}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
-                <FontAwesomeIcon icon={faTrash} />
-                Delete ({selectedVolunteers.length})
-              </button>
-            )}
+            <button 
+              className="bulk-delete-btn" 
+              onClick={handleBulkDelete}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              disabled={selectedVolunteers.length === 0}
+              style={{
+                cursor: selectedVolunteers.length === 0 ? 'not-allowed' : 'pointer',
+                opacity: selectedVolunteers.length === 0 ? 0.6 : 1
+              }}
+            >
+              <FontAwesomeIcon icon={faTrash} />
+              Delete {selectedVolunteers.length > 0 && `(${selectedVolunteers.length})`}
+            </button>
             <button 
               className="export-btn" 
               onClick={exportToCSV}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
+              disabled={selectedVolunteers.length === 0}
+              style={{
+                cursor: selectedVolunteers.length === 0 ? 'not-allowed' : 'pointer',
+                opacity: selectedVolunteers.length === 0 ? 0.6 : 1
+              }}
             >
               <FontAwesomeIcon icon={faDownload} />
-              Export
+              Export {selectedVolunteers.length > 0 && `(${selectedVolunteers.length})`}
             </button>
             <button 
               className="import-excel-btn" 
@@ -857,9 +889,18 @@ function VolunteerList() {
                 ))}
               </select>
               
+              <select
+                value={filters.age}
+                onChange={(e) => setFilters({ ...filters, age: e.target.value })}
+              >
+                <option value="">All Members</option>
+                <option value="New">New Members (&lt;30 days)</option>
+                <option value="Old">Old Members (&gt;30 days)</option>
+              </select>
+              
               <button 
                 className="clear-filters-btn"
-                onClick={() => setFilters({ type: '', expertise: '', gender: '' })}
+                onClick={() => setFilters({ type: '', expertise: '', gender: '', age: '' })}
               >
                 Clear Filter
               </button>
@@ -971,20 +1012,6 @@ function VolunteerList() {
                               }}
                             >
                               <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button
-                              className="action-btn delete-btn"
-                              onClick={e => { e.stopPropagation(); handleDelete(volunteer.id); }}
-                              onTouchStart={handleTouchStart}
-                              onTouchEnd={handleTouchEnd}
-                              title="Delete"
-                              disabled={isSubmitting}
-                              style={{
-                                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                                opacity: isSubmitting ? 0.5 : 1
-                              }}
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
                             </button>
                           </div>
                         </td>

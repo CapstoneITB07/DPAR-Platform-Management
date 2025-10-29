@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
-import './CitizenPage.css';
+import '../css/CitizenPage.css';
 
 function Recovery() {
   const navigate = useNavigate();

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
-import './CitizenPage.css';
-import './AboutUs.css';
+import '../css/CitizenPage.css';
+import '../css/AboutUs.css';
 // import disasterLogo from '../../../public/Assets/disaster_logo.png';
 
 function AboutUs() {

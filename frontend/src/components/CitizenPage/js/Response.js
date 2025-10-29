@@ -217,7 +217,7 @@ function Response() {
                 }
               ].map((obj, idx) => (
                 <div 
-                  key={idx}
+                  key={`objective-${idx}-${obj.title}`}
                   className="response-objective-card" 
                   style={{ borderTop: `5px solid ${obj.color}` }}
                   data-color={obj.color}
@@ -250,7 +250,7 @@ function Response() {
                 { icon: '✅', title: 'Accountability and Safety', desc: 'Ensure responders and affected people are protected throughout operations.' },
                 { icon: '🕊️', title: 'Humanitarian Consideration', desc: 'Respect dignity, culture, and basic rights of all victims during response operations.' }
               ].map((principle, idx) => (
-                <div key={idx} className="response-principle-card">
+                <div key={`principle-${idx}-${principle.title}`} className="response-principle-card">
                   <div className="response-principle-icon">{principle.icon}</div>
                   <h3 className="response-principle-title">{principle.title}</h3>
                   <p className="response-principle-desc">{principle.desc}</p>
@@ -566,7 +566,7 @@ function Response() {
                 { actor: 'Health Sector (DOH, hospitals)', role: 'Provide emergency medical services and disease control.' },
                 { actor: 'Volunteers / Community Members', role: 'First aid, communication, and community support.' }
               ].map((item, idx) => (
-                <div key={idx} className="response-role-row">
+                <div key={`role-${idx}-${item.actor}`} className="response-role-row">
                   <div className="response-role-actor">{item.actor}</div>
                   <div className="response-role-responsibility">{item.role}</div>
                 </div>
@@ -592,7 +592,7 @@ function Response() {
                 { icon: '📢', challenge: 'Misinformation', desc: 'Misinformation and panic spreading among the public' },
                 { icon: '🤝', challenge: 'Coordination Difficulties', desc: 'Coordination difficulties between multiple agencies and organizations' }
               ].map((item, idx) => (
-                <div key={idx} className="response-challenge-card">
+                <div key={`challenge-${idx}-${item.challenge}`} className="response-challenge-card">
                   <div className="response-challenge-icon">{item.icon}</div>
                   <h4 className="response-challenge-title">{item.challenge}</h4>
                   <p className="response-challenge-desc">{item.desc}</p>
@@ -649,7 +649,7 @@ function Response() {
                 }
               ].map((item, idx) => (
                 <div 
-                  key={idx}
+                  key={`importance-${idx}-${item.title}`}
                   className="response-importance-card"
                   style={{ borderLeft: `5px solid ${item.color}` }}
                 >

@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import logo from '../../logo.svg';
+import logo from '../../../logo.svg';
 import axios from 'axios';
 import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight, FaBell, FaBellSlash } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
-import './CitizenPage.css';
+import '../css/CitizenPage.css';
 import LogosCarousel from './LogosCarousel';
-import { API_BASE } from '../../utils/url';
+import { API_BASE } from '../../../utils/url';
 import { 
   isPushNotificationSupported, 
   subscribeToPushNotifications, 
   unsubscribeFromPushNotifications,
   isPushNotificationSubscribed 
-} from '../../utils/pushNotifications';
+} from '../../../utils/pushNotifications';
 
 // Helper for formatting date
 function formatDate(dateStr) {
@@ -218,6 +218,52 @@ function CitizenPage() {
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [pushNotificationsSupported, setPushNotificationsSupported] = useState(false);
   const [showPushButton, setShowPushButton] = useState(true);
+
+  // Carousel states for announcements
+  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+
+  // Carousel states for training programs
+  const [currentProgramIndex, setCurrentProgramIndex] = useState(0);
+
+  // Reset announcement index when announcements change
+  useEffect(() => {
+    if (currentAnnouncementIndex >= announcements.length && announcements.length > 0) {
+      setCurrentAnnouncementIndex(0);
+    }
+  }, [announcements, currentAnnouncementIndex]);
+
+  // Reset program index when programs change
+  useEffect(() => {
+    if (currentProgramIndex >= programs.length && programs.length > 0) {
+      setCurrentProgramIndex(0);
+    }
+  }, [programs, currentProgramIndex]);
+
+  // Navigation handlers for announcements carousel
+  const goToPreviousAnnouncement = () => {
+    setCurrentAnnouncementIndex((prev) => 
+      prev === 0 ? announcements.length - 1 : prev - 1
+    );
+  };
+
+  const goToNextAnnouncement = () => {
+    setCurrentAnnouncementIndex((prev) => 
+      prev === announcements.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  // Navigation handlers for training programs carousel
+  const goToPreviousProgram = () => {
+    setCurrentProgramIndex((prev) => 
+      prev === 0 ? programs.length - 1 : prev - 1
+    );
+  };
+
+  const goToNextProgram = () => {
+    setCurrentProgramIndex((prev) => 
+      prev === programs.length - 1 ? 0 : prev + 1
+    );
+  };
 
   // Helper function to get logo URL (similar to AssociateGroups.js)
   const getLogoUrl = (logoPath) => {
@@ -438,72 +484,706 @@ function CitizenPage() {
         )}
       </div>
 
+      {/* Side by Side Container for Announcements and Training Programs */}
+      <div className="citizen-side-by-side-container" style={{
+        display: 'flex',
+        gap: '30px',
+        padding: '30px 40px',
+        maxWidth: '95%',
+        margin: '0 auto',
+        flexWrap: 'wrap',
+        alignItems: 'flex-start'
+      }}>
       {/* Announcements Section */}
-      <div className="citizen-announcements-section">
-        <h2 className="citizen-announcements-title">Announcements</h2>
+        <div 
+          className="citizen-announcements-section" 
+          style={{
+            flex: '1',
+            minWidth: '300px',
+            background: 'white',
+            borderRadius: '20px',
+            padding: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            border: '3px solid transparent',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-10px)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.15)';
+            e.currentTarget.style.border = '3px solid #a52a1a';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+            e.currentTarget.style.border = '3px solid transparent';
+          }}
+        >
+          <h2 className="citizen-announcements-title" style={{
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: '#a52a1a',
+            margin: '0 0 20px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            borderBottom: '3px solid #a52a1a',
+            paddingBottom: '10px',
+            lineHeight: '1.2'
+          }}>Announcements</h2>
         {annLoading ? (
-          <div className="citizen-loading-message">Loading...</div>
+            <div className="citizen-loading-message" style={{
+              textAlign: 'center',
+              padding: '40px',
+              color: '#666',
+              fontSize: '1.1rem'
+            }}>Loading...</div>
         ) : annError ? (
-          <div className="citizen-error-message">{annError}</div>
+            <div className="citizen-error-message" style={{
+              textAlign: 'center',
+              padding: '40px',
+              color: '#e53935',
+              fontSize: '1.1rem'
+            }}>{annError}</div>
         ) : announcements.length === 0 ? (
-          <p className="citizen-no-data-message">No announcements available.</p>
-        ) : (
-          <div className="citizen-announcements-grid">
-            {announcements.map(a => {
-              return (
+            <div style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: '#999'
+            }}>
+              <FaBullhorn size={80} color="#ddd" style={{ marginBottom: '20px' }} />
+              <h3 style={{
+                fontSize: '1.3rem',
+                fontWeight: '600',
+                color: '#333',
+                marginBottom: '10px',
+                margin: '0 0 10px 0'
+              }}>No Announcements Available</h3>
+              <p style={{
+                fontSize: '1.1rem',
+                color: '#999',
+                margin: '0'
+              }}>Check back later for new announcements.</p>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', minHeight: '400px' }}>
+              {announcements.length > 1 && (
+                <>
+                  <button
+                    onClick={goToPreviousAnnouncement}
+                    style={{
+                      position: 'absolute',
+                      left: '-15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      background: '#a52a1a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#8a2316';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#a52a1a';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    }}
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <button
+                    onClick={goToNextAnnouncement}
+                    style={{
+                      position: 'absolute',
+                      right: '-15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      background: '#a52a1a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#8a2316';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#a52a1a';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    }}
+                  >
+                    <FaChevronRight />
+                  </button>
+                </>
+              )}
+              
+              {/* Display single announcement */}
+              <div style={{ padding: '10px 0' }}>
+                {announcements.map((a, index) => (
                 <div
                   key={a.id}
                   className="citizen-announcement-card"
-                >
+                    style={{
+                      display: index === currentAnnouncementIndex ? 'block' : 'none',
+                      transition: 'opacity 0.3s ease-in-out',
+                      background: '#fff',
+                      borderRadius: '15px',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    {/* Date Badge */}
+                    <div style={{
+                      background: '#8B1409',
+                      color: 'white',
+                      padding: '8px 20px',
+                      borderRadius: '20px',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      display: 'inline-block',
+                      margin: '15px 0 0 15px'
+                    }}>
+                      {a.created_at && formatDate(a.created_at)}
+                    </div>
+
+                    {/* Main Content Container */}
+                    <div style={{ padding: '20px 25px' }}>
                   {/* Image or Icon */}
                   {a.photo_urls && a.photo_urls.length > 0 ? (
-                    <div className="citizen-announcement-image-container">
+                        <div style={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '300px',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          marginBottom: '20px',
+                          cursor: 'pointer'
+                        }}>
                       <img
                         src={a.photo_urls[0]}
                         alt="Announcement"
-                        className="citizen-announcement-img"
                         onClick={() => handleAnnouncementClick(a)}
                         title="Click to view larger"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              transition: 'transform 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                       />
                       {a.photo_urls.length > 1 && (
-                        <div className="citizen-announcement-photos-indicator">
-                          <span>+{a.photo_urls.length - 1} more</span>
+                            <div style={{
+                              position: 'absolute',
+                              top: '10px',
+                              right: '10px',
+                              background: 'rgba(0,0,0,0.7)',
+                              color: 'white',
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              fontSize: '0.85rem',
+                              fontWeight: '600'
+                            }}>
+                              +{a.photo_urls.length - 1} Photos
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="citizen-announcement-icon-container">
-                      <FaBullhorn size={60} color="#a52a1a" className="citizen-announcement-icon" />
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: '150px',
+                          background: 'linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%)',
+                          borderRadius: '12px',
+                          marginBottom: '20px'
+                        }}>
+                          <FaBullhorn size={70} color="#a52a1a" />
                     </div>
                   )}
-                  {/* Date Badge */}
-                  <div className="citizen-announcement-date-badge">{a.created_at && formatDate(a.created_at)}</div>
-                  {/* Title/Description */}
-                  <div className="citizen-announcement-content">
-                    {a.title && <div className="citizen-announcement-title">{a.title}</div>}
+
+                      {/* Title */}
+                      {a.title && (
+                        <h3 style={{
+                          color: '#8B1409',
+                          fontSize: '1.5rem',
+                          fontWeight: '700',
+                          marginBottom: '15px',
+                          lineHeight: '1.4'
+                        }}>
+                          {a.title}
+                        </h3>
+                      )}
+
+                      {/* Description */}
                     {a.description && (
-                      <div className="citizen-announcement-desc">
+                        <div style={{
+                          color: '#555',
+                          fontSize: '1rem',
+                          lineHeight: '1.7',
+                          marginBottom: '20px'
+                        }}>
                         {truncateDescription(a.description)}
+                        </div>
+                      )}
+
+                      {/* See More Button */}
                         {needsTruncation(a.description) && (
                           <button
-                            className="citizen-announcement-see-more"
-                            onClick={e => {
+                          onClick={(e) => {
                               e.stopPropagation();
                               handleAnnouncementClick(a);
                             }}
-                          >
-                            See more
+                          style={{
+                            background: '#a52a1a',
+                            color: 'white',
+                            border: 'none',
+                            padding: '12px 30px',
+                            borderRadius: '25px',
+                            fontSize: '0.95rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            boxShadow: '0 4px 10px rgba(165,42,26,0.3)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = '#8a2316';
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 6px 15px rgba(165,42,26,0.4)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = '#a52a1a';
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 10px rgba(165,42,26,0.3)';
+                          }}
+                        >
+                          See More →
                           </button>
                         )}
                       </div>
-                    )}
                   </div>
+                ))}
                 </div>
-              );
-            })}
+
+              {/* Carousel Indicators */}
+              {announcements.length > 1 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginTop: '15px'
+                }}>
+                  {announcements.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentAnnouncementIndex(index)}
+                      style={{
+                        width: index === currentAnnouncementIndex ? '30px' : '10px',
+                        height: '10px',
+                        borderRadius: '5px',
+                        border: 'none',
+                        background: index === currentAnnouncementIndex ? '#a52a1a' : '#ddd',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                  ))}
           </div>
         )}
       </div>
+          )}
+          </div>
+
+      {/* Training Programs as Posts */}
+        <div 
+          className="citizen-training-section" 
+          style={{
+            flex: '1',
+            minWidth: '300px',
+            background: 'white',
+            borderRadius: '20px',
+            padding: '20px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            border: '3px solid transparent',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-10px)';
+            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.15)';
+            e.currentTarget.style.border = '3px solid #a52a1a';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+            e.currentTarget.style.border = '3px solid transparent';
+          }}
+        >
+          <h2 className="citizen-training-title" style={{
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            color: '#a52a1a',
+            margin: '0 0 20px 0',
+            textTransform: 'uppercase',
+            letterSpacing: '2px',
+            borderBottom: '3px solid #a52a1a',
+            paddingTop: '30px',
+            paddingBottom: '10px',
+            lineHeight: '1.2'
+          }}>Training Programs</h2>
+        <div>
+          {loading ? (
+            <div className="citizen-loading-container" style={{
+              textAlign: 'center',
+              padding: '40px'
+            }}>
+              <div className="citizen-loading-spinner"></div>
+              <p className="citizen-loading-message" style={{
+                color: '#666',
+                fontSize: '1.1rem'
+              }}>Loading training programs...</p>
+            </div>
+          ) : error ? (
+            <div className="citizen-error-container" style={{
+              textAlign: 'center',
+              padding: '40px'
+            }}>
+              <p className="citizen-error-message" style={{
+                color: '#e53935',
+                fontSize: '1.1rem'
+              }}>{error}</p>
+            </div>
+          ) : programs.length === 0 ? (
+            <div className="citizen-empty-container" style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: '#999'
+            }}>
+              <FaClipboardList size={80} color="#ddd" style={{ marginBottom: '20px' }} />
+              <h3 className="citizen-empty-title" style={{
+                fontSize: '1.3rem',
+                fontWeight: '600',
+                color: '#333',
+                margin: '0 0 10px 0'
+              }}>No Training Programs Available</h3>
+              <p className="citizen-empty-message" style={{
+                fontSize: '1.1rem',
+                color: '#999',
+                margin: '0'
+              }}>Check back later for new training opportunities.</p>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', minHeight: '350px' }}>
+              {programs.length > 1 && (
+                <>
+                  <button
+                    onClick={goToPreviousProgram}
+                    style={{
+                      position: 'absolute',
+                      left: '-15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      background: '#a52a1a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#8a2316';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#a52a1a';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    }}
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <button
+                    onClick={goToNextProgram}
+                    style={{
+                      position: 'absolute',
+                      right: '-15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      background: '#a52a1a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#8a2316';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#a52a1a';
+                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                    }}
+                  >
+                    <FaChevronRight />
+                  </button>
+                </>
+              )}
+              
+              {/* Display single training program */}
+              <div style={{ padding: '10px 0' }}>
+              {programs.map((program, index) => {
+              const title = program.name || '';
+              const description = program.description || '';
+              const hasPhotos = program.photos && program.photos.length > 0;
+              const photoCount = hasPhotos ? program.photos.length : 0;
+              
+              return (
+                <div
+                  key={program.id}
+                  className="citizen-training-card"
+                  style={{ 
+                    display: index === currentProgramIndex ? 'block' : 'none',
+                    cursor: 'pointer',
+                    transition: 'opacity 0.3s ease-in-out',
+                    background: '#fff',
+                    borderRadius: '15px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                  }}
+                  onClick={() => handleProgramClick(program)}
+                >
+                  {/* Header Badge */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)',
+                    color: 'white',
+                    padding: '15px 25px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ fontWeight: '600', fontSize: '1rem' }}>Training Program</span>
+                    {hasPhotos && (
+                      <span style={{
+                        background: 'rgba(255,255,255,0.2)',
+                        padding: '4px 12px',
+                        borderRadius: '15px',
+                        fontSize: '0.85rem',
+                        fontWeight: '600'
+                      }}>
+                        {photoCount} {photoCount === 1 ? 'Photo' : 'Photos'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Main Content Container */}
+                  <div style={{ padding: '15px 20px' }}>
+                  {/* Date and Location Badges */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '10px',
+                      flexWrap: 'wrap',
+                      marginBottom: '15px'
+                    }}>
+                    {program.date && (
+                        <div style={{
+                          background: '#8B1409',
+                          color: 'white',
+                          padding: '6px 16px',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: '600'
+                        }}>
+                          {new Date(program.date).toLocaleDateString(undefined, { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                      </div>
+                    )}
+                    {program.location && (
+                        <div style={{
+                          background: '#e3f2fd',
+                          color: '#1976d2',
+                          padding: '6px 16px',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: '600'
+                        }}>
+                          📍 {program.location}
+                      </div>
+                    )}
+                  </div>
+
+                    {/* Title */}
+                    {title && (
+                      <h3 style={{
+                        color: '#8B1409',
+                        fontSize: '1.3rem',
+                        fontWeight: '700',
+                        marginBottom: '12px',
+                        lineHeight: '1.3'
+                      }}>
+                        {title}
+                      </h3>
+                    )}
+
+                    {/* Description */}
+                    {description && (
+                      <div style={{
+                        color: '#555',
+                        fontSize: '0.95rem',
+                        lineHeight: '1.6',
+                        marginBottom: '15px'
+                      }}>
+                          {program.photos && program.photos.length > 0 
+                            ? description.length > 100 ? description.substring(0, 100) + '...' : description
+                            : description.length > 150 ? description.substring(0, 150) + '...' : description
+                          }
+                      </div>
+                    )}
+
+                  {/* Photo Display */}
+                  {hasPhotos && (
+                      <div style={{
+                        position: 'relative',
+                        width: '100%',
+                        height: '310px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        marginBottom: '20px'
+                      }}>
+                        <img
+                          src={program.photos[0]}
+                          alt="Training Program"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.3s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                        />
+                        {photoCount > 1 && (
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '15px',
+                            right: '15px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: 'white',
+                            padding: '8px 16px',
+                            borderRadius: '25px',
+                            fontSize: '0.9rem',
+                            fontWeight: '600'
+                          }}>
+                            +{photoCount - 1} More
+                          </div>
+                        )}
+                    </div>
+                  )}
+
+                    {/* View Details Button */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProgramClick(program);
+                        }}
+                      style={{
+                        background: '#a52a1a',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 30px',
+                        borderRadius: '25px',
+                        fontSize: '0.95rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        width: '100%',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 10px rgba(165,42,26,0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.background = '#8a2316';
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 15px rgba(165,42,26,0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.background = '#a52a1a';
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 10px rgba(165,42,26,0.3)';
+                      }}
+                    >
+                      View Details →
+                      </button>
+                    </div>
+                </div>
+              );
+            })}
+                  </div>
+
+              {/* Carousel Indicators */}
+              {programs.length > 1 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginTop: '15px'
+                }}>
+                  {programs.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentProgramIndex(index)}
+                      style={{
+                        width: index === currentProgramIndex ? '30px' : '10px',
+                        height: '10px',
+                        borderRadius: '5px',
+                        border: 'none',
+                        background: index === currentProgramIndex ? '#a52a1a' : '#ddd',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    />
+                  ))}
+                </div>
+          )}
+        </div>
+          )}
+      </div>
+        </div>
+      </div>
+
       {/* Phases Section: 4 Cards */}
       <div className="citizen-phases-section">
         <h2 className="citizen-phases-header">DPAR CATEGORIES</h2>
@@ -526,158 +1206,7 @@ function CitizenPage() {
           </div>
         </div>
       </div>
-      {/* Training Programs as Posts */}
-      <div className="citizen-training-section">
-        <div className="citizen-training-header">
-          <h2 className="citizen-training-title">Training Programs</h2>
-          <p className="citizen-training-subtitle">Enhance your skills with our comprehensive training programs</p>
-        </div>
-        <div className="citizen-training-card-grid">
-          {loading ? (
-            <div className="citizen-loading-container">
-              <div className="citizen-loading-spinner"></div>
-              <p className="citizen-loading-message">Loading training programs...</p>
-            </div>
-          ) : error ? (
-            <div className="citizen-error-container">
-              <p className="citizen-error-message">{error}</p>
-            </div>
-          ) : programs.length === 0 ? (
-            <div className="citizen-empty-container">
-              <h3 className="citizen-empty-title">No Training Programs Available</h3>
-              <p className="citizen-empty-message">Check back later for new training opportunities.</p>
-            </div>
-          ) : (
-            programs.map((program, index) => {
-              const title = program.name || '';
-              const description = program.description || '';
-              const hasPhotos = program.photos && program.photos.length > 0;
-              const photoCount = hasPhotos ? program.photos.length : 0;
-              
-              return (
-                <div
-                  key={program.id}
-                  className="citizen-training-card"
-                  onClick={() => handleProgramClick(program)}
-                  style={{ 
-                    cursor: 'pointer',
-                    animationDelay: `${index * 0.1}s`
-                  }}
-                  onMouseOver={e => { 
-                    e.currentTarget.classList.add('citizen-training-card-hover');
-                    e.currentTarget.querySelector('.citizen-training-card-overlay').style.opacity = '1';
-                  }}
-                  onMouseOut={e => { 
-                    e.currentTarget.classList.remove('citizen-training-card-hover');
-                    e.currentTarget.querySelector('.citizen-training-card-overlay').style.opacity = '0';
-                  }}
-                >
-                  {/* Card Header with Gradient */}
-                  <div className="citizen-training-card-header">
-                    <div className="citizen-training-card-category">
-                      <span className="citizen-training-category-text">Training Program</span>
-                    </div>
-                    {hasPhotos && (
-                      <div className="citizen-training-photo-count">
-                        <span>{photoCount} Photos</span>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Date and Location Badges */}
-                  <div className="citizen-training-badges">
-                    {program.date && (
-                      <div className="citizen-training-date-badge">
-                        <span className="citizen-training-badge-text">
-                          {new Date(program.date).toLocaleDateString(undefined, { 
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    )}
-                    {program.location && (
-                      <div className="citizen-training-location-badge">
-                        <span className="citizen-training-badge-text">{program.location}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="citizen-training-card-content">
-                    {title && (
-                      <h3 className="citizen-training-card-title">{title}</h3>
-                    )}
-                    
-                    {description && (
-                      <div className="citizen-training-card-description">
-                        <p className="citizen-training-desc-text">
-                          {program.photos && program.photos.length > 0 
-                            ? description.length > 120 ? description.substring(0, 120) + '...' : description
-                            : description.length > 200 ? description.substring(0, 200) + '...' : description
-                          }
-                        </p>
-                        {description.length > (program.photos && program.photos.length > 0 ? 120 : 200) && (
-                          <button 
-                            className="citizen-training-read-more"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleProgramClick(program);
-                            }}
-                          >
-                            Read More
-                            <span className="citizen-training-read-more-arrow">→</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Photo Display */}
-                  {hasPhotos && (
-                    <div className="citizen-training-card-image">
-                      <div className="citizen-training-image-container">
-                        <img
-                          src={program.photos[0]}
-                          alt="Training Program"
-                          className="citizen-training-card-img"
-                        />
-                        {photoCount > 1 && (
-                          <div className="citizen-training-more-photos">
-                            <span className="citizen-training-more-photos-count">+{photoCount - 1}</span>
-                          </div>
-                        )}
-                        <div className="citizen-training-image-overlay">
-                          <span className="citizen-training-view-text">View Details</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Card Footer */}
-                  <div className="citizen-training-card-footer">
-                    <div className="citizen-training-card-actions">
-                      <button 
-                        className="citizen-training-view-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProgramClick(program);
-                        }}
-                      >
-                        <span>View Details</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Hover Overlay */}
-                  <div className="citizen-training-card-overlay"></div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
       {/* Image Modal */}
       {modalOpen && (
         <div className="citizen-image-modal-overlay" onClick={closeImageModal}>

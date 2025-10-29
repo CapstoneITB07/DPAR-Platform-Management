@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import './LogosCarousel.css';
+import '../css/LogosCarousel.css';
 
 const LogosCarousel = ({ logos, onLogoClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);

@@ -3,12 +3,12 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './components/Login/LoginPage';
-import CitizenPage from './components/CitizenPage/CitizenPage';
-import AboutUs from './components/CitizenPage/AboutUs';
-import Mitigation from './components/CitizenPage/Mitigation';
-import Preparedness from './components/CitizenPage/Preparedness';
-import Response from './components/CitizenPage/Response';
-import Recovery from './components/CitizenPage/Recovery';
+import CitizenPage from './components/CitizenPage/js/CitizenPage';
+import AboutUs from './components/CitizenPage/js/AboutUs';
+import Mitigation from './components/CitizenPage/js/Mitigation';
+import Preparedness from './components/CitizenPage/js/Preparedness';
+import Response from './components/CitizenPage/js/Response';
+import Recovery from './components/CitizenPage/js/Recovery';
 import AdminDashboard from './components/AdminDashboard/js/AdminDashboard';
 import AssociateGroups from './components/AdminDashboard/js/AssociateGroups';
 import Notifications from './components/AdminDashboard/js/Notifications';

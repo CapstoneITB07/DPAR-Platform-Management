@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'dparvc1@gmail.com'],
             [
                 'name' => 'Head Admin',
+                'username' => 'headadmin', // username used for login
                 'password' => Hash::make('password'), // Replace 'password' with a strong password
                 'role' => 'head_admin',
             ]

@@ -13,6 +13,7 @@ class PendingApplication extends Model
         'organization_name',
         'organization_type',
         'director_name',
+        'username',
         'email',
         'phone',
         'password',

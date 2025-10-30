@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Services\BrevoEmailService;
 use App\Models\ActivityLog;
 use App\Models\DirectorHistory;
+use Illuminate\Support\Facades\Cache;
 
 class PasswordController extends Controller
 {
@@ -66,6 +67,14 @@ class PasswordController extends Controller
                 }
             }
 
+            // Or if it matches a verified email recovery code
+            if (!$isRecoveryPasscode) {
+                $cachedCode = Cache::get('recovery_email_code_accepted_' . $user->id);
+                if ($cachedCode && hash_equals($cachedCode, $request->current_password)) {
+                    $isRecoveryPasscode = true;
+                }
+            }
+
             // If not a recovery passcode, verify it's the current password
             if (!$isRecoveryPasscode && !Hash::check($request->current_password, $user->password)) {
                 Log::warning('Password verification failed', ['is_recovery' => $isRecoveryPasscode]);
@@ -112,6 +121,9 @@ class PasswordController extends Controller
                     Log::error('Error updating recovery passcodes: ' . $e->getMessage());
                     // Continue even if recovery passcode cleanup fails
                 }
+
+                // Invalidate verified email recovery code after successful change
+                Cache::forget('recovery_email_code_accepted_' . $user->id);
             }
 
             Log::info('Password changed successfully');

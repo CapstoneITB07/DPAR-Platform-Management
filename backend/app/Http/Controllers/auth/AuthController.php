@@ -13,6 +13,9 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use App\Services\BrevoEmailService;
 
 class AuthController extends Controller
 {
@@ -53,6 +56,153 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    // Send recovery verification code to user's email (by username)
+    public function sendRecoveryCode(Request $request)
+    {
+        try {
+            $request->validate([
+                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/'],
+            ], [
+                'username.regex' => 'Invalid username format.'
+            ]);
+
+            $user = User::where('username', $request->username)->first();
+
+            // Respond with generic message to avoid user enumeration
+            if (!$user) {
+                return response()->json([
+                    'message' => 'If the account exists, a verification code has been sent.'
+                ], 200);
+            }
+
+            // Enforce 1-minute cooldown between sends
+            $cooldownKey = 'recovery_email_cooldown_user_' . $user->id;
+            $cooldownUntil = Cache::get($cooldownKey);
+            if ($cooldownUntil && now()->lt($cooldownUntil)) {
+                $remaining = now()->diffInSeconds($cooldownUntil);
+                return response()->json([
+                    'message' => 'Please wait before requesting another code.',
+                    'cooldown_remaining' => $remaining
+                ], 429);
+            }
+
+            // Generate a 6-digit code and cache it for 1 minute (60 seconds)
+            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $cacheKey = 'recovery_email_code_user_' . $user->id;
+            Cache::put($cacheKey, $code, now()->addSeconds(60));
+
+            // Email the code using styled template
+            try {
+                $brevo = new BrevoEmailService();
+                // Custom styled email noting 1-minute expiry
+                $subject = 'DPAR Platform - Account Recovery Code';
+                $htmlContent = "<!DOCTYPE html>\n<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Account Recovery Code</title></head>
+                <body style='margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;'>
+                  <div style='max-width:600px;margin:0 auto;background:#ffffff;padding:20px;'>
+                    <div style='text-align:center;margin-bottom:24px;'>
+                      <h1 style='color:#A11C22;margin:0;font-size:26px;'>DPAR Platform</h1>
+                      <p style='color:#666;margin:6px 0 0 0;font-size:14px;'>Account Recovery</p>
+                    </div>
+                    <div style='background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:18px;'>
+                      <p style='color:#444;margin:0 0 12px 0;'>Use this verification code to recover your account:</p>
+                      <div style='background:#A11C22;color:#fff;padding:14px;border-radius:6px;text-align:center;font-size:24px;font-weight:bold;letter-spacing:3px;margin:14px 0;'>" . e($code) . "</div>
+                      <p style='color:#666;margin:8px 0 0 0;font-size:13px;'>This code will expire in <strong>1 minute</strong>. Do not share this code with anyone.</p>
+                    </div>
+                    <div style='text-align:center;color:#666;font-size:12px;margin-top:26px;'>
+                      <p style='margin:0;'>If you did not request this code, you can ignore this email.</p>
+                      <p style='margin:8px 0 0 0;'>&copy; " . date('Y') . " DPAR Platform. All rights reserved.</p>
+                    </div>
+                  </div>
+                </body></html>";
+                $brevo->sendEmail($user->email, $subject, $htmlContent);
+            } catch (\Exception $e) {
+                Log::error('Failed to send recovery code email: ' . $e->getMessage());
+                return response()->json(['message' => 'Failed to send verification code. Try again later.'], 500);
+            }
+
+            // Return masked email
+            $masked = $this->maskEmail($user->email);
+
+            // Set cooldown for 60 seconds
+            $cooldownDuration = 60;
+            Cache::put($cooldownKey, now()->addSeconds($cooldownDuration), now()->addSeconds($cooldownDuration));
+            return response()->json([
+                'message' => 'If the account exists, a verification code has been sent.',
+                'masked_email' => $masked,
+                'cooldown_remaining' => $cooldownDuration
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+    }
+
+    // Verify recovery code and issue temporary session to change password
+    public function verifyRecoveryCode(Request $request)
+    {
+        try {
+            $request->validate([
+                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/'],
+                'code' => 'required|string|size:6'
+            ], [
+                'username.regex' => 'Invalid username format.'
+            ]);
+
+            $user = User::where('username', $request->username)->first();
+            if (!$user) {
+                return response()->json(['message' => 'Invalid code or user.'], 401);
+            }
+
+            $cacheKey = 'recovery_email_code_user_' . $user->id;
+            $stored = Cache::get($cacheKey);
+            if (!$stored || $stored !== $request->code) {
+                return response()->json(['message' => 'Invalid or expired verification code.'], 401);
+            }
+
+            // Revoke existing tokens and create a new one
+            $user->tokens()->delete();
+            $token = $user->createToken('auth_token', ['*'], now()->addMinutes(30))->plainTextToken; // short-lived
+
+            // Let change-password accept this code as the current_password once
+            Cache::put('recovery_email_code_accepted_' . $user->id, $stored, now()->addMinutes(15));
+
+            return response()->json([
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'organization' => $user->organization
+                ],
+                'token' => $token,
+                'message' => 'Verification successful. Please change your password now.'
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Verify recovery code error: ' . $e->getMessage());
+            return response()->json(['message' => 'An error occurred during verification.'], 500);
+        }
+    }
+
+    private function maskEmail(string $email): string
+    {
+        [$local, $domain] = explode('@', $email, 2);
+        $localMasked = strlen($local) <= 2 ? substr($local, 0, 1) . '*' : substr($local, 0, 2) . str_repeat('*', max(1, strlen($local) - 3)) . substr($local, -1);
+        $domainParts = explode('.', $domain);
+        $domainName = $domainParts[0] ?? '';
+        $domainTld = implode('.', array_slice($domainParts, 1));
+        $domainMasked = (strlen($domainName) <= 2)
+            ? substr($domainName, 0, 1) . '*'
+            : substr($domainName, 0, 1) . str_repeat('*', max(1, strlen($domainName) - 2)) . substr($domainName, -1);
+        return $localMasked . '@' . $domainMasked . ($domainTld ? ('.' . $domainTld) : '');
     }
 
     // Check if director name is available
@@ -149,6 +299,46 @@ class AuthController extends Controller
         }
     }
 
+    // Check if username is available
+    public function checkUsername(Request $request)
+    {
+        try {
+            $request->validate([
+                // Allow letters, numbers, dots, underscores, hyphens; 3-30 chars
+                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/']
+            ], [
+                'username.regex' => 'Username must be 3-30 characters and contain only letters, numbers, dot, underscore, or hyphen.'
+            ]);
+
+            $username = $request->username;
+
+            $pendingExists = PendingApplication::whereRaw('LOWER(username) = ?', [strtolower($username)])
+                ->where('status', '!=', 'rejected')
+                ->exists();
+
+            $approvedExists = User::whereRaw('LOWER(username) = ?', [strtolower($username)])
+                ->exists();
+
+            $isAvailable = !$approvedExists && !$pendingExists;
+
+            return response()->json([
+                'available' => $isAvailable,
+                'message' => $isAvailable ? 'Username is available' : 'This username is already taken.'
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Username check error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while checking username.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Register new associate application
     public function register(Request $request)
     {
@@ -157,6 +347,7 @@ class AuthController extends Controller
                 'organization_name' => 'required|string|max:255',
                 'organization_type' => 'required|string|max:255',
                 'director_name' => 'required|string|max:255',
+                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/', 'unique:users,username'],
                 'email' => 'required|string|email|max:255|unique:users,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
                 'password' => 'required|string|min:8|confirmed',
@@ -166,6 +357,9 @@ class AuthController extends Controller
                 'organization_name.required' => 'Organization name is required.',
                 'organization_type.required' => 'Organization type is required.',
                 'director_name.required' => 'Director name is required.',
+                'username.required' => 'Username is required.',
+                'username.regex' => 'Username must be 3-30 characters and may include letters, numbers, dot, underscore, or hyphen.',
+                'username.unique' => 'This username is already taken.',
                 'email.required' => 'Email address is required.',
                 'email.email' => 'Please enter a valid email address.',
                 'email.unique' => 'This email is already registered.',
@@ -195,6 +389,16 @@ class AuthController extends Controller
                 ], 422);
             }
 
+            // Ensure username is unique across users and pending applications
+            $usernameTaken = User::where('username', $request->username)->exists() ||
+                PendingApplication::where('username', $request->username)->where('status', '!=', 'rejected')->exists();
+            if ($usernameTaken) {
+                return response()->json([
+                    'message' => 'This username is already taken.',
+                    'errors' => ['username' => ['This username is already taken.']]
+                ], 422);
+            }
+
             // Handle logo upload
             $logoPath = null;
             if ($request->hasFile('logo')) {
@@ -206,6 +410,7 @@ class AuthController extends Controller
                 'organization_name' => $request->organization_name,
                 'organization_type' => $request->organization_type,
                 'director_name' => $request->director_name,
+                'username' => $request->username,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
@@ -239,20 +444,22 @@ class AuthController extends Controller
         }
     }
 
-    // Login user
+    // Login user (using username instead of email)
     public function login(Request $request)
     {
         try {
             $request->validate([
-                'email' => 'required|string|email|max:255',
+                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/'],
                 'password' => 'required|string',
+            ], [
+                'username.regex' => 'Invalid username format.'
             ]);
 
-            $user = User::where('email', $request['email'])->first();
+            $user = User::where('username', $request['username'])->first();
 
             if (!$user) {
-                // Check if there's a pending application with this email
-                $pendingApplication = PendingApplication::where('email', $request['email'])
+                // Check if there's a pending application with this username
+                $pendingApplication = PendingApplication::where('username', $request['username'])
                     ->where('status', 'pending')
                     ->first();
 
@@ -266,7 +473,7 @@ class AuthController extends Controller
 
                 return response()->json([
                     'message' => 'Invalid credentials.',
-                    'errors' => ['email' => ['Invalid credentials.']]
+                    'errors' => ['username' => ['Invalid credentials.']]
                 ], 401);
             }
 
@@ -313,7 +520,7 @@ class AuthController extends Controller
                 $this->recordFailedLoginAttempt($user, $request);
                 return response()->json([
                     'message' => 'Invalid credentials.',
-                    'errors' => ['email' => ['Invalid credentials.']]
+                    'errors' => ['username' => ['Invalid credentials.']]
                 ], 401);
             }
 
@@ -396,21 +603,21 @@ class AuthController extends Controller
         }
     }
 
-    // Login with recovery passcode
+    // Login with recovery passcode (using username)
     public function loginWithRecoveryPasscode(Request $request)
     {
         try {
             $request->validate([
-                'email' => 'required|string|email|max:255|exists:users,email',
+                'username' => 'required|string|min:3|max:30|alpha_num|exists:users,username',
                 'recovery_passcode' => 'required|string|min:10|max:10',
             ]);
 
-            $user = User::where('email', $request->email)->first();
+            $user = User::where('username', $request->username)->first();
 
             if (!$user) {
                 return response()->json([
                     'message' => 'User not found.',
-                    'errors' => ['email' => ['User not found.']]
+                    'errors' => ['username' => ['User not found.']]
                 ], 404);
             }
 

@@ -10,6 +10,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
     organization_name: '',
     organization_type: '',
     director_name: '',
+    username: '',
     email: '',
     phone: '',
     password: '',
@@ -35,6 +36,9 @@ function RegistrationForm({ onSuccess, onCancel }) {
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailAvailability, setEmailAvailability] = useState(null);
   const [emailCheckTimeout, setEmailCheckTimeout] = useState(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameAvailability, setUsernameAvailability] = useState(null);
+  const [usernameCheckTimeout, setUsernameCheckTimeout] = useState(null);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -231,6 +235,52 @@ function RegistrationForm({ onSuccess, onCancel }) {
     setEmailCheckTimeout(timeout);
   }, [emailCheckTimeout, checkEmailAvailability]);
 
+  const checkUsernameAvailability = useCallback(async (username) => {
+    if (!username || username.trim().length < 3) {
+      setUsernameAvailability(null);
+      return;
+    }
+
+    setIsCheckingUsername(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/check-username`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUsernameAvailability({
+          available: data.available,
+          message: data.message
+        });
+      } else {
+        setUsernameAvailability(null);
+      }
+    } catch (error) {
+      console.error('Error checking username:', error);
+      setUsernameAvailability(null);
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  }, []);
+
+  const debouncedCheckUsername = useCallback((username) => {
+    if (usernameCheckTimeout) {
+      clearTimeout(usernameCheckTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      checkUsernameAvailability(username);
+    }, 500);
+
+    setUsernameCheckTimeout(timeout);
+  }, [usernameCheckTimeout, checkUsernameAvailability]);
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -243,8 +293,11 @@ function RegistrationForm({ onSuccess, onCancel }) {
       if (emailCheckTimeout) {
         clearTimeout(emailCheckTimeout);
       }
+      if (usernameCheckTimeout) {
+        clearTimeout(usernameCheckTimeout);
+      }
     };
-  }, [nameCheckTimeout, directorNameCheckTimeout, emailCheckTimeout]);
+  }, [nameCheckTimeout, directorNameCheckTimeout, emailCheckTimeout, usernameCheckTimeout]);
 
   // Trigger validation when availability status changes
   useEffect(() => {
@@ -292,6 +345,21 @@ function RegistrationForm({ onSuccess, onCancel }) {
     }
   }, [emailAvailability]);
 
+  useEffect(() => {
+    if (usernameAvailability !== null) {
+      // Clear any existing username errors and re-validate
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        if (usernameAvailability && !usernameAvailability.available) {
+          newErrors.username = 'This username is already taken.';
+        } else if (prev.username === 'This username is already taken.') {
+          delete newErrors.username;
+        }
+        return newErrors;
+      });
+    }
+  }, [usernameAvailability]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -332,6 +400,9 @@ function RegistrationForm({ onSuccess, onCancel }) {
     // Check email availability when email changes
     if (name === 'email') {
       debouncedCheckEmail(value);
+    }
+    if (name === 'username') {
+      debouncedCheckUsername(value);
     }
     
     // Clear error when user starts typing
@@ -429,6 +500,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
       'organization_name',
       'organization_type', 
       'director_name',
+      'username',
       'description',
       'email',
       'phone',
@@ -493,6 +565,16 @@ function RegistrationForm({ onSuccess, onCancel }) {
       newErrors.director_name = 'This director name is already registered.';
     } else if (isCheckingDirectorName) {
       newErrors.director_name = 'Checking name availability...';
+    }
+    
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (!/^[A-Za-z0-9._-]{3,30}$/.test(formData.username)) {
+      newErrors.username = 'Use 3-30 of letters, numbers, dot, underscore, or hyphen';
+    } else if (usernameAvailability && !usernameAvailability.available) {
+      newErrors.username = 'This username is already taken.';
+    } else if (isCheckingUsername) {
+      newErrors.username = 'Checking username availability...';
     }
     
     if (!formData.email.trim()) {
@@ -581,6 +663,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
       formDataToSend.append('organization_name', formData.organization_name);
       formDataToSend.append('organization_type', formData.organization_type);
       formDataToSend.append('director_name', formData.director_name);
+      formDataToSend.append('username', formData.username);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phone', formData.phone);
       formDataToSend.append('password', formData.password);
@@ -710,6 +793,28 @@ function RegistrationForm({ onSuccess, onCancel }) {
             />
             {errors.description && <span className="error-text">{errors.description}</span>}
             <small className="form-help">Minimum 20 characters</small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username">
+              <FontAwesomeIcon icon={faUser} className="form-icon" />
+              Username *
+            </label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className={`${errors.username ? 'error' : ''} ${usernameAvailability && usernameAvailability.available ? 'success' : ''}`}
+              placeholder="Choose a unique username"
+            />
+            {errors.username && <span className="error-text">{errors.username}</span>}
+            {usernameAvailability && !errors.username && (
+              <span className={`availability-text ${usernameAvailability.available ? 'available' : 'unavailable'}`}>
+                {usernameAvailability.message}
+              </span>
+            )}
           </div>
           
           <div className="form-group">

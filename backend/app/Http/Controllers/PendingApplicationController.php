@@ -81,6 +81,7 @@ class PendingApplicationController extends Controller
             // Create user account
             $user = User::create([
                 'name' => $application->organization_name,
+                'username' => $application->username,
                 'email' => $application->email,
                 'password' => $application->password,
                 'role' => 'associate_group_leader',
@@ -143,61 +144,22 @@ class PendingApplicationController extends Controller
                 'otp_expires_at' => $otpExpiresAt
             ]);
 
-            // Send OTP email to user using Brevo API
+            // Send OTP email to user using Brevo API (no recovery passcodes included)
             try {
                 $brevoService = new BrevoEmailService();
-
-                // Create recovery passcodes text file content
-                $recoveryPasscodesContent = "DPAR Platform - Recovery Passcodes\n";
-                $recoveryPasscodesContent .= "=====================================\n\n";
-                $recoveryPasscodesContent .= "Organization: " . $application->organization_name . "\n";
-                $recoveryPasscodesContent .= "Director: " . $application->director_name . "\n\n";
-                $recoveryPasscodesContent .= "Your Recovery Passcodes (use these if you forget your password):\n\n";
-                foreach ($recoveryPasscodes as $index => $passcode) {
-                    $recoveryPasscodesContent .= ($index + 1) . ". " . $passcode . "\n";
-                }
-                $recoveryPasscodesContent .= "\nImportant Notes:\n";
-                $recoveryPasscodesContent .= "- Each passcode can only be used once\n";
-                $recoveryPasscodesContent .= "- Keep these passcodes secure and do not share them\n";
-                $recoveryPasscodesContent .= "- If you use all three passcodes, contact support for new ones\n\n";
-                $recoveryPasscodesContent .= "Generated on: " . now()->format('Y-m-d H:i:s') . "\n";
-
-                // Create temporary file for attachment
-                $tempFilePath = storage_path('app/temp/recovery_passcodes_' . $application->id . '.txt');
-                if (!file_exists(dirname($tempFilePath))) {
-                    mkdir(dirname($tempFilePath), 0755, true);
-                }
-                file_put_contents($tempFilePath, $recoveryPasscodesContent);
 
                 // Render the email template
                 $htmlContent = view('emails.application-approved', [
                     'organizationName' => $application->organization_name,
                     'otpCode' => $otpCode,
-                    'directorName' => $application->director_name,
-                    'recoveryPasscodes' => $recoveryPasscodes
+                    'directorName' => $application->director_name
                 ])->render();
-
-                // Prepare attachment
-                $attachments = [
-                    [
-                        'content' => base64_encode($recoveryPasscodesContent),
-                        'name' => 'recovery_passcodes.txt',
-                        'type' => 'text/plain'
-                    ]
-                ];
 
                 $result = $brevoService->sendEmail(
                     $application->email,
                     'Your Organization Application Has Been Approved - DPAR Platform',
-                    $htmlContent,
-                    null,
-                    $attachments
+                    $htmlContent
                 );
-
-                // Clean up temporary file
-                if (file_exists($tempFilePath)) {
-                    unlink($tempFilePath);
-                }
 
                 if ($result['success']) {
                     Log::info('OTP email sent successfully via Brevo API', [
@@ -221,7 +183,7 @@ class PendingApplicationController extends Controller
             // Send push notification to admin about the approval/new application
             // This is actually a new application being submitted, so we should notify when it's created
             // But we can send a notification here too if needed
-            
+
             DB::commit();
 
             return response()->json([

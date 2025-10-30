@@ -1,7 +1,7 @@
 import { API_BASE } from './url';
 
 // VAPID public key - This should match the one in your backend .env file
-const VAPID_PUBLIC_KEY = 'BNMzH3lCgVKnnwEQxktiw8FqqWFg2y64RZnvXYYRrQrdtdveo7sM0DQyDfxr1D-X_pmIvxoedWOzANGo_uHYe9U';
+const VAPID_PUBLIC_KEY = 'BJAzlNG2r4F92OI90lXrhtqsE_0wubYcoWO4YmCxuxGymqFJ8InurVDZVTRgkcLA9JS-WyHqrgNRUscUOQBFMnU';
 
 /**
  * Convert base64url VAPID public key to Uint8Array

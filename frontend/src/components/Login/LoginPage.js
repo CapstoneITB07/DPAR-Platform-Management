@@ -76,10 +76,13 @@ const getPasswordStrengthDetails = (password) => {
 };
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [recoveryPasscode, setRecoveryPasscode] = useState('');
+  const [maskedRecoveryEmail, setMaskedRecoveryEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [codeCooldown, setCodeCooldown] = useState(0);
   const [showRA, setShowRA] = useState(false); // State for the pop-up
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [isRecoveryMode, setIsRecoveryMode] = useState(false); // State for recovery mode
@@ -419,10 +422,10 @@ function LoginPage() {
     setSigningIn(true);
 
     try {
-      const endpoint = isRecoveryMode ? `${API_BASE}/api/login/recovery` : `${API_BASE}/api/login`;
+      const endpoint = isRecoveryMode ? `${API_BASE}/api/recovery/verify-code` : `${API_BASE}/api/login`;
       const requestBody = isRecoveryMode 
-        ? { email, recovery_passcode: recoveryPasscode }
-        : { email, password };
+        ? { username, code: recoveryPasscode }
+        : { username, password };
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -453,7 +456,7 @@ function LoginPage() {
           } else {
             setOtpData({
               user_id: data.user_id,
-              email: email
+              username: username
             });
             setShowOtpModal(true);
             setMessage('OTP verification required. Please check your email for the authentication code.');
@@ -466,12 +469,12 @@ function LoginPage() {
         const userRole = data.user ? data.user.role : null; // Adjust based on actual backend response structure
         const userId = data.user ? data.user.id : null;
 
-        // If this was a recovery login, show change password modal BEFORE calling login
+        // If this was a recovery verification, show change password modal BEFORE calling login
         if (isRecoveryMode) {
           setRecoveryLoginData({
             token,
             user: data.user,
-            email,
+            username,
             recoveryPasscode
           });
           setShowChangePasswordModal(true);
@@ -578,22 +581,98 @@ function LoginPage() {
           {isRecoveryMode && (
             <div className="recoveryModeIndicator align-items-center">
               {/* <FontAwesomeIcon icon={faLock} /> */}
-              <span><strong>Recovery Mode: </strong>You will need to change your password after entering the recovery passcode.</span>
+              <span><strong>Recovery Mode: </strong>Click "Send code" to receive a verification code at your email, then enter it below. You'll be asked to change your password.</span>
             </div>
           )}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} autoComplete="off">
             {message && <p className="errorMessage">{message}</p>} {/* Styled error message */}
             <div className="inputGroup">
-              <label htmlFor="email" className="label">Email:</label>
+              <label htmlFor="username" className="label">Username:</label>
+              {!isRecoveryMode ? (
               <input
                 type="text"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  name="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 className="input"
                 required
-                placeholder="Enter your email"
-              />
+                  placeholder="Enter your username"
+                autoComplete="username"
+                />
+              ) : (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="input"
+                    required
+                    placeholder="Enter your username"
+                    style={{ flex: '1 1 auto' }}
+                    autoComplete="username"
+                  />
+                  <button
+                    type="button"
+                    className="signInButton"
+                    disabled={isSendingCode || codeCooldown > 0 || !username}
+                    style={{ 
+                      backgroundColor: isSendingCode ? '#17a2b8' : (codeCooldown > 0 ? '#6c757d' : '#0d6efd'), 
+                      cursor: (isSendingCode || codeCooldown > 0 || !username) ? 'not-allowed' : 'pointer',
+                      opacity: (isSendingCode || codeCooldown > 0 || !username) ? 0.85 : 1,
+                      whiteSpace: 'nowrap'
+                    }}
+                    onClick={async () => {
+                      setMessage('');
+                      if (!username) return;
+                      setIsSendingCode(true);
+                      try {
+                        const resp = await fetch(`${API_BASE}/api/recovery/send-code`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ username })
+                        });
+                        const data = await resp.json().catch(() => ({}));
+                        if (resp.ok) {
+                          if (data.masked_email) setMaskedRecoveryEmail(data.masked_email);
+                          setMessage('If the account exists, a verification code has been sent.' + (data.masked_email ? ` (${data.masked_email})` : ''));
+                          // Start cooldown countdown
+                          const initial = typeof data.cooldown_remaining === 'number' ? data.cooldown_remaining : 60;
+                          setCodeCooldown(initial);
+                          const start = Date.now();
+                          const timer = setInterval(() => {
+                            setCodeCooldown(prev => {
+                              const next = Math.max(0, initial - Math.floor((Date.now() - start) / 1000));
+                              if (next === 0) clearInterval(timer);
+                              return next;
+                            });
+                          }, 500);
+                        } else {
+                          if (resp.status === 429 && typeof data.cooldown_remaining === 'number') {
+                            setCodeCooldown(data.cooldown_remaining);
+                            setMessage('Please wait before requesting another code.');
+                          } else {
+                            setMessage(data.message || 'Failed to send verification code.');
+                          }
+                        }
+                      } catch (err) {
+                        setMessage('Failed to send verification code.');
+                      } finally {
+                        setIsSendingCode(false);
+                      }
+                    }}
+                  >
+                    {isSendingCode ? 'Sending…' : (codeCooldown > 0 ? `Sent (${codeCooldown}s)` : 'Send code')}
+                  </button>
+                </div>
+              )}
+              {isRecoveryMode && maskedRecoveryEmail && (
+                <div style={{ marginTop: '6px', color: '#ddd', fontSize: '12px' }}>
+                  Code will be sent to: {maskedRecoveryEmail}
+                </div>
+              )}
             </div>
             
             {!isRecoveryMode ? (
@@ -639,8 +718,8 @@ function LoginPage() {
               </div>
             </div>
             ) : (
-              <div className="inputGroup"> {/* Recovery passcode input group */}
-                <label htmlFor="recoveryPasscode" className="label">Recovery Passcode:</label>
+              <div className="inputGroup"> {/* Recovery code input group */}
+                <label htmlFor="recoveryPasscode" className="label">Verification Code:</label>
                 <div className="passwordInputContainer"> {/* Container for recovery passcode input and icon */}
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -649,8 +728,8 @@ function LoginPage() {
                     onChange={(e) => setRecoveryPasscode(e.target.value)}
                     className="passwordInput"
                     required
-                    placeholder="Enter your recovery passcode"
-                    aria-label="Recovery Passcode"
+                    placeholder="Enter the code sent to your email"
+                    aria-label="Verification Code"
                     maxLength="10"
                   />
                   <span
@@ -694,7 +773,7 @@ function LoginPage() {
                 pointerEvents: signingIn ? 'none' : 'auto'
               }}
             >
-              {signingIn ? 'Signing in...' : (isRecoveryMode ? 'Continue with Recovery Passcode' : 'Sign In')}
+              {signingIn ? 'Signing in...' : (isRecoveryMode ? 'Verify & Continue' : 'Sign In')}
             </button>
             
             <div className="registrationToggle">

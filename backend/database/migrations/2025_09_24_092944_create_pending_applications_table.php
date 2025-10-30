@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('organization_name');
             $table->string('organization_type');
             $table->string('director_name');
+            $table->string('username');
             $table->string('email')->unique();
             $table->string('phone', 11);
             $table->string('password');

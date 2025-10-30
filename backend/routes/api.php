@@ -35,8 +35,11 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/check-organization-name', [AuthController::class, 'checkOrganizationName']);
 Route::post('/check-director-name', [AuthController::class, 'checkDirectorName']);
 Route::post('/check-email', [AuthController::class, 'checkEmail']);
+Route::post('/check-username', [AuthController::class, 'checkUsername']);
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle.login:5,10');
 Route::post('/login/recovery', [AuthController::class, 'loginWithRecoveryPasscode'])->middleware('throttle:5,1');
+Route::post('/recovery/send-code', [AuthController::class, 'sendRecoveryCode'])->middleware('throttle:5,1');
+Route::post('/recovery/verify-code', [AuthController::class, 'verifyRecoveryCode'])->middleware('throttle:5,1');
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->middleware('throttle:5,1');
 
 // Admin recovery account management routes

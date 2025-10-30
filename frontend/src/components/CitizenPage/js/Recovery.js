@@ -1,16 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/CitizenPage.css';
+import '../css/Recovery.css';
 
 function Recovery() {
   const navigate = useNavigate();
   const [fade, setFade] = useState(false);
+  const [currentObjectiveSlide, setCurrentObjectiveSlide] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const location = useLocation();
+
+  // Objectives data
+  const objectives = [
+    { 
+      icon: '🏡', 
+      title: 'Restore Normal Living Conditions', 
+      desc: 'To restore normal living conditions and community functions for all affected populations.', 
+      color: '#2e7d32',
+      gradient: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)',
+      bgGradient: 'linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🏗️', 
+      title: 'Rebuild Infrastructure', 
+      desc: 'To rebuild damaged infrastructure, homes, and services to pre-disaster or better conditions.', 
+      color: '#1976d2',
+      gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
+      bgGradient: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '💼', 
+      title: 'Revive Local Economy', 
+      desc: 'To revive local economy, agriculture, and employment opportunities for sustainable livelihoods.', 
+      color: '#f57c00',
+      gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)',
+      bgGradient: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '❤️', 
+      title: 'Provide Long-term Care', 
+      desc: 'To provide long-term care and rehabilitation for affected populations.', 
+      color: '#c62828',
+      gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+      bgGradient: 'linear-gradient(135deg, #ffebee 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🧠', 
+      title: 'Address Psychological Impacts', 
+      desc: 'To address psychological and social impacts on survivors and promote healing.', 
+      color: '#7b1fa2',
+      gradient: 'linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)',
+      bgGradient: 'linear-gradient(135deg, #f3e5f5 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🛡️', 
+      title: 'Integrate Resilience', 
+      desc: 'To integrate resilience and disaster risk reduction in reconstruction efforts.', 
+      color: '#00796b',
+      gradient: 'linear-gradient(135deg, #009688 0%, #00695c 100%)',
+      bgGradient: 'linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%)'
+    }
+  ];
+
+  // Auto-rotation effect for carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, [objectives.length]);
+
+  // Carousel navigation functions
+  const nextSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev - 1 + objectives.length) % objectives.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentObjectiveSlide(index);
+  };
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -50,7 +126,7 @@ function Recovery() {
   const isAboutActive = location.pathname === '/citizen/about';
 
   return (
-    <div className="citizen-page-wrapper" style={{ opacity: fade ? 0 : 1 }}>
+    <div className={`citizen-page-wrapper recovery-page-wrapper`} style={{ opacity: fade ? 0 : 1 }}>
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="citizen-sidebar-overlay" onClick={closeSidebar} />
@@ -92,27 +168,10 @@ function Recovery() {
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
             <span 
               onClick={handleDropdown} 
-              className="citizen-dropdown-button"
-              style={{ 
-                background: dropdownOpen ? '#a52a1a' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '8px',
-                transition: 'all 0.3s ease',
-                border: dropdownOpen ? '2px solid #fff' : '2px solid transparent',
-                boxShadow: dropdownOpen ? '0 4px 12px rgba(165,42,26,0.3)' : 'none'
-              }}
+              className={`citizen-dropdown-button${dropdownOpen ? ' active' : ''}`}
             >
-              <span style={{ fontWeight: 'bold', fontSize: '16px' }}>CATEGORIES</span>
-              <span 
-                style={{ 
-                  fontSize: '10px',
-                  transition: 'transform 0.3s ease',
-                  transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-                }}
-              >
+              <span className="citizen-dropdown-button-text">CATEGORIES</span>
+              <span className={`citizen-dropdown-button-arrow${dropdownOpen ? ' open' : ''}`}>
                 ▼
               </span>
             </span>
@@ -166,185 +225,489 @@ function Recovery() {
         </div>
 
         <div className="citizen-phase-content">
-          <div className="citizen-phase-section">
-            <h2>What is Recovery?</h2>
-            <p>
-              Recovery is the long-term process of rebuilding, restoring, and improving communities 
-              after a disaster. It involves physical reconstruction, economic revitalization, 
-              and social healing to create more resilient communities. The goal is to "build back better."
+          {/* Objectives and Principles - Two Column Layout */}
+          <div className="recovery-objectives-principles-container">
+            {/* Objectives Section - Carousel */}
+            <div className="citizen-phase-section recovery-objectives-section">
+              <h2 className="recovery-section-header">
+                Objectives of Recovery
+              </h2>
+              <p className="recovery-section-intro">
+                Recovery aims to restore communities to normalcy while building resilience and 
+                reducing future disaster risks through comprehensive reconstruction efforts.
+              </p>
+              
+              <div className="recovery-objectives-carousel">
+                <div className="carousel-container">
+                  <div 
+                    className="carousel-track"
+                    style={{ transform: `translateX(-${currentObjectiveSlide * 100}%)` }}
+                  >
+                    {objectives.map((obj, idx) => (
+                      <div 
+                        key={`objective-${idx}-${obj.title}`}
+                        className="carousel-slide"
+                      >
+                        <div 
+                          className="recovery-objective-card-carousel"
+                          style={{ background: obj.bgGradient }}
+                        >
+                          <div className="recovery-objective-watermark">{obj.icon}</div>
+                          <div className="recovery-objective-icon-wrapper" style={{ background: obj.gradient }}>
+                            <div className="recovery-objective-icon">{obj.icon}</div>
+                          </div>
+                          <h3 className="recovery-objective-title" style={{ color: obj.color }}>{obj.title}</h3>
+                          <p className="recovery-objective-desc">{obj.desc}</p>
+                          <div className="recovery-objective-number" style={{ color: obj.color }}>
+                            {(idx + 1).toString().padStart(2, '0')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Navigation Buttons */}
+                  <button 
+                    className="carousel-button carousel-button-prev"
+                    onClick={prevSlide}
+                    aria-label="Previous objective"
+                  >
+                    ‹
+                  </button>
+                  <button 
+                    className="carousel-button carousel-button-next"
+                    onClick={nextSlide}
+                    aria-label="Next objective"
+                  >
+                    ›
+                  </button>
+                </div>
+
+                {/* Dots Indicator */}
+                <div className="carousel-dots">
+                  {objectives.map((_, idx) => (
+                    <button
+                      key={`dot-${idx}`}
+                      className={`carousel-dot ${idx === currentObjectiveSlide ? 'active' : ''}`}
+                      onClick={() => goToSlide(idx)}
+                      aria-label={`Go to objective ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Key Principles Section */}
+            <div className="citizen-phase-section recovery-principles-section">
+              <h2 className="recovery-section-header">
+                Key Principles of Recovery
+              </h2>
+              <div className="recovery-principles-grid">
+                {[
+                  { icon: '🏗️', title: 'Build Back Better', desc: 'Rebuild in a safer and more sustainable way.', variant: 'build' },
+                  { icon: '🤝', title: 'Community Participation', desc: 'Involve local residents in planning and rebuilding.', variant: 'participation' },
+                  { icon: '⚖️', title: 'Equity and Inclusiveness', desc: 'Address the needs of all, especially the most vulnerable.', variant: 'equity' },
+                  { icon: '🔗', title: 'Coordination and Cooperation', desc: 'Align government, NGOs, and international aid efforts.', variant: 'coordination' },
+                  { icon: '🌱', title: 'Sustainability', desc: 'Incorporate environmental protection and long-term resilience.', variant: 'sustainability' },
+                  { icon: '✅', title: 'Transparency and Accountability', desc: 'Ensure fair use of recovery funds and aid.', variant: 'transparency' }
+                ].map((principle, idx) => (
+                  <div key={`principle-${idx}-${principle.title}`} className={`recovery-principle-card recovery-principle-${principle.variant}`}>
+                    <div className="recovery-principle-watermark">{principle.icon}</div>
+                    <div className="recovery-principle-icon-wrapper">
+                      <div className="recovery-principle-icon">{principle.icon}</div>
+                    </div>
+                    <h3 className="recovery-principle-title">{principle.title}</h3>
+                    <p className="recovery-principle-desc">{principle.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Stages of Recovery Section */}
+          <div className="citizen-phase-section recovery-stages-section">
+            <h2 className="recovery-section-header">
+              Stages of Recovery
+            </h2>
+            <p className="recovery-section-intro">
+              Recovery happens in two main phases, each with distinct goals and activities.
             </p>
-            <div className="citizen-phase-highlight">
-              <strong>🏗️ Build Back Better:</strong> Recovery should make communities stronger than before the disaster.
-            </div>
-          </div>
 
-          <div className="citizen-phase-section">
-            <h2>Phases of Recovery</h2>
-            <div className="citizen-strategies-grid">
-              <div className="citizen-strategy-card">
-                <h3>Short-term Recovery</h3>
-                <p>Immediate restoration of essential services, debris removal, and temporary housing solutions.</p>
+            <div className="recovery-stages-steps">
+              {/* Short-term Recovery */}
+              <div className="recovery-stage-step recovery-stage-short">
+                <div className="recovery-stage-badge">Immediate Restoration</div>
+                <div className="recovery-stage-watermark">🩹</div>
+                <div className="recovery-stage-icon-wrapper">
+                  <div className="recovery-stage-icon">🩹</div>
+                </div>
+                <div className="recovery-stage-content">
+                  <h3 className="recovery-stage-title">Short-Term Recovery</h3>
+                  <p className="recovery-stage-description">
+                    Focuses on immediate needs after the response phase
+                  </p>
+                  <ul className="recovery-stage-list">
+                    <li>Clearing debris and repairing essential services (water, power, transport)</li>
+                    <li>Providing temporary shelters and housing</li>
+                    <li>Offering financial assistance or cash-for-work programs</li>
+                    <li>Reopening schools, hospitals, and government offices</li>
+                    <li>Continuing medical and psychosocial care for victims</li>
+                  </ul>
+                </div>
               </div>
-              <div className="citizen-strategy-card">
-                <h3>Medium-term Recovery</h3>
-                <p>Rebuilding infrastructure, restoring businesses, and addressing community needs.</p>
-              </div>
-              <div className="citizen-strategy-card">
-                <h3>Long-term Recovery</h3>
-                <p>Comprehensive rebuilding with improved resilience and community development.</p>
-              </div>
-              <div className="citizen-strategy-card">
-                <h3>Sustainable Recovery</h3>
-                <p>Building back better with enhanced disaster resistance and community resilience.</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="citizen-phase-section">
-            <h2>Recovery Priorities</h2>
-            <div className="citizen-recovery-priorities">
-              <div className="citizen-priority-category">
-                <h3>Immediate Needs (0-30 days)</h3>
-                <ul className="citizen-action-list">
-                  <li>Emergency shelter and housing</li>
-                  <li>Food and water distribution</li>
-                  <li>Medical and mental health services</li>
-                  <li>Debris removal and cleanup</li>
-                  <li>Restoration of basic utilities</li>
-                  <li>Emergency financial assistance</li>
-                </ul>
-              </div>
-              <div className="citizen-priority-category">
-                <h3>Short-term Recovery (1-6 months)</h3>
-                <ul className="citizen-action-list">
-                  <li>Permanent housing solutions</li>
-                  <li>Business reopening and job restoration</li>
-                  <li>Infrastructure repair and rebuilding</li>
-                  <li>Community services restoration</li>
-                  <li>Economic recovery programs</li>
-                  <li>Mental health and social support</li>
-                </ul>
-              </div>
-              <div className="citizen-priority-category">
-                <h3>Long-term Recovery (6+ months)</h3>
-                <ul className="citizen-action-list">
-                  <li>Comprehensive rebuilding with improved standards</li>
-                  <li>Economic development and diversification</li>
-                  <li>Enhanced disaster preparedness</li>
-                  <li>Community resilience building</li>
-                  <li>Environmental restoration</li>
-                  <li>Social cohesion and community healing</li>
-                </ul>
+              {/* Long-term Recovery */}
+              <div className="recovery-stage-step recovery-stage-long">
+                <div className="recovery-stage-badge">Rehabilitation & Reconstruction</div>
+                <div className="recovery-stage-watermark">🏠</div>
+                <div className="recovery-stage-icon-wrapper">
+                  <div className="recovery-stage-icon">🏠</div>
+                </div>
+                <div className="recovery-stage-content">
+                  <h3 className="recovery-stage-title">Long-Term Recovery</h3>
+                  <p className="recovery-stage-description">
+                    Focuses on rebuilding and development for sustainable future
+                  </p>
+                  <ul className="recovery-stage-list">
+                    <li>Reconstructing permanent housing and infrastructure</li>
+                    <li>Reviving agriculture, businesses, and local economy</li>
+                    <li>Strengthening public facilities and utilities</li>
+                    <li>Implementing livelihood and training programs</li>
+                    <li>Developing policies to prevent similar disasters in the future</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="citizen-phase-section">
-            <h2>Community Recovery Actions</h2>
-            <div className="citizen-individual-steps">
-              <div className="citizen-step-item">
-                <h4>Volunteer Cleanup</h4>
-                <p>Participate in community cleanup efforts and debris removal operations.</p>
-              </div>
-              <div className="citizen-step-item">
-                <h4>Support Local Businesses</h4>
-                <p>Patronize local businesses to help restore the local economy and create jobs.</p>
-              </div>
-              <div className="citizen-step-item">
-                <h4>Community Meetings</h4>
-                <p>Attend recovery planning meetings and provide input on community priorities.</p>
-              </div>
-              <div className="citizen-step-item">
-                <h4>Mental Health Support</h4>
-                <p>Offer emotional support to neighbors and connect people with counseling services.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="citizen-phase-section">
-            <h2>Building Back Better</h2>
-            <div className="citizen-benefits-grid">
-              <div className="citizen-benefit-item">
-                <strong>Improved Infrastructure:</strong> Rebuild with stronger, more disaster-resistant materials and designs.
-              </div>
-              <div className="citizen-benefit-item">
-                <strong>Enhanced Preparedness:</strong> Integrate better warning systems and emergency response capabilities.
-              </div>
-              <div className="citizen-benefit-item">
-                <strong>Economic Diversification:</strong> Develop new industries and job opportunities to reduce vulnerability.
-              </div>
-              <div className="citizen-benefit-item">
-                <strong>Community Resilience:</strong> Strengthen social networks and community support systems.
-              </div>
-            </div>
-          </div>
-
-          <div className="citizen-phase-section">
-            <h2>Individual Recovery Steps</h2>
-            <ul className="citizen-action-list">
-              <li>Document all damage with photos and videos for insurance claims</li>
-              <li>Contact your insurance company as soon as possible</li>
-              <li>Apply for disaster assistance programs if eligible</li>
-              <li>Keep all receipts for recovery-related expenses</li>
-              <li>Seek mental health support if needed</li>
-              <li>Stay connected with family, friends, and community</li>
-              <li>Participate in community recovery activities</li>
-              <li>Plan for future disasters while rebuilding</li>
-            </ul>
-          </div>
-
-          <div className="citizen-phase-section">
-            <h2>Volunteer Recovery Roles</h2>
-            <div className="citizen-volunteer-roles">
-              <div className="citizen-role-item">
-                <h4>Cleanup Teams</h4>
-                <p>Assist with debris removal, property cleanup, and environmental restoration.</p>
-              </div>
-              <div className="citizen-role-item">
-                <h4>Support Services</h4>
-                <p>Provide meals, childcare, transportation, and other support to affected families.</p>
-              </div>
-              <div className="citizen-role-item">
-                <h4>Rebuilding Assistance</h4>
-                <p>Help with home repairs, construction, and rebuilding efforts for vulnerable populations.</p>
-              </div>
-              <div className="citizen-role-item">
-                <h4>Community Outreach</h4>
-                <p>Connect people with resources, services, and support networks during recovery.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="citizen-phase-section">
-            <h2>Mental Health and Emotional Recovery</h2>
-            <p>
-              Recovery isn't just about physical rebuilding—it's also about emotional healing. 
-              Disasters can cause trauma, stress, and grief. It's important to:
+          {/* Key Components of Recovery Section */}
+          <div className="citizen-phase-section recovery-components-section">
+            <h2 className="recovery-section-header">
+              Key Components of Recovery
+            </h2>
+            <p className="recovery-section-intro">
+              Recovery encompasses various specialized activities working together to restore and strengthen communities.
             </p>
-            <ul className="citizen-action-list">
-              <li>Recognize that emotional reactions are normal after disasters</li>
-              <li>Seek professional help if you're struggling with trauma or depression</li>
-              <li>Support children and elderly family members who may be particularly affected</li>
-              <li>Stay connected with your community and support networks</li>
-              <li>Practice self-care and stress management techniques</li>
-              <li>Be patient with yourself and others during the recovery process</li>
-            </ul>
+
+            <div className="recovery-components-grid">
+              {/* Infrastructure and Housing */}
+              <div className="recovery-component-card recovery-component-infrastructure">
+                <div className="recovery-component-badge">Critical</div>
+                <div className="recovery-component-watermark">🏘️</div>
+                <div className="recovery-component-icon-wrapper">
+                  <div className="recovery-component-icon">🏘️</div>
+                </div>
+                <h3 className="recovery-component-title">Infrastructure and Housing Rehabilitation</h3>
+                <ul className="recovery-component-list">
+                  <li>Repairing or rebuilding homes, schools, hospitals, roads, and bridges</li>
+                  <li>Upgrading designs to meet disaster-resistant standards</li>
+                  <li>Relocating communities away from high-risk areas</li>
+                  <li>Ensuring access to clean water, electricity, and sanitation</li>
+                </ul>
+              </div>
+
+              {/* Economic Recovery */}
+              <div className="recovery-component-card recovery-component-economic">
+                <div className="recovery-component-badge">Essential</div>
+                <div className="recovery-component-watermark">💼</div>
+                <div className="recovery-component-icon-wrapper">
+                  <div className="recovery-component-icon">💼</div>
+                </div>
+                <h3 className="recovery-component-title">Economic Recovery</h3>
+                <ul className="recovery-component-list">
+                  <li>Providing livelihood programs for displaced workers</li>
+                  <li>Offering financial aid, microloans, or grants for small businesses</li>
+                  <li>Reestablishing markets and supply chains</li>
+                  <li>Restoring agricultural production and fisheries</li>
+                  <li>Encouraging investment in resilient industries</li>
+                </ul>
+              </div>
+
+              {/* Psychosocial and Health */}
+              <div className="recovery-component-card recovery-component-psychosocial">
+                <div className="recovery-component-badge">Vital</div>
+                <div className="recovery-component-watermark">❤️</div>
+                <div className="recovery-component-icon-wrapper">
+                  <div className="recovery-component-icon">❤️</div>
+                </div>
+                <h3 className="recovery-component-title">Psychosocial and Health Recovery</h3>
+                <ul className="recovery-component-list">
+                  <li>Providing mental health support and trauma counseling</li>
+                  <li>Continuing medical care for injured individuals</li>
+                  <li>Implementing health surveillance to prevent disease outbreaks</li>
+                  <li>Promoting community healing and social cohesion</li>
+                  <li>Offering community recreation and education programs</li>
+                </ul>
+              </div>
+
+              {/* Environmental Recovery */}
+              <div className="recovery-component-card recovery-component-environmental">
+                <div className="recovery-component-badge">Priority</div>
+                <div className="recovery-component-watermark">🧭</div>
+                <div className="recovery-component-icon-wrapper">
+                  <div className="recovery-component-icon">🧭</div>
+                </div>
+                <h3 className="recovery-component-title">Environmental Recovery</h3>
+                <ul className="recovery-component-list">
+                  <li>Conducting cleanup and waste management operations</li>
+                  <li>Rehabilitating damaged forests, coastal areas, and rivers</li>
+                  <li>Managing hazardous debris and contamination</li>
+                  <li>Replanting trees and restoring ecosystems</li>
+                  <li>Incorporating green and climate-smart infrastructure</li>
+                </ul>
+              </div>
+
+              {/* Governance and Institutional */}
+              <div className="recovery-component-card recovery-component-governance">
+                <div className="recovery-component-badge">Strategic</div>
+                <div className="recovery-component-watermark">🏛️</div>
+                <div className="recovery-component-icon-wrapper">
+                  <div className="recovery-component-icon">🏛️</div>
+                </div>
+                <h3 className="recovery-component-title">Governance and Institutional Recovery</h3>
+                <ul className="recovery-component-list">
+                  <li>Rebuilding local government offices and systems</li>
+                  <li>Updating land use plans and disaster management policies</li>
+                  <li>Training officials in risk reduction and recovery management</li>
+                  <li>Strengthening coordination between agencies and communities</li>
+                  <li>Enhancing early warning and communication systems</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
-          <div className="citizen-phase-section">
-            <h2>Recovery Success Stories</h2>
-            <div className="citizen-success-stories">
-              <div className="citizen-story-card">
-                <h3>🏘️ Community Rebuilding</h3>
-                <p>Communities that involved residents in recovery planning rebuilt 50% faster than those that didn't.</p>
+          {/* Recovery Strategies by Disaster Type */}
+          <div className="citizen-phase-section recovery-disaster-section">
+            <h2 className="recovery-section-header">
+              Recovery Strategies by Disaster Type
+            </h2>
+            <p className="recovery-section-intro">
+              Each type of disaster requires specialized recovery strategies tailored to its unique 
+              impacts and challenges.
+            </p>
+
+            <h3 className="recovery-subsection-title">Natural Disasters</h3>
+            <div className="recovery-disaster-grid">
+              {/* Volcanic Eruption */}
+              <div className="recovery-disaster-card recovery-disaster-volcanic">
+                <div className="recovery-disaster-icon">🌋</div>
+                <h4 className="recovery-disaster-heading">Volcanic Eruption Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Clean up ashfall and rebuild damaged roofs and crops</li>
+                  <li>Provide long-term relocation for displaced residents</li>
+                  <li>Support farmers with seeds and new farmland</li>
+                  <li>Establish lahar diversion and monitoring systems</li>
+                  <li>Replant forests destroyed by eruptions</li>
+                </ul>
               </div>
-              <div className="citizen-story-card">
-                <h3>💼 Economic Recovery</h3>
-                <p>Local businesses with disaster recovery plans reopened 3x faster than those without plans.</p>
+
+              {/* Flood */}
+              <div className="recovery-disaster-card recovery-disaster-flood">
+                <div className="recovery-disaster-icon">🌊</div>
+                <h4 className="recovery-disaster-heading">Flood Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Repair drainage systems and river embankments</li>
+                  <li>Clean and disinfect flood-affected homes</li>
+                  <li>Restore water supply, sanitation, and road networks</li>
+                  <li>Offer livelihood recovery programs for affected families</li>
+                  <li>Promote flood-resistant housing and elevated structures</li>
+                </ul>
               </div>
-              <div className="citizen-story-card">
-                <h3>🌱 Sustainable Recovery</h3>
-                <p>Communities that incorporated green infrastructure in recovery saw 30% reduction in future flood damage.</p>
+
+              {/* Typhoon */}
+              <div className="recovery-disaster-card recovery-disaster-typhoon">
+                <div className="recovery-disaster-icon">🌪️</div>
+                <h4 className="recovery-disaster-heading">Typhoon Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Reconstruct homes using storm-resistant materials</li>
+                  <li>Restore power, water, and telecommunication lines</li>
+                  <li>Provide psychosocial support to affected families</li>
+                  <li>Rebuild schools and health facilities</li>
+                  <li>Develop coastal protection and mangrove reforestation</li>
+                </ul>
+              </div>
+
+              {/* Earthquake */}
+              <div className="recovery-disaster-card recovery-disaster-earthquake">
+                <div className="recovery-disaster-icon">🌍</div>
+                <h4 className="recovery-disaster-heading">Earthquake Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Rebuild using earthquake-resistant designs</li>
+                  <li>Reconstruct bridges, roads, and public utilities</li>
+                  <li>Provide trauma care and rehabilitation for the injured</li>
+                  <li>Restore government and business operations</li>
+                  <li>Update building codes and urban plans for safety</li>
+                </ul>
+              </div>
+
+              {/* Fire */}
+              <div className="recovery-disaster-card recovery-disaster-fire">
+                <div className="recovery-disaster-icon">🔥</div>
+                <h4 className="recovery-disaster-heading">Fire Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Provide temporary shelters and financial support for rebuilding</li>
+                  <li>Replace lost documents and identification</li>
+                  <li>Offer livelihood assistance for affected families</li>
+                  <li>Implement fire safety awareness and training programs</li>
+                  <li>Improve firefighting infrastructure and hydrant systems</li>
+                </ul>
+              </div>
+
+              {/* Landslide */}
+              <div className="recovery-disaster-card recovery-disaster-landslide">
+                <div className="recovery-disaster-icon">⛰️</div>
+                <h4 className="recovery-disaster-heading">Landslide Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Relocate residents to safer zones</li>
+                  <li>Stabilize slopes through reforestation and engineering structures</li>
+                  <li>Repair damaged roads and utilities</li>
+                  <li>Support agriculture and replanting efforts</li>
+                  <li>Install monitoring systems to prevent future landslides</li>
+                </ul>
+              </div>
+
+              {/* Pandemic */}
+              <div className="recovery-disaster-card recovery-disaster-pandemic">
+                <div className="recovery-disaster-icon">🦠</div>
+                <h4 className="recovery-disaster-heading">Pandemic / Disease Outbreak Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Rehabilitate healthcare systems and hospitals</li>
+                  <li>Support affected families with income restoration</li>
+                  <li>Continue vaccination and preventive programs</li>
+                  <li>Provide mental health counseling and social support</li>
+                  <li>Rebuild confidence in public gatherings and education</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3 className="recovery-subsection-title">Human-Caused Disasters</h3>
+            <div className="recovery-disaster-grid recovery-human-disaster-grid">
+              {/* Industrial Accidents */}
+              <div className="recovery-disaster-card recovery-disaster-industrial">
+                <div className="recovery-disaster-icon">⚙️</div>
+                <h4 className="recovery-disaster-heading">Industrial Accidents Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Decontaminate polluted sites and rebuild safe workplaces</li>
+                  <li>Provide compensation and healthcare to affected workers</li>
+                  <li>Review safety regulations and upgrade facilities</li>
+                  <li>Rebuild public trust through transparency and monitoring</li>
+                  <li>Conduct re-skilling programs for displaced workers</li>
+                </ul>
+              </div>
+
+              {/* Terrorist Attacks */}
+              <div className="recovery-disaster-card recovery-disaster-terrorism">
+                <div className="recovery-disaster-icon">💣</div>
+                <h4 className="recovery-disaster-heading">Terrorist Attacks / Explosions Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Rebuild damaged structures and memorialize victims</li>
+                  <li>Offer trauma counseling and community healing</li>
+                  <li>Improve public security and emergency response systems</li>
+                  <li>Strengthen counterterrorism awareness and resilience</li>
+                  <li>Support economic and tourism recovery in affected areas</li>
+                </ul>
+              </div>
+
+              {/* Transportation Accidents */}
+              <div className="recovery-disaster-card recovery-disaster-transportation">
+                <div className="recovery-disaster-icon">🚗</div>
+                <h4 className="recovery-disaster-heading">Transportation Accidents Recovery</h4>
+                <ul className="recovery-disaster-list">
+                  <li>Repair transportation infrastructure (roads, railways, airports)</li>
+                  <li>Improve safety measures and emergency systems</li>
+                  <li>Provide compensation and aid to victims' families</li>
+                  <li>Review and strengthen safety protocols</li>
+                  <li>Train responders for mass casualty recovery management</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Challenges Section */}
+          <div className="citizen-phase-section recovery-challenges-section">
+            <h2 className="recovery-section-header">
+              Challenges in Recovery
+            </h2>
+            <p className="recovery-section-intro">
+              Recovery efforts face numerous obstacles that must be addressed through careful 
+              planning, coordination, and community engagement.
+            </p>
+            <div className="recovery-challenges-grid">
+              {[
+                { icon: '💰', challenge: 'Limited Funding', desc: 'Limited funding or delayed financial aid hampering recovery efforts' },
+                { icon: '📋', challenge: 'Bureaucratic Processes', desc: 'Bureaucratic processes and corruption slowing down recovery' },
+                { icon: '🤝', challenge: 'Lack of Coordination', desc: 'Lack of coordination between agencies and organizations' },
+                { icon: '😔', challenge: 'Psychological Trauma', desc: 'Psychological trauma and loss of motivation in victims' },
+                { icon: '🌊', challenge: 'Environmental Degradation', desc: 'Environmental degradation and recurring hazards' },
+                { icon: '⚖️', challenge: 'Inequitable Distribution', desc: 'Inequitable distribution of aid and opportunities' }
+              ].map((item, idx) => (
+                <div key={`challenge-${idx}-${item.challenge}`} className="recovery-challenge-card">
+                  <div className="recovery-challenge-icon">{item.icon}</div>
+                  <h4 className="recovery-challenge-title">{item.challenge}</h4>
+                  <p className="recovery-challenge-desc">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Importance Section */}
+          <div className="citizen-phase-section recovery-importance-section">
+            <div className="recovery-importance-header">
+              <h2>IMPORTANCE OF RECOVERY</h2>
+            </div>
+            <div className="recovery-importance-grid">
+              <div className="recovery-importance-card recovery-importance-dignity">
+                <div className="recovery-importance-watermark">🏡</div>
+                <div className="recovery-importance-card-title">
+                  <span className="recovery-importance-card-emoji">🏡</span>
+                  <span className="recovery-importance-heading">Restores Dignity and Stability</span>
+                </div>
+                <p className="recovery-importance-card-desc">
+                  Restores dignity, safety, and stability to affected people and communities.
+                </p>
+              </div>
+
+              <div className="recovery-importance-card recovery-importance-infrastructure">
+                <div className="recovery-importance-watermark">🏗️</div>
+                <div className="recovery-importance-card-title">
+                  <span className="recovery-importance-card-emoji">🏗️</span>
+                  <span className="recovery-importance-heading">Rebuilds Infrastructure</span>
+                </div>
+                <p className="recovery-importance-card-desc">
+                  Rebuilds infrastructure and economic stability for sustainable development.
+                </p>
+              </div>
+
+              <div className="recovery-importance-card recovery-importance-healing">
+                <div className="recovery-importance-watermark">❤️</div>
+                <div className="recovery-importance-card-title">
+                  <span className="recovery-importance-card-emoji">❤️</span>
+                  <span className="recovery-importance-heading">Promotes Healing</span>
+                </div>
+                <p className="recovery-importance-card-desc">
+                  Promotes emotional healing and community unity through support and engagement.
+                </p>
+              </div>
+
+              <div className="recovery-importance-card recovery-importance-resilient">
+                <div className="recovery-importance-watermark">🛡️</div>
+                <div className="recovery-importance-card-title">
+                  <span className="recovery-importance-card-emoji">🛡️</span>
+                  <span className="recovery-importance-heading">Creates Resilience</span>
+                </div>
+                <p className="recovery-importance-card-desc">
+                  Creates safer and more resilient communities prepared for future disasters.
+                </p>
+              </div>
+
+              <div className="recovery-importance-card recovery-importance-lessons">
+                <div className="recovery-importance-watermark">📚</div>
+                <div className="recovery-importance-card-title">
+                  <span className="recovery-importance-card-emoji">📚</span>
+                  <span className="recovery-importance-heading">Transforms Lessons</span>
+                </div>
+                <p className="recovery-importance-card-desc">
+                  Transforms lessons learned into future risk reduction actions and policies.
+                </p>
               </div>
             </div>
           </div>

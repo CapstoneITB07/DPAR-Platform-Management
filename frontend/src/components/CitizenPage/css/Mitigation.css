@@ -138,6 +138,422 @@
   font-style: italic;
 }
 
+/* Objectives Carousel */
+.mitigation-objectives-carousel {
+  position: relative;
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 0;
+  box-sizing: border-box;
+}
+
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 25px;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.8s cubic-bezier(0.45, 0, 0.15, 1);
+  will-change: transform;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.carousel-slide {
+  min-width: 100%;
+  width: 100%;
+  padding: 0;
+  transform: translateZ(0);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.mitigation-objective-card-carousel {
+  padding: 50px 35px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 450px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 3px solid rgba(0,0,0,0.08);
+}
+
+.mitigation-objective-watermark {
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  font-size: 12rem;
+  opacity: 0.05;
+  transform: rotate(-15deg);
+  animation: floatWatermark 8s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes floatWatermark {
+  0%, 100% { transform: rotate(-15deg) translate(0, 0); }
+  50% { transform: rotate(-10deg) translate(-10px, -10px); }
+}
+
+.mitigation-objective-icon-wrapper {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+  transition: all 0.5s ease;
+  position: relative;
+  z-index: 1;
+  animation: bounceIcon 2s ease-in-out infinite;
+}
+
+@keyframes bounceIcon {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.05); }
+}
+
+.mitigation-objective-icon {
+  font-size: 3.5rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
+.mitigation-objective-title {
+  font-size: 1.8rem;
+  margin-bottom: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+  line-height: 1.3;
+}
+
+.mitigation-objective-desc {
+  color: #555;
+  line-height: 1.8;
+  font-size: 1.05rem;
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+}
+
+.mitigation-objective-number {
+  position: absolute;
+  bottom: 20px;
+  left: 25px;
+  font-size: 5rem;
+  font-weight: 900;
+  opacity: 0.15;
+  font-family: 'Arial Black', sans-serif;
+  z-index: 0;
+}
+
+/* Carousel Navigation Buttons */
+.carousel-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  color: #a52a1a;
+  border: 3px solid #a52a1a;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.carousel-button:hover {
+  background: #a52a1a;
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 25px rgba(165, 42, 26, 0.4);
+}
+
+.carousel-button-prev {
+  left: 20px;
+}
+
+.carousel-button-next {
+  right: 20px;
+}
+
+/* Carousel Dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+  padding: 15px 0;
+}
+
+.carousel-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.carousel-dot:hover {
+  background: #bbb;
+  transform: scale(1.2);
+}
+
+.carousel-dot.active {
+  background: #a52a1a;
+  border-color: #7a1f13;
+  width: 40px;
+  border-radius: 10px;
+  transform: scale(1.1);
+  box-shadow: 0 2px 10px rgba(165, 42, 26, 0.4);
+}
+
+/* Principles Section */
+.mitigation-principles-section {
+  margin-bottom: 0;
+  box-sizing: border-box;
+}
+
+.mitigation-principles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.mitigation-principle-card {
+  padding: 15px 12px;
+  border-radius: 16px;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  border: 3px solid;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.mitigation-principle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.mitigation-principle-card:hover::before {
+  opacity: 1;
+}
+
+.mitigation-principle-card:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+}
+
+.mitigation-principle-watermark {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  font-size: 5rem;
+  opacity: 0.06;
+  transform: rotate(-15deg);
+  transition: all 0.5s ease;
+  z-index: 0;
+}
+
+.mitigation-principle-card:hover .mitigation-principle-watermark {
+  transform: rotate(0deg) scale(1.1);
+  opacity: 0.1;
+}
+
+.mitigation-principle-icon-wrapper {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  transition: all 0.4s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.mitigation-principle-card:hover .mitigation-principle-icon-wrapper {
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.mitigation-principle-icon {
+  font-size: 1.85rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+.mitigation-principle-title {
+  font-size: 1rem;
+  margin-bottom: 6px;
+  font-weight: 800;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.3px;
+}
+
+.mitigation-principle-desc {
+  color: #555;
+  line-height: 1.4;
+  font-size: 0.82rem;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Principle Color Variants */
+/* Assessment - Blue */
+.mitigation-principle-assessment {
+  border-color: rgba(30, 136, 229, 0.4);
+  background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+}
+
+.mitigation-principle-assessment:hover {
+  border-color: #1e88e5;
+  box-shadow: 0 20px 45px rgba(30, 136, 229, 0.25);
+}
+
+.mitigation-principle-assessment .mitigation-principle-icon-wrapper {
+  background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+}
+
+.mitigation-principle-assessment .mitigation-principle-title {
+  color: #1976d2;
+}
+
+/* Prevention - Green */
+.mitigation-principle-prevention {
+  border-color: rgba(67, 160, 71, 0.4);
+  background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%);
+}
+
+.mitigation-principle-prevention:hover {
+  border-color: #43a047;
+  box-shadow: 0 20px 45px rgba(67, 160, 71, 0.25);
+}
+
+.mitigation-principle-prevention .mitigation-principle-icon-wrapper {
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+}
+
+.mitigation-principle-prevention .mitigation-principle-title {
+  color: #388e3c;
+}
+
+/* Sustainable - Teal */
+.mitigation-principle-sustainable {
+  border-color: rgba(0, 150, 136, 0.4);
+  background: linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%);
+}
+
+.mitigation-principle-sustainable:hover {
+  border-color: #009688;
+  box-shadow: 0 20px 45px rgba(0, 150, 136, 0.25);
+}
+
+.mitigation-principle-sustainable .mitigation-principle-icon-wrapper {
+  background: linear-gradient(135deg, #26a69a 0%, #009688 100%);
+}
+
+.mitigation-principle-sustainable .mitigation-principle-title {
+  color: #00796b;
+}
+
+/* Community - Purple */
+.mitigation-principle-community {
+  border-color: rgba(156, 39, 176, 0.4);
+  background: linear-gradient(135deg, #f3e5f5 0%, #ffffff 100%);
+}
+
+.mitigation-principle-community:hover {
+  border-color: #9c27b0;
+  box-shadow: 0 20px 45px rgba(156, 39, 176, 0.25);
+}
+
+.mitigation-principle-community .mitigation-principle-icon-wrapper {
+  background: linear-gradient(135deg, #ab47bc 0%, #9c27b0 100%);
+}
+
+.mitigation-principle-community .mitigation-principle-title {
+  color: #7b1fa2;
+}
+
+/* Policy - Orange */
+.mitigation-principle-policy {
+  border-color: rgba(255, 152, 0, 0.4);
+  background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
+}
+
+.mitigation-principle-policy:hover {
+  border-color: #ff9800;
+  box-shadow: 0 20px 45px rgba(255, 152, 0, 0.25);
+}
+
+.mitigation-principle-policy .mitigation-principle-icon-wrapper {
+  background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+}
+
+.mitigation-principle-policy .mitigation-principle-title {
+  color: #f57c00;
+}
+
+/* Evaluation - Red */
+.mitigation-principle-evaluation {
+  border-color: rgba(229, 57, 53, 0.4);
+  background: linear-gradient(135deg, #ffebee 0%, #ffffff 100%);
+}
+
+.mitigation-principle-evaluation:hover {
+  border-color: #e53935;
+  box-shadow: 0 20px 45px rgba(229, 57, 53, 0.25);
+}
+
+.mitigation-principle-evaluation .mitigation-principle-icon-wrapper {
+  background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+}
+
+.mitigation-principle-evaluation .mitigation-principle-title {
+  color: #d32f2f;
+}
+
 /* Definition Section */
 .mitigation-definition-section {
   animation: fadeIn 0.6s ease-in;
@@ -239,9 +655,20 @@
   background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
 }
 
+/* Objectives and Principles Container - Two Column Layout */
+.mitigation-objectives-principles-container {
+  display: grid;
+  grid-template-columns: 45% 55%;
+  gap: 40px;
+  margin-bottom: 50px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
 /* Objectives Section */
 .mitigation-objectives-section {
-  margin-bottom: 50px;
+  margin-bottom: 0;
+  box-sizing: border-box;
 }
 
 .mitigation-objectives-grid {
@@ -322,6 +749,13 @@
 /* Types of Mitigation Section */
 .mitigation-types-section {
   margin-bottom: 50px;
+}
+
+.mitigation-types-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  align-items: stretch;
 }
 
 .mitigation-type-card {
@@ -1001,6 +1435,77 @@
 
 /* Tablets (768px - 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
+  /* Container Layout */
+  .mitigation-objectives-principles-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .mitigation-objectives-section,
+  .mitigation-principles-section {
+    margin-bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .mitigation-objectives-section {
+    margin-bottom: 10px;
+  }
+
+  /* Principles Grid - 2 columns on tablet */
+  .mitigation-principles-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .mitigation-principle-card {
+    padding: 16px 12px;
+    min-height: auto;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .mitigation-principle-icon-wrapper {
+    width: 58px;
+    height: 58px;
+    margin-bottom: 10px;
+  }
+
+  .mitigation-principle-icon {
+    font-size: 1.8rem;
+  }
+
+  .mitigation-principle-title {
+    font-size: 1.02rem;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    max-width: 100%;
+    word-wrap: break-word;
+  }
+
+  .mitigation-principle-desc {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    max-width: 100%;
+    word-wrap: break-word;
+  }
+
+  .mitigation-principle-watermark {
+    font-size: 5.5rem;
+  }
+
   .mitigation-hero-content {
     padding: 50px 35px;
   }
@@ -1154,6 +1659,57 @@
 
 /* Mobile Landscape & Small Tablets (600px - 767px) */
 @media (max-width: 767px) and (min-width: 600px) {
+  /* Container Layout */
+  .mitigation-objectives-principles-container {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mitigation-objectives-section {
+    order: 1;
+    width: 100%;
+  }
+
+  .mitigation-principles-section {
+    order: 2;
+    width: 100%;
+  }
+
+  /* Principles Grid - 2 columns */
+  .mitigation-principles-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+
+  .mitigation-principle-card {
+    padding: 20px 16px;
+  }
+
+  .mitigation-principle-icon-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+
+  .mitigation-principle-icon {
+    font-size: 1.9rem;
+  }
+
+  .mitigation-principle-title {
+    font-size: 1.05rem;
+  }
+
+  .mitigation-principle-desc {
+    font-size: 0.88rem;
+  }
+
+  .mitigation-types-grid {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
   .mitigation-hero-content {
     padding: 45px 30px;
   }
@@ -1316,6 +1872,50 @@
 
 /* Mobile Portrait (480px - 599px) */
 @media (max-width: 599px) and (min-width: 480px) {
+  /* Container Layout */
+  .mitigation-objectives-principles-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mitigation-objectives-section {
+    order: 1;
+    width: 100%;
+  }
+
+  .mitigation-principles-section {
+    order: 2;
+    width: 100%;
+  }
+
+  /* Principles Grid - 1 column */
+  .mitigation-principles-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .mitigation-principle-card {
+    padding: 20px 18px;
+  }
+
+  .mitigation-principle-icon-wrapper {
+    width: 65px;
+    height: 65px;
+  }
+
+  .mitigation-principle-icon {
+    font-size: 2rem;
+  }
+
+  .mitigation-principle-title {
+    font-size: 1.1rem;
+  }
+
+  .mitigation-principle-desc {
+    font-size: 0.9rem;
+  }
+
   .mitigation-hero-content {
     padding: 40px 25px;
     border-radius: 20px;
@@ -1542,6 +2142,59 @@
 
 /* Small Mobile (320px - 479px) */
 @media (max-width: 479px) {
+  /* Container Layout */
+  .mitigation-objectives-principles-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mitigation-objectives-section {
+    order: 1;
+    width: 100%;
+  }
+
+  .mitigation-principles-section {
+    order: 2;
+    width: 100%;
+  }
+
+  /* Principles Grid - 1 column */
+  .mitigation-principles-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .mitigation-principle-card {
+    padding: 20px 16px;
+  }
+
+  .mitigation-principle-icon-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+
+  .mitigation-principle-icon {
+    font-size: 1.9rem;
+  }
+
+  .mitigation-principle-title {
+    font-size: 1.05rem;
+  }
+
+  .mitigation-principle-desc {
+    font-size: 0.85rem;
+  }
+
+  .mitigation-principle-watermark {
+    font-size: 5rem;
+  }
+
+  .mitigation-types-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
   .mitigation-hero-content {
     padding: 35px 20px;
     border-radius: 18px;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -8,10 +8,85 @@ import '../css/Preparedness.css';
 function Preparedness() {
   const navigate = useNavigate();
   const [fade, setFade] = useState(false);
+  const [currentObjectiveSlide, setCurrentObjectiveSlide] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const location = useLocation();
+
+  // Objectives data
+  const objectives = [
+    { 
+      icon: '💔', 
+      title: 'Save Lives and Reduce Casualties', 
+      desc: 'Ensure quick, organized response to minimize injuries and loss of life through early warning systems, evacuation plans, and emergency protocols.', 
+      color: '#e53935',
+      gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+      bgGradient: 'linear-gradient(135deg, #ffebee 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '⚡', 
+      title: 'Enable Fast and Organized Response', 
+      desc: 'Establish clear procedures and coordination systems to ensure rapid, efficient action when emergencies strike.', 
+      color: '#43a047',
+      gradient: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)',
+      bgGradient: 'linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🏘️', 
+      title: 'Minimize Damage to Property and Infrastructure', 
+      desc: 'Protect physical assets, buildings, and critical infrastructure through preventive measures and strategic planning.', 
+      color: '#1e88e5',
+      gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
+      bgGradient: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🧠', 
+      title: 'Enhance Community Awareness and Readiness', 
+      desc: 'Educate and train communities to recognize risks, understand procedures, and act confidently during emergencies.', 
+      color: '#00897b',
+      gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)',
+      bgGradient: 'linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🛡️', 
+      title: 'Build Resilience and Self-Reliance', 
+      desc: 'Strengthen the capacity of individuals and institutions to withstand shocks and recover quickly from disasters.', 
+      color: '#fb8c00',
+      gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)',
+      bgGradient: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🤝', 
+      title: 'Establish Effective Coordination', 
+      desc: 'Foster collaboration and communication between government agencies, organizations, and the public for seamless disaster response.', 
+      color: '#5e35b1',
+      gradient: 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)',
+      bgGradient: 'linear-gradient(135deg, #ede7f6 0%, #ffffff 100%)'
+    }
+  ];
+
+  // Auto-rotation effect for carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, [objectives.length]);
+
+  // Carousel navigation functions
+  const nextSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev - 1 + objectives.length) % objectives.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentObjectiveSlide(index);
+  };
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -150,73 +225,101 @@ function Preparedness() {
         </div>
 
         <div className="citizen-phase-content">
-
-          {/* Objectives Section */}
-          <div className="citizen-phase-section prep-objectives-section">
-            <h2 className="prep-section-header-main">
-              Core Objectives of Preparedness
-            </h2>
-            <p className="prep-section-intro-main">
-              Effective disaster preparedness pursues multiple interconnected goals that work together to ensure readiness, reduce risks, and build resilient communities capable of responding to and recovering from disasters.
-            </p>
-            <div className="citizen-benefits-grid prep-objectives-grid">
-              {[
-                { 
-                  icon: '💔', 
-                  title: 'Save Lives and Reduce Casualties', 
-                  desc: 'Ensure quick, organized response to minimize injuries and loss of life through early warning systems, evacuation plans, and emergency protocols.', 
-                  color: '#e53935',
-                  gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
-                },
-                { 
-                  icon: '⚡', 
-                  title: 'Enable Fast and Organized Response', 
-                  desc: 'Establish clear procedures and coordination systems to ensure rapid, efficient action when emergencies strike.', 
-                  color: '#43a047',
-                  gradient: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)'
-                },
-                { 
-                  icon: '🏘️', 
-                  title: 'Minimize Damage to Property and Infrastructure', 
-                  desc: 'Protect physical assets, buildings, and critical infrastructure through preventive measures and strategic planning.', 
-                  color: '#1e88e5',
-                  gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)'
-                },
-                { 
-                  icon: '🧠', 
-                  title: 'Enhance Community Awareness and Readiness', 
-                  desc: 'Educate and train communities to recognize risks, understand procedures, and act confidently during emergencies.', 
-                  color: '#00897b',
-                  gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)'
-                },
-                { 
-                  icon: '🛡️', 
-                  title: 'Build Resilience and Self-Reliance', 
-                  desc: 'Strengthen the capacity of individuals and institutions to withstand shocks and recover quickly from disasters.', 
-                  color: '#fb8c00',
-                  gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)'
-                },
-                { 
-                  icon: '🤝', 
-                  title: 'Establish Effective Coordination', 
-                  desc: 'Foster collaboration and communication between government agencies, organizations, and the public for seamless disaster response.', 
-                  color: '#5e35b1',
-                  gradient: 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)'
-                }
-              ].map((obj, idx) => (
-                <div 
-                  key={idx}
-                  className="prep-objective-card" 
-                  style={{ borderTop: `5px solid ${obj.color}` }}
-                  data-color={obj.color}
-                >
-                  <div className="prep-objective-icon-bg" style={{ background: obj.gradient }}>
-                    <div className="prep-objective-icon">{obj.icon}</div>
+          {/* Objectives and Principles - Two Column Layout */}
+          <div className="prep-objectives-principles-container">
+            {/* Objectives Section - Carousel */}
+            <div className="citizen-phase-section prep-objectives-section">
+              <h2 className="prep-section-header-main">
+                Objectives of Preparedness
+              </h2>
+              <p className="prep-section-intro-main">
+                Effective disaster preparedness pursues multiple interconnected goals that work together to ensure readiness, reduce risks, and build resilient communities capable of responding to and recovering from disasters.
+              </p>
+              
+              <div className="prep-objectives-carousel">
+                <div className="carousel-container">
+                  <div 
+                    className="carousel-track"
+                    style={{ transform: `translateX(-${currentObjectiveSlide * 100}%)` }}
+                  >
+                    {objectives.map((obj, idx) => (
+                      <div 
+                        key={`objective-${idx}-${obj.title}`}
+                        className="carousel-slide"
+                      >
+                        <div 
+                          className="prep-objective-card-carousel"
+                          style={{ background: obj.bgGradient }}
+                        >
+                          <div className="prep-objective-watermark">{obj.icon}</div>
+                          <div className="prep-objective-icon-wrapper" style={{ background: obj.gradient }}>
+                            <div className="prep-objective-icon">{obj.icon}</div>
+                          </div>
+                          <h3 className="prep-objective-title" style={{ color: obj.color }}>{obj.title}</h3>
+                          <p className="prep-objective-desc">{obj.desc}</p>
+                          <div className="prep-objective-number" style={{ color: obj.color }}>
+                            {(idx + 1).toString().padStart(2, '0')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <strong className="prep-objective-title" style={{ color: obj.color }}>{obj.title}</strong>
-                  <span className="prep-objective-desc">{obj.desc}</span>
+
+                  {/* Navigation Buttons */}
+                  <button 
+                    className="carousel-button carousel-button-prev"
+                    onClick={prevSlide}
+                    aria-label="Previous objective"
+                  >
+                    ‹
+                  </button>
+                  <button 
+                    className="carousel-button carousel-button-next"
+                    onClick={nextSlide}
+                    aria-label="Next objective"
+                  >
+                    ›
+                  </button>
                 </div>
-              ))}
+
+                {/* Dots Indicator */}
+                <div className="carousel-dots">
+                  {objectives.map((_, idx) => (
+                    <button
+                      key={`dot-${idx}`}
+                      className={`carousel-dot ${idx === currentObjectiveSlide ? 'active' : ''}`}
+                      onClick={() => goToSlide(idx)}
+                      aria-label={`Go to objective ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Key Principles Section */}
+            <div className="citizen-phase-section prep-principles-section">
+              <h2 className="prep-section-header-main">
+                Key Principles of Preparedness
+              </h2>
+              <div className="prep-principles-grid">
+                {[
+                  { icon: '📡', title: 'Early Warning and Communication Systems', desc: 'Establish alert systems to provide timely information before disasters strike.', variant: 'warning' },
+                  { icon: '📋', title: 'Emergency Planning and Coordination', desc: 'Develop clear emergency response plans and ensure coordination among agencies and communities.', variant: 'planning' },
+                  { icon: '🎯', title: 'Training and Simulation Drills', desc: 'Conduct regular drills to strengthen the skills and readiness of responders and the public.', variant: 'training' },
+                  { icon: '🧰', title: 'Resource and Equipment Readiness', desc: 'Maintain essential supplies like food, water, first aid, and rescue equipment for quick deployment.', variant: 'resource' },
+                  { icon: '📚', title: 'Public Education and Awareness', desc: 'Inform and educate the public about disaster risks, evacuation routes, and safety measures.', variant: 'education' },
+                  { icon: '🛡️', title: 'Protection of Vulnerable Groups', desc: 'Ensure that preparedness plans prioritize children, elderly, persons with disabilities, and other at-risk populations.', variant: 'protection' }
+                ].map((principle, idx) => (
+                  <div key={`principle-${idx}-${principle.title}`} className={`prep-principle-card prep-principle-${principle.variant}`}>
+                    <div className="prep-principle-watermark">{principle.icon}</div>
+                    <div className="prep-principle-icon-wrapper">
+                      <div className="prep-principle-icon">{principle.icon}</div>
+                    </div>
+                    <h3 className="prep-principle-title">{principle.title}</h3>
+                    <p className="prep-principle-desc">{principle.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

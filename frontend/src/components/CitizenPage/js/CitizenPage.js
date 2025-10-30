@@ -265,6 +265,46 @@ function CitizenPage() {
     );
   };
 
+  // Auto-play carousel for announcements
+  useEffect(() => {
+    if (announcements.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentAnnouncementIndex((prev) => 
+          prev === announcements.length - 1 ? 0 : prev + 1
+        );
+      }, 5000); // Change slide every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [announcements.length]);
+
+  // Auto-play carousel for training programs
+  useEffect(() => {
+    if (programs.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentProgramIndex((prev) => 
+          prev === programs.length - 1 ? 0 : prev + 1
+        );
+      }, 5000); // Change slide every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [programs.length]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (selectedAnnouncement || selectedProgram) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
+  }, [selectedAnnouncement, selectedProgram]);
+
   // Helper function to get logo URL (similar to AssociateGroups.js)
   const getLogoUrl = (logoPath) => {
     if (!logoPath) return `${window.location.origin}/Assets/disaster_logo.png`;
@@ -336,13 +376,7 @@ function CitizenPage() {
     }
   };
 
-  // Inline style for associate groups background image
-  const logosBgStyle = {
-    background: "url('/Assets/compiled_activities.jpg') no-repeat center center",
-    backgroundSize: "cover",
-    position: "relative",
-    overflow: "hidden"
-  };
+  // Background image style moved to CSS
 
   return (
     <div className="citizen-page-wrapper">
@@ -390,31 +424,14 @@ function CitizenPage() {
         
         {/* Desktop Navigation */}
         <ul className="citizen-navbar-list">
-          <li style={{ background: '#a52a1a' }}>HOME</li>
+          <li className="home-active">HOME</li>
           <li className="citizen-navbar-dropdown" onMouseLeave={closeDropdown}>
             <span 
               onClick={handleDropdown} 
-              className="citizen-dropdown-button"
-              style={{ 
-                background: dropdownOpen ? '#a52a1a' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 20px',
-                borderRadius: '8px',
-                transition: 'all 0.3s ease',
-                border: dropdownOpen ? '2px solid #fff' : '2px solid transparent',
-                boxShadow: dropdownOpen ? '0 4px 12px rgba(165,42,26,0.3)' : 'none'
-              }}
+              className={`citizen-dropdown-button ${dropdownOpen ? 'open' : ''}`}
             >
-              <span style={{ fontWeight: 'bold', fontSize: '16px' }}>CATEGORIES</span>
-              <span 
-                style={{ 
-                  fontSize: '10px',
-                  transition: 'transform 0.3s ease',
-                  transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-                }}
-              >
+              <span className="citizen-dropdown-text">CATEGORIES</span>
+              <span className={`citizen-dropdown-arrow ${dropdownOpen ? 'open' : ''}`}>
                 ▼
               </span>
             </span>
@@ -460,7 +477,7 @@ function CitizenPage() {
         </ul>
       </nav>
       {/* Main Content: Dynamic Organization Logos Carousel */}
-      <div className="citizen-logos-container" style={logosBgStyle}>
+      <div className="citizen-logos-container">
         {groupsLoading ? (
           <div className="citizen-loading-message">Loading organizations...</div>
         ) : groupsError ? (
@@ -485,150 +502,37 @@ function CitizenPage() {
       </div>
 
       {/* Side by Side Container for Announcements and Training Programs */}
-      <div className="citizen-side-by-side-container" style={{
-        display: 'flex',
-        gap: '30px',
-        padding: '30px 40px',
-        maxWidth: '95%',
-        margin: '0 auto',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start'
-      }}>
-      {/* Announcements Section */}
-        <div 
-          className="citizen-announcements-section" 
-          style={{
-            flex: '1',
-            minWidth: '300px',
-            background: 'white',
-            borderRadius: '20px',
-            padding: '20px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            border: '3px solid transparent',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-10px)';
-            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.15)';
-            e.currentTarget.style.border = '3px solid #a52a1a';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-            e.currentTarget.style.border = '3px solid transparent';
-          }}
-        >
-          <h2 className="citizen-announcements-title" style={{
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: '#a52a1a',
-            margin: '0 0 20px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            borderBottom: '3px solid #a52a1a',
-            paddingBottom: '10px',
-            lineHeight: '1.2'
-          }}>Announcements</h2>
+      <div className="citizen-side-by-side-container">
+        <div className="citizen-content-columns">
+          {/* Announcements Section */}
+          <div className="citizen-announcements-section">
+          <h2 className="citizen-announcements-title">Announcements</h2>
         {annLoading ? (
-            <div className="citizen-loading-message" style={{
-              textAlign: 'center',
-              padding: '40px',
-              color: '#666',
-              fontSize: '1.1rem'
-            }}>Loading...</div>
+            <div className="citizen-loading-text">
+              <div className="citizen-loading-spinner"></div>
+              <p>Loading announcements...</p>
+            </div>
         ) : annError ? (
-            <div className="citizen-error-message" style={{
-              textAlign: 'center',
-              padding: '40px',
-              color: '#e53935',
-              fontSize: '1.1rem'
-            }}>{annError}</div>
+            <div className="citizen-error-text">{annError}</div>
         ) : announcements.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '60px 20px',
-              color: '#999'
-            }}>
-              <FaBullhorn size={80} color="#ddd" style={{ marginBottom: '20px' }} />
-              <h3 style={{
-                fontSize: '1.3rem',
-                fontWeight: '600',
-                color: '#333',
-                marginBottom: '10px',
-                margin: '0 0 10px 0'
-              }}>No Announcements Available</h3>
-              <p style={{
-                fontSize: '1.1rem',
-                color: '#999',
-                margin: '0'
-              }}>Check back later for new announcements.</p>
+            <div className="citizen-no-announcements-container">
+              <FaBullhorn size={80} color="#ddd" className="citizen-icon-margin" />
+              <h3 className="citizen-no-announcements-title">No Announcements Available</h3>
+              <p className="citizen-no-announcements-message">Check back later for new announcements.</p>
             </div>
           ) : (
-            <div style={{ position: 'relative', minHeight: '400px' }}>
+            <div className="citizen-announcement-carousel-container">
               {announcements.length > 1 && (
                 <>
                   <button
                     onClick={goToPreviousAnnouncement}
-                    style={{
-                      position: 'absolute',
-                      left: '-15px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      zIndex: 10,
-                      background: '#a52a1a',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '40px',
-                      height: '40px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#8a2316';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#a52a1a';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                    }}
+                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-left"
                   >
                     <FaChevronLeft />
                   </button>
                   <button
                     onClick={goToNextAnnouncement}
-                    style={{
-                      position: 'absolute',
-                      right: '-15px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      zIndex: 10,
-                      background: '#a52a1a',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '40px',
-                      height: '40px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#8a2316';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#a52a1a';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                    }}
+                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-right"
                   >
                     <FaChevronRight />
                   </button>
@@ -636,112 +540,52 @@ function CitizenPage() {
               )}
               
               {/* Display single announcement */}
-              <div style={{ padding: '10px 0' }}>
+              <div className="citizen-announcement-carousel-content">
                 {announcements.map((a, index) => (
                 <div
                   key={a.id}
-                  className="citizen-announcement-card"
-                    style={{
-                      display: index === currentAnnouncementIndex ? 'block' : 'none',
-                      transition: 'opacity 0.3s ease-in-out',
-                      background: '#fff',
-                      borderRadius: '15px',
-                      overflow: 'hidden',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                    }}
+                  className="citizen-announcement-card-wrapper"
+                  style={{ display: index === currentAnnouncementIndex ? 'block' : 'none' }}
                   >
                     {/* Date Badge */}
-                    <div style={{
-                      background: '#8B1409',
-                      color: 'white',
-                      padding: '8px 20px',
-                      borderRadius: '20px',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      display: 'inline-block',
-                      margin: '15px 0 0 15px'
-                    }}>
+                    <div className="citizen-announcement-date-badge-inline">
                       {a.created_at && formatDate(a.created_at)}
                     </div>
 
                     {/* Main Content Container */}
-                    <div style={{ padding: '20px 25px' }}>
+                    <div className="citizen-announcement-main-content">
                   {/* Image or Icon */}
                   {a.photo_urls && a.photo_urls.length > 0 ? (
-                        <div style={{
-                          position: 'relative',
-                          width: '100%',
-                          height: '300px',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          marginBottom: '20px',
-                          cursor: 'pointer'
-                        }}>
+                        <div className="citizen-announcement-image-wrapper">
                       <img
                         src={a.photo_urls[0]}
                         alt="Announcement"
                         onClick={() => handleAnnouncementClick(a)}
                         title="Click to view larger"
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              transition: 'transform 0.3s ease'
-                            }}
-                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                        className="citizen-announcement-image-main"
                       />
                       {a.photo_urls.length > 1 && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '10px',
-                              right: '10px',
-                              background: 'rgba(0,0,0,0.7)',
-                              color: 'white',
-                              padding: '5px 12px',
-                              borderRadius: '20px',
-                              fontSize: '0.85rem',
-                              fontWeight: '600'
-                            }}>
+                            <div className="citizen-announcement-photo-badge">
                               +{a.photo_urls.length - 1} Photos
                         </div>
                       )}
                     </div>
                   ) : (
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          height: '150px',
-                          background: 'linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%)',
-                          borderRadius: '12px',
-                          marginBottom: '20px'
-                        }}>
+                        <div className="citizen-announcement-no-image">
                           <FaBullhorn size={70} color="#a52a1a" />
                     </div>
                   )}
 
                       {/* Title */}
                       {a.title && (
-                        <h3 style={{
-                          color: '#8B1409',
-                          fontSize: '1.5rem',
-                          fontWeight: '700',
-                          marginBottom: '15px',
-                          lineHeight: '1.4'
-                        }}>
+                        <h3 className="citizen-announcement-title-inline">
                           {a.title}
                         </h3>
                       )}
 
                       {/* Description */}
                     {a.description && (
-                        <div style={{
-                          color: '#555',
-                          fontSize: '1rem',
-                          lineHeight: '1.7',
-                          marginBottom: '20px'
-                        }}>
+                        <div className="citizen-announcement-description-inline">
                         {truncateDescription(a.description)}
                         </div>
                       )}
@@ -753,28 +597,7 @@ function CitizenPage() {
                               e.stopPropagation();
                               handleAnnouncementClick(a);
                             }}
-                          style={{
-                            background: '#a52a1a',
-                            color: 'white',
-                            border: 'none',
-                            padding: '12px 30px',
-                            borderRadius: '25px',
-                            fontSize: '0.95rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            boxShadow: '0 4px 10px rgba(165,42,26,0.3)'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.background = '#8a2316';
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 6px 15px rgba(165,42,26,0.4)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.background = '#a52a1a';
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 4px 10px rgba(165,42,26,0.3)';
-                          }}
+                          className="citizen-announcement-see-more-btn"
                         >
                           See More →
                           </button>
@@ -786,25 +609,16 @@ function CitizenPage() {
 
               {/* Carousel Indicators */}
               {announcements.length > 1 && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginTop: '15px'
-                }}>
+                <div className="citizen-announcement-indicators">
                   {announcements.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentAnnouncementIndex(index)}
-                      style={{
-                        width: index === currentAnnouncementIndex ? '30px' : '10px',
-                        height: '10px',
-                        borderRadius: '5px',
-                        border: 'none',
-                        background: index === currentAnnouncementIndex ? '#a52a1a' : '#ddd',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease'
-                      }}
+                      className={`citizen-announcement-indicator ${
+                        index === currentAnnouncementIndex 
+                          ? 'citizen-announcement-indicator-active' 
+                          : 'citizen-announcement-indicator-inactive'
+                      }`}
                     />
                   ))}
           </div>
@@ -814,148 +628,37 @@ function CitizenPage() {
           </div>
 
       {/* Training Programs as Posts */}
-        <div 
-          className="citizen-training-section" 
-          style={{
-            flex: '1',
-            minWidth: '300px',
-            background: 'white',
-            borderRadius: '20px',
-            padding: '20px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            border: '3px solid transparent',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-10px)';
-            e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.15)';
-            e.currentTarget.style.border = '3px solid #a52a1a';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-            e.currentTarget.style.border = '3px solid transparent';
-          }}
-        >
-          <h2 className="citizen-training-title" style={{
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            color: '#a52a1a',
-            margin: '0 0 20px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            borderBottom: '3px solid #a52a1a',
-            paddingTop: '30px',
-            paddingBottom: '10px',
-            lineHeight: '1.2'
-          }}>Training Programs</h2>
+        <div className="citizen-training-section">
+          <h2 className="citizen-training-title">Training Programs</h2>
         <div>
           {loading ? (
-            <div className="citizen-loading-container" style={{
-              textAlign: 'center',
-              padding: '40px'
-            }}>
+            <div className="citizen-loading-container">
               <div className="citizen-loading-spinner"></div>
-              <p className="citizen-loading-message" style={{
-                color: '#666',
-                fontSize: '1.1rem'
-              }}>Loading training programs...</p>
+              <p className="citizen-loading-message">Loading training programs...</p>
             </div>
           ) : error ? (
-            <div className="citizen-error-container" style={{
-              textAlign: 'center',
-              padding: '40px'
-            }}>
-              <p className="citizen-error-message" style={{
-                color: '#e53935',
-                fontSize: '1.1rem'
-              }}>{error}</p>
+            <div className="citizen-error-container">
+              <p className="citizen-error-message">{error}</p>
             </div>
           ) : programs.length === 0 ? (
-            <div className="citizen-empty-container" style={{
-              textAlign: 'center',
-              padding: '60px 20px',
-              color: '#999'
-            }}>
-              <FaClipboardList size={80} color="#ddd" style={{ marginBottom: '20px' }} />
-              <h3 className="citizen-empty-title" style={{
-                fontSize: '1.3rem',
-                fontWeight: '600',
-                color: '#333',
-                margin: '0 0 10px 0'
-              }}>No Training Programs Available</h3>
-              <p className="citizen-empty-message" style={{
-                fontSize: '1.1rem',
-                color: '#999',
-                margin: '0'
-              }}>Check back later for new training opportunities.</p>
+            <div className="citizen-no-training-container">
+              <FaClipboardList size={80} color="#ddd" className="citizen-icon-margin" />
+              <h3 className="citizen-no-training-title">No Training Programs Available</h3>
+              <p className="citizen-no-training-message">Check back later for new training opportunities.</p>
             </div>
           ) : (
-            <div style={{ position: 'relative', minHeight: '350px' }}>
+            <div className="citizen-training-carousel-container">
               {programs.length > 1 && (
                 <>
                   <button
                     onClick={goToPreviousProgram}
-                    style={{
-                      position: 'absolute',
-                      left: '-15px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      zIndex: 10,
-                      background: '#a52a1a',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '40px',
-                      height: '40px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#8a2316';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#a52a1a';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                    }}
+                    className="citizen-training-carousel-nav-btn citizen-training-carousel-nav-btn-left"
                   >
                     <FaChevronLeft />
                   </button>
                   <button
                     onClick={goToNextProgram}
-                    style={{
-                      position: 'absolute',
-                      right: '-15px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      zIndex: 10,
-                      background: '#a52a1a',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '40px',
-                      height: '40px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                      transition: 'all 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#8a2316';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#a52a1a';
-                      e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                    }}
+                    className="citizen-training-carousel-nav-btn citizen-training-carousel-nav-btn-right"
                   >
                     <FaChevronRight />
                   </button>
@@ -963,7 +666,7 @@ function CitizenPage() {
               )}
               
               {/* Display single training program */}
-              <div style={{ padding: '10px 0' }}>
+              <div className="citizen-training-carousel-content">
               {programs.map((program, index) => {
               const title = program.name || '';
               const description = program.description || '';
@@ -973,59 +676,26 @@ function CitizenPage() {
               return (
                 <div
                   key={program.id}
-                  className="citizen-training-card"
-                  style={{ 
-                    display: index === currentProgramIndex ? 'block' : 'none',
-                    cursor: 'pointer',
-                    transition: 'opacity 0.3s ease-in-out',
-                    background: '#fff',
-                    borderRadius: '15px',
-                    overflow: 'hidden',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                  }}
+                  className="citizen-training-card-wrapper"
+                  style={{ display: index === currentProgramIndex ? 'block' : 'none' }}
                   onClick={() => handleProgramClick(program)}
                 >
                   {/* Header Badge */}
-                  <div style={{
-                    background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)',
-                    color: 'white',
-                    padding: '15px 25px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span style={{ fontWeight: '600', fontSize: '1rem' }}>Training Program</span>
+                  <div className="citizen-training-card-header-inline">
+                    <span className="citizen-training-card-label">Training Program</span>
                     {hasPhotos && (
-                      <span style={{
-                        background: 'rgba(255,255,255,0.2)',
-                        padding: '4px 12px',
-                        borderRadius: '15px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600'
-                      }}>
+                      <span className="citizen-training-photo-count-badge">
                         {photoCount} {photoCount === 1 ? 'Photo' : 'Photos'}
                       </span>
                     )}
                   </div>
 
                   {/* Main Content Container */}
-                  <div style={{ padding: '15px 20px' }}>
+                  <div className="citizen-training-card-main-content">
                   {/* Date and Location Badges */}
-                    <div style={{
-                      display: 'flex',
-                      gap: '10px',
-                      flexWrap: 'wrap',
-                      marginBottom: '15px'
-                    }}>
+                    <div className="citizen-training-badges-wrapper">
                     {program.date && (
-                        <div style={{
-                          background: '#8B1409',
-                          color: 'white',
-                          padding: '6px 16px',
-                          borderRadius: '20px',
-                          fontSize: '0.85rem',
-                          fontWeight: '600'
-                        }}>
+                        <div className="citizen-training-date-badge-inline">
                           {new Date(program.date).toLocaleDateString(undefined, { 
                             month: 'short', 
                             day: 'numeric',
@@ -1034,14 +704,7 @@ function CitizenPage() {
                       </div>
                     )}
                     {program.location && (
-                        <div style={{
-                          background: '#e3f2fd',
-                          color: '#1976d2',
-                          padding: '6px 16px',
-                          borderRadius: '20px',
-                          fontSize: '0.85rem',
-                          fontWeight: '600'
-                        }}>
+                        <div className="citizen-training-location-badge-inline">
                           📍 {program.location}
                       </div>
                     )}
@@ -1049,25 +712,14 @@ function CitizenPage() {
 
                     {/* Title */}
                     {title && (
-                      <h3 style={{
-                        color: '#8B1409',
-                        fontSize: '1.3rem',
-                        fontWeight: '700',
-                        marginBottom: '12px',
-                        lineHeight: '1.3'
-                      }}>
+                      <h3 className="citizen-training-title-inline">
                         {title}
                       </h3>
                     )}
 
                     {/* Description */}
                     {description && (
-                      <div style={{
-                        color: '#555',
-                        fontSize: '0.95rem',
-                        lineHeight: '1.6',
-                        marginBottom: '15px'
-                      }}>
+                      <div className="citizen-training-description-inline">
                           {program.photos && program.photos.length > 0 
                             ? description.length > 100 ? description.substring(0, 100) + '...' : description
                             : description.length > 150 ? description.substring(0, 150) + '...' : description
@@ -1077,38 +729,14 @@ function CitizenPage() {
 
                   {/* Photo Display */}
                   {hasPhotos && (
-                      <div style={{
-                        position: 'relative',
-                        width: '100%',
-                        height: '310px',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        marginBottom: '20px'
-                      }}>
+                      <div className="citizen-training-image-wrapper-inline">
                         <img
                           src={program.photos[0]}
                           alt="Training Program"
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            transition: 'transform 0.3s ease'
-                          }}
-                          onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                          className="citizen-training-image-main"
                         />
                         {photoCount > 1 && (
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '15px',
-                            right: '15px',
-                            background: 'rgba(0,0,0,0.7)',
-                            color: 'white',
-                            padding: '8px 16px',
-                            borderRadius: '25px',
-                            fontSize: '0.9rem',
-                            fontWeight: '600'
-                          }}>
+                          <div className="citizen-training-more-photos-badge">
                             +{photoCount - 1} More
                           </div>
                         )}
@@ -1121,29 +749,7 @@ function CitizenPage() {
                           e.stopPropagation();
                           handleProgramClick(program);
                         }}
-                      style={{
-                        background: '#a52a1a',
-                        color: 'white',
-                        border: 'none',
-                        padding: '12px 30px',
-                        borderRadius: '25px',
-                        fontSize: '0.95rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        width: '100%',
-                        transition: 'all 0.3s ease',
-                        boxShadow: '0 4px 10px rgba(165,42,26,0.3)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = '#8a2316';
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 15px rgba(165,42,26,0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = '#a52a1a';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 10px rgba(165,42,26,0.3)';
-                      }}
+                      className="citizen-training-view-details-btn"
                     >
                       View Details →
                       </button>
@@ -1155,25 +761,16 @@ function CitizenPage() {
 
               {/* Carousel Indicators */}
               {programs.length > 1 && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginTop: '15px'
-                }}>
+                <div className="citizen-training-indicators">
                   {programs.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentProgramIndex(index)}
-                      style={{
-                        width: index === currentProgramIndex ? '30px' : '10px',
-                        height: '10px',
-                        borderRadius: '5px',
-                        border: 'none',
-                        background: index === currentProgramIndex ? '#a52a1a' : '#ddd',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease'
-                      }}
+                      className={`citizen-training-indicator ${
+                        index === currentProgramIndex 
+                          ? 'citizen-training-indicator-active' 
+                          : 'citizen-training-indicator-inactive'
+                      }`}
                     />
                   ))}
                 </div>
@@ -1181,6 +778,7 @@ function CitizenPage() {
         </div>
           )}
       </div>
+        </div>
         </div>
       </div>
 
@@ -1209,8 +807,8 @@ function CitizenPage() {
 
       {/* Image Modal */}
       {modalOpen && (
-        <div className="citizen-image-modal-overlay" onClick={closeImageModal}>
-          <div className="citizen-image-modal-content" onClick={e => e.stopPropagation()}>
+        <div className="citizen-image-modal-overlay">
+          <div className="citizen-image-modal-content">
             <button onClick={closeImageModal} className="citizen-image-modal-close">&times;</button>
             <img src={modalImg} alt="Large Program" className="citizen-image-modal-img" />
           </div>
@@ -1218,42 +816,40 @@ function CitizenPage() {
       )}
       {/* Announcement Modal */}
       {selectedAnnouncement && (
-        <div className="citizen-modal-overlay" onClick={() => setSelectedAnnouncement(null)}>
-          <div className="citizen-modal-content" onClick={e => e.stopPropagation()}>
+        <div className="citizen-modal-overlay">
+          <div className="citizen-modal-content">
             <button className="citizen-modal-close" onClick={() => setSelectedAnnouncement(null)}>&times;</button>
             <div className="citizen-announcement-modal-header">
               <h3 className="citizen-announcement-modal-title">{selectedAnnouncement.title}</h3>
             </div>
             
             {/* Date and Location Section - Match Admin Design */}
-            <div className="citizen-announcement-modal-meta">
-              {selectedAnnouncement.date && (
-                <div className="citizen-announcement-modal-date">
-                  <strong>Date:</strong> {selectedAnnouncement.date}
-                </div>
-              )}
-              {selectedAnnouncement.location && (
-                <div className="citizen-announcement-modal-location">
-                  <strong>Location:</strong> {selectedAnnouncement.location}
-                </div>
-              )}
-            </div>
+            {(selectedAnnouncement.date || selectedAnnouncement.location) && (
+              <div className="citizen-announcement-modal-meta">
+                {selectedAnnouncement.date && (
+                  <div className="citizen-announcement-modal-date">
+                    <strong>Date:</strong> {selectedAnnouncement.date}
+                  </div>
+                )}
+                {selectedAnnouncement.location && (
+                  <div className="citizen-announcement-modal-location">
+                    <strong>Location:</strong> {selectedAnnouncement.location}
+                  </div>
+                )}
+              </div>
+            )}
             
-            {/* Description Section - Match Admin Design */}
-            <div className="citizen-announcement-modal-description">
-              <strong>Description:</strong>
-              <p style={{
-                wordWrap: 'break-word',
-                overflowWrap: 'break-word',
-                whiteSpace: 'pre-wrap',
-                maxWidth: '100%',
-                wordBreak: 'break-word'
-              }}>{selectedAnnouncement.description}</p>
-            </div>
-            
-            {/* Photo Navigation (Instagram/Facebook style) */}
-            {selectedAnnouncement.photo_urls && selectedAnnouncement.photo_urls.length > 0 && (
-              <div className="citizen-announcement-photo-navigation">
+            {/* Scrollable Body Content */}
+            <div className="citizen-modal-body">
+              {/* Description Section - Match Admin Design */}
+              <div className="citizen-announcement-modal-description">
+                <strong>Description:</strong>
+                <p>{selectedAnnouncement.description}</p>
+              </div>
+              
+              {/* Photo Navigation (Instagram/Facebook style) */}
+              {selectedAnnouncement.photo_urls && selectedAnnouncement.photo_urls.length > 0 && (
+                <div className="citizen-announcement-photo-navigation">
                 <div className="citizen-announcement-photo-container">
                   <img 
                     src={selectedAnnouncement.photo_urls[currentPhotoIndex]} 
@@ -1288,13 +884,14 @@ function CitizenPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
       {/* Organization Details Modal */}
       {showGroupModal && selectedGroup && (
-        <div className="citizen-modal-overlay" onClick={() => setShowGroupModal(false)}>
-          <div className="citizen-modal-content" onClick={e => e.stopPropagation()}>
+        <div className="citizen-modal-overlay">
+          <div className="citizen-modal-content">
             <button className="citizen-modal-close" onClick={() => setShowGroupModal(false)}>&times;</button>
             <div className="citizen-group-modal-header">
               <img
@@ -1327,113 +924,75 @@ function CitizenPage() {
       )}
       {/* Enhanced Training Program Details Modal */}
       {showProgramModal && selectedProgram && (
-        <div className="citizen-training-modal-overlay" onClick={() => setShowProgramModal(false)}>
-          <div className="citizen-training-modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* Modern Modal Header */}
+        <div className="citizen-modal-overlay">
+          <div className="citizen-modal-content">
+            <button className="citizen-modal-close" onClick={() => setShowProgramModal(false)}>&times;</button>
+            
+            {/* Modal Header */}
             <div className="citizen-training-modal-header">
-              <div className="citizen-training-modal-header-content">
-                <div className="citizen-training-modal-category">
-                  <span className="citizen-training-modal-category-text">Training Program</span>
-                </div>
-                <div className="citizen-training-modal-meta">
-                  {selectedProgram.date && (
-                    <div className="citizen-training-modal-date">
-                      <span className="citizen-training-modal-meta-label">Date:</span>
-                      <span className="citizen-training-modal-meta-value">
-                        {new Date(selectedProgram.date).toLocaleDateString(undefined, { 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </span>
-                    </div>
-                  )}
-                  {selectedProgram.location && (
-                    <div className="citizen-training-modal-location">
-                      <span className="citizen-training-modal-meta-label">Location:</span>
-                      <span className="citizen-training-modal-meta-value">{selectedProgram.location}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <button
-                className="citizen-training-modal-close"
-                onClick={() => setShowProgramModal(false)}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Modal Title */}
-            <div className="citizen-training-modal-title-section">
-              <h2 className="citizen-training-modal-title">{selectedProgram.name}</h2>
+              <h3 className="citizen-training-modal-title">{selectedProgram.name}</h3>
             </div>
             
-            {/* Scrollable content container */}
-            <div className="citizen-training-modal-scrollable">
+            {/* Date and Location Section */}
+            {(selectedProgram.date || selectedProgram.location) && (
+              <div className="citizen-training-modal-meta">
+                {selectedProgram.date && (
+                  <div className="citizen-training-modal-date">
+                    <strong>Date:</strong> {new Date(selectedProgram.date).toLocaleDateString(undefined, { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </div>
+                )}
+                {selectedProgram.location && (
+                  <div className="citizen-training-modal-location">
+                    <strong>Location:</strong> {selectedProgram.location}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Scrollable Body Content */}
+            <div className="citizen-modal-body">
               {/* Description Section */}
-              <div className="citizen-training-modal-description-section">
-                <div className="citizen-training-modal-description-header">
-                  <h3 className="citizen-training-modal-description-title">Program Description</h3>
-                </div>
-                <div className="citizen-training-modal-description-content">
-                  <p className="citizen-training-modal-description-text">
-                    {selectedProgram.description}
-                  </p>
-                </div>
+              <div className="citizen-training-modal-description">
+                <strong>Description:</strong>
+                <p>{selectedProgram.description}</p>
               </div>
               
-              {/* Enhanced Photo Gallery */}
+              {/* Photo Navigation (Instagram/Facebook style) */}
               {selectedProgram.photos && selectedProgram.photos.length > 0 && (
-                <div className="citizen-training-modal-gallery">
-                  <div className="citizen-training-modal-gallery-header">
-                    <h3 className="citizen-training-modal-gallery-title">Program Photos</h3>
-                    {selectedProgram.photos.length > 1 && (
-                      <div className="citizen-training-modal-gallery-counter">
-                        {currentPhotoIndex + 1} of {selectedProgram.photos.length}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="citizen-training-modal-gallery-container">
-                    <div className="citizen-training-modal-image-wrapper">
-                      <img
-                        src={selectedProgram.photos[currentPhotoIndex]}
-                        alt={`Training Program Photo ${currentPhotoIndex + 1}`}
-                        className="citizen-training-modal-image"
-                      />
-                      
-                      {/* Navigation Arrows */}
-                      {selectedProgram.photos.length > 1 && (
-                        <>
-                          <button 
-                            className="citizen-training-modal-nav-btn citizen-training-modal-nav-prev"
-                            onClick={prevPhoto}
-                          >
-                            <FaChevronLeft />
-                          </button>
-                          <button 
-                            className="citizen-training-modal-nav-btn citizen-training-modal-nav-next"
-                            onClick={nextPhoto}
-                          >
-                            <FaChevronRight />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                <div className="citizen-training-photo-navigation">
+                  <div className="citizen-training-photo-container">
+                    <img 
+                      src={selectedProgram.photos[currentPhotoIndex]} 
+                      alt={`Photo ${currentPhotoIndex + 1}`} 
+                      className="citizen-training-modal-img" 
+                    />
                     
-                    {/* Photo Thumbnails */}
+                    {/* Navigation Arrows */}
                     {selectedProgram.photos.length > 1 && (
-                      <div className="citizen-training-modal-thumbnails">
-                        {selectedProgram.photos.map((photo, index) => (
-                          <button
-                            key={index}
-                            className={`citizen-training-modal-thumbnail ${index === currentPhotoIndex ? 'active' : ''}`}
-                            onClick={() => setCurrentPhotoIndex(index)}
-                          >
-                            <img src={photo} alt={`Thumbnail ${index + 1}`} />
-                          </button>
-                        ))}
+                      <>
+                        <button 
+                          className="citizen-training-photo-nav-btn citizen-training-photo-nav-prev"
+                          onClick={prevPhoto}
+                        >
+                          <FaChevronLeft />
+                        </button>
+                        <button 
+                          className="citizen-training-photo-nav-btn citizen-training-photo-nav-next"
+                          onClick={nextPhoto}
+                        >
+                          <FaChevronRight />
+                        </button>
+                      </>
+                    )}
+                    
+                    {/* Photo Counter */}
+                    {selectedProgram.photos.length > 1 && (
+                      <div className="citizen-training-photo-counter">
+                        {currentPhotoIndex + 1} / {selectedProgram.photos.length}
                       </div>
                     )}
                   </div>
@@ -1446,35 +1005,12 @@ function CitizenPage() {
       {/* Floating Push Notification Button */}
       {pushNotificationsSupported && showPushButton && (
         <button
-          className="citizen-push-notification-fab"
+          className={`citizen-push-notification-fab ${
+            pushNotificationsEnabled 
+              ? 'citizen-push-notification-fab-enabled' 
+              : 'citizen-push-notification-fab-disabled'
+          }`}
           onClick={togglePushNotifications}
-          style={{
-            position: 'fixed',
-            bottom: '30px',
-            right: '30px',
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            background: pushNotificationsEnabled ? '#28a745' : '#6c757d',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '24px',
-            transition: 'all 0.3s ease',
-            zIndex: 1000,
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.1)';
-            e.target.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-          }}
           title={pushNotificationsEnabled ? 'Push Notifications ON - Click to disable' : 'Push Notifications OFF - Click to enable'}
         >
           {pushNotificationsEnabled ? <FaBell /> : <FaBellSlash />}

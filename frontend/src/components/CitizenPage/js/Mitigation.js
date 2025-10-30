@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -8,10 +8,85 @@ import '../css/Mitigation.css';
 function Mitigation() {
   const navigate = useNavigate();
   const [fade, setFade] = useState(false);
+  const [currentObjectiveSlide, setCurrentObjectiveSlide] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const location = useLocation();
+
+  // Objectives data
+  const objectives = [
+    { 
+      icon: '💔', 
+      title: 'Protect Human Life', 
+      desc: 'Minimize casualties, injuries, and loss of life through preventive measures, early warning systems, and safe infrastructure design.', 
+      color: '#e53935',
+      gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+      bgGradient: 'linear-gradient(135deg, #ffebee 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '💰', 
+      title: 'Preserve Economic Stability', 
+      desc: 'Reduce economic disruption, protect livelihoods, and minimize the financial burden of disaster recovery on communities and governments.', 
+      color: '#43a047',
+      gradient: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)',
+      bgGradient: 'linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🏘️', 
+      title: 'Build Community Resilience', 
+      desc: 'Strengthen the capacity of communities to anticipate, prepare for, and adapt to changing conditions while recovering quickly from disasters.', 
+      color: '#1e88e5',
+      gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
+      bgGradient: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🌱', 
+      title: 'Ensure Environmental Sustainability', 
+      desc: 'Protect ecosystems, preserve natural resources, and promote development practices that work with nature rather than against it.', 
+      color: '#00897b',
+      gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)',
+      bgGradient: 'linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '⏰', 
+      title: 'Establish Long-term Preparedness', 
+      desc: 'Create lasting systems and infrastructure that provide continuous protection against recurring hazards and future risks.', 
+      color: '#fb8c00',
+      gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)',
+      bgGradient: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🏛️', 
+      title: 'Safeguard Critical Infrastructure', 
+      desc: 'Protect essential facilities like hospitals, schools, power systems, and transportation networks that communities depend on.', 
+      color: '#5e35b1',
+      gradient: 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)',
+      bgGradient: 'linear-gradient(135deg, #ede7f6 0%, #ffffff 100%)'
+    }
+  ];
+
+  // Auto-rotation effect for carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, [objectives.length]);
+
+  // Carousel navigation functions
+  const nextSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev - 1 + objectives.length) % objectives.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentObjectiveSlide(index);
+  };
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -167,86 +242,103 @@ function Mitigation() {
         </div>
 
         <div className="citizen-phase-content">
-          {/* Hero Introduction */}
-          <div className="mitigation-hero-section">
-            <div className="mitigation-hero-content">
-              <div className="mitigation-hero-icon">🛡️</div>
-              <h2 className="mitigation-hero-title">Building Resilience Before Disaster Strikes</h2>
-              <p className="mitigation-hero-description">
-                Mitigation is the foundation of disaster preparedness—proactive measures that save lives, 
-                protect communities, and reduce the devastating impacts of natural and human-caused disasters.
+          {/* Objectives and Principles - Two Column Layout */}
+          <div className="mitigation-objectives-principles-container">
+            {/* Objectives Section - Carousel */}
+            <div className="citizen-phase-section mitigation-objectives-section">
+              <h2 className="mitigation-section-header">
+                Core Objectives of Mitigation
+              </h2>
+              <p className="mitigation-section-intro">
+                Effective disaster mitigation pursues multiple interconnected goals that work together to create safer, more resilient communities capable of withstanding and recovering from disasters.
               </p>
+              
+              <div className="mitigation-objectives-carousel">
+                <div className="carousel-container">
+                  <div 
+                    className="carousel-track"
+                    style={{ transform: `translateX(-${currentObjectiveSlide * 100}%)` }}
+                  >
+                    {objectives.map((obj, idx) => (
+                      <div 
+                        key={`objective-${idx}-${obj.title}`}
+                        className="carousel-slide"
+                      >
+                        <div 
+                          className="mitigation-objective-card-carousel"
+                          style={{ background: obj.bgGradient }}
+                        >
+                          <div className="mitigation-objective-watermark">{obj.icon}</div>
+                          <div className="mitigation-objective-icon-wrapper" style={{ background: obj.gradient }}>
+                            <div className="mitigation-objective-icon">{obj.icon}</div>
+                          </div>
+                          <h3 className="mitigation-objective-title" style={{ color: obj.color }}>{obj.title}</h3>
+                          <p className="mitigation-objective-desc">{obj.desc}</p>
+                          <div className="mitigation-objective-number" style={{ color: obj.color }}>
+                            {(idx + 1).toString().padStart(2, '0')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Navigation Buttons */}
+                  <button 
+                    className="carousel-button carousel-button-prev"
+                    onClick={prevSlide}
+                    aria-label="Previous objective"
+                  >
+                    ‹
+                  </button>
+                  <button 
+                    className="carousel-button carousel-button-next"
+                    onClick={nextSlide}
+                    aria-label="Next objective"
+                  >
+                    ›
+                  </button>
+                </div>
+
+                {/* Dots Indicator */}
+                <div className="carousel-dots">
+                  {objectives.map((_, idx) => (
+                    <button
+                      key={`dot-${idx}`}
+                      className={`carousel-dot ${idx === currentObjectiveSlide ? 'active' : ''}`}
+                      onClick={() => goToSlide(idx)}
+                      aria-label={`Go to objective ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Key Principles Section */}
+            <div className="citizen-phase-section mitigation-principles-section">
+              <h2 className="mitigation-section-header">
+                Key Principles of Mitigation
+              </h2>
+              <div className="mitigation-principles-grid">
+                {[
+                  { icon: '🔍', title: 'Risk Assessment and Hazard Mapping', desc: 'Identify and analyze potential hazards and vulnerable areas to understand the level of risk.', variant: 'assessment' },
+                  { icon: '🛡️', title: 'Prevention and Risk Reduction', desc: 'Implement measures (like flood control, reforestation, and strict building codes) to reduce disaster impacts.', variant: 'prevention' },
+                  { icon: '🌱', title: 'Sustainable Land Use and Development', desc: 'Plan urban areas and infrastructure to minimize exposure to hazards and protect the environment.', variant: 'sustainable' },
+                  { icon: '🤝', title: 'Community Involvement', desc: 'Engage local communities in planning and implementing mitigation strategies.', variant: 'community' },
+                  { icon: '📜', title: 'Policy and Regulation Enforcement', desc: 'Strengthen and enforce laws, safety standards, and zoning regulations to reduce risk.', variant: 'policy' },
+                  { icon: '🔄', title: 'Continuous Evaluation and Improvement', desc: 'Regularly review and update mitigation plans based on new data, technology, and experiences from past disasters.', variant: 'evaluation' }
+                ].map((principle, idx) => (
+                  <div key={`principle-${idx}-${principle.title}`} className={`mitigation-principle-card mitigation-principle-${principle.variant}`}>
+                    <div className="mitigation-principle-watermark">{principle.icon}</div>
+                    <div className="mitigation-principle-icon-wrapper">
+                      <div className="mitigation-principle-icon">{principle.icon}</div>
+                    </div>
+                    <h3 className="mitigation-principle-title">{principle.title}</h3>
+                    <p className="mitigation-principle-desc">{principle.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Objectives Section */}
-          <div className="citizen-phase-section mitigation-objectives-section">
-            <h2 className="mitigation-section-header">
-              Core Objectives of Mitigation
-            </h2>
-            <p className="mitigation-section-intro">
-              Effective disaster mitigation pursues multiple interconnected goals that work together to create safer, more resilient communities capable of withstanding and recovering from disasters.
-            </p>
-            <div className="citizen-benefits-grid mitigation-objectives-grid">
-              {[
-                { 
-                  icon: '💔', 
-                  title: 'Protect Human Life', 
-                  desc: 'Minimize casualties, injuries, and loss of life through preventive measures, early warning systems, and safe infrastructure design.', 
-                  color: '#e53935',
-                  gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
-                },
-                { 
-                  icon: '💰', 
-                  title: 'Preserve Economic Stability', 
-                  desc: 'Reduce economic disruption, protect livelihoods, and minimize the financial burden of disaster recovery on communities and governments.', 
-                  color: '#43a047',
-                  gradient: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)'
-                },
-                { 
-                  icon: '🏘️', 
-                  title: 'Build Community Resilience', 
-                  desc: 'Strengthen the capacity of communities to anticipate, prepare for, and adapt to changing conditions while recovering quickly from disasters.', 
-                  color: '#1e88e5',
-                  gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)'
-                },
-                { 
-                  icon: '🌱', 
-                  title: 'Ensure Environmental Sustainability', 
-                  desc: 'Protect ecosystems, preserve natural resources, and promote development practices that work with nature rather than against it.', 
-                  color: '#00897b',
-                  gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)'
-                },
-                { 
-                  icon: '⏰', 
-                  title: 'Establish Long-term Preparedness', 
-                  desc: 'Create lasting systems and infrastructure that provide continuous protection against recurring hazards and future risks.', 
-                  color: '#fb8c00',
-                  gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)'
-                },
-                { 
-                  icon: '🏛️', 
-                  title: 'Safeguard Critical Infrastructure', 
-                  desc: 'Protect essential facilities like hospitals, schools, power systems, and transportation networks that communities depend on.', 
-                  color: '#5e35b1',
-                  gradient: 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)'
-                }
-              ].map((obj, idx) => (
-                <div 
-                  key={idx}
-                  className="mitigation-objective-card" 
-                  style={{ borderTop: `5px solid ${obj.color}` }}
-                  data-color={obj.color}
-                >
-                  <div className="mitigation-objective-icon-bg" style={{ background: obj.gradient }}>
-                    <div className="mitigation-objective-icon">{obj.icon}</div>
-                  </div>
-                  <strong className="mitigation-objective-title" style={{ color: obj.color }}>{obj.title}</strong>
-                  <span className="mitigation-objective-desc">{obj.desc}</span>
-              </div>
-              ))}
-              </div>
-              </div>
 
           {/* Types of Mitigation Measures */}
           <div className="citizen-phase-section mitigation-types-section">
@@ -257,6 +349,7 @@ function Mitigation() {
               Mitigation strategies are broadly classified into structural and non-structural approaches. The most effective mitigation programs combine both types to create comprehensive protection systems.
             </p>
             
+            <div className="mitigation-types-grid">
             <div className="mitigation-type-card mitigation-type-structural">
               <div className="mitigation-type-watermark">🏗️</div>
               <div className="mitigation-type-badge">Structural</div>
@@ -360,6 +453,7 @@ function Mitigation() {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
 

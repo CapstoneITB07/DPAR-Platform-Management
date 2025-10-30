@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -8,10 +8,85 @@ import '../css/Response.css';
 function Response() {
   const navigate = useNavigate();
   const [fade, setFade] = useState(false);
+  const [currentObjectiveSlide, setCurrentObjectiveSlide] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const location = useLocation();
+
+  // Objectives data
+  const objectives = [
+    { 
+      icon: '💔', 
+      title: 'Save Lives and Reduce Suffering', 
+      desc: 'Implement immediate life-saving measures and provide emergency medical care to minimize casualties and injuries.', 
+      color: '#e53935',
+      gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)',
+      bgGradient: 'linear-gradient(135deg, #ffebee 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🆘', 
+      title: 'Provide Emergency Relief', 
+      desc: 'Distribute essential supplies including food, water, medical care, and shelter to affected populations.', 
+      color: '#fb8c00',
+      gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)',
+      bgGradient: 'linear-gradient(135deg, #fff3e0 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🏘️', 
+      title: 'Protect Property and Infrastructure', 
+      desc: 'Safeguard vital infrastructure, prevent further damage, and secure essential facilities and services.', 
+      color: '#1e88e5',
+      gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)',
+      bgGradient: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🛑', 
+      title: 'Stabilize the Situation', 
+      desc: 'Control the disaster scene, prevent escalation, and eliminate secondary hazards that threaten safety.', 
+      color: '#c62828',
+      gradient: 'linear-gradient(135deg, #c62828 0%, #b71c1c 100%)',
+      bgGradient: 'linear-gradient(135deg, #fce4ec 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '🤝', 
+      title: 'Ensure Coordination', 
+      desc: 'Facilitate seamless collaboration among responders, agencies, and stakeholders under unified command.', 
+      color: '#00897b',
+      gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)',
+      bgGradient: 'linear-gradient(135deg, #e0f2f1 0%, #ffffff 100%)'
+    },
+    { 
+      icon: '📋', 
+      title: 'Begin Recovery Planning', 
+      desc: 'Conduct rapid assessments, document damage, and initiate strategies for rehabilitation and recovery.', 
+      color: '#5e35b1',
+      gradient: 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)',
+      bgGradient: 'linear-gradient(135deg, #ede7f6 0%, #ffffff 100%)'
+    }
+  ];
+
+  // Auto-rotation effect for carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(timer);
+  }, [objectives.length]);
+
+  // Carousel navigation functions
+  const nextSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev + 1) % objectives.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentObjectiveSlide((prev) => (prev - 1 + objectives.length) % objectives.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentObjectiveSlide(index);
+  };
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -150,112 +225,102 @@ function Response() {
         </div>
 
         <div className="citizen-phase-content">
-          {/* Hero Introduction */}
-          <div className="response-hero-section">
-            <div className="response-hero-content">
-              <div className="response-hero-icon">🚑</div>
-              <h2 className="response-hero-title">Response for Disaster Preparedness and Response</h2>
-              <p className="response-hero-description">
-                Effective disaster response saves lives, reduces suffering, and stabilizes communities 
-                through immediate, coordinated action when disaster strikes.
+          {/* Objectives and Principles - Two Column Layout */}
+          <div className="response-objectives-principles-container">
+            {/* Objectives Section - Carousel */}
+            <div className="citizen-phase-section response-objectives-section">
+              <h2 className="response-section-header">
+                Objectives of Disaster Response
+              </h2>
+              <p className="response-section-intro">
+                Disaster response aims to minimize casualties, provide immediate assistance, and create 
+                the foundation for recovery through rapid, coordinated action.
               </p>
-            </div>
-          </div>
-
-          {/* Objectives Section */}
-          <div className="citizen-phase-section response-objectives-section">
-            <h2 className="response-section-header">
-              Objectives of Disaster Response
-            </h2>
-            <p className="response-section-intro">
-              Disaster response aims to minimize casualties, provide immediate assistance, and create 
-              the foundation for recovery through rapid, coordinated action.
-            </p>
-            <div className="citizen-benefits-grid response-objectives-grid">
-              {[
-                { 
-                  icon: '💔', 
-                  title: 'Save Lives and Reduce Suffering', 
-                  desc: 'Implement immediate life-saving measures and provide emergency medical care to minimize casualties and injuries.', 
-                  color: '#e53935',
-                  gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
-                },
-                { 
-                  icon: '🆘', 
-                  title: 'Provide Emergency Relief', 
-                  desc: 'Distribute essential supplies including food, water, medical care, and shelter to affected populations.', 
-                  color: '#fb8c00',
-                  gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)'
-                },
-                { 
-                  icon: '🏘️', 
-                  title: 'Protect Property and Infrastructure', 
-                  desc: 'Safeguard vital infrastructure, prevent further damage, and secure essential facilities and services.', 
-                  color: '#1e88e5',
-                  gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)'
-                },
-                { 
-                  icon: '🛑', 
-                  title: 'Stabilize the Situation', 
-                  desc: 'Control the disaster scene, prevent escalation, and eliminate secondary hazards that threaten safety.', 
-                  color: '#c62828',
-                  gradient: 'linear-gradient(135deg, #c62828 0%, #b71c1c 100%)'
-                },
-                { 
-                  icon: '🤝', 
-                  title: 'Ensure Coordination', 
-                  desc: 'Facilitate seamless collaboration among responders, agencies, and stakeholders under unified command.', 
-                  color: '#00897b',
-                  gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)'
-                },
-                { 
-                  icon: '📋', 
-                  title: 'Begin Recovery Planning', 
-                  desc: 'Conduct rapid assessments, document damage, and initiate strategies for rehabilitation and recovery.', 
-                  color: '#5e35b1',
-                  gradient: 'linear-gradient(135deg, #5e35b1 0%, #4527a0 100%)'
-                }
-              ].map((obj, idx) => (
-                <div 
-                  key={`objective-${idx}-${obj.title}`}
-                  className="response-objective-card" 
-                  style={{ borderTop: `5px solid ${obj.color}` }}
-                  data-color={obj.color}
-                >
-                  <div className="response-objective-icon-bg" style={{ background: obj.gradient }}>
-                    <div className="response-objective-icon">{obj.icon}</div>
+              
+              <div className="response-objectives-carousel">
+                <div className="carousel-container">
+                  <div 
+                    className="carousel-track"
+                    style={{ transform: `translateX(-${currentObjectiveSlide * 100}%)` }}
+                  >
+                    {objectives.map((obj, idx) => (
+                      <div 
+                        key={`objective-${idx}-${obj.title}`}
+                        className="carousel-slide"
+                      >
+                        <div 
+                          className="response-objective-card-carousel"
+                          style={{ background: obj.bgGradient }}
+                        >
+                          <div className="response-objective-watermark">{obj.icon}</div>
+                          <div className="response-objective-icon-wrapper" style={{ background: obj.gradient }}>
+                            <div className="response-objective-icon">{obj.icon}</div>
+                          </div>
+                          <h3 className="response-objective-title" style={{ color: obj.color }}>{obj.title}</h3>
+                          <p className="response-objective-desc">{obj.desc}</p>
+                          <div className="response-objective-number" style={{ color: obj.color }}>
+                            {(idx + 1).toString().padStart(2, '0')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <strong className="response-objective-title" style={{ color: obj.color }}>{obj.title}</strong>
-                  <span className="response-objective-desc">{obj.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Key Principles Section */}
-          <div className="citizen-phase-section response-principles-section">
-            <h2 className="response-section-header">
-              Key Principles of Effective Response
-            </h2>
-            <p className="response-section-intro">
-              Successful disaster response adheres to core principles that ensure efficiency, 
-              safety, and effectiveness in emergency operations.
-            </p>
-            <div className="response-principles-grid">
-              {[
-                { icon: '⚡', title: 'Speed and Efficiency', desc: 'Actions must be immediate and organized to maximize life-saving potential.' },
-                { icon: '📡', title: 'Coordination and Communication', desc: 'Agencies must work together under a clear chain of command and maintain constant communication.' },
-                { icon: '🎯', title: 'Prioritization', desc: 'Focus on life-saving measures first, then move to stabilization and relief activities.' },
-                { icon: '📦', title: 'Resource Optimization', desc: 'Use available resources effectively and prevent duplication of efforts.' },
-                { icon: '✅', title: 'Accountability and Safety', desc: 'Ensure responders and affected people are protected throughout operations.' },
-                { icon: '🕊️', title: 'Humanitarian Consideration', desc: 'Respect dignity, culture, and basic rights of all victims during response operations.' }
-              ].map((principle, idx) => (
-                <div key={`principle-${idx}-${principle.title}`} className="response-principle-card">
-                  <div className="response-principle-icon">{principle.icon}</div>
-                  <h3 className="response-principle-title">{principle.title}</h3>
-                  <p className="response-principle-desc">{principle.desc}</p>
+                  {/* Navigation Buttons */}
+                  <button 
+                    className="carousel-button carousel-button-prev"
+                    onClick={prevSlide}
+                    aria-label="Previous objective"
+                  >
+                    ‹
+                  </button>
+                  <button 
+                    className="carousel-button carousel-button-next"
+                    onClick={nextSlide}
+                    aria-label="Next objective"
+                  >
+                    ›
+                  </button>
                 </div>
-              ))}
+
+                {/* Dots Indicator */}
+                <div className="carousel-dots">
+                  {objectives.map((_, idx) => (
+                    <button
+                      key={`dot-${idx}`}
+                      className={`carousel-dot ${idx === currentObjectiveSlide ? 'active' : ''}`}
+                      onClick={() => goToSlide(idx)}
+                      aria-label={`Go to objective ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Key Principles Section */}
+            <div className="citizen-phase-section response-principles-section">
+              <h2 className="response-section-header">
+                Key Principles of Effective Response
+              </h2>
+              <div className="response-principles-grid">
+                {[
+                  { icon: '⚡', title: 'Speed and Efficiency', desc: 'Actions must be immediate and organized to maximize life-saving potential.', variant: 'speed' },
+                  { icon: '📡', title: 'Coordination and Communication', desc: 'Agencies must work together under a clear chain of command and maintain constant communication.', variant: 'coordination' },
+                  { icon: '🎯', title: 'Prioritization', desc: 'Focus on life-saving measures first, then move to stabilization and relief activities.', variant: 'prioritization' },
+                  { icon: '📦', title: 'Resource Optimization', desc: 'Use available resources effectively and prevent duplication of efforts.', variant: 'resource' },
+                  { icon: '✅', title: 'Accountability and Safety', desc: 'Ensure responders and affected people are protected throughout operations.', variant: 'accountability' },
+                  { icon: '🕊️', title: 'Humanitarian Consideration', desc: 'Respect dignity, culture, and basic rights of all victims during response operations.', variant: 'humanitarian' }
+                ].map((principle, idx) => (
+                  <div key={`principle-${idx}-${principle.title}`} className={`response-principle-card response-principle-${principle.variant}`}>
+                    <div className="response-principle-watermark">{principle.icon}</div>
+                    <div className="response-principle-icon-wrapper">
+                      <div className="response-principle-icon">{principle.icon}</div>
+                    </div>
+                    <h3 className="response-principle-title">{principle.title}</h3>
+                    <p className="response-principle-desc">{principle.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -272,66 +337,90 @@ function Response() {
             <div className="response-cycle-steps">
               {/* Step 1: Alert and Warning */}
               <div className="response-cycle-step response-step-warning">
+                <div className="response-step-number">01</div>
                 <div className="response-step-badge">Step 1</div>
-                <div className="response-step-icon">⚠️</div>
-                <h3 className="response-step-title">Alert and Warning</h3>
-                <p className="response-step-description">
-                  Issuing timely warnings and mobilizing response teams to prepare for immediate action.
-                </p>
-                <ul className="response-step-list">
-                  <li>Issuing official warnings from government or disaster agencies</li>
-                  <li>Disseminating alerts through sirens, text messages, or broadcasts</li>
-                  <li>Mobilizing responders and volunteers for action</li>
-                  <li>Activating emergency communication networks</li>
-                </ul>
+                <div className="response-step-watermark">⚠️</div>
+                <div className="response-step-icon-wrapper">
+                  <div className="response-step-icon">⚠️</div>
+                </div>
+                <div className="response-step-content">
+                  <h3 className="response-step-title">Alert and Warning</h3>
+                  <p className="response-step-description">
+                    Issuing timely warnings and mobilizing response teams to prepare for immediate action.
+                  </p>
+                  <ul className="response-step-list">
+                    <li>Issuing official warnings from government or disaster agencies</li>
+                    <li>Disseminating alerts through sirens, text messages, or broadcasts</li>
+                    <li>Mobilizing responders and volunteers for action</li>
+                    <li>Activating emergency communication networks</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Step 2: Immediate Rescue */}
               <div className="response-cycle-step response-step-rescue">
+                <div className="response-step-number">02</div>
                 <div className="response-step-badge">Step 2</div>
-                <div className="response-step-icon">🚨</div>
-                <h3 className="response-step-title">Immediate Rescue and Evacuation</h3>
-                <p className="response-step-description">
-                  Life-saving operations to locate, evacuate, and provide medical care to victims.
-                </p>
-                <ul className="response-step-list">
-                  <li>Search and rescue (SAR) operations to locate trapped or injured victims</li>
-                  <li>Evacuation to safe shelters or designated areas</li>
-                  <li>Providing first aid, triage, and emergency medical care</li>
-                  <li>Ensuring the safety of responders during operations</li>
-                </ul>
+                <div className="response-step-watermark">🚨</div>
+                <div className="response-step-icon-wrapper">
+                  <div className="response-step-icon">🚨</div>
+                </div>
+                <div className="response-step-content">
+                  <h3 className="response-step-title">Immediate Rescue and Evacuation</h3>
+                  <p className="response-step-description">
+                    Life-saving operations to locate, evacuate, and provide medical care to victims.
+                  </p>
+                  <ul className="response-step-list">
+                    <li>Search and rescue (SAR) operations to locate trapped or injured victims</li>
+                    <li>Evacuation to safe shelters or designated areas</li>
+                    <li>Providing first aid, triage, and emergency medical care</li>
+                    <li>Ensuring the safety of responders during operations</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Step 3: Relief Operations */}
               <div className="response-cycle-step response-step-relief">
+                <div className="response-step-number">03</div>
                 <div className="response-step-badge">Step 3</div>
-                <div className="response-step-icon">🏕️</div>
-                <h3 className="response-step-title">Relief Operations</h3>
-                <p className="response-step-description">
-                  Providing essential supplies, shelter, and support services to affected populations.
-                </p>
-                <ul className="response-step-list">
-                  <li>Distribution of food, clean water, clothing, and hygiene kits</li>
-                  <li>Setting up temporary shelters and relief centers</li>
-                  <li>Providing psychosocial support and counseling for trauma victims</li>
-                  <li>Restoring communication lines and basic services (electricity, transportation)</li>
-                </ul>
+                <div className="response-step-watermark">🏕️</div>
+                <div className="response-step-icon-wrapper">
+                  <div className="response-step-icon">🏕️</div>
+                </div>
+                <div className="response-step-content">
+                  <h3 className="response-step-title">Relief Operations</h3>
+                  <p className="response-step-description">
+                    Providing essential supplies, shelter, and support services to affected populations.
+                  </p>
+                  <ul className="response-step-list">
+                    <li>Distribution of food, clean water, clothing, and hygiene kits</li>
+                    <li>Setting up temporary shelters and relief centers</li>
+                    <li>Providing psychosocial support and counseling for trauma victims</li>
+                    <li>Restoring communication lines and basic services (electricity, transportation)</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Step 4: Damage Assessment */}
               <div className="response-cycle-step response-step-assessment">
+                <div className="response-step-number">04</div>
                 <div className="response-step-badge">Step 4</div>
-                <div className="response-step-icon">📋</div>
-                <h3 className="response-step-title">Damage Assessment and Initial Recovery</h3>
-                <p className="response-step-description">
-                  Evaluating impact and beginning the transition to recovery and rehabilitation.
-                </p>
-                <ul className="response-step-list">
-                  <li>Conducting Rapid Damage and Needs Assessment (RDNA)</li>
-                  <li>Recording affected populations, casualties, and property loss</li>
-                  <li>Prioritizing rehabilitation of critical infrastructure (roads, hospitals)</li>
-                  <li>Coordinating with NGOs and other agencies for ongoing aid</li>
-                </ul>
+                <div className="response-step-watermark">📋</div>
+                <div className="response-step-icon-wrapper">
+                  <div className="response-step-icon">📋</div>
+                </div>
+                <div className="response-step-content">
+                  <h3 className="response-step-title">Damage Assessment and Initial Recovery</h3>
+                  <p className="response-step-description">
+                    Evaluating impact and beginning the transition to recovery and rehabilitation.
+                  </p>
+                  <ul className="response-step-list">
+                    <li>Conducting Rapid Damage and Needs Assessment (RDNA)</li>
+                    <li>Recording affected populations, casualties, and property loss</li>
+                    <li>Prioritizing rehabilitation of critical infrastructure (roads, hospitals)</li>
+                    <li>Coordinating with NGOs and other agencies for ongoing aid</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -349,8 +438,13 @@ function Response() {
             <div className="response-activities-grid">
               {/* Life-Saving Operations */}
               <div className="response-activity-card response-activity-lifesaving">
-                <div className="response-activity-icon">🧭</div>
+                <div className="response-activity-badge">Critical</div>
+                <div className="response-activity-watermark">🧭</div>
+                <div className="response-activity-icon-wrapper">
+                  <div className="response-activity-icon">🧭</div>
+                </div>
                 <h3 className="response-activity-title">Life-Saving Operations</h3>
+                <p className="response-activity-desc">Immediate actions to save lives and rescue victims</p>
                 <ul className="response-activity-list">
                   <li>Search and rescue (SAR)</li>
                   <li>Emergency medical response</li>
@@ -361,8 +455,13 @@ function Response() {
 
               {/* Relief and Humanitarian */}
               <div className="response-activity-card response-activity-humanitarian">
-                <div className="response-activity-icon">🩹</div>
+                <div className="response-activity-badge">Essential</div>
+                <div className="response-activity-watermark">🩹</div>
+                <div className="response-activity-icon-wrapper">
+                  <div className="response-activity-icon">🩹</div>
+                </div>
                 <h3 className="response-activity-title">Relief and Humanitarian Assistance</h3>
+                <p className="response-activity-desc">Providing essential aid and support to affected populations</p>
                 <ul className="response-activity-list">
                   <li>Distribution of relief goods (food, water, blankets)</li>
                   <li>Medical missions and mobile health units</li>
@@ -373,8 +472,13 @@ function Response() {
 
               {/* Coordination and Command */}
               <div className="response-activity-card response-activity-coordination">
-                <div className="response-activity-icon">🏢</div>
+                <div className="response-activity-badge">Vital</div>
+                <div className="response-activity-watermark">🏢</div>
+                <div className="response-activity-icon-wrapper">
+                  <div className="response-activity-icon">🏢</div>
+                </div>
                 <h3 className="response-activity-title">Coordination and Command</h3>
+                <p className="response-activity-desc">Organizing and directing response operations effectively</p>
                 <ul className="response-activity-list">
                   <li>Establishing the Incident Command System (ICS)</li>
                   <li>Setting up Emergency Operations Centers (EOCs)</li>
@@ -385,8 +489,13 @@ function Response() {
 
               {/* Communication */}
               <div className="response-activity-card response-activity-communication">
-                <div className="response-activity-icon">📞</div>
+                <div className="response-activity-badge">Priority</div>
+                <div className="response-activity-watermark">📞</div>
+                <div className="response-activity-icon-wrapper">
+                  <div className="response-activity-icon">📞</div>
+                </div>
                 <h3 className="response-activity-title">Communication and Information Management</h3>
+                <p className="response-activity-desc">Ensuring clear and accurate information flow during crisis</p>
                 <ul className="response-activity-list">
                   <li>Disseminating accurate updates to the public</li>
                   <li>Maintaining contact with media, government, and volunteers</li>
@@ -544,36 +653,6 @@ function Response() {
             </div>
           </div>
 
-          {/* Roles and Responsibilities */}
-          <div className="citizen-phase-section response-roles-section">
-            <h2 className="response-section-header">
-              Roles and Responsibilities in the Response Phase
-            </h2>
-            <p className="response-section-intro">
-              Effective disaster response requires clear roles and responsibilities across multiple 
-              stakeholders and agencies.
-            </p>
-            <div className="response-roles-table">
-              <div className="response-role-row response-role-header">
-                <div className="response-role-actor">Actor</div>
-                <div className="response-role-responsibility">Role / Responsibility</div>
-              </div>
-              {[
-                { actor: 'Local Government Units (LGUs)', role: 'First responders; manage evacuation centers; distribute aid.' },
-                { actor: 'National Disaster Risk Reduction and Management Council (NDRRMC)', role: 'National coordination, deployment of military, and central command.' },
-                { actor: 'Philippine Red Cross / NGOs', role: 'Medical care, relief goods, psychosocial support.' },
-                { actor: 'Philippine National Police / AFP', role: 'Security, crowd control, rescue operations.' },
-                { actor: 'Health Sector (DOH, hospitals)', role: 'Provide emergency medical services and disease control.' },
-                { actor: 'Volunteers / Community Members', role: 'First aid, communication, and community support.' }
-              ].map((item, idx) => (
-                <div key={`role-${idx}-${item.actor}`} className="response-role-row">
-                  <div className="response-role-actor">{item.actor}</div>
-                  <div className="response-role-responsibility">{item.role}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Challenges Section */}
           <div className="citizen-phase-section response-challenges-section">
             <h2 className="response-section-header">
@@ -603,63 +682,64 @@ function Response() {
 
           {/* Importance Section */}
           <div className="citizen-phase-section response-importance-section">
-            <h2 className="response-section-header">
-              Importance of Response
-            </h2>
-            <p className="response-section-intro">
-              Effective disaster response is critical for saving lives, protecting communities, 
-              and laying the foundation for successful recovery.
-            </p>
+            <div className="response-importance-header">
+              <h2>IMPORTANCE OF RESPONSE</h2>
+            </div>
             <div className="response-importance-grid">
-              {[
-                { 
-                  icon: '💖', 
-                  title: 'Saves Lives', 
-                  desc: 'Saves lives and minimizes casualties through immediate action and medical intervention.', 
-                  color: '#e53935',
-                  gradient: 'linear-gradient(135deg, #e53935 0%, #c62828 100%)'
-                },
-                { 
-                  icon: '🛡️', 
-                  title: 'Prevents Secondary Hazards', 
-                  desc: 'Prevents the spread of diseases and secondary hazards that could cause additional harm.', 
-                  color: '#43a047',
-                  gradient: 'linear-gradient(135deg, #43a047 0%, #2e7d32 100%)'
-                },
-                { 
-                  icon: '🔒', 
-                  title: 'Restores Safety', 
-                  desc: 'Restores order and public safety in chaotic and dangerous post-disaster environments.', 
-                  color: '#1e88e5',
-                  gradient: 'linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)'
-                },
-                { 
-                  icon: '🤝', 
-                  title: 'Builds Trust', 
-                  desc: 'Builds public trust and morale during crisis through visible, effective action.', 
-                  color: '#00897b',
-                  gradient: 'linear-gradient(135deg, #00897b 0%, #00695c 100%)'
-                },
-                { 
-                  icon: '🏗️', 
-                  title: 'Enables Recovery', 
-                  desc: 'Provides a stable foundation for the recovery and rehabilitation phase to begin.', 
-                  color: '#fb8c00',
-                  gradient: 'linear-gradient(135deg, #fb8c00 0%, #e65100 100%)'
-                }
-              ].map((item, idx) => (
-                <div 
-                  key={`importance-${idx}-${item.title}`}
-                  className="response-importance-card"
-                  style={{ borderLeft: `5px solid ${item.color}` }}
-                >
-                  <div className="response-importance-icon-bg" style={{ background: item.gradient }}>
-                    <div className="response-importance-icon">{item.icon}</div>
+              <div className="response-importance-card response-importance-lives">
+                <div className="response-importance-watermark">💖</div>
+                <div className="response-importance-card-title">
+                  <span className="response-importance-card-emoji">💖</span>
+                  <span className="response-importance-heading">Saves Lives</span>
+                </div>
+                <p className="response-importance-card-desc">
+                  Saves lives and minimizes casualties through immediate action and medical intervention.
+                </p>
               </div>
-                  <h3 className="response-importance-title" style={{ color: item.color }}>{item.title}</h3>
-                  <p className="response-importance-desc">{item.desc}</p>
+
+              <div className="response-importance-card response-importance-prevents">
+                <div className="response-importance-watermark">🛡️</div>
+                <div className="response-importance-card-title">
+                  <span className="response-importance-card-emoji">🛡️</span>
+                  <span className="response-importance-heading">Prevents Secondary Hazards</span>
+                </div>
+                <p className="response-importance-card-desc">
+                  Prevents the spread of diseases and secondary hazards that could cause additional harm.
+                </p>
               </div>
-              ))}
+
+              <div className="response-importance-card response-importance-safety">
+                <div className="response-importance-watermark">🔒</div>
+                <div className="response-importance-card-title">
+                  <span className="response-importance-card-emoji">🔒</span>
+                  <span className="response-importance-heading">Restores Safety</span>
+                </div>
+                <p className="response-importance-card-desc">
+                  Restores order and public safety in chaotic and dangerous post-disaster environments.
+                </p>
+              </div>
+
+              <div className="response-importance-card response-importance-trust">
+                <div className="response-importance-watermark">🤝</div>
+                <div className="response-importance-card-title">
+                  <span className="response-importance-card-emoji">🤝</span>
+                  <span className="response-importance-heading">Builds Trust</span>
+                </div>
+                <p className="response-importance-card-desc">
+                  Builds public trust and morale during crisis through visible, effective action.
+                </p>
+              </div>
+
+              <div className="response-importance-card response-importance-recovery">
+                <div className="response-importance-watermark">🏗️</div>
+                <div className="response-importance-card-title">
+                  <span className="response-importance-card-emoji">🏗️</span>
+                  <span className="response-importance-heading">Enables Recovery</span>
+                </div>
+                <p className="response-importance-card-desc">
+                  Provides a stable foundation for the recovery and rehabilitation phase to begin.
+                </p>
+              </div>
             </div>
           </div>
         </div>

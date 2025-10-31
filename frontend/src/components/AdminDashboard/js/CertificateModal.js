@@ -8,7 +8,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   const [localData, setLocalData] = useState(certificateData);
   const [downloading, setDownloading] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [recipients, setRecipients] = useState([{ name: '', controlNumber: '' }]);
+  const [recipients, setRecipients] = useState([{ name: '' }]);
   const [bulkInput, setBulkInput] = useState('');
   const [debounceTimer, setDebounceTimer] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
@@ -120,7 +120,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   };
 
   const addRecipient = () => {
-    setRecipients([...recipients, { name: '', controlNumber: '' }]);
+    setRecipients([...recipients, { name: '' }]);
   };
 
   const removeRecipient = (index) => {
@@ -131,45 +131,28 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
 
   const updateRecipient = (index, field, value) => {
     const updatedRecipients = [...recipients];
-    
-    // If updating control number, extract only numbers
-    if (field === 'controlNumber') {
-      value = value.replace(/[^0-9]/g, '');
-    }
-    
     updatedRecipients[index] = { ...updatedRecipients[index], [field]: value };
     setRecipients(updatedRecipients);
   };
 
-  const handleControlNumberChange = (e) => {
-    const { name, value } = e.target;
-    // Extract only numbers from control number input
-    const numbersOnly = value.replace(/[^0-9]/g, '');
-    const updated = { ...localData, [name]: numbersOnly };
-    setLocalData(updated);
-    onCertificateDataChange(updated);
-  };
 
   const parseBulkInput = () => {
     const lines = bulkInput.split('\n').filter(line => line.trim());
     const parsedRecipients = lines.map(line => {
+      // Just take the first part (name) from tab or comma separated input
       const parts = line.split('\t');
-      if (parts.length >= 2) {
-        // Extract only numbers from control number
-        const controlNumber = parts[1].trim().replace(/[^0-9]/g, '');
-        return { name: parts[0].trim(), controlNumber: controlNumber };
+      if (parts.length >= 1) {
+        return { name: parts[0].trim() };
       } else {
         const commaParts = line.split(',');
-        if (commaParts.length >= 2) {
-          // Extract only numbers from control number, ignoring any letters after comma
-          const controlNumber = commaParts[1].trim().replace(/[^0-9]/g, '');
-          return { name: commaParts[0].trim(), controlNumber: controlNumber };
+        if (commaParts.length >= 1) {
+          return { name: commaParts[0].trim() };
         }
       }
-      return { name: line.trim(), controlNumber: '' };
+      return { name: line.trim() };
     }).filter(recipient => recipient.name);
     
-    setRecipients(parsedRecipients.length > 0 ? parsedRecipients : [{ name: '', controlNumber: '' }]);
+    setRecipients(parsedRecipients.length > 0 ? parsedRecipients : [{ name: '' }]);
   };
 
   const isFormValid = () => {
@@ -187,7 +170,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
     
     if (isBulkMode) {
       for (const recipient of recipients) {
-        if (!recipient.name || !recipient.controlNumber) return false;
+        if (!recipient.name) return false;
       }
     } else {
       if (!localData.name) return false;
@@ -220,8 +203,8 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
       
       if (isBulkMode) {
         for (const recipient of recipients) {
-          if (!recipient.name || !recipient.controlNumber) {
-            alert('Please fill out all recipient names and control numbers.');
+          if (!recipient.name) {
+            alert('Please fill out all recipient names.');
             return;
           }
         }
@@ -233,7 +216,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
       }
       
       const message = isBulkMode 
-        ? 'Please fill out all required fields: message, each signatory\'s name and title, and all recipient names and control numbers.'
+        ? 'Please fill out all required fields: message, each signatory\'s name and title, and all recipient names.'
         : 'Please fill out all required fields: recipient name, message, and each signatory\'s name and title.';
       alert(message);
       return;
@@ -292,7 +275,6 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
           `${backendBaseUrl}/api/certificates`,
           {
             name: localData.name,
-            controlNumber: localData.controlNumber || 'N/A',
             date: localData.date,
             signatories: localData.signatories || [{ name: '', title: '' }],
             message: localData.message,
@@ -399,30 +381,18 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                       onChange={handleChange}
                     />
                   </div>
-                  <div className="certificate-form-group">
-                    <label htmlFor="controlNumber">Control Number:</label>
-                    <input
-                      type="text"
-                      id="controlNumber"
-                      name="controlNumber"
-                      placeholder="Enter numbers only (e.g., 123 → CN-00123)"
-                      value={localData.controlNumber || ''}
-                      onChange={handleControlNumberChange}
-                    />
-                  </div>
                 </>
                 ) : (
                   <div className="bulk-section">
                     <div className="bulk-input-section">
                       <h3>Bulk Input</h3>
                       <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '10px' }}>
-                        Paste names and control numbers from Excel (tab-separated or comma-separated).
-                        Numbers only needed for CN (e.g., 123 → CN-00123):
+                        Paste names from Excel (one per line):
                       </p>
                       <textarea
                         value={bulkInput}
                         onChange={(e) => setBulkInput(e.target.value)}
-                        placeholder="John Doe&#9;123&#10;Jane Smith&#9;456&#10;Mike Johnson&#9;789abc"
+                        placeholder="John Doe&#10;Jane Smith&#10;Mike Johnson"
                         style={{
                           width: '100%',
                           height: '120px',
@@ -456,7 +426,6 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                         <div className="recipients-table">
                           <div className="recipients-header">
                             <div className="recipient-name-header">Name</div>
-                            <div className="recipient-cn-header">Control Number</div>
                             <div className="recipient-actions-header">Actions</div>
                           </div>
                           <div className="recipients-body">
@@ -468,13 +437,6 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                                   value={recipient.name}
                                   onChange={(e) => updateRecipient(index, 'name', e.target.value)}
                                   className="recipient-name-input"
-                                />
-                                <input
-                                  type="text"
-                                  placeholder="Numbers only (e.g., 123)"
-                                  value={recipient.controlNumber}
-                                  onChange={(e) => updateRecipient(index, 'controlNumber', e.target.value)}
-                                  className="recipient-cn-input"
                                 />
                                 <div className="recipient-actions">
                                   {recipients.length > 1 && (

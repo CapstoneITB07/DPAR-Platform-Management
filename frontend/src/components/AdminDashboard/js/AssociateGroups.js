@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faBell, faChartBar, faTimes, faTrash, faPen, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faBell, faChartBar, faTimes, faTrash, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt, faChevronDown, faChevronUp, faIdCard } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
 import Modal from 'react-modal';
 import { API_BASE } from '../../../utils/url';
@@ -54,6 +54,7 @@ function AssociateGroups() {
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState(null); // Track which application is being approved
   const [rejectingId, setRejectingId] = useState(null); // Track which application is being rejected
+  const [expandedDirectors, setExpandedDirectors] = useState(new Set()); // Track which directors are expanded
 
   const fetchAssociates = async (showNotification = false, isInitialLoad = false) => {
     try {
@@ -473,10 +474,23 @@ function AssociateGroups() {
       
       setSelectedGroup(response.data);
       setShowModal(true);
+      setExpandedDirectors(new Set()); // Reset expanded directors when opening modal
     } catch (error) {
       console.error('Error fetching group details:', error);
       setError('Failed to fetch group details');
     }
+  };
+
+  const toggleDirectorExpansion = (directorId) => {
+    setExpandedDirectors(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(directorId)) {
+        newSet.delete(directorId);
+      } else {
+        newSet.add(directorId);
+      }
+      return newSet;
+    });
   };
 
 
@@ -533,16 +547,6 @@ function AssociateGroups() {
               }}
             />
             {editListMode && (
-              <>
-                <FontAwesomeIcon
-                  icon={faPen}
-                  className="edit-icon"
-                  style={{ position: 'absolute', top: 8, left: 8, color: '#ffc107', background: '#fff', borderRadius: '50%', padding: 6, cursor: 'pointer', fontSize: 18, zIndex: 2 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditAssociate(associate);
-                  }}
-                />
                 <FontAwesomeIcon
                   icon={faTrash}
                   className="remove-icon"
@@ -552,7 +556,6 @@ function AssociateGroups() {
                     handleRemoveAssociate(associate.id);
                   }}
                 />
-              </>
             )}
           </div>
         ))
@@ -578,6 +581,8 @@ function AssociateGroups() {
         overlayClassName="profile-modal-overlay"
       >
         {selectedGroup && (
+          <>
+            <button onClick={() => setShowModal(false)} className="enhanced-close-icon">✕</button>
           <div className="profile-modal-content enhanced-profile-content">
             <div className="enhanced-profile-header">
               <img
@@ -588,11 +593,13 @@ function AssociateGroups() {
                   e.target.src = '/Assets/disaster_logo.png';
                 }}
               />
-              <button onClick={() => setShowModal(false)} className="enhanced-close-icon">✕</button>
             </div>
             <h3 className="enhanced-profile-title">{selectedGroup.name}</h3>
             <div className="enhanced-profile-info">
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faUser} className="enhanced-profile-icon" /> <span><b>Director:</b> {selectedGroup.director}</span></div>
+              {selectedGroup.user && selectedGroup.user.username && (
+                <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faIdCard} className="enhanced-profile-icon" /> <span><b>Username:</b> {selectedGroup.user.username}</span></div>
+              )}
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faEnvelope} className="enhanced-profile-icon" /> <span><b>Email:</b> {selectedGroup.email}</span></div>
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faPhone} className="enhanced-profile-icon" /> <span><b>Phone:</b> {selectedGroup.phone || 'N/A'}</span></div>
               <div className="enhanced-profile-info-row"><FontAwesomeIcon icon={faCalendarAlt} className="enhanced-profile-icon" /> <span><b>Date Joined:</b> {selectedGroup.date_joined ? new Date(selectedGroup.date_joined).toLocaleDateString() : 'N/A'}</span></div>
@@ -608,16 +615,30 @@ function AssociateGroups() {
               <h4 className="director-history-title">
                 <FontAwesomeIcon icon={faUsers} style={{ marginRight: '8px' }} />
                 Director History
+                {selectedGroup.director_histories_with_activities && selectedGroup.director_histories_with_activities.length > 0 && (
+                  <span className="director-count-badge">({selectedGroup.director_histories_with_activities.length})</span>
+                )}
               </h4>
               {selectedGroup.director_histories_with_activities && selectedGroup.director_histories_with_activities.length > 0 ? (
                 <div className="director-history-list">
-                  {selectedGroup.director_histories_with_activities.map((history, index) => (
+                  {selectedGroup.director_histories_with_activities.map((history, index) => {
+                    const isExpanded = expandedDirectors.has(history.id);
+                    return (
                     <div key={history.id} className={`director-history-item ${history.is_current ? 'current' : 'former'}`}>
                       <div className="director-history-header">
+                        <div className="director-header-info">
                         <span className="director-name">{history.director_name}</span>
                         <span className={`director-status ${history.is_current ? 'current' : 'former'}`}>
                           {history.is_current ? 'Current Director' : 'Former Director'}
                         </span>
+                        </div>
+                        <button 
+                          className="director-toggle-btn"
+                          onClick={() => toggleDirectorExpansion(history.id)}
+                          aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+                        >
+                          <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} />
+                        </button>
                       </div>
                       <div className="director-history-details">
                         <div className="director-period">
@@ -635,7 +656,8 @@ function AssociateGroups() {
                           </span>
                         </div>
                         
-                        {/* Director Activity Summary */}
+                        {/* Director Activity Summary - Collapsible */}
+                        {isExpanded && (
                         <div className="director-activity-summary">
                           <h5 className="activity-summary-title">
                             <FontAwesomeIcon icon={faChartBar} style={{ marginRight: '8px' }} />
@@ -720,9 +742,11 @@ function AssociateGroups() {
                               </div>
                             )}
                           </div>
+                        )}
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               ) : (
                 <div className="no-director-history">
@@ -738,6 +762,7 @@ function AssociateGroups() {
               )}
             </div>
           </div>
+          </>
         )}
       </Modal>
       {/* Add Associate Modal */}

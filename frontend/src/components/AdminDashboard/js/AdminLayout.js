@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../css/AdminDashboard.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding, faLock, faEye, faEyeSlash, faBellSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTachometerAlt, faUsers, faBell, faCheckCircle, faBullhorn, faGraduationCap, faChartBar, faSignOutAlt, faBars, faTimes, faUser, faEnvelope, faBuilding, faLock, faEye, faEyeSlash, faBellSlash, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import Modal from 'react-modal';
@@ -17,6 +17,7 @@ import {
 
 function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [announcementSubmenuOpen, setAnnouncementSubmenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [activeTab, setActiveTab] = useState('profile'); // New state for tab management
   const [profileImage, setProfileImage] = useState('/Assets/disaster_logo.png');
@@ -529,6 +530,13 @@ function AdminLayout({ children }) {
   }, [location.pathname]);
 
   useEffect(() => {
+    // Auto-expand announcement submenu if Announcement or Training Program is active
+    if (location.pathname === '/admin/announcement' || location.pathname === '/admin/training-program') {
+      setAnnouncementSubmenuOpen(true);
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (location.pathname === '/admin/associate-groups') {
       fetch(`${API_BASE}/api/pending-applications`, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || sessionStorage.getItem('authToken')}` } })
         .then(res => res.json())
@@ -700,8 +708,31 @@ function AdminLayout({ children }) {
                     )}
                   </li>
               <li className={isActive('/admin/approval-aor') ? 'active' : ''} onClick={() => { navigate('/admin/approval-aor'); closeSidebar(); }}><FontAwesomeIcon icon={faCheckCircle} /> APPROVAL/AOR</li>
-              <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => { navigate('/admin/announcement'); closeSidebar(); }}><FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT</li>
-              <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => { navigate('/admin/training-program'); closeSidebar(); }}><FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM</li>
+              <li className={`nav-parent ${isActive('/admin/announcement') || isActive('/admin/training-program') ? 'parent-active' : ''}`}>
+                <div 
+                  className="nav-parent-trigger" 
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    setAnnouncementSubmenuOpen(!announcementSubmenuOpen);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT
+                  <FontAwesomeIcon 
+                    icon={announcementSubmenuOpen ? faChevronDown : faChevronRight} 
+                    className="nav-chevron"
+                  />
+                </div>
+                {announcementSubmenuOpen && (
+                  <ul className="nav-submenu">
+                    <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => { navigate('/admin/announcement'); closeSidebar(); }}>
+                      <FontAwesomeIcon icon={faBullhorn} /> GENERAL ANNOUNCEMENT
+                    </li>
+                    <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => { navigate('/admin/training-program'); closeSidebar(); }}>
+                      <FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM
+                    </li>
+                  </ul>
+                )}
+              </li>
               <li className={isActive('/admin/evaluation') ? 'active' : ''} onClick={() => { navigate('/admin/evaluation'); closeSidebar(); }}><FontAwesomeIcon icon={faChartBar} /> EVALUATION</li>
             </ul>
           </nav>

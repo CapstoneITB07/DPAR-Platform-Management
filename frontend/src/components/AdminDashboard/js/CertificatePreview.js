@@ -5,7 +5,7 @@ const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
 const CertificatePreview = ({ data }) => {
-  const { name, associate, signatories = [], message, controlNumber } = data || {};
+  const { name, associate, signatories = [], message } = data || {};
   const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || API_BASE;
   const logoSrc = backendBaseUrl + '/Assets/disaster_logo.png';
   const backgroundSrc = backendBaseUrl + '/Assets/background.jpg';
@@ -276,19 +276,6 @@ const CertificatePreview = ({ data }) => {
             <div style={{ fontSize: '1.7rem', fontWeight: 'bold', color: '#222', margin: '0.5rem 0 0.3rem' }}>
               {recipientName}
             </div>
-
-            {controlNumber && (
-              <div style={{ 
-                fontSize: '1.3rem', 
-                fontWeight: '500', 
-                color: '#000', 
-                margin: '0 0 0.3rem',
-                letterSpacing: '1px',
-                opacity: '0.85'
-              }}>
-                CN-{controlNumber.padStart(5, '0')}
-              </div>
-            )}
 
             <hr style={{ width: '60%', border: 'none', borderTop: '1px solid #000', margin: '0.3rem auto 0.8rem auto' }} />
 

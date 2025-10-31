@@ -106,7 +106,6 @@ async function generateBulkCertificates(data) {
       // Create data object for this recipient
       const certificateData = {
         name: recipient.name,
-        controlNumber: recipient.controlNumber,
         associate: recipient.name,
         signatories: data.signatories,
         message: data.message,
@@ -247,14 +246,6 @@ async function generateBulkCertificates(data) {
             word-wrap: break-word;
             max-width: 90%;
             line-height: 1.2;
-          }
-          .cert-control-number {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #666;
-            font-weight: 400;
-            margin-bottom: 0.3rem;
-            font-family: 'Montserrat', Arial, sans-serif;
           }
           .cert-divider {
             border: none;

@@ -342,14 +342,19 @@
 
 .sidebar-nav ul {
   list-style: none;
-  padding: 0 0 0 0;
-  margin: 0;
+  padding: 0 0 0 0 !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .sidebar-nav li {
   padding: 12px 28px 12px 28px;
   cursor: pointer;
   font-size: 1.08rem;
+  line-height: 1.5;
   display: flex;
   align-items: center;
   border-radius: 10px;
@@ -358,6 +363,11 @@
   color: #222;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s;
   box-shadow: none;
+  box-sizing: border-box;
+  /* Ensure consistent font properties */
+  font-family: inherit;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .sidebar-nav li:hover {
@@ -384,6 +394,360 @@
 
 .sidebar-nav li.active svg {
   color: #fff;
+}
+
+/* Nested Navigation Styles - Industry Standard Dropdown Pattern */
+.sidebar-nav ul > li.nav-parent,
+.sidebar-nav .nav-parent {
+  /* Parent li should look EXACTLY like a regular li item */
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  cursor: default;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: inherit;
+  list-style: none !important;
+  position: relative !important;
+}
+
+/* The trigger div BECOMES the visual parent item - styled exactly like regular li */
+.sidebar-nav ul > li.nav-parent > div.nav-parent-trigger,
+.sidebar-nav .nav-parent > div.nav-parent-trigger {
+  /* EXACT match to .sidebar-nav li - inherit all font properties from parent li */
+  padding: 12px 0px 12px 0px !important;
+  margin: 0 !important;
+  margin-bottom: 6px !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  border-radius: 10px !important;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  text-align: left !important;
+  position: relative !important;
+  /* Match .sidebar-nav li font properties exactly */
+  font-size: 16px !important;
+  color: #222 !important;
+  font-family: inherit !important;
+}
+
+.sidebar-nav ul > li.nav-parent > div.nav-parent-trigger .nav-chevron,
+.sidebar-nav .nav-parent > div.nav-parent-trigger .nav-chevron {
+  margin-left: auto;
+  font-size: 0.9rem;
+  margin-right: 0 !important;
+  flex-shrink: 0;
+}
+
+.sidebar-nav .nav-parent > div.nav-parent-trigger:hover {
+  background: #fbeaec !important;
+  color: #A11C22;
+  box-shadow: 0 2px 8px rgba(161,28,34,0.04);
+}
+
+.sidebar-nav ul > li.nav-parent > div.nav-parent-trigger > svg:first-of-type,
+.sidebar-nav .nav-parent > div.nav-parent-trigger > svg:first-of-type {
+  margin-right: 10px;
+  width: 22px;
+  text-align: center;
+  color: #A11C22;
+  font-size: 1.2em;
+}
+
+/* Parent should NEVER be highlighted, even when sub-items are active (like Brevo reference) */
+.sidebar-nav .nav-parent > div.nav-parent-trigger,
+.sidebar-nav .parent-active > div.nav-parent-trigger {
+  background: transparent !important;
+  color: #222 !important;
+}
+
+/* Override any active class that might be applied */
+.sidebar-nav .nav-parent > div.nav-parent-trigger.active {
+  background: transparent !important;
+  color: #222 !important;
+  padding: 12px 28px 12px 28px !important; /* Keep same padding as regular li */
+  box-shadow: none !important;
+}
+
+.sidebar-nav .nav-parent > div.nav-parent-trigger.active > svg:first-of-type {
+  color: #A11C22 !important; /* Keep icon color normal, not white */
+}
+
+.sidebar-nav .nav-parent > div.nav-parent-trigger.active .nav-chevron {
+  color: #222 !important; /* Keep chevron color normal */
+}
+
+/* Submenu positioned below parent, indented */
+.sidebar-nav .nav-submenu {
+  list-style: none;
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  /* Positioned as normal block flow element below parent trigger */
+}
+
+.sidebar-nav .nav-submenu li {
+  /* Submenu items indented - standard pattern */
+  padding: 10px 28px 10px 40px !important; /* Reduced left padding for less indentation */
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #444;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  box-shadow: none;
+}
+
+.sidebar-nav .nav-submenu li:hover {
+  background: #fbeaec;
+  color: #A11C22;
+  box-shadow: 0 2px 8px rgba(161,28,34,0.04);
+}
+
+.sidebar-nav .nav-submenu li svg {
+  margin-right: 12px;
+  width: 18px;
+  text-align: center;
+  color: #A11C22;
+  font-size: 1.1em;
+}
+
+.sidebar-nav .nav-submenu li.active {
+  background: linear-gradient(90deg, #A11C22 90%, #fff 100%);
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 28px 10px 40px !important; /* Same padding as non-active for consistency */
+  box-shadow: 0 4px 16px rgba(161,28,34,0.10);
+  font-weight: 600;
+}
+
+.sidebar-nav .nav-submenu li.active svg {
+  color: #fff;
+}
+
+/* Removed - parent should not be highlighted when sub-items are active */
+
+/* ========================================
+   RESPONSIVE STYLES FOR SIDEBAR NAVIGATION
+   ======================================== */
+
+/* Tablet View (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .sidebar-nav {
+    padding: 16px 0 0 0;
+  }
+
+  .sidebar-nav li {
+    padding: 10px 20px 10px 20px;
+    font-size: 1rem;
+    margin-bottom: 5px;
+  }
+
+  .sidebar-nav li svg {
+    margin-right: 12px;
+    width: 20px;
+    font-size: 1.1em;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger {
+    padding: 12px 0px 12px 0px !important;
+    font-size: 1rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger > svg:first-of-type,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger > svg:first-of-type {
+    margin-right: 12px;
+    width: 20px;
+    font-size: 1.1em;
+  }
+
+  .sidebar-nav .nav-submenu li {
+    padding: 8px 20px 8px 32px !important;
+    font-size: 0.9rem;
+  }
+
+  .sidebar-nav .nav-submenu li.active {
+    padding: 8px 20px 8px 32px !important;
+  }
+
+  .sidebar-nav .nav-submenu li svg {
+    margin-right: 10px;
+    width: 16px;
+    font-size: 1em;
+  }
+
+  .sidebar-footer {
+    padding: 20px 16px;
+  }
+}
+
+/* Mobile/Tablet View (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .sidebar-nav {
+    padding: 14px 0 0 0;
+  }
+
+  .sidebar-nav li {
+    padding: 10px 16px 10px 16px;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+    border-radius: 8px;
+  }
+
+  .sidebar-nav li.active {
+    padding-left: 20px;
+  }
+
+  .sidebar-nav li svg {
+    margin-right: 10px;
+    width: 18px;
+    font-size: 1em;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger {
+    padding: 12px 0px 12px 0px !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 4px !important;
+    border-radius: 8px !important;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger > svg:first-of-type,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger > svg:first-of-type {
+    margin-right: 10px;
+    width: 18px;
+    font-size: 1em;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger .nav-chevron,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger .nav-chevron {
+    font-size: 0.85rem;
+  }
+
+  .sidebar-nav .nav-submenu li {
+    padding: 8px 16px 8px 28px !important;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+    border-radius: 6px;
+  }
+
+  .sidebar-nav .nav-submenu li.active {
+    padding: 8px 16px 8px 28px !important;
+  }
+
+  .sidebar-nav .nav-submenu li svg {
+    margin-right: 8px;
+    width: 16px;
+    font-size: 0.95em;
+  }
+
+  .sidebar-footer {
+    padding: 16px 12px;
+  }
+
+  .logout-button {
+    font-size: 0.95rem;
+    padding: 10px 0;
+  }
+}
+
+/* Mobile View (max-width: 480px) */
+@media (max-width: 480px) {
+  .sidebar-nav {
+    padding: 12px 0 0 0;
+  }
+
+  .sidebar-nav li {
+    padding: 8px 12px 8px 12px;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+    border-radius: 6px;
+    font-weight: 600;
+    white-space: nowrap; /* Prevent text wrapping on mobile */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-nav li.active {
+    padding-left: 16px;
+    font-size: 0.9rem;
+  }
+
+  .sidebar-nav li svg {
+    margin-right: 8px;
+    width: 16px;
+    font-size: 0.95em;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger {
+    padding: 12px 0px 12px 0px !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 3px !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    white-space: nowrap; /* Prevent text wrapping on mobile */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger > svg:first-of-type,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger > svg:first-of-type {
+    margin-right: 8px;
+    width: 16px;
+    font-size: 0.95em;
+  }
+
+  .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger .nav-chevron,
+  .sidebar-nav .nav-parent > div.nav-parent-trigger .nav-chevron {
+    font-size: 0.8rem;
+    margin-right: 4px;
+  }
+
+  .sidebar-nav .nav-submenu li {
+    padding: 6px 12px 6px 24px !important;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .sidebar-nav .nav-submenu li.active {
+    padding: 6px 12px 6px 24px !important;
+    font-weight: 600;
+  }
+
+  .sidebar-nav .nav-submenu li svg {
+    margin-right: 6px;
+    width: 14px;
+    font-size: 0.9em;
+  }
+
+  .sidebar-footer {
+    padding: 12px 10px;
+  }
+
+  .logout-button {
+    font-size: 0.9rem;
+    padding: 10px 0;
+    gap: 8px;
+  }
 }
 
 .sidebar-footer {

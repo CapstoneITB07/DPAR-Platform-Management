@@ -5,7 +5,7 @@ import '../css/BulkCertificateModal.css';
 
 const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCertificateDataChange }) => {
   const [localData, setLocalData] = useState(certificateData);
-  const [recipients, setRecipients] = useState([{ name: '', controlNumber: '' }]);
+  const [recipients, setRecipients] = useState([{ name: '' }]);
   const [downloading, setDownloading] = useState(false);
   const [bulkInput, setBulkInput] = useState('');
   const [debounceTimer, setDebounceTimer] = useState(null);
@@ -118,7 +118,7 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
   };
 
   const addRecipient = () => {
-    setRecipients([...recipients, { name: '', controlNumber: '' }]);
+    setRecipients([...recipients, { name: '' }]);
   };
 
   const removeRecipient = (index) => {
@@ -129,12 +129,6 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
 
   const updateRecipient = (index, field, value) => {
     const updatedRecipients = [...recipients];
-    
-    // If updating control number, extract only numbers
-    if (field === 'controlNumber') {
-      value = value.replace(/[^0-9]/g, '');
-    }
-    
     updatedRecipients[index] = { ...updatedRecipients[index], [field]: value };
     setRecipients(updatedRecipients);
   };
@@ -142,23 +136,20 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
   const parseBulkInput = () => {
     const lines = bulkInput.split('\n').filter(line => line.trim());
     const parsedRecipients = lines.map(line => {
+      // Just take the first part (name) from tab or comma separated input
       const parts = line.split('\t');
-      if (parts.length >= 2) {
-        // Extract only numbers from control number
-        const controlNumber = parts[1].trim().replace(/[^0-9]/g, '');
-        return { name: parts[0].trim(), controlNumber: controlNumber };
+      if (parts.length >= 1) {
+        return { name: parts[0].trim() };
       } else {
         const commaParts = line.split(',');
-        if (commaParts.length >= 2) {
-          // Extract only numbers from control number, ignoring any letters after comma
-          const controlNumber = commaParts[1].trim().replace(/[^0-9]/g, '');
-          return { name: commaParts[0].trim(), controlNumber: controlNumber };
+        if (commaParts.length >= 1) {
+          return { name: commaParts[0].trim() };
         }
       }
-      return { name: line.trim(), controlNumber: '' };
+      return { name: line.trim() };
     }).filter(recipient => recipient.name);
     
-    setRecipients(parsedRecipients.length > 0 ? parsedRecipients : [{ name: '', controlNumber: '' }]);
+    setRecipients(parsedRecipients.length > 0 ? parsedRecipients : [{ name: '' }]);
   };
 
   const isFormValid = () => {
@@ -174,7 +165,7 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
       if (!signatory.name || !signatory.title) return false;
     }
     for (const recipient of recipients) {
-      if (!recipient.name || !recipient.controlNumber) return false;
+      if (!recipient.name) return false;
     }
     return true;
   };
@@ -202,13 +193,13 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
       }
       
       for (const recipient of recipients) {
-        if (!recipient.name || !recipient.controlNumber) {
-          alert('Please fill out all recipient names and control numbers.');
+        if (!recipient.name) {
+          alert('Please fill out all recipient names.');
           return;
         }
       }
       
-      alert('Please fill out all required fields: message, each signatory\'s name and title, and all recipient names and control numbers.');
+      alert('Please fill out all required fields: message, each signatory\'s name and title, and all recipient names.');
       return;
     }
 
@@ -296,13 +287,12 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
               <div className="bulk-input-section">
                 <h3>Bulk Input</h3>
                 <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '10px' }}>
-                  Paste names and control numbers separated by tabs or commas (one per line).
-                  Numbers only needed for CN (e.g., 123 → CN-00123):
+                  Paste names from Excel (one per line):
                 </p>
                 <textarea
                   value={bulkInput}
                   onChange={(e) => setBulkInput(e.target.value)}
-                  placeholder="John Doe&#9;123&#10;Jane Smith&#9;456&#10;Mike Johnson&#9;789abc"
+                  placeholder="John Doe&#10;Jane Smith&#10;Mike Johnson"
                   style={{
                     width: '100%',
                     height: '120px',
@@ -334,7 +324,6 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
                 <div className="recipients-table">
                   <div className="recipients-header">
                     <div className="recipient-name-header">Name</div>
-                    <div className="recipient-cn-header">Control Number</div>
                     <div className="recipient-actions-header">Actions</div>
                   </div>
                   {recipients.map((recipient, index) => (
@@ -345,13 +334,6 @@ const BulkCertificateModal = ({ show, onClose, associates, certificateData, onCe
                         value={recipient.name}
                         onChange={(e) => updateRecipient(index, 'name', e.target.value)}
                         className="recipient-name-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Numbers only (e.g., 123)"
-                        value={recipient.controlNumber}
-                        onChange={(e) => updateRecipient(index, 'controlNumber', e.target.value)}
-                        className="recipient-cn-input"
                       />
                       <div className="recipient-actions">
                         {recipients.length > 1 && (

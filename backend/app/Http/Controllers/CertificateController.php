@@ -8,40 +8,6 @@ use Illuminate\Support\Facades\Log;
 
 class CertificateController extends Controller
 {
-    /**
-     * Format control number to CN-XXXXX format
-     */
-    private function formatControlNumber($controlNumber)
-    {
-        if (empty($controlNumber) || $controlNumber === 'N/A') {
-            return 'N/A';
-        }
-
-        // Extract only numbers from the control number
-        $numbers = preg_replace('/[^0-9]/', '', $controlNumber);
-
-        // If no numbers found, return original
-        if (empty($numbers)) {
-            return $controlNumber;
-        }
-
-        // Pad with zeros to ensure 5 digits and format as CN-XXXXX
-        $paddedNumber = str_pad($numbers, 5, '0', STR_PAD_LEFT);
-        return 'CN-' . $paddedNumber;
-    }
-
-    /**
-     * Process recipients array to format control numbers
-     */
-    private function processRecipients($recipients)
-    {
-        return array_map(function ($recipient) {
-            return [
-                'name' => $recipient['name'],
-                'controlNumber' => $this->formatControlNumber($recipient['controlNumber'])
-            ];
-        }, $recipients);
-    }
 
     public function store(Request $request)
     {
@@ -50,7 +16,6 @@ class CertificateController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'nullable|string',
-                'controlNumber' => 'nullable|string',
                 'associate' => 'nullable|string',
                 'signatories' => 'required|array|min:1|max:5',
                 'signatories.*.name' => 'required|string',
@@ -67,7 +32,6 @@ class CertificateController extends Controller
             $data = [
                 'name' => $validated['name'] ?? null,
                 'associate' => $validated['associate'] ?? $validated['name'] ?? 'Certificate Recipient',
-                'controlNumber' => $this->formatControlNumber($validated['controlNumber'] ?? 'N/A'),
                 'signatories' => $validated['signatories'],
                 'message' => $validated['message'],
                 'logoUrl' => $logoUrl,
@@ -133,7 +97,6 @@ class CertificateController extends Controller
             $validated = $request->validate([
                 'recipients' => 'required|array|min:1',
                 'recipients.*.name' => 'required|string',
-                'recipients.*.controlNumber' => 'required|string',
                 'signatories' => 'required|array|min:1|max:5',
                 'signatories.*.name' => 'required|string',
                 'signatories.*.title' => 'required|string',
@@ -147,7 +110,11 @@ class CertificateController extends Controller
             $logoUrl = str_replace('localhost', '127.0.0.1', $logoUrl);
 
             $data = [
-                'recipients' => $this->processRecipients($validated['recipients']),
+                'recipients' => array_map(function ($recipient) {
+                    return [
+                        'name' => $recipient['name']
+                    ];
+                }, $validated['recipients']),
                 'signatories' => $validated['signatories'],
                 'message' => $validated['message'],
                 'logoUrl' => $logoUrl,

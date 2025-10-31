@@ -293,7 +293,7 @@ function CitizenPage() {
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (selectedAnnouncement || selectedProgram) {
+    if (showAnnouncementModal || showProgramModal) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
@@ -303,7 +303,7 @@ function CitizenPage() {
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [selectedAnnouncement, selectedProgram]);
+  }, [showAnnouncementModal, showProgramModal]);
 
   // Helper function to get logo URL (similar to AssociateGroups.js)
   const getLogoUrl = (logoPath) => {
@@ -815,10 +815,16 @@ function CitizenPage() {
         </div>
       )}
       {/* Announcement Modal */}
-      {selectedAnnouncement && (
-        <div className="citizen-modal-overlay">
-          <div className="citizen-modal-content">
-            <button className="citizen-modal-close" onClick={() => setSelectedAnnouncement(null)}>&times;</button>
+      {showAnnouncementModal && selectedAnnouncement && (
+        <div className="citizen-modal-overlay" onClick={() => {
+          setShowAnnouncementModal(false);
+          setSelectedAnnouncement(null);
+        }}>
+          <div className="citizen-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="citizen-modal-close" onClick={() => {
+              setShowAnnouncementModal(false);
+              setSelectedAnnouncement(null);
+            }}>&times;</button>
             <div className="citizen-announcement-modal-header">
               <h3 className="citizen-announcement-modal-title">{selectedAnnouncement.title}</h3>
             </div>
@@ -924,9 +930,15 @@ function CitizenPage() {
       )}
       {/* Enhanced Training Program Details Modal */}
       {showProgramModal && selectedProgram && (
-        <div className="citizen-modal-overlay">
-          <div className="citizen-modal-content">
-            <button className="citizen-modal-close" onClick={() => setShowProgramModal(false)}>&times;</button>
+        <div className="citizen-modal-overlay" onClick={() => {
+          setShowProgramModal(false);
+          setSelectedProgram(null);
+        }}>
+          <div className="citizen-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="citizen-modal-close" onClick={() => {
+              setShowProgramModal(false);
+              setSelectedProgram(null);
+            }}>&times;</button>
             
             {/* Modal Header */}
             <div className="citizen-training-modal-header">

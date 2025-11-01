@@ -6,7 +6,6 @@ use App\Models\PushSubscription;
 use Illuminate\Http\Request;
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
-use Illuminate\Support\Facades\Log;
 
 class PushNotificationController extends Controller
 {
@@ -24,20 +23,15 @@ class PushNotificationController extends Controller
         try {
             $userId = $request->user() ? $request->user()->id : null;
 
-            // Check if subscription already exists
             $subscription = PushSubscription::where('endpoint', $validated['endpoint'])->first();
 
             if ($subscription) {
-                // Check if keys have changed - if so, delete old subscription and create new one
                 if (
                     $subscription->public_key !== $validated['keys']['p256dh'] ||
                     $subscription->auth_token !== $validated['keys']['auth']
                 ) {
-
-                    Log::info('Subscription keys changed, recreating subscription');
                     $subscription->delete();
 
-                    // Create new subscription with new keys
                     $subscription = PushSubscription::create([
                         'user_id' => $userId,
                         'endpoint' => $validated['endpoint'],
@@ -48,7 +42,6 @@ class PushNotificationController extends Controller
                         'user_agent' => $request->header('User-Agent'),
                     ]);
                 } else {
-                    // Keys are the same, just update user info
                     $subscription->update([
                         'user_id' => $userId,
                         'is_enabled' => true,
@@ -56,7 +49,6 @@ class PushNotificationController extends Controller
                     ]);
                 }
             } else {
-                // Create new subscription
                 $subscription = PushSubscription::create([
                     'user_id' => $userId,
                     'endpoint' => $validated['endpoint'],
@@ -74,7 +66,6 @@ class PushNotificationController extends Controller
                 'subscription_id' => $subscription->id
             ]);
         } catch (\Exception $e) {
-            Log::error('Push subscription error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save subscription'
@@ -107,7 +98,6 @@ class PushNotificationController extends Controller
                 'message' => 'Subscription not found'
             ], 404);
         } catch (\Exception $e) {
-            Log::error('Push unsubscribe error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to unsubscribe'
@@ -142,7 +132,6 @@ class PushNotificationController extends Controller
                 'message' => 'Subscription not found'
             ], 404);
         } catch (\Exception $e) {
-            Log::error('Push toggle error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to toggle subscription'
@@ -175,7 +164,6 @@ class PushNotificationController extends Controller
                 'endpoint' => $subscription ? $subscription->endpoint : null
             ]);
         } catch (\Exception $e) {
-            Log::error('Push status error: ' . $e->getMessage());
             return response()->json([
                 'subscribed' => false,
                 'enabled' => false
@@ -203,32 +191,23 @@ class PushNotificationController extends Controller
             $subscriptions = $query->get();
 
             if ($subscriptions->isEmpty()) {
-                Log::info('No active push subscriptions found');
                 return false;
             }
 
-            Log::info('Found ' . $subscriptions->count() . ' active push subscriptions');
-
-            // Try to send actual push notifications using a different approach
             $successCount = 0;
             foreach ($subscriptions as $sub) {
                 try {
                     $result = self::sendDirectNotification($sub, $title, $body, $data);
                     if ($result) {
                         $successCount++;
-                        Log::info('Push notification sent successfully to: ' . substr($sub->endpoint, 0, 50) . '...');
-                    } else {
-                        Log::error('Failed to send notification to: ' . substr($sub->endpoint, 0, 50) . '...');
                     }
                 } catch (\Exception $e) {
-                    Log::error('Error sending notification to subscription ' . $sub->id . ': ' . $e->getMessage());
+                    // Silent fail
                 }
             }
 
-            Log::info('Push notifications sent: ' . $successCount . ' successful, ' . ($subscriptions->count() - $successCount) . ' failed');
             return $successCount > 0;
         } catch (\Exception $e) {
-            Log::error('Failed to process push notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -239,86 +218,158 @@ class PushNotificationController extends Controller
     private static function sendDirectNotification($subscription, $title, $body, $data = [])
     {
         try {
-            // Prepare notification payload
+            // Prepare notification payload - match daily-quest format
+            // Service worker expects: { message, body, icon }
+            $icon = isset($data['icon']) ? $data['icon'] : '/Assets/disaster_logo.png';
+
+            // Extract icon from data if present, otherwise use default
+            $payloadData = $data;
+            if (!isset($payloadData['icon'])) {
+                $payloadData['icon'] = $icon;
+            }
+
             $payload = json_encode([
-                'title' => $title,
+                'message' => $title,  // Use 'message' instead of 'title' to match daily-quest
                 'body' => $body,
-                'icon' => '/Assets/disaster_logo.png',
-                'badge' => '/Assets/disaster_logo.png',
-                'data' => $data,
+                'icon' => $icon,
+                'data' => $payloadData,  // Keep data structure for DPAR
             ]);
 
             // Get VAPID keys from config
             $vapidConfig = config('services.vapid');
-            $vapidPublicKey = trim($vapidConfig['public_key'] ?? '');
-            $vapidPrivateKey = trim($vapidConfig['private_key'] ?? '');
-            $vapidSubject = $vapidConfig['subject'] ?? 'mailto:admin@dpar.com';
+            // Only remove whitespace - preserve exact format from .env
+            // Keys from keynate.com generator should already be in correct base64url format
+            $vapidPublicKey = preg_replace('/\s+/', '', trim($vapidConfig['public_key'] ?? ''));
+            $vapidPrivateKey = preg_replace('/\s+/', '', trim($vapidConfig['private_key'] ?? ''));
+            $vapidSubject = $vapidConfig['subject'] ?? 'mailto:dparvc1@gmail.com';
 
-            if (!$vapidPublicKey || !$vapidPrivateKey) {
-                Log::error('VAPID keys not configured');
+            if (empty($vapidPublicKey) || empty($vapidPrivateKey)) {
                 return false;
             }
 
-            // Try different VAPID key formats
-            $authConfigs = [
-                // Try with full VAPID structure
-                [
-                    'VAPID' => [
-                        'subject' => $vapidSubject,
-                        'publicKey' => $vapidPublicKey,
-                        'privateKey' => $vapidPrivateKey,
-                    ],
+            // Validate key format - keys from keynate.com should be base64url
+            // But we need to handle both base64 and base64url formats
+            $vapidPublicKeyForValidation = $vapidPublicKey;
+            $vapidPrivateKeyForValidation = $vapidPrivateKey;
+
+            // If keys contain base64 characters (+ or /), they need conversion to base64url
+            // But preserve original for WebPush (library handles both)
+            if (strpos($vapidPublicKey, '+') !== false || strpos($vapidPublicKey, '/') !== false) {
+                $vapidPublicKeyForValidation = strtr($vapidPublicKey, '+/', '-_');
+            }
+            if (strpos($vapidPrivateKey, '+') !== false || strpos($vapidPrivateKey, '/') !== false) {
+                $vapidPrivateKeyForValidation = strtr($vapidPrivateKey, '+/', '-_');
+            }
+
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $vapidPublicKeyForValidation) || !preg_match('/^[A-Za-z0-9_-]+$/', $vapidPrivateKeyForValidation)) {
+                return false;
+            }
+
+            // Validate private key length - when decoded, it must be exactly 32 bytes (256 bits)
+            // A base64url encoded 32-byte key should be 43 characters (32 * 4/3 = 42.67, rounded up)
+            try {
+                // Decode base64url (convert -_ back to +/ for base64_decode)
+                // Try both original and normalized versions
+                $keyToDecode = rtrim($vapidPrivateKeyForValidation, '=');
+                $decodedPrivateKey = base64_decode(strtr($keyToDecode, '-_', '+/') . str_repeat('=', (4 - strlen($keyToDecode) % 4) % 4), true);
+
+                // If that fails, try the original key
+                if ($decodedPrivateKey === false) {
+                    $keyToDecode = rtrim($vapidPrivateKey, '=');
+                    $decodedPrivateKey = base64_decode(strtr($keyToDecode, '-_', '+/') . str_repeat('=', (4 - strlen($keyToDecode) % 4) % 4), true);
+                }
+
+                if ($decodedPrivateKey === false) {
+                    return false;
+                }
+
+                $decodedLength = strlen($decodedPrivateKey);
+                if ($decodedLength !== 32) {
+                    return false;
+                }
+            } catch (\Exception $e) {
+                return false;
+            }
+
+            if (empty($subscription->public_key) || empty($subscription->auth_token)) {
+                return false;
+            }
+
+            $publicKey = preg_replace('/\s+/', '', $subscription->public_key);
+            $authToken = preg_replace('/\s+/', '', $subscription->auth_token);
+
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $publicKey) || !preg_match('/^[A-Za-z0-9_-]+$/', $authToken)) {
+                return false;
+            }
+
+            $auth = [
+                'VAPID' => [
+                    'subject' => $vapidSubject,
+                    'publicKey' => $vapidPublicKey,
+                    'privateKey' => $vapidPrivateKey,
                 ],
-                // Try with just keys
-                [
-                    'VAPID' => [
-                        'publicKey' => $vapidPublicKey,
-                        'privateKey' => $vapidPrivateKey,
-                    ],
-                ],
-                // Try with different subject format
-                [
-                    'VAPID' => [
-                        'subject' => 'mailto:no-reply@dparvc.com',
-                        'publicKey' => $vapidPublicKey,
-                        'privateKey' => $vapidPrivateKey,
-                    ],
-                ]
             ];
 
-            // Create WebPush instance with VAPID authentication
-            $webPush = new WebPush($authConfigs[0]); // Use first auth config
-            $webPush->setAutomaticPadding(false);
-            $webPush->setDefaultOptions([
-                'TTL' => 300,
-                'urgency' => 'normal'
-            ]);
+            try {
+                $webPush = new WebPush($auth);
+                $webPush->setAutomaticPadding(false);
+            } catch (\Exception $e) {
+                return false;
+            }
 
-            // Create subscription object
             $webPushSubscription = Subscription::create([
                 'endpoint' => $subscription->endpoint,
-                'publicKey' => $subscription->public_key,
-                'authToken' => $subscription->auth_token,
-                'contentEncoding' => $subscription->content_encoding,
+                'publicKey' => $publicKey,
+                'authToken' => $authToken,
+                'contentEncoding' => $subscription->content_encoding ?? 'aesgcm',
             ]);
 
-            // Queue and send notification
-            $webPush->queueNotification($webPushSubscription, $payload);
-            $results = $webPush->flush();
+            try {
+                $webPush->queueNotification($webPushSubscription, $payload);
+            } catch (\Exception $queueError) {
+                return false;
+            }
 
-            foreach ($results as $result) {
+            try {
+                $results = $webPush->flush();
+                $resultsArray = is_array($results) ? $results : iterator_to_array($results);
+            } catch (\Exception $flushException) {
+                try {
+                    $subscription->update(['is_enabled' => false]);
+                } catch (\Exception $updateError) {
+                    // Ignore
+                }
+                return false;
+            }
+
+            if (empty($resultsArray)) {
+                return true;
+            }
+
+            foreach ($resultsArray as $result) {
                 if ($result->isSuccess()) {
-                    Log::info('Push notification sent successfully to: ' . $result->getEndpoint());
                     return true;
                 } else {
-                    Log::error('Push notification failed: ' . $result->getReason());
+                    $reason = $result->getReason();
+                    if (
+                        strpos($reason, '410') !== false ||
+                        strpos($reason, 'expired') !== false ||
+                        strpos($reason, 'Invalid') !== false ||
+                        strpos($reason, '410 Gone') !== false
+                    ) {
+                        $subscription->update(['is_enabled' => false]);
+                    }
                     return false;
                 }
             }
 
             return false;
         } catch (\Exception $e) {
-            Log::error('Error in sendDirectNotification: ' . $e->getMessage());
+            try {
+                $subscription->update(['is_enabled' => false]);
+            } catch (\Exception $updateError) {
+                // Ignore
+            }
             return false;
         }
     }
@@ -363,7 +414,6 @@ class PushNotificationController extends Controller
                 'deleted_invalid' => $invalidCount
             ]);
         } catch (\Exception $e) {
-            Log::error('Error clearing old subscriptions: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to clear old subscriptions'
@@ -385,7 +435,6 @@ class PushNotificationController extends Controller
                 'deleted_count' => 'all'
             ]);
         } catch (\Exception $e) {
-            Log::error('Error clearing all subscriptions: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to clear all subscriptions'
@@ -442,7 +491,6 @@ class PushNotificationController extends Controller
                 })
             ]);
         } catch (\Exception $e) {
-            Log::error('Error debugging subscriptions: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to debug subscriptions',
@@ -457,8 +505,6 @@ class PushNotificationController extends Controller
     private static function sendNotificationsIndividually($subscriptions, $payload)
     {
         try {
-            Log::info('Attempting individual notification sending as fallback');
-
             $successCount = 0;
             foreach ($subscriptions as $sub) {
                 try {
@@ -497,22 +543,15 @@ class PushNotificationController extends Controller
                     foreach ($results as $result) {
                         if ($result->isSuccess()) {
                             $successCount++;
-                            Log::info('Individual notification sent successfully to: ' . $result->getEndpoint());
-                        } else {
-                            Log::error('Individual notification failed: ' . $result->getReason());
                         }
                     }
                 } catch (\Exception $e) {
-                    Log::error('Failed to send individual notification to subscription ' . $sub->id . ': ' . $e->getMessage());
-                    // Try one more time with a different approach
                     self::tryAlternativeNotificationSending($sub, $payload);
                 }
             }
 
-            Log::info('Individual notification sending completed. Success: ' . $successCount);
             return $successCount > 0;
         } catch (\Exception $e) {
-            Log::error('Individual notification sending failed: ' . $e->getMessage());
             return false;
         }
     }
@@ -523,15 +562,8 @@ class PushNotificationController extends Controller
     private static function tryAlternativeNotificationSending($sub, $payload)
     {
         try {
-            Log::info('Trying alternative notification sending for subscription ' . $sub->id);
-
-            // For now, just log that we tried
-            Log::info('Alternative notification method attempted for: ' . $sub->endpoint);
-
-            // In the future, we could implement a different push service here
             return true;
         } catch (\Exception $e) {
-            Log::error('Alternative notification sending failed: ' . $e->getMessage());
             return false;
         }
     }

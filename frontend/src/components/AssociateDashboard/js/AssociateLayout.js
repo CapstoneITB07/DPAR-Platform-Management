@@ -24,12 +24,14 @@ function AssociateLayout({ children }) {
     email: '',
     director: '',
     type: '',
+    username: '',
   });
   const [profileForm, setProfileForm] = useState({
     name: '',
     email: '',
     director: '',
     type: '',
+    username: '',
   });
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
@@ -61,9 +63,11 @@ function AssociateLayout({ children }) {
   const [showDirectorWarning, setShowDirectorWarning] = useState(false);
   const [originalDirectorValues, setOriginalDirectorValues] = useState({
     director: '',
-    email: ''
+    email: '',
+    username: ''
   });
   const [pendingChanges, setPendingChanges] = useState({});
+  const [warningModalUsername, setWarningModalUsername] = useState('');
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const NOTIF_READ_KEY = `associateNotifRead_${userId}`;
   const [notifications, setNotifications] = useState([]);
@@ -332,6 +336,9 @@ function AssociateLayout({ children }) {
     if (directorChanged) {
       // Store pending changes and show warning
       setPendingChanges(profileForm);
+      // Initialize warning modal username as empty (user must enter new one)
+      setWarningModalUsername('');
+      setProfileError(''); // Clear any previous errors
       setShowDirectorWarning(true);
       return;
     }
@@ -340,7 +347,7 @@ function AssociateLayout({ children }) {
     await performProfileUpdate();
   };
 
-  const performProfileUpdate = async () => {
+  const performProfileUpdate = async (overrideFormData = null) => {
     setIsLoading(true);
     setProfileError('');
     setProfileSuccess('');
@@ -348,12 +355,16 @@ function AssociateLayout({ children }) {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
+      // Use overrideFormData if provided, otherwise use profileForm
+      const formDataToUse = overrideFormData || profileForm;
+      
       // Create FormData to handle both form fields and file upload
       const formData = new FormData();
-      formData.append('name', profileForm.name);
-      formData.append('director', profileForm.director);
-      formData.append('type', profileForm.type);
-      formData.append('email', profileForm.email); // Include email even though it's read-only
+      formData.append('name', formDataToUse.name);
+      formData.append('director', formDataToUse.director);
+      formData.append('type', formDataToUse.type);
+      formData.append('email', formDataToUse.email); // Include email even though it's read-only
+      formData.append('username', formDataToUse.username);
       
       // Add image if selected
       if (profileForm.profileImage) {
@@ -374,13 +385,16 @@ function AssociateLayout({ children }) {
         setProfileImage(response.data.profile_picture_url);
       }
       // Update the sidebar name immediately
-      setUserDisplayName(profileForm.name);
-      // Refresh profile data to update UI
+      setUserDisplayName(formDataToUse.name);
+      // Update profile form state first with the updated values
+      setProfileForm({
+        ...formDataToUse,
+        profileImage: null
+      });
+      // Refresh profile data to update UI (this will also update originalDirectorValues)
       await fetchProfile();
       // Reset form changes state
       setHasFormChanges(false);
-      // Clear image selection (preview will be cleared by fetchProfile)
-      setProfileForm(prev => ({ ...prev, profileImage: null }));
     } catch (error) {
       setProfileError(error.response?.data?.message || 'Failed to update profile');
     } finally {
@@ -389,19 +403,41 @@ function AssociateLayout({ children }) {
   };
 
   const handleDirectorChangeConfirm = async () => {
+    // Validate that username is provided and different from original
+    if (!warningModalUsername || warningModalUsername.trim() === '') {
+      setProfileError('Username is required when changing director. Please enter a new username.');
+      return;
+    }
+    
+    if (warningModalUsername === originalDirectorValues.username) {
+      setProfileError('Username must be different from the current username when changing director.');
+      return;
+    }
+    
+    // Update pendingChanges with the new username from the modal
+    const updatedPendingChanges = {
+      ...pendingChanges,
+      username: warningModalUsername.trim()
+    };
+    
     setShowDirectorWarning(false);
-    setProfileForm(pendingChanges);
-    await performProfileUpdate();
+    // Update profile form state
+    setProfileForm(updatedPendingChanges);
+    // Pass the updated changes directly to performProfileUpdate to avoid async state issues
+    await performProfileUpdate(updatedPendingChanges);
   };
 
   const handleDirectorChangeCancel = () => {
     setShowDirectorWarning(false);
     setPendingChanges({});
+    setWarningModalUsername('');
+    setProfileError(''); // Clear any errors
     // Reset form to original values
     setProfileForm(prev => ({
       ...prev,
       director: originalDirectorValues.director,
-      email: originalDirectorValues.email
+      email: originalDirectorValues.email,
+      username: originalDirectorValues.username
     }));
   };
 
@@ -420,6 +456,7 @@ function AssociateLayout({ children }) {
         email: response.data.email || '',
         director: response.data.director || '',
         type: response.data.type || '',
+        username: response.data.username || '',
       });
       
       // Update profile data
@@ -428,6 +465,7 @@ function AssociateLayout({ children }) {
         email: response.data.email || '',
         director: response.data.director || '',
         type: response.data.type || '',
+        username: response.data.username || '',
       });
       
       // Update user display name for sidebar
@@ -450,7 +488,8 @@ function AssociateLayout({ children }) {
       // Store original director values for change detection
       setOriginalDirectorValues({
         director: response.data.director || '',
-        email: response.data.email || ''
+        email: response.data.email || '',
+        username: response.data.username || ''
       });
       
       // Update profile image
@@ -1262,6 +1301,35 @@ function AssociateLayout({ children }) {
                         color: '#333',
                         fontSize: window.innerWidth <= 480 ? '12px' : '14px'
                       }}>
+                        <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={profileForm.username}
+                        onChange={handleProfileFormChange}
+                        placeholder="Enter your username"
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '5px',
+                        fontWeight: '500',
+                        color: '#333',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                      }}>
                         <FontAwesomeIcon icon={faBuilding} style={{ marginRight: '8px', color: '#666' }} />
                         Organization Type
                       </label>
@@ -1760,7 +1828,8 @@ function AssociateLayout({ children }) {
             fontSize: '14px'
           }}>
             You are about to change the director information. This will create a new director history record 
-            and end the current director's tenure. This action cannot be undone.
+            and end the current director's tenure. <strong style={{ color: '#dc3545' }}>When changing the director, 
+            you must also change your username.</strong> This action cannot be undone.
           </p>
           
           <div style={{
@@ -1779,6 +1848,64 @@ function AssociateLayout({ children }) {
             {pendingChanges.email !== originalDirectorValues.email && (
               <p style={{ margin: '5px 0', fontSize: '13px', color: '#666' }}>
                 <strong>Email Address:</strong> "{originalDirectorValues.email}" → "{pendingChanges.email}"
+              </p>
+            )}
+            <p style={{ margin: '5px 0', fontSize: '13px', color: '#666' }}>
+              <strong>Username:</strong> Must be changed (see field below)
+            </p>
+          </div>
+          
+          <div style={{
+            marginBottom: '25px',
+            textAlign: 'left'
+          }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '500',
+              color: '#333',
+              fontSize: '14px'
+            }}>
+              <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
+              New Username <span style={{ color: '#dc3545' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={warningModalUsername}
+              onChange={(e) => {
+                setWarningModalUsername(e.target.value);
+                // Clear error when user starts typing
+                if (profileError) {
+                  setProfileError('');
+                }
+              }}
+              placeholder="Enter new username"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: profileError ? '1px solid #dc3545' : '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '14px',
+                boxSizing: 'border-box'
+              }}
+              required
+            />
+            <p style={{
+              margin: '5px 0 0 0',
+              fontSize: '12px',
+              color: '#666',
+              fontStyle: 'italic'
+            }}>
+              Current username: <strong>{originalDirectorValues.username}</strong>
+            </p>
+            {profileError && (
+              <p style={{
+                margin: '8px 0 0 0',
+                fontSize: '12px',
+                color: '#dc3545',
+                fontWeight: '500'
+              }}>
+                {profileError}
               </p>
             )}
           </div>

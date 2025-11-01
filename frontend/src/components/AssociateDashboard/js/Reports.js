@@ -1361,16 +1361,6 @@ function Reports() {
                             {report.status === 'draft' && (
                               <>
                                 <button
-                                  className="action-btn delete-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(report.id);
-                                  }}
-                                  title="Delete"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
-                                <button
                                   className="action-btn edit-btn"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -1397,59 +1387,23 @@ function Reports() {
                                 </button>
                               </>
                             )}
-                            {report.status === 'rejected' && (
-                              <button
-                                className="action-btn delete-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(report.id);
-                                }}
-                                title="Delete & Create New Report"
-                              >
-                                <FontAwesomeIcon icon={faTrash} />
-                              </button>
-                            )}
                             {report.status === 'approved' && (
-                              <>
-                                <button
-                                  className="action-btn download-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDownloadPDF(report.id);
-                                  }}
-                                  title="Download PDF"
-                                  style={{
-                                    width: 'auto',
-                                    padding: '8px 12px',
-                                    gap: '6px',
-                                    minWidth: '100px'
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faFilePdf} />
-                                  <span style={{ fontSize: '12px', fontWeight: '600' }}>PDF</span>
-                                </button>
-                                <button
-                                  className="action-btn delete-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(report.id);
-                                  }}
-                                  title="Delete"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </button>
-                              </>
-                            )}
-                            {report.status !== 'draft' && report.status !== 'rejected' && report.status !== 'approved' && (
                               <button
-                                className="action-btn delete-btn"
+                                className="action-btn download-btn"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDelete(report.id);
+                                  handleDownloadPDF(report.id);
                                 }}
-                                title="Delete"
+                                title="Download PDF"
+                                style={{
+                                  width: 'auto',
+                                  padding: '8px 12px',
+                                  gap: '6px',
+                                  minWidth: '100px'
+                                }}
                               >
-                                <FontAwesomeIcon icon={faTrash} />
+                                <FontAwesomeIcon icon={faFilePdf} />
+                                <span style={{ fontSize: '12px', fontWeight: '600' }}>PDF</span>
                               </button>
                             )}
                           </div>

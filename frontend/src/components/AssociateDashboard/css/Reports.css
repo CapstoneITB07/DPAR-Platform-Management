@@ -1280,6 +1280,8 @@ button[type="button"]:last-child:hover {
   box-shadow: none;
   padding: 0;
   border-bottom: none;
+  position: static; /* Ensure not sticky */
+  z-index: auto;
 }
 
 .header-left {
@@ -1315,6 +1317,8 @@ button[type="button"]:last-child:hover {
   gap: 12px;
   justify-content: flex-end;
   flex-wrap: nowrap;
+  position: static; /* Ensure not sticky */
+  z-index: auto;
 }
 
 .search-bar {
@@ -1547,12 +1551,52 @@ button[type="button"]:last-child:hover {
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  height: 600px !important; /* Fixed height to ensure scrolling works */
+  max-height: 600px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  position: relative;
+  display: block;
+  flex-shrink: 0; /* Prevent flex shrinking */
+}
+
+/* Custom Scrollbar Styling */
+.table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Firefox scrollbar */
+.table-container {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
 .reports-table {
   width: 100%;
   border-collapse: collapse;
+  background: white;
+}
+
+.reports-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: white;
 }
 
@@ -1568,6 +1612,18 @@ button[type="button"]:last-child:hover {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Ensure sticky header maintains background on scroll */
+.reports-table thead tr {
+  background: white;
+}
+
+.reports-table thead tr th {
+  background: #f8fafc;
 }
 
 .reports-table tr:nth-child(even) {
@@ -2248,6 +2304,7 @@ button[type="button"]:last-child:hover {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    position: static; /* Ensure not sticky */
   }
   
   .header-actions {
@@ -2256,6 +2313,7 @@ button[type="button"]:last-child:hover {
     flex-direction: row !important;
     align-items: center;
     gap: 12px;
+    position: static; /* Ensure not sticky */
   }
   /* Remove stretching for buttons and search bar */
   .header-actions > .search-bar,
@@ -2297,10 +2355,15 @@ button[type="button"]:last-child:hover {
 }
 
 @media (max-width: 700px) {
+  .header-section {
+    position: static; /* Ensure not sticky */
+  }
+  
   .header-actions {
     flex-direction: row !important;
     align-items: center;
     gap: 8px;
+    position: static; /* Ensure not sticky */
   }
 }
 
@@ -2313,6 +2376,15 @@ button[type="button"]:last-child:hover {
     font-size: 1.8rem;
   }
   
+  .header-section {
+    position: static; /* Ensure not sticky on mobile */
+    margin-bottom: 20px;
+  }
+  
+  .header-actions {
+    position: static; /* Ensure not sticky on mobile */
+  }
+  
   .search-bar input {
     width: 100%;
     min-width: 150px;
@@ -2321,6 +2393,18 @@ button[type="button"]:last-child:hover {
   .add-report-btn {
     padding: 8px 16px;
     font-size: 14px;
+  }
+  
+  .reports-summary {
+    margin-bottom: 16px;
+  }
+  
+  .table-container {
+    height: 280px !important; /* Fixed height for mobile */
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    margin-top: 12px;
+    margin-bottom: 16px;
   }
   
   .reports-table {
@@ -2968,6 +3052,9 @@ tr.selected {
 @media (max-width: 700px) {
   .table-container {
     overflow-x: auto;
+    height: 320px !important; /* Fixed height for mobile */
+    max-height: 320px !important;
+    overflow-y: auto !important;
   }
   .reports-table {
     min-width: 600px;
@@ -2976,6 +3063,12 @@ tr.selected {
   .reports-table th,
   .reports-table td {
     padding: 12px 10px;
+  }
+  
+  /* Larger scrollbar on mobile for better usability */
+  .table-container::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
   }
 } 
 
@@ -3056,18 +3149,28 @@ tr.selected {
     flex-direction: row;
     gap: 10px;
     width: 100%;
+    align-items: stretch;
   }
   .add-report-btn,
   .bulk-delete-btn {
-    flex: 1 1 0;
-    width: 100%;
-    min-width: 0;
+    flex: 1 1 auto;
+    min-width: 120px; /* Prevent buttons from getting too small */
     max-width: none;
     justify-content: center;
-    font-size: 16px;
-    padding: 12px 0;
+    font-size: 14px; /* Slightly smaller to fit better */
+    padding: 12px 8px; /* Reduce horizontal padding on mobile */
     border-radius: 12px;
     height: 48px;
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Ensure icons and text fit properly */
+  .add-report-btn svg,
+  .bulk-delete-btn svg {
+    flex-shrink: 0; /* Prevent icon from shrinking */
+    margin-right: 4px;
   }
   .report-modal .form-row {
     display: block !important;
@@ -3145,6 +3248,23 @@ tr.selected {
     flex-direction: column !important;
     gap: 10px !important;
     padding: 8px 0 0 0 !important;
+  }
+}
+
+/* For very small screens, stack buttons vertically if needed */
+@media (max-width: 480px) {
+  .button-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .add-report-btn,
+  .bulk-delete-btn {
+    width: 100%;
+    min-width: 100%;
+    flex: 1 1 auto;
+    font-size: 15px;
+    padding: 12px 16px;
   }
 }
 

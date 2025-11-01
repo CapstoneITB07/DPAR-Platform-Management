@@ -587,10 +587,12 @@
   text-align: left;
 }
 
-.checkbox-column input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+.volunteer-table input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #a51d1d;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .sortable {

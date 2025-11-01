@@ -30,7 +30,8 @@ function AdminLayout({ children }) {
   });
   const [profileForm, setProfileForm] = useState({
     name: '',
-    email: ''
+    email: '',
+    username: ''
   });
   const [userDisplayName, setUserDisplayName] = useState('Admin');
   const [profileError, setProfileError] = useState('');
@@ -46,7 +47,8 @@ function AdminLayout({ children }) {
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const [originalProfileValues, setOriginalProfileValues] = useState({
     name: '',
-    email: ''
+    email: '',
+    username: ''
   });
   const navigate = useNavigate();
   const location = useLocation();
@@ -233,13 +235,16 @@ function AdminLayout({ children }) {
   };
 
   const handleProfileFormChange = (e) => {
-    // Since Name and Email are now read-only, this function is no longer needed
-    // but keeping it for potential future use
     const { name, value } = e.target;
     setProfileForm(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    // Check if any form field has changed (excluding read-only fields)
+    const updatedForm = { ...profileForm, [name]: value };
+    const hasChanges = updatedForm.username !== originalProfileValues.username || newProfileImage !== null;
+    setHasFormChanges(hasChanges);
   };
 
   const handleProfileImageChange = (e) => {
@@ -268,14 +273,17 @@ function AdminLayout({ children }) {
       reader.readAsDataURL(file);
       
       // Mark as having changes when image is selected
+      // Also check if username has changed
+      const usernameChanged = profileForm.username !== originalProfileValues.username;
       setHasFormChanges(true);
     } else {
       // Clear preview if no file selected
       setImagePreview(null);
       setNewProfileImage(null);
       
-      // Since Name and Email are read-only, only check for image changes
-      setHasFormChanges(false);
+      // Check if username has changed
+      const usernameChanged = profileForm.username !== originalProfileValues.username;
+      setHasFormChanges(usernameChanged);
     }
   };
 
@@ -288,34 +296,60 @@ function AdminLayout({ children }) {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
-      // Only update profile image since Name and Email are read-only
-      if (newProfileImage) {
+      // Check if username has changed or if there's a new profile image
+      const usernameChanged = profileForm.username !== originalProfileValues.username;
+      const hasChanges = usernameChanged || newProfileImage !== null;
+      
+      if (hasChanges) {
         const formData = new FormData();
-        formData.append('profile_picture', newProfileImage);
         
-        const response = await axiosInstance.post(`${API_BASE}/api/profile/update-picture`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
+        // If username changed, use the update endpoint (requires all fields)
+        if (usernameChanged) {
+          // Include all required fields for the update endpoint
+          formData.append('name', profileForm.name);
+          formData.append('email', profileForm.email);
+          formData.append('username', profileForm.username);
+          
+          // Add profile picture if selected
+          if (newProfileImage) {
+            formData.append('profile_image', newProfileImage);
           }
-        });
-        
-        // Profile update response logged for debugging (remove in production)
-        // console.log('Current imagePreview:', imagePreview ? 'exists' : 'null');
-        
-        // Update the profile image with the server response URL
-        if (response.data.profile_picture_url) {
-          setProfileImage(response.data.profile_picture_url);
-          // console.log('Updated profileImage with server URL:', response.data.profile_picture_url);
-        } else if (imagePreview) {
-          // Fallback to preview if no server URL
-          setProfileImage(imagePreview);
-          // console.log('Updated profileImage with preview');
+          
+          const response = await axiosInstance.post(`${API_BASE}/api/profile/update`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          if (response.data.profile_picture_url) {
+            setProfileImage(response.data.profile_picture_url);
+          }
+          setNewProfileImage(null);
+          setImagePreview(null);
+          setProfileSuccess(newProfileImage 
+            ? 'Profile updated successfully' 
+            : 'Username updated successfully');
+        } else if (newProfileImage) {
+          // Only updating picture, use the simpler endpoint
+          formData.append('profile_picture', newProfileImage);
+          
+          const response = await axiosInstance.post(`${API_BASE}/api/profile/update-picture`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          if (response.data.profile_picture_url) {
+            setProfileImage(response.data.profile_picture_url);
+          } else if (imagePreview) {
+            setProfileImage(imagePreview);
+          }
+          setNewProfileImage(null);
+          setImagePreview(null);
+          setProfileSuccess('Profile picture updated successfully');
         }
-        setNewProfileImage(null);
-        setImagePreview(null); // Clear preview
-        
-        setProfileSuccess('Profile picture updated successfully');
       }
       
       // Refresh profile data to update UI
@@ -323,7 +357,7 @@ function AdminLayout({ children }) {
       // Reset form changes state
       setHasFormChanges(false);
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Failed to update profile picture');
+      setProfileError(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setIsLoading(false);
     }
@@ -385,7 +419,8 @@ function AdminLayout({ children }) {
       // Update profile form with current data
       const profileData = {
         name: response.data.name || 'Mark Carlo Garcia',
-        email: response.data.email || ''
+        email: response.data.email || '',
+        username: response.data.username || ''
       };
       setProfileForm(profileData);
       
@@ -1157,6 +1192,35 @@ function AdminLayout({ children }) {
                         color: '#333',
                         fontSize: window.innerWidth <= 480 ? '12px' : '14px'
                       }}>
+                        <FontAwesomeIcon icon={faUser} style={{ marginRight: '8px', color: '#666' }} />
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={profileForm.username}
+                        onChange={handleProfileFormChange}
+                        placeholder="Enter your username"
+                        style={{
+                          width: '100%',
+                          padding: window.innerWidth <= 480 ? '10px 12px' : '12px 16px',
+                          border: '1px solid #ddd',
+                          borderRadius: '6px',
+                          fontSize: window.innerWidth <= 480 ? '12px' : '14px',
+                          boxSizing: 'border-box'
+                        }}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '5px',
+                        fontWeight: '500',
+                        color: '#333',
+                        fontSize: window.innerWidth <= 480 ? '12px' : '14px'
+                      }}>
                         <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: '8px', color: '#666' }} />
                         Email Address
                       </label>
@@ -1195,7 +1259,7 @@ function AdminLayout({ children }) {
                         width: window.innerWidth <= 480 ? '100%' : 'auto'
                       }}
                     >
-                      {isLoading ? 'Updating...' : 'Update Profile Picture'}
+                      {isLoading ? 'Updating...' : 'Update Profile'}
                     </button>
                   </form>
                 </div>

@@ -19,6 +19,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'name' => $user->name,
+            'username' => $user->username,
             'email' => $user->email,
             'organization' => $associateGroup ? $associateGroup->name : $user->organization,
             'director' => $associateGroup ? $associateGroup->director : null,
@@ -76,10 +77,14 @@ class ProfileController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'required|string|regex:/^[A-Za-z0-9._-]{3,30}$/|unique:users,username,' . Auth::id(),
             'email' => 'required|email|unique:users,email,' . Auth::id(),
             'director' => 'nullable|string|max:255',
             'type' => 'nullable|string|max:255',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ], [
+            'username.regex' => 'Username must be 3-30 characters and contain only letters, numbers, dot, underscore, or hyphen.',
+            'username.unique' => 'This username is already taken.'
         ]);
 
         DB::beginTransaction();
@@ -92,6 +97,7 @@ class ProfileController extends Controller
             $originalEmail = $user->email;
 
             $user->name = $request->name;
+            $user->username = $request->username;
             $user->email = $request->email;
 
             // Handle profile image upload

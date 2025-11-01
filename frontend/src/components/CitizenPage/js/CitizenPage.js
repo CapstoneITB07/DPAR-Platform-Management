@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../../logo.svg';
 import axios from 'axios';
-import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight, FaBell, FaBellSlash } from 'react-icons/fa';
+import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight, FaBell, FaBellSlash, FaUserTie, FaUsers } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/CitizenPage.css';
@@ -293,7 +293,7 @@ function CitizenPage() {
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (showAnnouncementModal || showProgramModal) {
+    if (showAnnouncementModal || showProgramModal || showGroupModal || modalOpen) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
@@ -303,7 +303,7 @@ function CitizenPage() {
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [showAnnouncementModal, showProgramModal]);
+  }, [showAnnouncementModal, showProgramModal, showGroupModal, modalOpen]);
 
   // Helper function to get logo URL (similar to AssociateGroups.js)
   const getLogoUrl = (logoPath) => {
@@ -479,7 +479,16 @@ function CitizenPage() {
       {/* Main Content: Dynamic Organization Logos Carousel */}
       <div className="citizen-logos-container">
         {groupsLoading ? (
-          <div className="citizen-loading-message">Loading organizations...</div>
+          <div className="organization-loading-container">
+            <div className="organization-loading-top-line"></div>
+            <div className="organization-loading-dots">
+              <div className="organization-loading-dot"></div>
+              <div className="organization-loading-dot"></div>
+              <div className="organization-loading-dot"></div>
+            </div>
+            <div className="organization-loading-title">LOADING ASSOCIATE GROUPS</div>
+            <div className="organization-loading-subtitle">Fetching associate group data and applications...</div>
+          </div>
         ) : groupsError ? (
           <div className="citizen-error-message">{groupsError}</div>
         ) : associateGroups.length === 0 ? (
@@ -508,9 +517,9 @@ function CitizenPage() {
           <div className="citizen-announcements-section">
           <h2 className="citizen-announcements-title">Announcements</h2>
         {annLoading ? (
-            <div className="citizen-loading-text">
+            <div className="citizen-loading-container">
               <div className="citizen-loading-spinner"></div>
-              <p>Loading announcements...</p>
+              <p className="citizen-loading-message">Loading announcements...</p>
             </div>
         ) : annError ? (
             <div className="citizen-error-text">{annError}</div>
@@ -896,9 +905,16 @@ function CitizenPage() {
       )}
       {/* Organization Details Modal */}
       {showGroupModal && selectedGroup && (
-        <div className="citizen-modal-overlay">
-          <div className="citizen-modal-content">
-            <button className="citizen-modal-close" onClick={() => setShowGroupModal(false)}>&times;</button>
+        <div className="citizen-modal-overlay" onClick={() => {
+          setShowGroupModal(false);
+          setSelectedGroup(null);
+        }}>
+          <div className="citizen-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="citizen-modal-close" onClick={() => {
+              setShowGroupModal(false);
+              setSelectedGroup(null);
+            }}>&times;</button>
+            {/* Modal Header with Gradient Background */}
             <div className="citizen-group-modal-header">
               <img
                 src={getLogoUrl(selectedGroup.logo)}
@@ -910,20 +926,48 @@ function CitizenPage() {
               />
               <h3 className="citizen-group-modal-title">{selectedGroup.name}</h3>
             </div>
-            <div className="citizen-group-modal-info">
-              <div className="citizen-group-info-row">
-                <strong>Director:</strong> {selectedGroup.director}
+            
+            {/* Scrollable Body Content */}
+            <div className="citizen-modal-body">
+              {/* Information Cards Section */}
+              <div className="citizen-group-modal-info">
+                <div className="citizen-group-info-card">
+                  <div className="citizen-group-info-icon">
+                    <FaUserTie />
+                  </div>
+                  <div className="citizen-group-info-content">
+                    <div className="citizen-group-info-label">Director</div>
+                    <div className="citizen-group-info-value">{selectedGroup.director || 'N/A'}</div>
+                  </div>
+                </div>
+                <div className="citizen-group-info-card">
+                  <div className="citizen-group-info-icon">🏢</div>
+                  <div className="citizen-group-info-content">
+                    <div className="citizen-group-info-label">Type</div>
+                    <div className="citizen-group-info-value">{selectedGroup.type || 'N/A'}</div>
+                  </div>
+                </div>
+                <div className="citizen-group-info-card">
+                  <div className="citizen-group-info-icon">
+                    <FaUsers />
+                  </div>
+                  <div className="citizen-group-info-content">
+                    <div className="citizen-group-info-label">Members</div>
+                    <div className="citizen-group-info-value">{selectedGroup.members_count || 0}</div>
+                  </div>
+                </div>
               </div>
-              <div className="citizen-group-info-row">
-                <strong>Type:</strong> {selectedGroup.type}
+              
+              {/* Description Section */}
+              <div className="citizen-group-modal-description">
+                <div className="citizen-group-description-header">
+                  <div className="citizen-group-description-icon">📋</div>
+                  <strong>Description</strong>
+                </div>
+                <div className="citizen-group-description-content">
+                  <p>{selectedGroup.description || 'No description available.'}</p>
+                </div>
               </div>
-              <div className="citizen-group-info-row">
-                <strong>Members:</strong> {selectedGroup.members_count || 0}
-              </div>
-            </div>
-            <div className="citizen-group-modal-description">
-              <strong>Description:</strong>
-              <p>{selectedGroup.description}</p>
             </div>
           </div>
         </div>

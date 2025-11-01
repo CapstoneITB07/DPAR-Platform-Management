@@ -98,6 +98,18 @@ function CitizenPage() {
     fetchPrograms();
     fetchAssociateGroups();
     checkPushNotificationStatus();
+    
+    // Listen for online/offline events
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const checkPushNotificationStatus = async () => {
@@ -129,11 +141,21 @@ function CitizenPage() {
 
   const fetchPrograms = async () => {
     setLoading(true);
+    setError(''); // Clear previous errors
     try {
       const res = await axios.get(`${API_BASE}/api/training-programs`);
-      setPrograms(res.data);
+      setPrograms(res.data || []);
     } catch (err) {
-      setError('Failed to load training programs');
+      // Check if it's a network error (offline) - service worker should handle caching
+      if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503) {
+        // Service worker should serve cached data, but if it doesn't, show empty state
+        setPrograms([]); // Show empty state instead of error
+        setError(''); // Don't show error message when offline - cached data will show if available
+      } else {
+        // For other errors, show error message
+        setError('Failed to load training programs');
+        setPrograms([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -142,11 +164,21 @@ function CitizenPage() {
   // Fetch associate groups (no auth required for public view)
   const fetchAssociateGroups = async () => {
     setGroupsLoading(true);
+    setGroupsError(''); // Clear previous errors
     try {
       const res = await axios.get(`${API_BASE}/api/associate-groups/public`);
-      setAssociateGroups(res.data);
+      setAssociateGroups(res.data || []);
     } catch (err) {
-      setGroupsError('Failed to load associate groups');
+      // Check if it's a network error (offline) - service worker should handle caching
+      if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503) {
+        // Service worker should serve cached data, but if it doesn't, show empty state
+        setAssociateGroups([]); // Show empty state instead of error
+        setGroupsError(''); // Don't show error message when offline - cached data will show if available
+      } else {
+        // For other errors, show error message
+        setGroupsError('Failed to load associate groups');
+        setAssociateGroups([]);
+      }
     } finally {
       setGroupsLoading(false);
     }
@@ -159,11 +191,21 @@ function CitizenPage() {
 
   const fetchAnnouncements = async () => {
     setAnnLoading(true);
+    setAnnError(''); // Clear previous errors
     try {
       const res = await axios.get(`${API_BASE}/api/announcements`);
-      setAnnouncements(res.data);
+      setAnnouncements(res.data || []);
     } catch (err) {
-      setAnnError('Failed to load announcements');
+      // Check if it's a network error (offline) - service worker should handle caching
+      if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503) {
+        // Service worker should serve cached data, but if it doesn't, show empty state
+        setAnnouncements([]); // Show empty state instead of error
+        setAnnError(''); // Don't show error message when offline - cached data will show if available
+      } else {
+        // For other errors, show error message
+        setAnnError('Failed to load announcements');
+        setAnnouncements([]);
+      }
     } finally {
       setAnnLoading(false);
     }
@@ -218,6 +260,9 @@ function CitizenPage() {
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [pushNotificationsSupported, setPushNotificationsSupported] = useState(false);
   const [showPushButton, setShowPushButton] = useState(true);
+  
+  // Offline state
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // Carousel states for announcements
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
@@ -379,7 +424,15 @@ function CitizenPage() {
   // Background image style moved to CSS
 
   return (
-    <div className="citizen-page-wrapper">
+    <div className={`citizen-page-wrapper ${isOffline ? 'offline-mode' : ''}`}>
+      {/* Offline Indicator */}
+      {isOffline && (
+        <div className="citizen-offline-banner">
+          <span className="citizen-offline-icon">📡</span>
+          <span className="citizen-offline-text">You are offline. Showing cached content.</span>
+        </div>
+      )}
+      
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div className="citizen-sidebar-overlay" onClick={closeSidebar} />

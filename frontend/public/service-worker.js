@@ -1,4 +1,5 @@
 const CACHE_NAME = 'dpar-citizen-cache-v1';
+const API_CACHE_NAME = 'dpar-api-cache-v1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -14,27 +15,93 @@ const urlsToCache = [
   // You can add more specific assets for CitizenPage if needed
 ];
 
+// Citizen API endpoints that should be cached for offline use
+const CACHEABLE_API_ENDPOINTS = [
+  '/api/training-programs',
+  '/api/announcements',
+  '/api/associate-groups/public',
+];
+
 // Install a service worker
 self.addEventListener('install', event => {
   // Perform install steps
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
+    Promise.all([
+      caches.open(CACHE_NAME).then(cache => {
         return cache.addAll(urlsToCache.map(url => new Request(url, { cache: 'reload' })));
+      }),
+      caches.open(API_CACHE_NAME).then(cache => {
+        // Cache opened
       })
-      .catch(error => {
-        console.error('Failed to open cache:', error);
-      })
+    ]).catch(error => {
+      // Cache failed
+    })
   );
 });
 
 // Cache and return requests
 self.addEventListener('fetch', event => {
-  // Don't cache API calls or non-GET requests (POST, PUT, DELETE, etc.)
-  // Only GET requests can be cached - POST/PUT/DELETE cannot be cached
-  if (event.request.url.includes('/api/') || event.request.method !== 'GET') {
-    // Just fetch without caching
+  const url = new URL(event.request.url);
+  const isApiRequest = url.pathname.includes('/api/');
+  const isGetRequest = event.request.method === 'GET';
+  
+  // Handle API requests for citizen endpoints (cache for offline)
+  if (isApiRequest && isGetRequest) {
+    const shouldCache = CACHEABLE_API_ENDPOINTS.some(endpoint => url.pathname.includes(endpoint));
+    
+    if (shouldCache) {
+      // Use network-first strategy with cache fallback for API requests
+      event.respondWith(
+        caches.match(event.request).then(cachedResponse => {
+          // Always try network first to get fresh data
+          const fetchPromise = fetch(event.request).then(response => {
+            // Check if we received a valid response
+            if (response && response.status === 200) {
+              // Clone the response because it's a stream and can only be consumed once
+              const responseToCache = response.clone();
+              
+              caches.open(API_CACHE_NAME).then(cache => {
+                cache.put(event.request, responseToCache);
+              });
+            }
+            return response;
+          }).catch(() => {
+            // Network failed - return null to fall back to cache
+            return null;
+          });
+
+          // If we have a cached response, use it while waiting for network
+          // If network fails, return cached response
+          return fetchPromise.then(networkResponse => {
+            if (networkResponse) {
+              return networkResponse;
+            }
+            // Network failed, return cached response if available
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // If no cache, return a basic error response
+            return new Response(
+              JSON.stringify({ error: 'No internet connection and no cached data available' }),
+              {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: { 'Content-Type': 'application/json' }
+              }
+            );
+          });
+        })
+      );
+      return;
+    } else {
+      // For other API requests, don't cache
+      event.respondWith(fetch(event.request));
+      return;
+    }
+  }
+  
+  // Don't cache non-GET requests (POST, PUT, DELETE, etc.)
+  if (!isGetRequest) {
     event.respondWith(fetch(event.request));
     return;
   }
@@ -68,14 +135,17 @@ self.addEventListener('fetch', event => {
 
             return response;
           }
-        );
+        ).catch(() => {
+          // If fetch fails and it's a static asset, return cached version if available
+          return caches.match(event.request);
+        });
       })
   );
 });
 
 // Update a service worker
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheWhitelist = [CACHE_NAME, API_CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -89,10 +159,8 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Push notification event handler
+// Push notification event handler - match daily-quest format
 self.addEventListener('push', event => {
-  console.log('Push notification received:', event);
-  
   let notificationData = {
     title: 'DPAR Notification',
     body: 'You have a new notification',
@@ -105,25 +173,26 @@ self.addEventListener('push', event => {
 
   if (event.data) {
     try {
+      // Parse like daily-quest: expects { message, body, icon } format
       const data = event.data.json();
-      console.log('Parsed notification data:', data);
+      
+      // Support both formats: daily-quest uses 'message', DPAR might send 'title'
+      const title = data.message || data.title || notificationData.title;
       
       notificationData = {
-        title: data.title || notificationData.title,
+        title: title,
         body: data.body || notificationData.body,
         icon: data.icon || notificationData.icon,
         badge: data.badge || notificationData.badge,
         data: data.data || notificationData.data,
-        tag: data.data?.type || 'default',
+        tag: (data.data && data.data.type) || data.tag || 'default',
         requireInteraction: false,
         vibrate: [200, 100, 200]
       };
     } catch (error) {
-      console.error('Error parsing push notification data:', error);
+      // Error parsing push notification data
     }
   }
-
-  console.log('Showing notification with data:', notificationData);
 
   event.waitUntil(
     self.registration.showNotification(notificationData.title, {
@@ -138,26 +207,24 @@ self.addEventListener('push', event => {
   );
 });
 
-// Notification click event handler
+// Notification click event handler 
 self.addEventListener('notificationclick', event => {
-  console.log('Notification clicked:', event);
-  
   event.notification.close();
   
-  // Fix: Extract URL from the correct data structure
-  // Backend sends: data.data.url, so we need to access it properly
-  const urlToOpen = event.notification.data?.data?.url || event.notification.data?.url || '/';
-  
-  console.log('Redirecting to:', urlToOpen);
+  // Extract URL - support both data structures
+  const notificationData = event.notification.data || {};
+  const urlToOpen = notificationData.url || notificationData.data?.url || '/';
   
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(windowClients => {
-        // Check if there's already a window open with the target URL
+        // Check if there's already a window open
         for (let i = 0; i < windowClients.length; i++) {
           const client = windowClients[i];
-          if (client.url.includes(urlToOpen) && 'focus' in client) {
-            return client.focus();
+          if (client.url === urlToOpen || (urlToOpen !== '/' && client.url.includes(urlToOpen))) {
+            if ('focus' in client) {
+              return client.focus();
+            }
           }
         }
         // If no window is open, open a new one

@@ -1,7 +1,7 @@
 import { API_BASE } from './url';
 
 // VAPID public key - This should match the one in your backend .env file
-const VAPID_PUBLIC_KEY = 'BJAzlNG2r4F92OI90lXrhtqsE_0wubYcoWO4YmCxuxGymqFJ8InurVDZVTRgkcLA9JS-WyHqrgNRUscUOQBFMnU';
+const VAPID_PUBLIC_KEY = 'BEfs6iHJHFTDKdpBrV7HH08j7p-p2KAuFijurHHljtoBGq9vEcXQBvT7rKLk6mZSw8tgaEFDqO0eSaui2qZTYuo';
 
 /**
  * Convert base64url VAPID public key to Uint8Array
@@ -89,27 +89,25 @@ export async function subscribeToPushNotifications() {
         registration = await navigator.serviceWorker.register('/service-worker.js');
         await navigator.serviceWorker.ready;
       } catch (error) {
-        console.error('Service Worker registration failed:', error);
+        // Service Worker registration failed
         throw new Error('Service Worker registration failed');
       }
     } else {
       throw new Error('Service Worker is not supported');
     }
 
-    // Check if already subscribed
+    // Check if already subscribed - if so, unsubscribe first to ensure fresh subscription
     let subscription = await registration.pushManager.getSubscription();
     
     if (subscription) {
-      console.log('Already subscribed to push notifications');
-    } else {
-      // Subscribe to push manager
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      });
-      
-      console.log('New push subscription created');
+      await subscription.unsubscribe();
+      subscription = null;
     }
+    
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
 
     // Send subscription to backend
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -139,10 +137,8 @@ export async function subscribeToPushNotifications() {
       throw new Error(data.message || 'Failed to save subscription');
     }
 
-    console.log('Push notification subscription saved successfully');
     return subscription;
   } catch (error) {
-    console.error('Error subscribing to push notifications:', error);
     throw error;
   }
 }
@@ -179,10 +175,8 @@ export async function unsubscribeFromPushNotifications() {
 
     const data = await response.json();
     
-    console.log('Unsubscribed from push notifications');
     return true;
   } catch (error) {
-    console.error('Error unsubscribing from push notifications:', error);
     throw error;
   }
 }
@@ -201,7 +195,47 @@ export async function isPushNotificationSubscribed() {
     
     return subscription !== null;
   } catch (error) {
-    console.error('Error checking push subscription:', error);
+    return false;
+  }
+}
+
+/**
+ * Force unsubscribe and clear any old subscriptions
+ * Use this if you changed VAPID keys
+ */
+export async function forceResubscribe() {
+  try {
+    if (!isPushNotificationSupported()) {
+      return false;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    
+    if (subscription) {
+      await subscription.unsubscribe();
+      
+      try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        await fetch(`${API_BASE}/api/push/unsubscribe`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            endpoint: subscription.endpoint
+          })
+        });
+      } catch (e) {
+        // Silent fail
+      }
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
     return false;
   }
 }
@@ -233,7 +267,7 @@ export async function sendTestNotification() {
 
     return true;
   } catch (error) {
-    console.error('Error sending test notification:', error);
+    // Error sending test notification
     throw error;
   }
 }

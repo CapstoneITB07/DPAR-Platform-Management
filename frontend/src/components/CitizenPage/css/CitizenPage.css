@@ -1375,18 +1375,6 @@ body.modal-open {
   position: relative;
 }
 
-.citizen-side-by-side-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #a52a1a 0%, #d32f2f 50%, #a52a1a 100%);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out infinite;
-  border-radius: 24px 24px 0 0;
-}
 
 .citizen-content-columns {
   display: grid;
@@ -3887,17 +3875,6 @@ body.modal-open {
   position: relative;
 }
 
-.citizen-announcement-card-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #a52a1a 0%, #d32f2f 50%, #a52a1a 100%);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out infinite;
-}
 
 @keyframes shimmer {
   0%, 100% { background-position: 200% 0; }
@@ -4161,17 +4138,6 @@ body.modal-open {
   position: relative;
 }
 
-.citizen-training-card-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #a52a1a 0%, #d32f2f 50%, #a52a1a 100%);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out infinite;
-}
 
 .citizen-training-card-header-inline {
   background: linear-gradient(135deg, #a52a1a 0%, #8B1409 100%);

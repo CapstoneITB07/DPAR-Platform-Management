@@ -86,11 +86,45 @@
 
 /* Hero Section */
 .about-hero {
-  background: linear-gradient(rgba(139, 20, 9, 0.9), rgba(139, 20, 9, 0.8));
-  padding: 80px 20px;
+  background: linear-gradient(135deg, #8B1409 0%, #a52a1a 50%, #8B1409 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+  padding: 100px 20px;
   text-align: center;
   color: #fff;
-  margin-bottom: 40px;
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+  opacity: 0.3;
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 .about-hero-title {
@@ -98,6 +132,21 @@
   font-weight: 800;
   margin: 0;
   letter-spacing: 1px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: fadeInDown 1s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .about-hero-subtitle {
@@ -106,6 +155,21 @@
   max-width: 800px;
   margin: 20px auto 0;
   line-height: 1.6;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .about-hero-logo {
@@ -115,6 +179,21 @@
   max-width: 100%;
   width: 120px;
   height: auto;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.3));
+  animation: fadeInScale 1s ease-out 0.3s both;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (min-width: 600px) {
@@ -143,6 +222,32 @@
   padding: 40px;
   margin-bottom: 40px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  opacity: 0;
+  animation: fadeInSection 0.8s ease-out forwards;
+}
+
+.about-section:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.about-section:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.about-section:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes fadeInSection {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .about-section-header {
@@ -164,6 +269,28 @@
   background: linear-gradient(to right, #8B1409, #ff6b6b);
   margin: 0 auto 24px;
   border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-section-divider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+  animation: slideRight 3s ease-in-out infinite;
+}
+
+@keyframes slideRight {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 100%;
+  }
 }
 
 .about-section-description {
@@ -237,17 +364,35 @@
 }
 
 .about-timeline-card {
-  background: #fff;
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   border: 1px solid rgba(139, 20, 9, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-timeline-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #8B1409, #ff6b6b);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.about-timeline-card:hover::after {
+  transform: scaleY(1);
 }
 
 .about-timeline-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(139, 20, 9, 0.2);
 }
 
 .about-timeline-card-title {
@@ -376,22 +521,46 @@
 }
 
 .about-mission-card {
-  background: #fff;
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
   padding: 32px 24px;
   border-radius: 16px;
   border: 1px solid rgba(139, 20, 9, 0.1);
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-mission-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(139, 20, 9, 0.05), transparent);
+  transition: left 0.5s ease;
+}
+
+.about-mission-card:hover::before {
+  left: 100%;
 }
 
 .about-mission-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(139, 20, 9, 0.15);
+  border-color: rgba(139, 20, 9, 0.2);
 }
 
 .about-mission-icon {
   font-size: 40px;
   margin-bottom: 16px;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.about-mission-card:hover .about-mission-icon {
+  transform: scale(1.2) rotate(5deg);
 }
 
 .about-mission-card-title {
@@ -427,22 +596,46 @@
 }
 
 .about-value-card {
-  background: #fff;
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
   padding: 32px 24px;
   border-radius: 16px;
   border: 1px solid rgba(139, 20, 9, 0.1);
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-value-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(139, 20, 9, 0.05), transparent);
+  transition: left 0.5s ease;
+}
+
+.about-value-card:hover::before {
+  left: 100%;
 }
 
 .about-value-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(139, 20, 9, 0.15);
+  border-color: rgba(139, 20, 9, 0.2);
 }
 
 .about-value-icon {
   font-size: 40px;
   margin-bottom: 16px;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.about-value-card:hover .about-value-icon {
+  transform: scale(1.2) rotate(5deg);
 }
 
 .about-value-title {
@@ -487,17 +680,78 @@
 
 /* Footer */
 .about-footer {
-  background: #8B1409;
+  background: linear-gradient(135deg, #8B1409 0%, #6d0f06 100%);
   color: #fff;
   text-align: center;
-  padding: 20px 0;
-  margin-top: 48px;
+  padding: 30px 0;
+  margin-top: 60px;
   font-size: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
 }
 
 .about-footer-text {
   font-size: 14px;
   color: #ffd6d6;
+  position: relative;
+  z-index: 1;
+}
+
+/* Scroll to Top Button */
+.about-scroll-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #8B1409, #a52a1a);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 15px rgba(139, 20, 9, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.about-scroll-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.about-scroll-to-top:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(139, 20, 9, 0.4);
+}
+
+.about-scroll-to-top:active {
+  transform: translateY(-2px);
 }
 
 /* Animation */
@@ -577,6 +831,14 @@
   .about-mission-card,
   .about-value-card {
     padding: 24px 16px;
+  }
+  
+  .about-scroll-to-top {
+    width: 45px;
+    height: 45px;
+    bottom: 20px;
+    right: 20px;
+    font-size: 18px;
   }
 } 
 

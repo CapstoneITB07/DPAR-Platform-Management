@@ -12,7 +12,17 @@ function Preparedness() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
+
+  useEffect(() => {
+    // Reset loading when location changes
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   // Objectives data
   const objectives = [
@@ -116,14 +126,34 @@ function Preparedness() {
 
   const handleCategoryClick = (category) => {
     closeSidebar();
+    const targetPath = `/citizen/${category.toLowerCase()}`;
+    // Don't navigate if already on the same page
+    if (location.pathname === targetPath) {
+      return;
+    }
     setFade(true);
     setTimeout(() => {
-      navigate(`/citizen/${category.toLowerCase()}`);
+      navigate(targetPath);
     }, 350);
   };
 
   // Determine if ABOUT US is active
   const isAboutActive = location.pathname === '/citizen/about';
+
+  if (isLoading) {
+    return (
+      <div className="page-loading-container">
+        <div className="page-loading-top-line"></div>
+        <div className="page-loading-dots">
+          <div className="page-loading-dot"></div>
+          <div className="page-loading-dot"></div>
+          <div className="page-loading-dot"></div>
+        </div>
+        <div className="page-loading-title">LOADING PREPAREDNESS</div>
+        <div className="page-loading-subtitle">Loading page content...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={`citizen-page-wrapper preparedness-wrapper${fade ? ' fade-out' : ''}`}>
@@ -186,6 +216,9 @@ function Preparedness() {
                 }} data-tooltip="Prevent and reduce disaster risks through long-term strategies">MITIGATION</li>
                 <li onClick={() => {
                   closeDropdown();
+                  if (location.pathname === '/citizen/preparedness') {
+                    return;
+                  }
                   setFade(true);
                   setTimeout(() => {
                     navigate('/citizen/preparedness');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -11,8 +11,35 @@ function AboutUs() {
   const [fade, setFade] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    // Reset loading when location changes
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -27,7 +54,9 @@ function AboutUs() {
   // Animation and navigation for About Us
   const handleAboutClick = () => {
     closeSidebar();
-    if (location.pathname === '/citizen/about') return;
+    if (location.pathname === '/citizen/about') {
+      return;
+    }
     setFade(true);
     setTimeout(() => {
       navigate('/citizen/about');
@@ -37,7 +66,9 @@ function AboutUs() {
   // Animation and navigation for Home
   const handleHomeClick = () => {
     closeSidebar();
-    if (location.pathname === '/citizen') return;
+    if (location.pathname === '/citizen') {
+      return;
+    }
     setFade(true);
     setTimeout(() => {
       navigate('/citizen');
@@ -46,15 +77,35 @@ function AboutUs() {
 
   const handleCategoryClick = (category) => {
     closeSidebar();
+    const targetPath = `/citizen/${category.toLowerCase()}`;
+    // Don't navigate if already on the same page
+    if (location.pathname === targetPath) {
+      return;
+    }
     setFade(true);
     setTimeout(() => {
-      navigate(`/citizen/${category.toLowerCase()}`);
+      navigate(targetPath);
     }, 350);
   };
 
   // Determine if ABOUT US is active
   const isAboutActive = location.pathname === '/citizen/about';
   const isHomeActive = location.pathname === '/citizen';
+
+  if (isLoading) {
+    return (
+      <div className="page-loading-container">
+        <div className="page-loading-top-line"></div>
+        <div className="page-loading-dots">
+          <div className="page-loading-dot"></div>
+          <div className="page-loading-dot"></div>
+          <div className="page-loading-dot"></div>
+        </div>
+        <div className="page-loading-title">LOADING ABOUT US</div>
+        <div className="page-loading-subtitle">Loading page content...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="about-page-wrapper">
@@ -386,6 +437,15 @@ function AboutUs() {
           &copy; {new Date().getFullYear()} DPAR Volunteer Coalition. All rights reserved.
         </div>
       </footer>
+
+      {/* Scroll to Top Button */}
+      <button 
+        className={`about-scroll-to-top ${showScrollTop ? 'visible' : ''}`}
+        onClick={scrollToTop}
+        aria-label="Scroll to top"
+      >
+        ↑
+      </button>
     </div>
   );
 }

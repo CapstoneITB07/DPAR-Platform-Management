@@ -1,5 +1,45 @@
 /* CitizenPage.css */
 
+/* Offline Banner */
+.citizen-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  padding: 12px 20px;
+  text-align: center;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.citizen-offline-icon {
+  font-size: 18px;
+}
+
+.citizen-offline-text {
+  flex: 1;
+}
+
 /* Hamburger Menu Button */
 .citizen-hamburger-btn {
   display: none;
@@ -169,6 +209,12 @@
   justify-content: space-between;
   height: 60px;
   position: relative;
+  transition: margin-top 0.3s ease-out;
+}
+
+/* Adjust navbar when offline banner is shown */
+.citizen-page-wrapper.offline-mode .citizen-navbar {
+  margin-top: 44px; /* Height of offline banner (padding 12px * 2 + content height) */
 }
 .citizen-navbar-title {
   font-weight: bold;

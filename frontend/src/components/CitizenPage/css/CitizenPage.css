@@ -3836,6 +3836,22 @@ body.modal-open {
   .citizen-group-info-card {
     min-width: 0;
   }
+
+  /* Hide navigation buttons on mobile - use swipe instead */
+  .citizen-announcement-photo-nav-btn,
+  .citizen-training-photo-nav-btn {
+    display: none !important;
+  }
+
+  /* Make photo containers touch-friendly for swiping */
+  .citizen-announcement-photo-container,
+  .citizen-training-photo-container {
+    touch-action: pan-x pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
 }
 
 /* Extra small devices */
@@ -4229,14 +4245,15 @@ body.modal-open {
 }
 
 .citizen-training-card-main-content {
-  padding: 15px 20px 20px 20px;
+  padding: 16px 20px 20px 20px;
+  text-align: left;
 }
 
 .citizen-training-badges-wrapper {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 13px;
 }
 
 .citizen-training-date-badge-inline {
@@ -4265,7 +4282,7 @@ body.modal-open {
   color: #8B1409;
   font-size: 1.25rem;
   font-weight: 800;
-  margin-bottom: 10px;
+  margin-bottom: 11px;
   line-height: 1.3;
   letter-spacing: -0.5px;
   position: relative;
@@ -4287,15 +4304,16 @@ body.modal-open {
   color: #4a4a4a;
   font-size: 0.9rem;
   line-height: 1.6;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   font-weight: 400;
   letter-spacing: 0.2px;
+  text-align: left;
 }
 
 .citizen-training-image-wrapper-inline {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 230px;
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 15px;
@@ -4952,7 +4970,7 @@ body.modal-open {
   }
 
   .citizen-training-card-main-content {
-    padding: 20px 20px 25px 20px;
+    padding: 18px 20px 22px 20px;
   }
 
   .citizen-training-badges-wrapper {
@@ -5019,7 +5037,7 @@ body.modal-open {
   }
 
   .citizen-training-card-main-content {
-    padding: 15px 15px 20px 15px;
+    padding: 15px 15px 18px 15px;
   }
 
   .citizen-training-badges-wrapper {

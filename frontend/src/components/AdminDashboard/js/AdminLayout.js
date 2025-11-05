@@ -751,7 +751,7 @@ function AdminLayout({ children }) {
                     setAnnouncementSubmenuOpen(!announcementSubmenuOpen);
                   }}
                 >
-                  <FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT
+                  <FontAwesomeIcon icon={faBullhorn} /> POSTING
                   <FontAwesomeIcon 
                     icon={announcementSubmenuOpen ? faChevronDown : faChevronRight} 
                     className="nav-chevron"
@@ -760,7 +760,7 @@ function AdminLayout({ children }) {
                 {announcementSubmenuOpen && (
                   <ul className="nav-submenu">
                     <li className={isActive('/admin/announcement') ? 'active' : ''} onClick={() => { navigate('/admin/announcement'); closeSidebar(); }}>
-                      <FontAwesomeIcon icon={faBullhorn} /> GENERAL ANNOUNCEMENT
+                      <FontAwesomeIcon icon={faBullhorn} /> ANNOUNCEMENT
                     </li>
                     <li className={isActive('/admin/training-program') ? 'active' : ''} onClick={() => { navigate('/admin/training-program'); closeSidebar(); }}>
                       <FontAwesomeIcon icon={faGraduationCap} /> TRAINING PROGRAM
@@ -830,17 +830,17 @@ function AdminLayout({ children }) {
           <span className="dpar-text">DPAR</span>
         </div>
         <div className="header-right">
-          <div className="notification-icon" onClick={() => navigate('/admin/notifications')} style={{ cursor: 'pointer', position: 'relative' }}>
+          <div className="notification-icon" onClick={() => navigate('/admin/notifications')} style={{ cursor: 'pointer', position: 'relative', overflow: 'visible' }}>
             <FontAwesomeIcon icon={faBell} />
             {unreadCount > 0 && (
-              <span style={{ 
+              <span className="notification-badge" style={{ 
                 position: 'absolute', 
-                top: 6, 
-                right: -20, 
+                top: 3, 
+                right: -11, 
                 background: '#ff0000', 
                 color: 'white', 
                 borderRadius: '50%', 
-                padding: '4px 8px', 
+                padding: unreadCount > 99 ? '3px 5px' : '3px 7px', 
                 fontSize: 12, 
                 fontWeight: '900',
                 minWidth: '24px',
@@ -852,8 +852,10 @@ function AdminLayout({ children }) {
                 border: '2px solid #ffffff',
                 zIndex: 10,
                 animation: 'pulse 1.5s infinite',
-                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-              }}>{unreadCount}</span>
+                textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                whiteSpace: 'nowrap',
+                lineHeight: 1
+              }}>{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
           </div>
         </div>

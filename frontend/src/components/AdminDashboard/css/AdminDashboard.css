@@ -264,6 +264,38 @@
   display: flex;
   align-items: center;
   height: 48px;
+  overflow: visible !important;
+}
+
+.notification-badge {
+  position: absolute;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+/* Ensure header-right doesn't clip the badge */
+.header-right {
+  overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+  .notification-badge {
+    font-size: 13px !important;
+    min-width: 24px !important;
+    height: 24px !important;  
+    top: 3px !important;
+    right: -6px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-badge {
+    font-size: 14px !important;
+    min-width: 26px !important;
+    height: 26px !important;
+    top: 3px !important;
+    right: -5px !important;
+  }
 }
 
 @keyframes pulse {
@@ -697,7 +729,7 @@
 
   .sidebar-nav ul > li.nav-parent > div.nav-parent-trigger,
   .sidebar-nav .nav-parent > div.nav-parent-trigger {
-    padding: 12px 0px 12px 0px !important;
+    padding: 12px 14px 12px 14px !important;
     font-size: 0.9rem !important;
     margin-bottom: 3px !important;
     border-radius: 6px !important;

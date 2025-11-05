@@ -70,7 +70,6 @@ function AssociateLayout({ children }) {
   const [warningModalUsername, setWarningModalUsername] = useState('');
   const [hasFormChanges, setHasFormChanges] = useState(false);
   const NOTIF_READ_KEY = `associateNotifRead_${userId}`;
-  const [notifications, setNotifications] = useState([]);
   const [editProfileHover, setEditProfileHover] = useState(false);
   
   // Passcode regeneration states
@@ -106,17 +105,6 @@ function AssociateLayout({ children }) {
     }
   };
 
-  const fetchNotifications = async () => {
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE}/api/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNotifications(response.data);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    }
-  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -569,8 +557,6 @@ function AssociateLayout({ children }) {
   };
 
   useEffect(() => {
-    fetchNotifications();
-    
     // Set up periodic refresh of unread count
     const interval = setInterval(() => {
       const calculateUnreadCount = async () => {
@@ -925,17 +911,17 @@ function AssociateLayout({ children }) {
           <span className="dpar-text">DPAR</span>
         </div>
         <div className="header-right">
-          <div className="notification-icon" onClick={() => navigate('/associate/notification')} style={{ cursor: 'pointer', position: 'relative' }}>
+          <div className="notification-icon" onClick={() => navigate('/associate/notification')} style={{ cursor: 'pointer', position: 'relative', overflow: 'visible' }}>
             <FontAwesomeIcon icon={faEnvelope} />
             {unreadCount > 0 && (
-              <span style={{ 
+              <span className="notification-badge" style={{ 
                 position: 'absolute', 
-                top: 6, 
-                right: -20, 
+                top: 3, 
+                right: -9, 
                 background: '#ff0000', 
                 color: 'white', 
                 borderRadius: '50%', 
-                padding: '4px 8px', 
+                padding: unreadCount > 99 ? '3px 5px' : '3px 7px', 
                 fontSize: 12, 
                 fontWeight: '900',
                 minWidth: '24px',
@@ -947,8 +933,10 @@ function AssociateLayout({ children }) {
                 border: '2px solid #ffffff',
                 zIndex: 10,
                 animation: 'pulse 1.5s infinite',
-                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-              }}>{unreadCount}</span>
+                textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                whiteSpace: 'nowrap',
+                lineHeight: 1
+              }}>{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
           </div>
         </div>

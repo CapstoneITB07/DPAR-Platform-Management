@@ -1301,8 +1301,8 @@
   .enhanced-form-actions {
     display: flex !important;
     flex-direction: row !important;
-    gap: 16px !important;
-    justify-content: space-between !important;
+    gap: 12px !important;
+    justify-content: flex-end !important;
     align-items: center !important;
     margin-top: 20px !important;
     width: 100% !important;
@@ -1310,9 +1310,10 @@
   
   .enhanced-cancel-btn {
     flex: 0 0 auto !important;
-    width: 40% !important;
+    width: auto !important;
+    min-width: 120px !important;
     font-size: 13px !important;
-    padding: 10px 12px !important;
+    padding: 10px 16px !important;
     justify-content: center !important;
     display: flex !important;
     align-items: center !important;
@@ -1321,14 +1322,15 @@
   
   .enhanced-btn-submit {
     flex: 0 0 auto !important;
-    width: 40% !important;
+    width: auto !important;
+    min-width: 160px !important;
     font-size: 13px !important;
-    padding: 10px 12px !important;
+    padding: 10px 16px !important;
     justify-content: center !important;
     display: flex !important;
     align-items: center !important;
     gap: 4px !important;
-    margin-left: auto !important;
+    margin-left: 0 !important;
   }
 }
 
@@ -1550,9 +1552,33 @@
   .enhanced-notification-header {
     padding: 16px 12px 10px 12px;
     border-radius: 16px 16px 0 0;
+    justify-content: space-between !important;
+    position: relative;
+    flex-wrap: nowrap;
+  }
+  .enhanced-header-left {
+    justify-content: flex-start;
+    align-items: center;
+    flex: 1;
+    display: flex;
   }
   .enhanced-header-title {
     font-size: 1.1rem;
+    text-align: left;
+  }
+  .enhanced-close-icon {
+    position: relative !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.8rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    flex-shrink: 0;
   }
   .enhanced-section-label {
     font-size: 0.98rem;
@@ -1564,8 +1590,9 @@
     padding: 0 8px;
   }
   .enhanced-form-actions {
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row !important;
+    gap: 12px !important;
+    justify-content: flex-end !important;
     padding: 0 8px;
   }
 } 

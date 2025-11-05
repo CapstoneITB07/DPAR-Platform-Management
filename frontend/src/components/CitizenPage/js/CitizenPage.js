@@ -421,6 +421,40 @@ function CitizenPage() {
     }
   };
 
+  // Swipe gesture handlers for mobile
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance (in pixels)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      nextPhoto();
+    } else if (isRightSwipe) {
+      prevPhoto();
+    }
+    
+    // Reset
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   // Background image style moved to CSS
 
   return (
@@ -648,12 +682,18 @@ function CitizenPage() {
                       {/* Description */}
                     {a.description && (
                         <div className="citizen-announcement-description-inline">
-                        {truncateDescription(a.description)}
+                          {a.photo_urls && a.photo_urls.length > 0 
+                            ? a.description.length > 100 ? a.description.substring(0, 100) + '...' : a.description
+                            : a.description.length > 150 ? a.description.substring(0, 150) + '...' : a.description
+                          }
                         </div>
                       )}
 
                       {/* See More Button */}
-                        {needsTruncation(a.description) && (
+                        {a.description && (
+                          (a.photo_urls && a.photo_urls.length > 0 && a.description.length > 100) ||
+                          ((!a.photo_urls || a.photo_urls.length === 0) && a.description.length > 150)
+                        ) && (
                           <button
                           onClick={(e) => {
                               e.stopPropagation();
@@ -742,16 +782,6 @@ function CitizenPage() {
                   style={{ display: index === currentProgramIndex ? 'block' : 'none' }}
                   onClick={() => handleProgramClick(program)}
                 >
-                  {/* Header Badge */}
-                  <div className="citizen-training-card-header-inline">
-                    <span className="citizen-training-card-label">Training Program</span>
-                    {hasPhotos && (
-                      <span className="citizen-training-photo-count-badge">
-                        {photoCount} {photoCount === 1 ? 'Photo' : 'Photos'}
-                      </span>
-                    )}
-                  </div>
-
                   {/* Main Content Container */}
                   <div className="citizen-training-card-main-content">
                   {/* Date and Location Badges */}
@@ -918,7 +948,12 @@ function CitizenPage() {
               {/* Photo Navigation (Instagram/Facebook style) */}
               {selectedAnnouncement.photo_urls && selectedAnnouncement.photo_urls.length > 0 && (
                 <div className="citizen-announcement-photo-navigation">
-                <div className="citizen-announcement-photo-container">
+                <div 
+                  className="citizen-announcement-photo-container"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
                   <img 
                     src={selectedAnnouncement.photo_urls[currentPhotoIndex]} 
                     alt={`Photo ${currentPhotoIndex + 1}`} 
@@ -1073,7 +1108,12 @@ function CitizenPage() {
               {/* Photo Navigation (Instagram/Facebook style) */}
               {selectedProgram.photos && selectedProgram.photos.length > 0 && (
                 <div className="citizen-training-photo-navigation">
-                  <div className="citizen-training-photo-container">
+                  <div 
+                    className="citizen-training-photo-container"
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                  >
                     <img 
                       src={selectedProgram.photos[currentPhotoIndex]} 
                       alt={`Photo ${currentPhotoIndex + 1}`} 

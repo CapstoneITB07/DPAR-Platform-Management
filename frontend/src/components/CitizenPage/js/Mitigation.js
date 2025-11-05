@@ -13,6 +13,7 @@ function Mitigation() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarDropdownOpen, setSidebarDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -23,6 +24,15 @@ function Mitigation() {
     }, 800);
     return () => clearTimeout(timer);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Objectives data
   const objectives = [
@@ -96,6 +106,13 @@ function Mitigation() {
 
   const goToSlide = (index) => {
     setCurrentObjectiveSlide(index);
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
@@ -747,6 +764,15 @@ function Mitigation() {
           &copy; {new Date().getFullYear()} DPAR Volunteer Coalition. All rights reserved.
         </div>
       </footer>
+
+      {/* Scroll to Top Button */}
+      <button 
+        className={`about-scroll-to-top ${showScrollTop ? 'visible' : ''}`}
+        onClick={scrollToTop}
+        aria-label="Scroll to top"
+      >
+        ↑
+      </button>
     </div>
   );
 }

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Crypt;
 use Carbon\Carbon;
 
 class DatabaseBackup extends Command
@@ -38,9 +39,13 @@ class DatabaseBackup extends Command
             $filename = "backup_{$database}_{$timestamp}.sql";
             $backupPath = storage_path("app/backups/{$filename}");
 
-            // Ensure backup directory exists
-            if (!file_exists(storage_path('app/backups'))) {
-                mkdir(storage_path('app/backups'), 0755, true);
+            // Ensure backup directory exists with secure permissions
+            $backupDir = storage_path('app/backups');
+            if (!file_exists($backupDir)) {
+                mkdir($backupDir, 0700, true);
+            } else {
+                // Ensure existing directory has secure permissions
+                chmod($backupDir, 0700);
             }
 
             // Determine mysqldump path based on OS
@@ -109,12 +114,42 @@ class DatabaseBackup extends Command
                 }
             }
 
+            // Encrypt the backup file for security
+            $this->info('Encrypting backup...');
+            $encryptedPath = $backupPath . '.enc';
+            
+            try {
+                // Read the backup file content
+                $backupContent = file_get_contents($backupPath);
+                
+                // Encrypt using Laravel's Crypt (AES-256-CBC)
+                $encryptedContent = Crypt::encryptString($backupContent);
+                
+                // Write encrypted content to new file
+                file_put_contents($encryptedPath, $encryptedContent);
+                
+                // Set secure file permissions (read/write for owner only)
+                chmod($encryptedPath, 0600);
+                
+                // Remove unencrypted file
+                unlink($backupPath);
+                
+                $backupPath = $encryptedPath;
+                $filename .= '.enc';
+                $encryptedSize = filesize($encryptedPath);
+                $this->info("Encrypted backup created: " . $this->formatBytes($encryptedSize));
+            } catch (\Exception $e) {
+                $this->error('Encryption failed: ' . $e->getMessage());
+                $this->warn('Backup file remains unencrypted. Please encrypt manually.');
+            }
+
             // Clean up old backups based on retention policy
             $keepDays = $this->option('keep-days');
             $this->cleanOldBackups($keepDays);
 
-            // Log the backup
-            $this->logBackup($filename, $fileSize);
+            // Log the backup (use final file size)
+            $finalSize = filesize($backupPath);
+            $this->logBackup($filename, $finalSize);
 
             $this->info('Backup completed successfully!');
             $this->info("Location: {$backupPath}");

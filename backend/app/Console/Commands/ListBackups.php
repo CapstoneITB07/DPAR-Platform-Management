@@ -41,7 +41,7 @@ class ListBackups extends Command
         $this->info('Available Database Backups:');
         $this->line('');
 
-        $headers = ['Filename', 'Size', 'Created', 'Age'];
+        $headers = ['Filename', 'Size', 'Status', 'Created', 'Age'];
         $rows = [];
         $totalSize = 0;
 
@@ -51,10 +51,15 @@ class ListBackups extends Command
             $totalSize += $size;
             $created = Carbon::createFromTimestamp(filemtime($file));
             $age = $created->diffForHumans();
+            
+            // Check if file is encrypted
+            $isEncrypted = substr($filename, -4) === '.enc';
+            $status = $isEncrypted ? '🔒 Encrypted' : '⚠️ Unencrypted';
 
             $rows[] = [
                 $filename,
                 $this->formatBytes($size),
+                $status,
                 $created->format('Y-m-d H:i:s'),
                 $age
             ];

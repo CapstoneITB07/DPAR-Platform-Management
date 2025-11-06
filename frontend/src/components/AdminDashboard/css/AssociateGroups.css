@@ -814,6 +814,14 @@
     max-height: calc(95vh - 48px);
   }
   
+  /* Ensure close button stays on the right on mobile */
+  .enhanced-profile-modal .enhanced-close-icon {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    left: auto !important;
+  }
+  
   /* Director History Mobile Adjustments */
   .director-history-section {
     padding: 1rem;
@@ -891,6 +899,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 700;
+  }
+  
+  /* Ensure close button stays on the right on small mobile */
+  .enhanced-profile-modal .enhanced-close-icon {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    left: auto !important;
   }
 }
 
@@ -2266,6 +2282,14 @@ body.ReactModal__Body--open {
     width: 100%;
     padding: 12px 20px;
     font-size: 15px;
+  }
+  
+  /* Ensure close button stays on the right on very small mobile */
+  .enhanced-profile-modal .enhanced-close-icon {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    left: auto !important;
   }
 }
 

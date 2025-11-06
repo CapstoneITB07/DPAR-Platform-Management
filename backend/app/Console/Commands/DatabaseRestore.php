@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Crypt;
 
 class DatabaseRestore extends Command
 {
@@ -51,19 +52,58 @@ class DatabaseRestore extends Command
             $host = config('database.connections.mysql.host');
             $port = config('database.connections.mysql.port', 3306);
 
-            // Handle compressed files
-            $isCompressed = substr($backupFile, -3) === '.gz';
-            $tempFile = $backupPath;
+            // Handle encrypted files
+            $isEncrypted = substr($backupFile, -4) === '.enc';
+            $workingPath = $backupPath;
+            
+            if ($isEncrypted) {
+                $this->info('Decrypting backup...');
+                try {
+                    // Read encrypted content
+                    $encryptedContent = file_get_contents($backupPath);
+                    
+                    // Decrypt using Laravel's Crypt
+                    $decryptedContent = Crypt::decryptString($encryptedContent);
+                    
+                    // Write decrypted content to temp file
+                    $tempDecryptedPath = storage_path('app/backups/temp_decrypted_backup');
+                    file_put_contents($tempDecryptedPath, $decryptedContent);
+                    chmod($tempDecryptedPath, 0600);
+                    
+                    $workingPath = $tempDecryptedPath;
+                    $this->info('Backup decrypted successfully.');
+                } catch (\Exception $e) {
+                    $this->error('Decryption failed: ' . $e->getMessage());
+                    return 1;
+                }
+            }
+
+            // Handle compressed files (check if decrypted file is compressed)
+            $isCompressed = false;
+            $tempFile = $workingPath;
+            
+            // Check if the working file is gzipped (check first bytes for gzip magic number)
+            if (file_exists($workingPath)) {
+                $handle = fopen($workingPath, 'rb');
+                $header = fread($handle, 2);
+                fclose($handle);
+                $isCompressed = ($header === "\x1f\x8b"); // Gzip magic number
+            }
 
             if ($isCompressed) {
                 $this->info('Decompressing backup...');
                 $tempFile = storage_path('app/backups/temp_restore.sql');
-                exec("gunzip -c {$backupPath} > {$tempFile}", $output, $returnVar);
+                exec("gunzip -c {$workingPath} > {$tempFile}", $output, $returnVar);
 
                 if ($returnVar !== 0) {
                     $this->error('Failed to decompress backup file!');
+                    // Clean up temp decrypted file if it exists
+                    if ($isEncrypted && file_exists($workingPath)) {
+                        unlink($workingPath);
+                    }
                     return 1;
                 }
+                chmod($tempFile, 0600);
             }
 
             // Determine mysql path based on OS
@@ -100,9 +140,12 @@ class DatabaseRestore extends Command
             // Execute restore
             exec($command, $output, $returnVar);
 
-            // Clean up temp file if decompressed
-            if ($isCompressed && file_exists($tempFile)) {
+            // Clean up temp files
+            if ($isCompressed && file_exists($tempFile) && $tempFile !== $backupPath) {
                 unlink($tempFile);
+            }
+            if ($isEncrypted && file_exists($workingPath) && $workingPath !== $backupPath) {
+                unlink($workingPath);
             }
 
             if ($returnVar !== 0) {

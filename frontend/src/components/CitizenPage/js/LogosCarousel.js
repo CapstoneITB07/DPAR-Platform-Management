@@ -102,7 +102,7 @@ const LogosCarousel = ({ logos, onLogoClick }) => {
       <div className="netflix-logos-row" ref={carouselRef}>
         {getVisibleLogos().map((logo, index) => (
           <div 
-            key={`${logo.id}-${logo.originalIndex}`}
+            key={`logo-${logo.id || 'unknown'}-${logo.originalIndex}-${logo.position}-${index}`}
             className={`netflix-logo-item ${logo.position === 0 ? 'center' : ''} ${logo.position === -1 || logo.position === 1 ? 'side' : ''} ${logo.position === -2 || logo.position === 2 ? 'edge' : ''}`}
             onClick={() => handleLogoClick(logo, logo.originalIndex)}
           >
@@ -128,9 +128,9 @@ const LogosCarousel = ({ logos, onLogoClick }) => {
       {logos.length > 1 && (
         <div className="netflix-progress">
           <div className="netflix-progress-track">
-            {logos.map((_, index) => (
+            {logos.map((logo, index) => (
               <div
-                key={index}
+                key={`progress-dot-${logo.id || index}-${index}`}
                 className={`netflix-progress-dot ${index === currentIndex ? 'active' : ''}`}
                 onClick={() => setCurrentIndex(index)}
               />

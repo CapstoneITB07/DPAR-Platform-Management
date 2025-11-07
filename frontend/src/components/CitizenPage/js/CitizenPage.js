@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../../logo.svg';
 import axios from 'axios';
@@ -54,6 +54,11 @@ function CitizenPage() {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [showProgramModal, setShowProgramModal] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // For image viewer modal
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [viewerPhotos, setViewerPhotos] = useState([]);
+  const [viewerCurrentIndex, setViewerCurrentIndex] = useState(0);
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -147,10 +152,17 @@ function CitizenPage() {
       setPrograms(res.data || []);
     } catch (err) {
       // Check if it's a network error (offline) - service worker should handle caching
-      if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503) {
-        // Service worker should serve cached data, but if it doesn't, show empty state
-        setPrograms([]); // Show empty state instead of error
-        setError(''); // Don't show error message when offline - cached data will show if available
+      const isOfflineError = !navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503;
+      
+      if (isOfflineError) {
+        // Service worker should serve cached data if available (returns 200, not error)
+        // If we get here, it means no cache was available (503 from service worker)
+        // Preserve existing data if available, otherwise show empty state
+        if (programs.length === 0) {
+          setPrograms([]); // Show empty state only if no existing data
+        }
+        // Don't show error message when offline - user will see offline banner
+        setError('');
       } else {
         // For other errors, show error message
         setError('Failed to load training programs');
@@ -170,10 +182,17 @@ function CitizenPage() {
       setAssociateGroups(res.data || []);
     } catch (err) {
       // Check if it's a network error (offline) - service worker should handle caching
-      if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503) {
-        // Service worker should serve cached data, but if it doesn't, show empty state
-        setAssociateGroups([]); // Show empty state instead of error
-        setGroupsError(''); // Don't show error message when offline - cached data will show if available
+      const isOfflineError = !navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503;
+      
+      if (isOfflineError) {
+        // Service worker should serve cached data if available (returns 200, not error)
+        // If we get here, it means no cache was available (503 from service worker)
+        // Preserve existing data if available, otherwise show empty state
+        if (associateGroups.length === 0) {
+          setAssociateGroups([]); // Show empty state only if no existing data
+        }
+        // Don't show error message when offline - user will see offline banner
+        setGroupsError('');
       } else {
         // For other errors, show error message
         setGroupsError('Failed to load associate groups');
@@ -197,10 +216,17 @@ function CitizenPage() {
       setAnnouncements(res.data || []);
     } catch (err) {
       // Check if it's a network error (offline) - service worker should handle caching
-      if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503) {
-        // Service worker should serve cached data, but if it doesn't, show empty state
-        setAnnouncements([]); // Show empty state instead of error
-        setAnnError(''); // Don't show error message when offline - cached data will show if available
+      const isOfflineError = !navigator.onLine || err.code === 'ERR_NETWORK' || err.message?.includes('Network') || err.response?.status === 503;
+      
+      if (isOfflineError) {
+        // Service worker should serve cached data if available (returns 200, not error)
+        // If we get here, it means no cache was available (503 from service worker)
+        // Preserve existing data if available, otherwise show empty state
+        if (announcements.length === 0) {
+          setAnnouncements([]); // Show empty state only if no existing data
+        }
+        // Don't show error message when offline - user will see offline banner
+        setAnnError('');
       } else {
         // For other errors, show error message
         setAnnError('Failed to load announcements');
@@ -264,81 +290,179 @@ function CitizenPage() {
   // Offline state
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // Carousel states for announcements
-  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
+  // Scroll position for announcements list (vertical scrollable list)
+  const [announcementsScrollIndex, setAnnouncementsScrollIndex] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(5); // Number of items to show at once
 
-  // Carousel states for training programs
-  const [currentProgramIndex, setCurrentProgramIndex] = useState(0);
+  // Carousel state for announcements
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [carouselAutoPlay, setCarouselAutoPlay] = useState(true);
+  const carouselContentRef = useRef(null);
+  const [carouselItemsPerView, setCarouselItemsPerView] = useState(3); // Responsive items per view
 
-  // Reset announcement index when announcements change
+  // Carousel state for training programs
+  const [programCarouselIndex, setProgramCarouselIndex] = useState(0);
+  const [programCarouselAutoPlay, setProgramCarouselAutoPlay] = useState(true);
+  const programCarouselContentRef = useRef(null);
+
+  // Update items per page based on screen size
   useEffect(() => {
-    if (currentAnnouncementIndex >= announcements.length && announcements.length > 0) {
-      setCurrentAnnouncementIndex(0);
-    }
-  }, [announcements, currentAnnouncementIndex]);
+    const updateItemsPerPage = () => {
+      if (window.innerWidth < 768) {
+        setItemsPerPage(3); // Mobile: 3 items
+      } else if (window.innerWidth < 1024) {
+        setItemsPerPage(4); // Tablet: 4 items
+      } else {
+        setItemsPerPage(5); // Desktop: 5 items
+      }
+    };
 
-  // Reset program index when programs change
+    updateItemsPerPage();
+    window.addEventListener('resize', updateItemsPerPage);
+    return () => window.removeEventListener('resize', updateItemsPerPage);
+  }, []);
+
+  // Update carousel items per view based on screen size
+  const [carouselGap, setCarouselGap] = useState(15); // Gap between items
+  
   useEffect(() => {
-    if (currentProgramIndex >= programs.length && programs.length > 0) {
-      setCurrentProgramIndex(0);
-    }
-  }, [programs, currentProgramIndex]);
+    const updateCarouselItemsPerView = () => {
+      if (window.innerWidth < 768) {
+        setCarouselItemsPerView(1); // Mobile: 1 item
+        setCarouselGap(0);
+      } else if (window.innerWidth < 1024) {
+        setCarouselItemsPerView(2); // Tablet: 2 items
+        setCarouselGap(12);
+      } else {
+        setCarouselItemsPerView(3); // Desktop/Laptop: 3 items
+        setCarouselGap(15);
+      }
+    };
 
-  // Navigation handlers for announcements carousel
+    updateCarouselItemsPerView();
+    window.addEventListener('resize', updateCarouselItemsPerView);
+    return () => window.removeEventListener('resize', updateCarouselItemsPerView);
+  }, []);
+
+  // Sort announcements by date (latest first) and separate featured from list
+  const sortedAnnouncements = [...announcements].sort((a, b) => {
+    const dateA = new Date(a.created_at || a.date || 0);
+    const dateB = new Date(b.created_at || b.date || 0);
+    return dateB - dateA;
+  });
+  
+  const featuredAnnouncement = sortedAnnouncements.length > 0 ? sortedAnnouncements[0] : null;
+  const listAnnouncements = sortedAnnouncements.slice(1, 4); // 2nd, 3rd, 4th announcements only
+  const carouselAnnouncements = sortedAnnouncements.slice(4); // 5th+ announcements for carousel
+
+  // Sort training programs by date (latest first) and separate featured from list
+  const sortedPrograms = [...programs].sort((a, b) => {
+    const dateA = new Date(a.date || a.created_at || 0);
+    const dateB = new Date(b.date || b.created_at || 0);
+    return dateB - dateA;
+  });
+  
+  const featuredProgram = sortedPrograms.length > 0 ? sortedPrograms[0] : null;
+  const listPrograms = sortedPrograms.slice(1, 4); // 2nd, 3rd, 4th programs only
+  const carouselPrograms = sortedPrograms.slice(4); // 5th+ programs for carousel
+
+  // Navigation handlers for announcements list (scroll through list)
   const goToPreviousAnnouncement = () => {
-    setCurrentAnnouncementIndex((prev) => 
-      prev === 0 ? announcements.length - 1 : prev - 1
+    if (listAnnouncements.length === 0) return;
+    setAnnouncementsScrollIndex((prev) => 
+      Math.max(0, prev - itemsPerPage)
     );
   };
 
   const goToNextAnnouncement = () => {
-    setCurrentAnnouncementIndex((prev) => 
-      prev === announcements.length - 1 ? 0 : prev + 1
+    if (listAnnouncements.length === 0) return;
+    setAnnouncementsScrollIndex((prev) => 
+      Math.min(listAnnouncements.length - itemsPerPage, prev + itemsPerPage)
     );
   };
 
-  // Navigation handlers for training programs carousel
-  const goToPreviousProgram = () => {
-    setCurrentProgramIndex((prev) => 
-      prev === 0 ? programs.length - 1 : prev - 1
+  // Carousel navigation handlers - move by 1 item at a time
+  const carouselNext = () => {
+    if (carouselAnnouncements.length === 0) return;
+    const maxIndex = Math.max(0, carouselAnnouncements.length - carouselItemsPerView);
+    setCarouselIndex((prev) => 
+      prev >= maxIndex ? 0 : prev + 1
     );
   };
 
-  const goToNextProgram = () => {
-    setCurrentProgramIndex((prev) => 
-      prev === programs.length - 1 ? 0 : prev + 1
+  const carouselPrev = () => {
+    if (carouselAnnouncements.length === 0) return;
+    const maxIndex = Math.max(0, carouselAnnouncements.length - carouselItemsPerView);
+    setCarouselIndex((prev) => 
+      prev <= 0 ? maxIndex : prev - 1
     );
   };
 
-  // Auto-play carousel for announcements
+  // Auto-play carousel - move by 1 item at a time
   useEffect(() => {
-    if (announcements.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentAnnouncementIndex((prev) => 
-          prev === announcements.length - 1 ? 0 : prev + 1
-        );
-      }, 5000); // Change slide every 5 seconds
+    if (!carouselAutoPlay || carouselAnnouncements.length === 0) return;
+    if (carouselAnnouncements.length <= carouselItemsPerView) return;
+    
+    const interval = setInterval(() => {
+      const maxIndex = Math.max(0, carouselAnnouncements.length - carouselItemsPerView);
+      setCarouselIndex((prev) => 
+        prev >= maxIndex ? 0 : prev + 1
+      );
+    }, 5000); // Auto-advance every 5 seconds
 
-      return () => clearInterval(interval);
-    }
-  }, [announcements.length]);
+    return () => clearInterval(interval);
+  }, [carouselAutoPlay, carouselAnnouncements.length]);
 
-  // Auto-play carousel for training programs
+  // Carousel navigation handlers for training programs - move by 1 item at a time
+  const programCarouselNext = () => {
+    if (carouselPrograms.length === 0) return;
+    const maxIndex = Math.max(0, carouselPrograms.length - carouselItemsPerView);
+    setProgramCarouselIndex((prev) => 
+      prev >= maxIndex ? 0 : prev + 1
+    );
+  };
+
+  const programCarouselPrev = () => {
+    if (carouselPrograms.length === 0) return;
+    const maxIndex = Math.max(0, carouselPrograms.length - carouselItemsPerView);
+    setProgramCarouselIndex((prev) => 
+      prev <= 0 ? maxIndex : prev - 1
+    );
+  };
+
+  // Auto-play carousel for training programs - move by 1 item at a time
   useEffect(() => {
-    if (programs.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentProgramIndex((prev) => 
-          prev === programs.length - 1 ? 0 : prev + 1
-        );
-      }, 5000); // Change slide every 5 seconds
+    if (!programCarouselAutoPlay || carouselPrograms.length === 0) return;
+    if (carouselPrograms.length <= carouselItemsPerView) return;
+    
+    const interval = setInterval(() => {
+      const maxIndex = Math.max(0, carouselPrograms.length - carouselItemsPerView);
+      setProgramCarouselIndex((prev) => 
+        prev >= maxIndex ? 0 : prev + 1
+      );
+    }, 5000); // Auto-advance every 5 seconds
 
-      return () => clearInterval(interval);
-    }
-  }, [programs.length]);
+    return () => clearInterval(interval);
+  }, [programCarouselAutoPlay, carouselPrograms.length]);
+
+  // Get visible announcements for list (paginated)
+  const getVisibleAnnouncements = () => {
+    if (listAnnouncements.length === 0) return [];
+    const endIndex = Math.min(announcementsScrollIndex + itemsPerPage, listAnnouncements.length);
+    return listAnnouncements.slice(announcementsScrollIndex, endIndex);
+  };
+
+  // Get visible carousel announcements (3 at a time)
+  const getVisibleCarouselAnnouncements = () => {
+    if (carouselAnnouncements.length === 0) return [];
+    const endIndex = Math.min(carouselIndex + 3, carouselAnnouncements.length);
+    return carouselAnnouncements.slice(carouselIndex, endIndex);
+  };
+
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (showAnnouncementModal || showProgramModal || showGroupModal || modalOpen) {
+    if (showAnnouncementModal || showProgramModal || showGroupModal || modalOpen || showImageViewer) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
@@ -348,7 +472,7 @@ function CitizenPage() {
     return () => {
       document.body.classList.remove('modal-open');
     };
-  }, [showAnnouncementModal, showProgramModal, showGroupModal, modalOpen]);
+  }, [showAnnouncementModal, showProgramModal, showGroupModal, modalOpen, showImageViewer]);
 
   // Helper function to get logo URL (similar to AssociateGroups.js)
   const getLogoUrl = (logoPath) => {
@@ -402,6 +526,34 @@ function CitizenPage() {
     setCurrentPhotoIndex(0);
   };
 
+  // Handle image click to open viewer
+  const handleImageClick = (announcement, photoIndex = 0) => {
+    if (announcement.photo_urls && announcement.photo_urls.length > 0) {
+      setViewerPhotos(announcement.photo_urls);
+      setViewerCurrentIndex(photoIndex);
+      setShowImageViewer(true);
+    }
+  };
+
+  // Image viewer navigation
+  const viewerNextPhoto = () => {
+    setViewerCurrentIndex((prev) => 
+      prev === viewerPhotos.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const viewerPrevPhoto = () => {
+    setViewerCurrentIndex((prev) => 
+      prev === 0 ? viewerPhotos.length - 1 : prev - 1
+    );
+  };
+
+  const closeImageViewer = () => {
+    setShowImageViewer(false);
+    setViewerPhotos([]);
+    setViewerCurrentIndex(0);
+  };
+
   // Photo navigation functions - work with both training programs and announcements
   const nextPhoto = () => {
     const currentPhotos = selectedProgram?.photos || selectedAnnouncement?.photo_urls;
@@ -419,40 +571,6 @@ function CitizenPage() {
         prev === 0 ? currentPhotos.length - 1 : prev - 1
       );
     }
-  };
-
-  // Swipe gesture handlers for mobile
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-
-  // Minimum swipe distance (in pixels)
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    if (isLeftSwipe) {
-      nextPhoto();
-    } else if (isRightSwipe) {
-      prevPhoto();
-    }
-    
-    // Reset
-    setTouchStart(null);
-    setTouchEnd(null);
   };
 
   // Background image style moved to CSS
@@ -597,7 +715,7 @@ function CitizenPage() {
         )}
       </div>
 
-      {/* Side by Side Container for Announcements and Training Programs */}
+      {/* Vertical Container for Announcements and Training Programs */}
       <div className="citizen-side-by-side-container">
         <div className="citizen-content-columns">
           {/* Announcements Section */}
@@ -617,115 +735,233 @@ function CitizenPage() {
               <p className="citizen-no-announcements-message">Check back later for new announcements.</p>
             </div>
           ) : (
-            <div className="citizen-announcement-carousel-container">
-              {announcements.length > 1 && (
-                <>
-                  <button
-                    onClick={goToPreviousAnnouncement}
-                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-left"
-                  >
-                    <FaChevronLeft />
-                  </button>
-                  <button
-                    onClick={goToNextAnnouncement}
-                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-right"
-                  >
-                    <FaChevronRight />
-                  </button>
-                </>
-              )}
-              
-              {/* Display single announcement */}
-              <div className="citizen-announcement-carousel-content">
-                {announcements.map((a, index) => (
-                <div
-                  key={a.id}
-                  className="citizen-announcement-card-wrapper"
-                  style={{ display: index === currentAnnouncementIndex ? 'block' : 'none' }}
-                  >
-                    {/* Date Badge */}
-                    <div className="citizen-announcement-date-badge-inline">
-                      {a.created_at && formatDate(a.created_at)}
-                    </div>
+            <div className="citizen-announcements-layout-container">
+              {/* Featured Announcement (Left Side) */}
+              {featuredAnnouncement && (
+                <div className="citizen-announcement-featured-container">
+                  {/* NEW Badge */}
+                  <div className="citizen-announcement-new-badge">
+                    <span className="citizen-announcement-new-text">NEW</span>
+                  </div>
+                  <div className="citizen-announcement-card-wrapper citizen-announcement-featured-card" onClick={() => handleAnnouncementClick(featuredAnnouncement)}>
+                    {/* Image or Icon */}
+                    {featuredAnnouncement.photo_urls && featuredAnnouncement.photo_urls.length > 0 ? (
+                      <div className="citizen-announcement-featured-image-wrapper">
+                        <img
+                          src={featuredAnnouncement.photo_urls[0]}
+                          alt="Announcement"
+                          className="citizen-announcement-featured-image"
+                          style={{ cursor: 'pointer' }}
+                        />
+                        {featuredAnnouncement.photo_urls.length > 1 && (
+                          <div className="citizen-announcement-photo-badge">
+                            +{featuredAnnouncement.photo_urls.length - 1} Photos
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="citizen-announcement-featured-no-image">
+                        <FaBullhorn size={80} color="#a52a1a" />
+                      </div>
+                    )}
 
-                    {/* Main Content Container */}
-                    <div className="citizen-announcement-main-content">
-                  {/* Image or Icon */}
-                  {a.photo_urls && a.photo_urls.length > 0 ? (
-                        <div className="citizen-announcement-image-wrapper">
-                      <img
-                        src={a.photo_urls[0]}
-                        alt="Announcement"
-                        onClick={() => handleAnnouncementClick(a)}
-                        title="Click to view larger"
-                        className="citizen-announcement-image-main"
-                      />
-                      {a.photo_urls.length > 1 && (
-                            <div className="citizen-announcement-photo-badge">
-                              +{a.photo_urls.length - 1} Photos
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                        <div className="citizen-announcement-no-image">
-                          <FaBullhorn size={70} color="#a52a1a" />
-                    </div>
-                  )}
+                    {/* Content */}
+                    <div className="citizen-announcement-featured-content">
+                      {/* Date Badge */}
+                      <div className="citizen-announcement-date-badge-inline">
+                        {featuredAnnouncement.created_at && formatDate(featuredAnnouncement.created_at)}
+                      </div>
 
                       {/* Title */}
-                      {a.title && (
-                        <h3 className="citizen-announcement-title-inline">
-                          {a.title}
+                      {featuredAnnouncement.title && (
+                        <h3 className="citizen-announcement-featured-title">
+                          {featuredAnnouncement.title}
                         </h3>
                       )}
 
                       {/* Description */}
-                    {a.description && (
-                        <div className="citizen-announcement-description-inline">
-                          {a.photo_urls && a.photo_urls.length > 0 
-                            ? a.description.length > 100 ? a.description.substring(0, 100) + '...' : a.description
-                            : a.description.length > 150 ? a.description.substring(0, 150) + '...' : a.description
+                      {featuredAnnouncement.description && (
+                        <div className="citizen-announcement-featured-description">
+                          {featuredAnnouncement.description.length > 200 
+                            ? featuredAnnouncement.description.substring(0, 200) + '...' 
+                            : featuredAnnouncement.description
                           }
                         </div>
                       )}
 
                       {/* See More Button */}
-                        {a.description && (
-                          (a.photo_urls && a.photo_urls.length > 0 && a.description.length > 100) ||
-                          ((!a.photo_urls || a.photo_urls.length === 0) && a.description.length > 150)
-                        ) && (
-                          <button
+                      {featuredAnnouncement.description && featuredAnnouncement.description.length > 200 && (
+                        <button
                           onClick={(e) => {
-                              e.stopPropagation();
-                              handleAnnouncementClick(a);
-                            }}
+                            e.stopPropagation();
+                            handleAnnouncementClick(featuredAnnouncement);
+                          }}
                           className="citizen-announcement-see-more-btn"
                         >
                           See More →
-                          </button>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Announcements List (Right Side) - 2nd, 3rd, 4th only */}
+              {listAnnouncements.length > 0 && (
+                <div className="citizen-announcements-list-container">
+                  {/* Vertical List of Announcements */}
+                  <div className="citizen-announcements-list">
+                    {listAnnouncements.map((a) => (
+                      <div
+                        key={a.id}
+                        className="citizen-announcement-list-item"
+                        onClick={() => handleAnnouncementClick(a)}
+                      >
+                        {/* Image - Left Side */}
+                        {a.photo_urls && a.photo_urls.length > 0 ? (
+                          <div className="citizen-announcement-list-image">
+                            <img
+                              src={a.photo_urls[0]}
+                              alt="Announcement"
+                              className="citizen-announcement-list-img"
+                            />
+                            {a.photo_urls.length > 1 && (
+                              <div className="citizen-announcement-list-photo-badge">
+                                +{a.photo_urls.length - 1}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="citizen-announcement-list-image citizen-announcement-list-no-image">
+                            <FaBullhorn size={40} color="#a52a1a" />
+                          </div>
+                        )}
+
+                        {/* Content - Right Side */}
+                        <div className="citizen-announcement-list-content">
+                          {/* Date */}
+                          {a.created_at && (
+                            <div className="citizen-announcement-list-date">
+                              {formatDate(a.created_at)}
+                            </div>
+                          )}
+
+                          {/* Title */}
+                          {a.title && (
+                            <h4 className="citizen-announcement-list-title">
+                              {a.title}
+                            </h4>
+                          )}
+
+                          {/* Description with ellipses */}
+                          {a.description && (
+                            <p className="citizen-announcement-list-description">
+                              {a.description.length > 100 
+                                ? a.description.substring(0, 100) + '...' 
+                                : a.description
+                              }
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* More Announcements Section with Carousel */}
+          {carouselAnnouncements.length > 0 && (
+            <div className="citizen-announcements-carousel-section">
+              <h3 className="citizen-announcements-carousel-title">More Announcements</h3>
+              <div className="citizen-announcement-carousel-container-static">
+                <div className="citizen-announcement-carousel-content" ref={carouselContentRef}>
+                  <div 
+                    className="citizen-announcement-carousel-slider"
+                    style={{
+                      transform: carouselItemsPerView === 1 
+                        ? `translateX(-${carouselIndex * 100}%)`
+                        : carouselItemsPerView === 2
+                        ? `translateX(calc(-${carouselIndex} * ((100% - ${carouselGap}px) / ${carouselItemsPerView} + ${carouselGap}px)))`
+                        : `translateX(calc(-${carouselIndex} * ((100% - ${carouselGap * (carouselItemsPerView - 1)}px) / ${carouselItemsPerView} + ${carouselGap}px)))`,
+                      transition: 'transform 0.5s ease-in-out'
+                    }}
+                  >
+                  {carouselAnnouncements.map((a) => (
+                    <div
+                      key={a.id}
+                      className="citizen-announcement-carousel-item"
+                      onClick={() => handleAnnouncementClick(a)}
+                    >
+                      {/* Image - Left Side */}
+                      {a.photo_urls && a.photo_urls.length > 0 ? (
+                        <div className="citizen-announcement-list-image">
+                          <img
+                            src={a.photo_urls[0]}
+                            alt="Announcement"
+                            className="citizen-announcement-list-img"
+                          />
+                          {a.photo_urls.length > 1 && (
+                            <div className="citizen-announcement-list-photo-badge">
+                              +{a.photo_urls.length - 1}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="citizen-announcement-list-image citizen-announcement-list-no-image">
+                          <FaBullhorn size={40} color="#a52a1a" />
+                        </div>
+                      )}
+
+                      {/* Content - Right Side */}
+                      <div className="citizen-announcement-list-content">
+                        {/* Date */}
+                        {a.created_at && (
+                          <div className="citizen-announcement-list-date">
+                            {formatDate(a.created_at)}
+                          </div>
+                        )}
+
+                        {/* Title */}
+                        {a.title && (
+                          <h4 className="citizen-announcement-list-title">
+                            {a.title}
+                          </h4>
+                        )}
+
+                        {/* Description with ellipses */}
+                        {a.description && (
+                          <p className="citizen-announcement-list-description">
+                            {a.description.length > 100 
+                              ? a.description.substring(0, 100) + '...' 
+                              : a.description
+                            }
+                          </p>
                         )}
                       </div>
-                  </div>
-                ))}
-                </div>
-
-              {/* Carousel Indicators */}
-              {announcements.length > 1 && (
-                <div className="citizen-announcement-indicators">
-                  {announcements.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentAnnouncementIndex(index)}
-                      className={`citizen-announcement-indicator ${
-                        index === currentAnnouncementIndex 
-                          ? 'citizen-announcement-indicator-active' 
-                          : 'citizen-announcement-indicator-inactive'
-                      }`}
-                    />
+                    </div>
                   ))}
-          </div>
-        )}
-      </div>
+                  </div>
+                </div>
+                <div className="citizen-announcement-carousel-nav-buttons-wrapper">
+                  <button
+                    onClick={carouselPrev}
+                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-left"
+                    aria-label="Previous announcements"
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <button
+                    onClick={carouselNext}
+                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-right"
+                    aria-label="Next announcements"
+                  >
+                    <FaChevronRight />
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
           </div>
 
@@ -749,125 +985,273 @@ function CitizenPage() {
               <p className="citizen-no-training-message">Check back later for new training opportunities.</p>
             </div>
           ) : (
-            <div className="citizen-training-carousel-container">
-              {programs.length > 1 && (
-                <>
+            <div className="citizen-training-layout-container">
+              {/* Featured Training Program (Left Side) */}
+              {featuredProgram && (
+                <div className="citizen-training-featured-container">
+                  <div className="citizen-training-card-wrapper citizen-training-featured-card" onClick={() => handleProgramClick(featuredProgram)}>
+                    {/* Image */}
+                    {featuredProgram.photos && featuredProgram.photos.length > 0 ? (
+                      <div className="citizen-training-featured-image-wrapper">
+                        <img
+                          src={featuredProgram.photos[0]}
+                          alt="Training Program"
+                          className="citizen-training-featured-image"
+                        />
+                        {featuredProgram.photos.length > 1 && (
+                          <div className="citizen-training-more-photos-badge">
+                            +{featuredProgram.photos.length - 1} More
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="citizen-training-featured-no-image">
+                        <FaClipboardList size={80} color="#a52a1a" />
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div className="citizen-training-featured-content">
+                      {/* Date and Location Badges */}
+                      <div className="citizen-training-badges-wrapper">
+                        {featuredProgram.date && (
+                          <div className="citizen-training-date-badge-inline">
+                            {new Date(featuredProgram.date).toLocaleDateString(undefined, { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                        )}
+                        {featuredProgram.location && (
+                          <div className="citizen-training-location-badge-inline">
+                            📍 {featuredProgram.location}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Title */}
+                      {featuredProgram.name && (
+                        <h3 className="citizen-training-featured-title">
+                          {featuredProgram.name}
+                        </h3>
+                      )}
+
+                      {/* Description */}
+                      {featuredProgram.description && (
+                        <div className="citizen-training-featured-description">
+                          {featuredProgram.description.length > 200 
+                            ? featuredProgram.description.substring(0, 200) + '...' 
+                            : featuredProgram.description
+                          }
+                        </div>
+                      )}
+
+                      {/* View Details Button */}
+                      {featuredProgram.description && featuredProgram.description.length > 200 && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProgramClick(featuredProgram);
+                          }}
+                          className="citizen-training-view-details-btn"
+                        >
+                          View Details →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Training Programs List (Right Side) - 2nd, 3rd, 4th only */}
+              {listPrograms.length > 0 && (
+                <div className="citizen-training-list-container">
+                  {/* Vertical List of Training Programs */}
+                  <div className="citizen-training-list">
+                    {listPrograms.map((program) => {
+                      const title = program.name || '';
+                      const description = program.description || '';
+                      const hasPhotos = program.photos && program.photos.length > 0;
+                      
+                      return (
+                        <div
+                          key={program.id}
+                          className="citizen-training-list-item"
+                          onClick={() => handleProgramClick(program)}
+                        >
+                          {/* Image - Left Side */}
+                          {hasPhotos ? (
+                            <div className="citizen-training-list-image">
+                              <img
+                                src={program.photos[0]}
+                                alt="Training Program"
+                                className="citizen-training-list-img"
+                              />
+                              {program.photos.length > 1 && (
+                                <div className="citizen-training-list-photo-badge">
+                                  +{program.photos.length - 1}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="citizen-training-list-image citizen-training-list-no-image">
+                              <FaClipboardList size={40} color="#a52a1a" />
+                            </div>
+                          )}
+
+                          {/* Content - Right Side */}
+                          <div className="citizen-training-list-content">
+                            {/* Date and Location */}
+                            <div className="citizen-training-list-meta">
+                              {program.date && (
+                                <span className="citizen-training-list-date">
+                                  {new Date(program.date).toLocaleDateString(undefined, { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              )}
+                              {program.location && (
+                                <span className="citizen-training-list-location">
+                                  📍 {program.location}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Title */}
+                            {title && (
+                              <h4 className="citizen-training-list-title">
+                                {title}
+                              </h4>
+                            )}
+
+                            {/* Description with ellipses */}
+                            {description && (
+                              <p className="citizen-training-list-description">
+                                {description.length > 100 
+                                  ? description.substring(0, 100) + '...' 
+                                  : description
+                                }
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* More Training Programs Section with Carousel */}
+          {carouselPrograms.length > 0 && (
+            <div className="citizen-announcements-carousel-section">
+              <h3 className="citizen-announcements-carousel-title">More Training Programs</h3>
+              <div className="citizen-announcement-carousel-container-static">
+                <div className="citizen-announcement-carousel-content" ref={programCarouselContentRef}>
+                  <div 
+                    className="citizen-announcement-carousel-slider"
+                    style={{
+                      transform: carouselItemsPerView === 1 
+                        ? `translateX(-${programCarouselIndex * 100}%)`
+                        : carouselItemsPerView === 2
+                        ? `translateX(calc(-${programCarouselIndex} * ((100% - ${carouselGap}px) / ${carouselItemsPerView} + ${carouselGap}px)))`
+                        : `translateX(calc(-${programCarouselIndex} * ((100% - ${carouselGap * (carouselItemsPerView - 1)}px) / ${carouselItemsPerView} + ${carouselGap}px)))`,
+                      transition: 'transform 0.5s ease-in-out'
+                    }}
+                  >
+                  {carouselPrograms.map((program) => {
+                    const title = program.name || '';
+                    const description = program.description || '';
+                    const hasPhotos = program.photos && program.photos.length > 0;
+                    
+                    return (
+                      <div
+                        key={program.id}
+                        className="citizen-announcement-carousel-item"
+                        onClick={() => handleProgramClick(program)}
+                      >
+                        {/* Image - Left Side */}
+                        {hasPhotos ? (
+                          <div className="citizen-announcement-list-image">
+                            <img
+                              src={program.photos[0]}
+                              alt="Training Program"
+                              className="citizen-announcement-list-img"
+                            />
+                            {program.photos.length > 1 && (
+                              <div className="citizen-announcement-list-photo-badge">
+                                +{program.photos.length - 1}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="citizen-announcement-list-image citizen-announcement-list-no-image">
+                            <FaClipboardList size={40} color="#a52a1a" />
+                          </div>
+                        )}
+
+                        {/* Content - Right Side */}
+                        <div className="citizen-announcement-list-content">
+                          {/* Date */}
+                          {program.date && (
+                            <div className="citizen-announcement-list-date">
+                              {new Date(program.date).toLocaleDateString(undefined, { 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </div>
+                          )}
+                          {program.location && (
+                            <div className="citizen-training-list-location" style={{ marginTop: '4px', fontSize: '0.85rem', color: '#666' }}>
+                              📍 {program.location}
+                            </div>
+                          )}
+
+                          {/* Title */}
+                          {title && (
+                            <h4 className="citizen-announcement-list-title">
+                              {title}
+                            </h4>
+                          )}
+
+                          {/* Description with ellipses */}
+                          {description && (
+                            <p className="citizen-announcement-list-description">
+                              {description.length > 100 
+                                ? description.substring(0, 100) + '...' 
+                                : description
+                              }
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  </div>
+                </div>
+                <div className="citizen-announcement-carousel-nav-buttons-wrapper">
                   <button
-                    onClick={goToPreviousProgram}
-                    className="citizen-training-carousel-nav-btn citizen-training-carousel-nav-btn-left"
+                    onClick={programCarouselPrev}
+                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-left"
+                    aria-label="Previous training programs"
                   >
                     <FaChevronLeft />
                   </button>
                   <button
-                    onClick={goToNextProgram}
-                    className="citizen-training-carousel-nav-btn citizen-training-carousel-nav-btn-right"
+                    onClick={programCarouselNext}
+                    className="citizen-announcement-carousel-nav-btn citizen-announcement-carousel-nav-btn-right"
+                    aria-label="Next training programs"
                   >
                     <FaChevronRight />
                   </button>
-                </>
-              )}
-              
-              {/* Display single training program */}
-              <div className="citizen-training-carousel-content">
-              {programs.map((program, index) => {
-              const title = program.name || '';
-              const description = program.description || '';
-              const hasPhotos = program.photos && program.photos.length > 0;
-              const photoCount = hasPhotos ? program.photos.length : 0;
-              
-              return (
-                <div
-                  key={program.id}
-                  className="citizen-training-card-wrapper"
-                  style={{ display: index === currentProgramIndex ? 'block' : 'none' }}
-                  onClick={() => handleProgramClick(program)}
-                >
-                  {/* Main Content Container */}
-                  <div className="citizen-training-card-main-content">
-                  {/* Date and Location Badges */}
-                    <div className="citizen-training-badges-wrapper">
-                    {program.date && (
-                        <div className="citizen-training-date-badge-inline">
-                          {new Date(program.date).toLocaleDateString(undefined, { 
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                      </div>
-                    )}
-                    {program.location && (
-                        <div className="citizen-training-location-badge-inline">
-                          📍 {program.location}
-                      </div>
-                    )}
-                  </div>
-
-                    {/* Title */}
-                    {title && (
-                      <h3 className="citizen-training-title-inline">
-                        {title}
-                      </h3>
-                    )}
-
-                    {/* Description */}
-                    {description && (
-                      <div className="citizen-training-description-inline">
-                          {program.photos && program.photos.length > 0 
-                            ? description.length > 100 ? description.substring(0, 100) + '...' : description
-                            : description.length > 150 ? description.substring(0, 150) + '...' : description
-                          }
-                      </div>
-                    )}
-
-                  {/* Photo Display */}
-                  {hasPhotos && (
-                      <div className="citizen-training-image-wrapper-inline">
-                        <img
-                          src={program.photos[0]}
-                          alt="Training Program"
-                          className="citizen-training-image-main"
-                        />
-                        {photoCount > 1 && (
-                          <div className="citizen-training-more-photos-badge">
-                            +{photoCount - 1} More
-                          </div>
-                        )}
-                    </div>
-                  )}
-
-                    {/* View Details Button */}
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProgramClick(program);
-                        }}
-                      className="citizen-training-view-details-btn"
-                    >
-                      View Details →
-                      </button>
-                    </div>
                 </div>
-              );
-            })}
-                  </div>
-
-              {/* Carousel Indicators */}
-              {programs.length > 1 && (
-                <div className="citizen-training-indicators">
-                  {programs.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentProgramIndex(index)}
-                      className={`citizen-training-indicator ${
-                        index === currentProgramIndex 
-                          ? 'citizen-training-indicator-active' 
-                          : 'citizen-training-indicator-inactive'
-                      }`}
-                    />
-                  ))}
-                </div>
-          )}
-        </div>
+              </div>
+            </div>
           )}
       </div>
         </div>
@@ -950,14 +1334,13 @@ function CitizenPage() {
                 <div className="citizen-announcement-photo-navigation">
                 <div 
                   className="citizen-announcement-photo-container"
-                  onTouchStart={onTouchStart}
-                  onTouchMove={onTouchMove}
-                  onTouchEnd={onTouchEnd}
                 >
                   <img 
                     src={selectedAnnouncement.photo_urls[currentPhotoIndex]} 
                     alt={`Photo ${currentPhotoIndex + 1}`} 
-                    className="citizen-announcement-modal-img" 
+                    className="citizen-announcement-modal-img"
+                    onClick={() => handleImageClick(selectedAnnouncement, currentPhotoIndex)}
+                    style={{ cursor: 'pointer' }}
                   />
                   
                   {/* Navigation Arrows */}
@@ -1110,9 +1493,6 @@ function CitizenPage() {
                 <div className="citizen-training-photo-navigation">
                   <div 
                     className="citizen-training-photo-container"
-                    onTouchStart={onTouchStart}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}
                   >
                     <img 
                       src={selectedProgram.photos[currentPhotoIndex]} 
@@ -1164,6 +1544,48 @@ function CitizenPage() {
         >
           {pushNotificationsEnabled ? <FaBell /> : <FaBellSlash />}
         </button>
+      )}
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && viewerPhotos.length > 0 && (
+        <div className="citizen-image-viewer-overlay" onClick={closeImageViewer}>
+          <div className="citizen-image-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button className="citizen-image-viewer-close" onClick={closeImageViewer}>&times;</button>
+            
+            {/* Image Container */}
+            <div className="citizen-image-viewer-image-container">
+              <img 
+                src={viewerPhotos[viewerCurrentIndex]} 
+                alt={`Photo ${viewerCurrentIndex + 1}`} 
+                className="citizen-image-viewer-img" 
+              />
+            </div>
+
+            {/* Navigation Buttons Below Image */}
+            {viewerPhotos.length > 1 && (
+              <div className="citizen-image-viewer-nav-buttons">
+                <button 
+                  className="citizen-image-viewer-nav-btn citizen-image-viewer-nav-prev"
+                  onClick={viewerPrevPhoto}
+                >
+                  <FaChevronLeft /> Previous
+                </button>
+                
+                {/* Photo Counter */}
+                <div className="citizen-image-viewer-counter">
+                  {viewerCurrentIndex + 1} / {viewerPhotos.length}
+                </div>
+                
+                <button 
+                  className="citizen-image-viewer-nav-btn citizen-image-viewer-nav-next"
+                  onClick={viewerNextPhoto}
+                >
+                  Next <FaChevronRight />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Footer always at the bottom */}

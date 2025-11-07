@@ -1297,7 +1297,7 @@ body.modal-open {
   transform: translateY(-50%);
   background: linear-gradient(135deg, rgba(165, 42, 26, 0.95) 0%, rgba(139, 20, 9, 0.95) 100%);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   width: 45px;
   height: 45px;
   border-radius: 50%;
@@ -1319,11 +1319,11 @@ body.modal-open {
 }
 
 .citizen-training-photo-nav-prev {
-  left: 15px;
+  left: 12px;
 }
 
 .citizen-training-photo-nav-next {
-  right: 15px;
+  right: 12px;
 }
 
 .citizen-training-photo-counter {
@@ -1423,10 +1423,10 @@ body.modal-open {
 
 
 .citizen-content-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  align-items: stretch;
 }
 
 .citizen-announcements-section,
@@ -1438,6 +1438,8 @@ body.modal-open {
   border: 2px solid transparent;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  min-height: 200px;
 }
 
 .citizen-announcements-section::before,
@@ -1552,63 +1554,124 @@ body.modal-open {
   }
 }
 
-/* Responsive Layout for Side by Side Container */
-@media (max-width: 1024px) {
+/* Responsive Layout for Vertical Container */
+/* Laptop (1024px and above) */
+@media (min-width: 1024px) {
   .citizen-side-by-side-container {
-    padding: 30px;
+    max-width: 1200px;
+    padding: 40px;
+    margin: 40px auto;
   }
 
   .citizen-content-columns {
-    grid-template-columns: 1fr;
-    gap: 25px;
+    gap: 50px;
+  }
+
+  .citizen-announcements-section,
+  .citizen-training-section {
+    padding: 30px;
+    min-height: 300px;
   }
 
   .citizen-announcements-title,
   .citizen-training-title {
-    font-size: 1.6rem;
+    font-size: 2rem;
+    margin-bottom: 25px;
   }
 }
 
+/* Tablet (768px to 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .citizen-side-by-side-container {
+    max-width: 95%;
+    padding: 30px;
+    margin: 30px auto;
+  }
+
+  .citizen-content-columns {
+    gap: 35px;
+  }
+
+  .citizen-announcements-section,
+  .citizen-training-section {
+    padding: 25px;
+    min-height: 250px;
+  }
+
+  .citizen-announcements-title,
+  .citizen-training-title {
+    font-size: 1.7rem;
+    margin-bottom: 20px;
+  }
+}
+
+/* Mobile (below 768px) */
 @media (max-width: 768px) {
   .citizen-side-by-side-container {
+    max-width: 100%;
     padding: 20px;
-    margin: 30px auto;
+    margin: 20px auto;
     border-radius: 20px;
+  }
+
+  .citizen-content-columns {
+    gap: 30px;
   }
 
   .citizen-announcements-section,
   .citizen-training-section {
     padding: 20px;
+    min-height: 200px;
   }
 
   .citizen-announcements-title,
   .citizen-training-title {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     margin-bottom: 15px;
     padding-bottom: 12px;
   }
 }
 
+/* Small Mobile (below 480px) */
 @media (max-width: 480px) {
   .citizen-side-by-side-container {
-    padding: 15px;
-    margin: 20px 10px;
-    border-radius: 16px;
+    max-width: 100vw;
+    padding: 12px 4px 4px 4px;
+    margin: 15px 0 0 0;
+    border-radius: 0;
   }
 
   .citizen-content-columns {
-    gap: 20px;
+    gap: 25px;
   }
 
   .citizen-announcements-section,
   .citizen-training-section {
-    padding: 15px;
-    border-radius: 12px;
+    max-width: 100vw;
+    padding: 12px 4px 4px 4px;
+    margin: 0;
+    border-radius: 0;
+    min-height: 180px;
+  }
+  
+  .citizen-training-layout-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+  
+  .citizen-training-featured-container,
+  .citizen-training-list-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
   }
 
   .citizen-announcements-title,
   .citizen-training-title {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     margin-bottom: 12px;
     padding-bottom: 10px;
     letter-spacing: 1px;
@@ -1748,7 +1811,10 @@ body.modal-open {
   
   .citizen-modal-content {
     max-width: 95vw;
-    padding: 20px;
+    width: 95vw;
+    padding: 0;
+    border-radius: 16px;
+    margin: 15px auto;
   }
   
   .citizen-image-modal-content {
@@ -1764,6 +1830,35 @@ body.modal-open {
     padding: 0 0 16px 0;
     margin: 20px 0 0 0;
     border-radius: 0;
+  }
+  
+  .citizen-side-by-side-container {
+    max-width: 100vw;
+    padding: 0 0 16px 0;
+    margin: 20px 0 0 0;
+    border-radius: 0;
+  }
+  
+  .citizen-training-section {
+    max-width: 100vw;
+    padding: 12px 4px 4px 4px !important;
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  .citizen-training-layout-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+  
+  .citizen-training-featured-container,
+  .citizen-training-list-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
   }
   
   .citizen-logo-img {
@@ -1825,8 +1920,11 @@ body.modal-open {
   }
   
   .citizen-modal-content {
-    max-width: 98vw;
-    padding: 16px;
+    max-width: 95vw;
+    width: 95vw;
+    padding: 0;
+    border-radius: 16px;
+    margin: 15px auto;
   }
   
   .citizen-image-modal-content {
@@ -1846,6 +1944,35 @@ body.modal-open {
     padding: 0 0 12px 0;
     margin: 15px 0 0 0;
     border-radius: 0;
+  }
+  
+  .citizen-side-by-side-container {
+    max-width: 100vw;
+    padding: 0 0 12px 0;
+    margin: 15px 0 0 0;
+    border-radius: 0;
+  }
+  
+  .citizen-training-section {
+    max-width: 100vw;
+    padding: 12px 4px 4px 4px !important;
+    margin: 0;
+    border-radius: 0;
+  }
+  
+  .citizen-training-layout-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+  
+  .citizen-training-featured-container,
+  .citizen-training-list-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
   }
   
   .citizen-logo-img {
@@ -1909,8 +2036,12 @@ body.modal-open {
   }
   
   .citizen-modal-content {
-    max-width: 99vw;
-    padding: 12px;
+    max-width: 95vw;
+    width: 95vw;
+    padding: 0;
+    border-radius: 16px;
+    max-height: 90vh;
+    margin: 20px auto;
   }
   
   .citizen-image-modal-content {
@@ -2000,8 +2131,11 @@ body.modal-open {
   }
   
   .citizen-modal-content {
-    max-width: 100vw;
-    padding: 8px;
+    max-width: 95vw;
+    width: 95vw;
+    padding: 0;
+    border-radius: 16px;
+    margin: 15px auto;
   }
   
   .citizen-image-modal-content {
@@ -3664,11 +3798,13 @@ body.modal-open {
 }
 
 .citizen-announcement-modal-description {
-  margin: 20px 20px 24px 20px;
-  width: calc(100% - 40px);
+  margin: 0;
+  padding: 20px 20px 24px 20px;
+  width: 100%;
   max-width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .citizen-announcement-modal-description strong {
@@ -3698,11 +3834,14 @@ body.modal-open {
 
 /* Announcement Photo Navigation Styles */
 .citizen-announcement-photo-navigation {
-  margin: 25px 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  margin: 0;
   padding: 25px;
-  border-radius: 16px;
-  border: 2px solid rgba(165, 42, 26, 0.1);
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .citizen-announcement-photo-container {
@@ -3711,10 +3850,12 @@ body.modal-open {
   justify-content: center;
   align-items: center;
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   min-height: 350px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .citizen-announcement-modal-img {
@@ -3734,19 +3875,19 @@ body.modal-open {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: linear-gradient(135deg, #a52a1a 0%, #8B1409 100%);
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.95) 0%, rgba(139, 20, 9, 0.95) 100%);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 10;
-  font-size: 20px;
+  font-size: 18px;
   box-shadow: 0 6px 20px rgba(165, 42, 26, 0.4);
   backdrop-filter: blur(10px);
 }
@@ -3763,11 +3904,11 @@ body.modal-open {
 }
 
 .citizen-announcement-photo-nav-prev {
-  left: 15px;
+  left: 12px;
 }
 
 .citizen-announcement-photo-nav-next {
-  right: 15px;
+  right: 12px;
 }
 
 .citizen-announcement-photo-counter {
@@ -3815,6 +3956,12 @@ body.modal-open {
     -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
+    width: 95vw;
+    max-width: 95vw;
+    border-radius: 16px;
+    max-height: 90vh;
+    padding: 0;
+    margin: 20px auto;
   }
   
   .citizen-group-modal-header {
@@ -3837,20 +3984,90 @@ body.modal-open {
     min-width: 0;
   }
 
-  /* Hide navigation buttons on mobile - use swipe instead */
-  .citizen-announcement-photo-nav-btn,
-  .citizen-training-photo-nav-btn {
-    display: none !important;
+  /* Make announcement modal content box-like on mobile */
+  .citizen-announcement-modal-header {
+    border-radius: 16px 16px 0 0;
+    padding: 30px 20px 25px 20px;
   }
 
-  /* Make photo containers touch-friendly for swiping */
-  .citizen-announcement-photo-container,
-  .citizen-training-photo-container {
-    touch-action: pan-x pan-y;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+  .citizen-announcement-modal-description {
+    padding: 20px 20px 24px 20px;
+    margin: 0;
+  }
+
+  .citizen-announcement-photo-navigation {
+    padding: 20px;
+    margin: 0;
+    border-radius: 0 0 16px 16px;
+  }
+
+  .citizen-announcement-photo-container {
+    border-radius: 12px;
+    margin: 0;
+  }
+
+  /* Keep modal overlay centered */
+  .citizen-modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  /* Make arrow buttons smaller but visible on mobile */
+  .citizen-announcement-photo-nav-btn,
+  .citizen-training-photo-nav-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
+    border-width: 1.5px !important;
+    box-shadow: 0 3px 12px rgba(165, 42, 26, 0.4) !important;
+    background: linear-gradient(135deg, rgba(165, 42, 26, 0.9) 0%, rgba(139, 20, 9, 0.9) 100%) !important;
+  }
+
+  .citizen-announcement-photo-nav-btn:hover,
+  .citizen-training-photo-nav-btn:hover {
+    transform: translateY(-50%) scale(1.1) !important;
+  }
+
+  .citizen-announcement-photo-nav-btn:active,
+  .citizen-training-photo-nav-btn:active {
+    transform: translateY(-50%) scale(0.95) !important;
+  }
+
+  .citizen-announcement-photo-nav-prev,
+  .citizen-training-photo-nav-prev {
+    left: 5px !important;
+  }
+
+  .citizen-announcement-photo-nav-next,
+  .citizen-training-photo-nav-next {
+    right: 5px !important;
+  }
+
+  /* Make buttons more compact on very small screens */
+  @media (max-width: 480px) {
+    .citizen-announcement-photo-nav-btn,
+    .citizen-training-photo-nav-btn {
+      width: 30px !important;
+      height: 30px !important;
+      font-size: 13px !important;
+      border-width: 1px !important;
+    }
+
+    .citizen-announcement-photo-nav-btn:hover,
+    .citizen-training-photo-nav-btn:hover {
+      transform: translateY(-50%) scale(1.08) !important;
+    }
+
+    .citizen-announcement-photo-nav-prev,
+    .citizen-training-photo-nav-prev {
+      left: 3px !important;
+    }
+
+    .citizen-announcement-photo-nav-next,
+    .citizen-training-photo-nav-next {
+      right: 3px !important;
+    }
   }
 }
 
@@ -3902,27 +4119,849 @@ body.modal-open {
   overflow-wrap: break-word !important;
 }
 
+/* Featured Announcement Styles */
+/* New Layout: Featured Left, List Right */
+.citizen-announcements-layout-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.citizen-announcement-featured-container {
+  position: relative;
+}
+
+.citizen-announcement-featured {
+  margin-bottom: 30px;
+  position: relative;
+}
+
+/* NEW Badge for Featured Announcement */
+.citizen-announcement-new-badge {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  padding: 8px 24px;
+  border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 68, 68, 0.6);
+  }
+}
+
+.citizen-announcement-new-text {
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.citizen-announcement-featured-card {
+  width: 100%;
+  max-width: 100%;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.citizen-announcement-featured-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(165, 42, 26, 0.2);
+}
+
+/* Featured Announcement Image */
+.citizen-announcement-featured-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.citizen-announcement-featured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.citizen-announcement-featured-no-image {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 50%, #fff0f0 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.citizen-announcement-featured-content {
+  padding: 25px;
+}
+
+.citizen-announcement-featured-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 15px 0;
+  line-height: 1.3;
+}
+
+.citizen-announcement-featured-description {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Announcements List (Right Side) */
+.citizen-announcements-list-container {
+  position: relative;
+  height: 100%;
+  min-height: 500px;
+}
+
+.citizen-announcements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+}
+
+.citizen-announcement-list-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.citizen-announcement-list-item:hover {
+  box-shadow: 0 4px 16px rgba(165, 42, 26, 0.15);
+  transform: translateX(4px);
+  border-color: #a52a1a;
+}
+
+.citizen-announcement-list-image {
+  flex: 0 0 120px;
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background: #f8f9fa;
+}
+
+.citizen-announcement-list-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.citizen-announcement-list-no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 50%, #fff0f0 100%);
+}
+
+.citizen-announcement-list-photo-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(165, 42, 26, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.citizen-announcement-list-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.citizen-announcement-list-date {
+  font-size: 0.75rem;
+  color: #8B1409;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.citizen-announcement-list-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.citizen-announcement-list-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* List Navigation Buttons */
+.citizen-announcement-list-nav-btn {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.9) 0%, rgba(139, 20, 9, 0.9) 100%);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 15px rgba(165, 42, 26, 0.4);
+  transition: all 0.3s ease;
+}
+
+.citizen-announcement-list-nav-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 1) 0%, rgba(139, 20, 9, 1) 100%);
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(165, 42, 26, 0.6);
+}
+
+.citizen-announcement-list-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.citizen-announcement-list-nav-btn-up {
+  top: -20px;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+.citizen-announcement-list-nav-btn-up:hover:not(:disabled) {
+  transform: translateX(-50%) rotate(90deg) scale(1.1);
+}
+
+.citizen-announcement-list-nav-btn-down {
+  bottom: -20px;
+  transform: translateX(-50%) rotate(-90deg);
+}
+
+.citizen-announcement-list-nav-btn-down:hover:not(:disabled) {
+  transform: translateX(-50%) rotate(-90deg) scale(1.1);
+}
+
+/* Responsive Styles for Layout */
+/* Laptop (1024px - 1439px) */
+@media (max-width: 1439px) and (min-width: 1024px) {
+  .citizen-announcements-layout-container,
+  .citizen-training-layout-container {
+    gap: 25px;
+    max-width: 1200px;
+  }
+
+  .citizen-announcement-featured-image-wrapper,
+  .citizen-training-featured-image-wrapper {
+    height: 350px;
+  }
+
+  .citizen-announcement-featured-no-image,
+  .citizen-training-featured-no-image {
+    height: 350px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .citizen-announcements-layout-container,
+  .citizen-training-layout-container {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .citizen-announcement-featured-container,
+  .citizen-training-featured-container {
+    order: 1;
+  }
+
+  .citizen-announcements-list-container,
+  .citizen-training-list-container {
+    order: 2;
+    height: auto;
+  }
+
+  .citizen-announcements-list,
+  .citizen-training-list {
+    height: auto;
+  }
+
+  .citizen-announcement-featured-image-wrapper,
+  .citizen-training-featured-image-wrapper {
+    height: 350px;
+  }
+
+  .citizen-announcement-featured-no-image,
+  .citizen-training-featured-no-image {
+    height: 350px;
+  }
+
+  .citizen-announcement-list-item,
+  .citizen-training-list-item {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .citizen-announcement-list-image,
+  .citizen-training-list-image {
+    flex: 0 0 100px;
+    width: 100px;
+    height: 100px;
+  }
+
+  .citizen-announcement-list-content,
+  .citizen-training-list-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+}
+
+/* Mobile (below 768px) */
+@media (max-width: 767px) {
+  .citizen-announcements-layout-container,
+  .citizen-training-layout-container {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
+  .citizen-announcement-featured-container,
+  .citizen-training-featured-container {
+    order: 1;
+  }
+
+  .citizen-announcements-list-container,
+  .citizen-training-list-container {
+    order: 2;
+    min-height: 400px;
+    height: auto;
+  }
+
+  .citizen-announcements-list,
+  .citizen-training-list {
+    height: auto;
+  }
+
+  .citizen-announcement-featured-image-wrapper,
+  .citizen-training-featured-image-wrapper {
+    height: 250px;
+  }
+
+  .citizen-announcement-featured-no-image,
+  .citizen-training-featured-no-image {
+    height: 250px;
+  }
+
+  .citizen-announcement-featured-title,
+  .citizen-training-featured-title {
+    font-size: 1.4rem;
+  }
+
+  .citizen-announcement-featured-description,
+  .citizen-training-featured-description {
+    font-size: 0.9rem;
+  }
+
+  .citizen-announcement-list-item,
+  .citizen-training-list-item {
+    padding: 12px;
+    gap: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .citizen-announcement-list-image,
+  .citizen-training-list-image {
+    flex: 0 0 90px;
+    width: 90px;
+    height: 90px;
+  }
+
+  .citizen-announcement-list-content,
+  .citizen-training-list-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .citizen-announcement-list-title,
+  .citizen-training-list-title {
+    font-size: 0.95rem;
+  }
+
+  .citizen-announcement-list-description,
+  .citizen-training-list-description {
+    font-size: 0.85rem;
+  }
+
+  .citizen-announcement-list-nav-btn,
+  .citizen-training-list-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
 /* Enhanced Announcement Carousel Styles */
 .citizen-announcement-carousel-container {
   position: relative;
   min-height: 380px;
   padding: 0 10px;
+  overflow: hidden;
 }
 
 .citizen-announcement-carousel-nav-btn {
-  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.9) 0%, rgba(139, 20, 9, 0.9) 100%);
+  color: white;
+  border: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 4px 15px rgba(165, 42, 26, 0.4);
+  transition: all 0.3s ease;
+}
+
+.citizen-announcement-carousel-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 1) 0%, rgba(139, 20, 9, 1) 100%);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(165, 42, 26, 0.6);
+}
+
+.citizen-announcement-carousel-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .citizen-announcement-carousel-nav-btn-left {
-  left: -20px;
+  left: 10px;
 }
 
 .citizen-announcement-carousel-nav-btn-right {
-  right: -20px;
+  right: 10px;
+}
+
+.citizen-announcements-carousel-section {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+}
+
+.citizen-announcement-carousel-container-static {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 150px;
+  padding: 0 55px;
+}
+
+/* Button wrapper - positioned absolutely on desktop/tablet, below on mobile */
+.citizen-announcement-carousel-nav-buttons-wrapper {
+  position: absolute;
+  top: 65%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.citizen-announcement-carousel-nav-buttons-wrapper .citizen-announcement-carousel-nav-btn {
+  pointer-events: all;
+  position: relative;
+}
+
+.citizen-announcement-carousel-nav-buttons-wrapper .citizen-announcement-carousel-nav-btn-left {
+  left: 10px;
+}
+
+.citizen-announcement-carousel-nav-buttons-wrapper .citizen-announcement-carousel-nav-btn-right {
+  right: 10px;
+  left: auto;
+}
+
+.citizen-announcement-carousel-container-static .citizen-announcement-carousel-content {
+  overflow: hidden;
+  padding: 15px 0;
+  position: relative;
+  width: 100%;
+}
+
+.citizen-announcement-carousel-container-static .citizen-announcement-carousel-slider {
+  display: flex;
+  gap: 15px;
+  will-change: transform;
+}
+
+.citizen-announcement-carousel-container-static .citizen-announcement-carousel-item {
+  flex-shrink: 0;
+  width: calc(100% / 3);
+  min-width: calc(100% / 3);
+  max-width: calc(100% / 3);
+}
+
+/* Responsive styles for static container */
+/* Laptop/Desktop (1024px and above) - 3 items */
+@media (min-width: 1024px) {
+  .citizen-announcement-carousel-container-static {
+    max-width: 1100px;
+    padding: 0 55px;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-slider {
+    gap: 15px;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-item {
+    width: calc((100% - 30px) / 3);
+    min-width: calc((100% - 30px) / 3);
+    max-width: calc((100% - 30px) / 3);
+  }
+}
+
+/* Tablet (768px - 1023px) - 2 items */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .citizen-announcements-carousel-section {
+    padding: 0 15px;
+  }
+
+  .citizen-announcement-carousel-container-static {
+    max-width: 100%;
+    padding: 0 50px;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-slider {
+    gap: 12px;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-item {
+    width: calc((100% - 12px) / 2);
+    min-width: calc((100% - 12px) / 2);
+    max-width: calc((100% - 12px) / 2);
+  }
+
+  .citizen-announcements-carousel-title {
+    font-size: 1.3rem;
+    margin-bottom: 18px;
+  }
+}
+
+/* Mobile (below 768px) - 1 item */
+@media (max-width: 767px) {
+  .citizen-announcements-carousel-section {
+    padding: 0 10px;
+    margin-top: 30px;
+  }
+
+  .citizen-announcement-carousel-container-static {
+    max-width: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-content {
+    width: 100%;
+    order: 1;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-slider {
+    gap: 0;
+    display: flex;
+    width: 100%;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-item {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    flex-shrink: 0;
+    padding: 12px 15px;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
+  .citizen-announcements-carousel-title {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+
+  /* Show button wrapper on mobile and position buttons below */
+  .citizen-announcement-carousel-nav-buttons-wrapper {
+    position: static;
+    transform: none;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 15px;
+    order: 2;
+    top: auto;
+    left: auto;
+    right: auto;
+  }
+
+  /* Move navigation buttons below carousel on mobile */
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-nav-btn {
+    position: static;
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+    transform: none;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-nav-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-nav-btn:active {
+    transform: scale(0.95);
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-nav-btn-left {
+    left: auto;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-nav-btn-right {
+    right: auto;
+  }
+
+  /* Adjust carousel item layout for mobile */
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-item {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-list-image {
+    flex: 0 0 70px;
+    width: 70px;
+    height: 70px;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-list-title {
+    font-size: 0.95rem;
+  }
+
+  .citizen-announcement-carousel-container-static .citizen-announcement-list-description {
+    font-size: 0.85rem;
+  }
+}
+
+.citizen-announcements-carousel-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 .citizen-announcement-carousel-content {
-  padding: 15px 0;
+  overflow: hidden;
+  padding: 15px 50px;
+  position: relative;
+  width: 100%;
+}
+
+.citizen-announcement-carousel-slider {
+  display: flex;
+  gap: 20px;
+  will-change: transform;
+}
+
+.citizen-announcement-carousel-item {
+  flex-shrink: 0;
+  width: calc((100% - 40px) / 3);
+  min-width: calc((100% - 40px) / 3);
+  max-width: calc((100% - 40px) / 3);
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.citizen-announcement-carousel-item:hover {
+  box-shadow: 0 4px 16px rgba(165, 42, 26, 0.15);
+  transform: translateX(4px);
+  border-color: #a52a1a;
+}
+
+/* Responsive carousel items - Always 3 items */
+@media (min-width: 1024px) {
+  .citizen-announcement-carousel-item {
+    width: calc((100% - 40px) / 3);
+    min-width: calc((100% - 40px) / 3);
+    max-width: calc((100% - 40px) / 3);
+  }
+
+  .citizen-training-carousel-item {
+    flex: 0 0 calc(33.333% - 14px);
+    min-width: calc(33.333% - 14px);
+    max-width: calc(33.333% - 14px);
+  }
+}
+
+/* Tablet (3 items) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .citizen-announcements-carousel-section {
+    padding: 0 15px;
+    max-width: 1000px;
+  }
+
+  .citizen-announcements-carousel-title {
+    font-size: 1.3rem;
+    margin-bottom: 18px;
+  }
+
+  .citizen-announcement-carousel-content {
+    padding: 12px 45px;
+  }
+
+  .citizen-announcement-carousel-slider {
+    gap: 15px;
+  }
+
+  .citizen-announcement-carousel-item {
+    width: calc((100% - 30px) / 3);
+    min-width: calc((100% - 30px) / 3);
+    max-width: calc((100% - 30px) / 3);
+  }
+
+  .citizen-training-carousel-item {
+    flex: 0 0 calc(50% - 8px);
+    min-width: calc(50% - 8px);
+    max-width: calc(50% - 8px);
+  }
+}
+
+/* Mobile (3 items) */
+@media (max-width: 767px) {
+  .citizen-announcements-carousel-section {
+    padding: 0 10px;
+    margin-top: 25px;
+    max-width: 100%;
+  }
+
+  .citizen-announcements-carousel-title {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+  }
+
+  .citizen-announcement-carousel-container {
+    padding: 0 40px;
+  }
+
+  .citizen-announcement-carousel-content {
+    padding: 10px 0;
+  }
+
+  .citizen-announcement-carousel-slider {
+    gap: 10px;
+  }
+
+  /* Only apply to old carousel structure, not container-static */
+  .citizen-announcement-carousel-container .citizen-announcement-carousel-item {
+    width: calc((100% - 20px) / 3);
+    min-width: calc((100% - 20px) / 3);
+    max-width: calc((100% - 20px) / 3);
+  }
+
+  .citizen-announcement-carousel-nav-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .citizen-announcement-carousel-nav-btn-left {
+    left: 5px;
+  }
+
+  .citizen-announcement-carousel-nav-btn-right {
+    right: 5px;
+  }
+
+  .citizen-training-carousel-container {
+    padding: 0 20px;
+  }
+
+  .citizen-training-carousel-item {
+    flex: 0 0 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
 }
 
 .citizen-announcement-card-wrapper {
@@ -3946,28 +4985,28 @@ body.modal-open {
 .citizen-announcement-date-badge-inline {
   background: linear-gradient(135deg, #8B1409 0%, #a52a1a 100%);
   color: white;
-  padding: 6px 16px;
+  padding: 8px 20px;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   display: inline-block;
-  margin: 12px 0 0 12px;
+  margin: 15px 0 0 15px;
   box-shadow: 0 4px 12px rgba(139, 20, 9, 0.3);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
 .citizen-announcement-main-content {
-  padding: 15px 20px 20px 20px;
+  padding: 20px 25px 25px 25px;
 }
 
 .citizen-announcement-image-wrapper {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 280px;
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   cursor: pointer;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -4039,13 +5078,13 @@ body.modal-open {
 
 .citizen-announcement-title-inline {
   color: #8B1409;
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  margin-bottom: 12px;
-  line-height: 1.3;
+  margin-bottom: 15px;
+  line-height: 1.4;
   letter-spacing: -0.5px;
   position: relative;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
 }
 
 .citizen-announcement-title-inline::after {
@@ -4061,9 +5100,9 @@ body.modal-open {
 
 .citizen-announcement-description-inline {
   color: #4a4a4a;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-bottom: 15px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
   text-align: justify;
   font-weight: 400;
   letter-spacing: 0.2px;
@@ -4164,27 +5203,317 @@ body.modal-open {
   transform: scaleY(1.3);
 }
 
+/* Training Programs Layout: Featured Left, List Right */
+.citizen-training-layout-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.citizen-training-featured-container {
+  position: relative;
+}
+
+/* Featured Training Program Styles */
+.citizen-training-featured {
+  margin-bottom: 30px;
+}
+
+.citizen-training-featured-card {
+  width: 100%;
+  max-width: 100%;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.citizen-training-featured-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(165, 42, 26, 0.2);
+}
+
+/* Featured Training Image */
+.citizen-training-featured-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.citizen-training-featured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.citizen-training-featured-no-image {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 50%, #fff0f0 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.citizen-training-featured-content {
+  padding: 25px;
+}
+
+.citizen-training-featured-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 15px 0;
+  line-height: 1.3;
+}
+
+.citizen-training-featured-description {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* Training Programs List (Right Side) */
+.citizen-training-list-container {
+  position: relative;
+  height: 100%;
+  min-height: 500px;
+}
+
+.citizen-training-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+}
+
+.citizen-training-list-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.citizen-training-list-item:hover {
+  box-shadow: 0 4px 16px rgba(165, 42, 26, 0.15);
+  transform: translateX(4px);
+  border-color: #a52a1a;
+}
+
+.citizen-training-list-image {
+  flex: 0 0 120px;
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background: #f8f9fa;
+}
+
+.citizen-training-list-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.citizen-training-list-no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 50%, #fff0f0 100%);
+}
+
+.citizen-training-list-photo-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(165, 42, 26, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.citizen-training-list-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.citizen-training-list-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.citizen-training-list-date {
+  font-size: 0.75rem;
+  color: #8B1409;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.citizen-training-list-location {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.citizen-training-list-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.citizen-training-list-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Training List Navigation Buttons */
+.citizen-training-list-nav-btn {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.9) 0%, rgba(139, 20, 9, 0.9) 100%);
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 15px rgba(165, 42, 26, 0.4);
+  transition: all 0.3s ease;
+}
+
+.citizen-training-list-nav-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 1) 0%, rgba(139, 20, 9, 1) 100%);
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(165, 42, 26, 0.6);
+}
+
+.citizen-training-list-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.citizen-training-list-nav-btn-up {
+  top: -20px;
+  transform: translateX(-50%) rotate(90deg);
+}
+
+.citizen-training-list-nav-btn-up:hover:not(:disabled) {
+  transform: translateX(-50%) rotate(90deg) scale(1.1);
+}
+
+.citizen-training-list-nav-btn-down {
+  bottom: -20px;
+  transform: translateX(-50%) rotate(-90deg);
+}
+
+.citizen-training-list-nav-btn-down:hover:not(:disabled) {
+  transform: translateX(-50%) rotate(-90deg) scale(1.1);
+}
+
 /* Enhanced Training Program Carousel Styles */
 .citizen-training-carousel-container {
   position: relative;
   min-height: 380px;
   padding: 0 10px;
+  overflow: hidden;
 }
 
 .citizen-training-carousel-nav-btn {
-  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.9) 0%, rgba(139, 20, 9, 0.9) 100%);
+  color: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 15px rgba(165, 42, 26, 0.4);
+  transition: all 0.3s ease;
+}
+
+.citizen-training-carousel-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 1) 0%, rgba(139, 20, 9, 1) 100%);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 20px rgba(165, 42, 26, 0.6);
+}
+
+.citizen-training-carousel-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 .citizen-training-carousel-nav-btn-left {
-  left: -20px;
+  left: 10px;
 }
 
 .citizen-training-carousel-nav-btn-right {
-  right: -20px;
+  right: 10px;
 }
 
 .citizen-training-carousel-content {
+  display: flex;
+  gap: 15px;
   padding: 15px 0;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.citizen-training-carousel-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.citizen-training-carousel-item {
+  flex: 0 0 calc(33.333% - 10px);
+  min-width: calc(33.333% - 10px);
+  max-width: calc(33.333% - 10px);
 }
 
 .citizen-training-card-wrapper {
@@ -4245,7 +5574,7 @@ body.modal-open {
 }
 
 .citizen-training-card-main-content {
-  padding: 16px 20px 20px 20px;
+  padding: 20px 25px 25px 25px;
   text-align: left;
 }
 
@@ -4280,13 +5609,13 @@ body.modal-open {
 
 .citizen-training-title-inline {
   color: #8B1409;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  margin-bottom: 11px;
-  line-height: 1.3;
+  margin-bottom: 15px;
+  line-height: 1.4;
   letter-spacing: -0.5px;
   position: relative;
-  padding-bottom: 8px;
+  padding-bottom: 12px;
 }
 
 .citizen-training-title-inline::after {
@@ -4302,9 +5631,9 @@ body.modal-open {
 
 .citizen-training-description-inline {
   color: #4a4a4a;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  margin-bottom: 14px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
   font-weight: 400;
   letter-spacing: 0.2px;
   text-align: left;
@@ -4313,10 +5642,10 @@ body.modal-open {
 .citizen-training-image-wrapper-inline {
   position: relative;
   width: 100%;
-  height: 230px;
+  height: 280px;
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: #f8f9fa;
@@ -4808,73 +6137,360 @@ body.modal-open {
 }
 
 /* Responsive Adjustments for Announcements */
-@media (max-width: 768px) {
+/* Laptop (1024px and above) */
+@media (min-width: 1024px) {
+  .citizen-announcement-featured {
+    margin-bottom: 30px;
+  }
+
   .citizen-announcement-carousel-container {
-    min-height: 420px;
-    padding: 0 5px;
+    min-height: 400px;
+    padding: 0 60px;
+  }
+
+  .citizen-announcement-carousel-nav-btn {
+    width: 55px;
+    height: 55px;
+    font-size: 20px;
+  }
+
+  .citizen-announcement-carousel-content {
+    gap: 20px;
+  }
+
+}
+
+/* Tablet (768px to 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .citizen-announcement-featured {
+    margin-bottom: 28px;
+  }
+
+  .citizen-announcement-new-badge {
+    padding: 6px 20px;
+    top: -12px;
+  }
+
+  .citizen-announcement-new-text {
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+  }
+
+  .citizen-announcement-carousel-container {
+    min-height: 410px;
+    padding: 0 55px;
   }
 
   .citizen-announcement-carousel-nav-btn {
     width: 48px;
     height: 48px;
-    font-size: 15px;
+    font-size: 16px;
+  }
+
+  .citizen-announcement-carousel-content {
+    gap: 15px;
+  }
+}
+
+/* Mobile Horizontal Layout - News Style */
+@media (max-width: 768px) {
+  /* Announcements Horizontal Layout */
+  .citizen-announcement-horizontal-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .citizen-announcement-image-left {
+    flex: 0 0 100px;
+    min-width: 100px;
+    max-width: 100px;
+    height: 100px;
+    margin: 0;
+  }
+
+  .citizen-announcement-image-left .citizen-announcement-image-main,
+  .citizen-announcement-image-left img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  .citizen-announcement-no-image.citizen-announcement-image-left {
+    height: 100px;
+    min-height: 100px;
+    margin: 0;
+  }
+
+  .citizen-announcement-content-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .citizen-announcement-content-right .citizen-announcement-title-inline {
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+    line-height: 1.2;
+    padding-bottom: 4px;
+  }
+
+  .citizen-announcement-content-right .citizen-announcement-description-inline {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .citizen-announcement-content-right .citizen-announcement-see-more-btn {
+    padding: 6px 12px;
+    font-size: 0.7rem;
+    align-self: flex-start;
+    margin-top: auto;
+  }
+
+  /* Training Programs Horizontal Layout */
+  .citizen-training-horizontal-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .citizen-training-image-left {
+    flex: 0 0 100px;
+    min-width: 100px;
+    max-width: 100px;
+    height: 100px;
+    margin: 0;
+  }
+
+  .citizen-training-image-left .citizen-training-image-main,
+  .citizen-training-image-left img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  .citizen-training-no-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 50%, #fff0f0 100%);
+    border-radius: 10px;
+  }
+
+  .citizen-training-content-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .citizen-training-content-right .citizen-training-badges-wrapper {
+    margin-bottom: 5px;
+    gap: 4px;
+  }
+
+  .citizen-training-content-right .citizen-training-date-badge-inline,
+  .citizen-training-content-right .citizen-training-location-badge-inline {
+    padding: 3px 8px;
+    font-size: 0.65rem;
+  }
+
+  .citizen-training-content-right .citizen-training-title-inline {
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+    line-height: 1.2;
+    padding-bottom: 4px;
+  }
+
+  .citizen-training-content-right .citizen-training-description-inline {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .citizen-training-content-right .citizen-training-view-details-btn {
+    padding: 6px 12px;
+    font-size: 0.7rem;
+    align-self: flex-start;
+    margin-top: auto;
+  }
+
+  .citizen-announcement-featured {
+    margin-bottom: 25px;
+  }
+
+  .citizen-announcement-new-badge {
+    padding: 6px 18px;
+    top: -10px;
+  }
+
+  .citizen-announcement-new-text {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+  }
+
+  .citizen-announcement-carousel-container {
+    min-height: 140px;
+    padding: 0 40px;
+  }
+
+  .citizen-announcement-carousel-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+    display: flex;
   }
 
   .citizen-announcement-carousel-nav-btn-left {
-    left: -15px;
+    left: 5px;
   }
 
   .citizen-announcement-carousel-nav-btn-right {
-    right: -15px;
+    right: 5px;
+  }
+
+  .citizen-announcement-carousel-content {
+    gap: 8px;
+    padding: 8px 0;
   }
 
   .citizen-announcement-card-wrapper {
-    border-radius: 16px;
+    border-radius: 12px;
   }
 
   .citizen-announcement-date-badge-inline {
-    padding: 8px 18px;
-    margin: 15px 0 0 15px;
-    font-size: 0.75rem;
+    padding: 4px 10px;
+    margin: 8px 0 0 8px;
+    font-size: 0.65rem;
   }
 
-  .citizen-announcement-main-content {
-    padding: 20px 20px 25px 20px;
+  .citizen-announcement-carousel-item .citizen-announcement-card-wrapper {
+    margin: 0;
   }
 
-  .citizen-announcement-image-wrapper {
-    height: 260px;
-    border-radius: 12px;
-    margin-bottom: 20px;
+  /* Override for carousel items - use horizontal layout (only for old carousel structure) */
+  .citizen-announcement-carousel-container .citizen-announcement-carousel-item {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Ensure container-static items use row layout and proper sizing */
+  .citizen-announcement-carousel-container-static .citizen-announcement-carousel-item {
+    flex-direction: row !important;
+    display: flex !important;
   }
 
-  .citizen-announcement-title-inline {
-    font-size: 1.4rem;
-    margin-bottom: 15px;
+  .citizen-announcement-carousel-item .citizen-announcement-date-badge-inline {
+    margin: 8px 0 0 8px;
+    padding: 4px 10px;
+    font-size: 0.65rem;
   }
 
-  .citizen-announcement-description-inline {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    margin-bottom: 20px;
+  .citizen-announcement-carousel-item .citizen-announcement-main-content {
+    padding: 0;
   }
 
-  .citizen-announcement-see-more-btn {
-    padding: 12px 28px;
-    font-size: 0.85rem;
+  .citizen-announcement-carousel-item .citizen-announcement-image-wrapper {
+    height: auto;
+    margin-bottom: 0;
+  }
+
+  .citizen-announcement-carousel-item .citizen-announcement-photo-badge {
+    top: 5px;
+    right: 5px;
+    padding: 4px 8px;
+    font-size: 0.65rem;
+  }
+
+  .citizen-training-carousel-item .citizen-training-more-photos-badge {
+    top: 5px;
+    right: 5px;
+    padding: 4px 8px;
+    font-size: 0.65rem;
   }
 }
 
 @media (max-width: 480px) {
+  /* Smaller mobile adjustments */
+  .citizen-announcement-image-left,
+  .citizen-training-image-left {
+    flex: 0 0 90px;
+    min-width: 90px;
+    max-width: 90px;
+    height: 90px;
+  }
+
+  .citizen-announcement-no-image.citizen-announcement-image-left {
+    height: 90px;
+    min-height: 90px;
+  }
+
+  .citizen-announcement-horizontal-layout,
+  .citizen-training-horizontal-layout {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .citizen-announcement-content-right .citizen-announcement-title-inline,
+  .citizen-training-content-right .citizen-training-title-inline {
+    font-size: 0.9rem;
+  }
+
+  .citizen-announcement-content-right .citizen-announcement-description-inline,
+  .citizen-training-content-right .citizen-training-description-inline {
+    font-size: 0.75rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
   .citizen-announcement-carousel-container {
-    min-height: 400px;
-    padding: 0;
+    min-height: 120px;
+    padding: 0 35px;
+  }
+
+  .citizen-training-carousel-container {
+    min-height: 120px;
+    padding: 0 35px;
+  }
+
+  .citizen-announcement-carousel-item,
+  .citizen-training-carousel-item {
+    min-height: 110px;
   }
 
   .citizen-announcement-carousel-nav-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 14px;
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .citizen-training-carousel-nav-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
   }
 
   .citizen-announcement-card-wrapper {
@@ -4888,35 +6504,46 @@ body.modal-open {
   }
 
   .citizen-announcement-main-content {
-    padding: 15px 15px 20px 15px;
+    padding: 20px 20px 25px 20px;
   }
 
   .citizen-announcement-image-wrapper {
-    height: 220px;
-    border-radius: 10px;
-    margin-bottom: 18px;
+    height: 350px;
+    border-radius: 12px;
+    margin-bottom: 25px;
   }
 
   .citizen-announcement-title-inline {
-    font-size: 1.25rem;
-    margin-bottom: 12px;
+    font-size: 1.7rem;
+    margin-bottom: 18px;
+    line-height: 1.4;
   }
 
   .citizen-announcement-title-inline::after {
-    width: 40px;
-    height: 2px;
+    width: 50px;
+    height: 3px;
   }
 
   .citizen-announcement-description-inline {
-    font-size: 0.9rem;
-    line-height: 1.6;
-    margin-bottom: 18px;
+    font-size: 1.15rem;
+    line-height: 1.8;
+    margin-bottom: 25px;
     text-align: left;
   }
 
+  .citizen-announcement-date-badge-inline {
+    padding: 10px 20px;
+    font-size: 0.85rem;
+    margin: 18px 0 0 18px;
+  }
+
+  .citizen-announcement-main-content {
+    padding: 25px 25px 30px 25px;
+  }
+
   .citizen-announcement-see-more-btn {
-    padding: 10px 24px;
-    font-size: 0.8rem;
+    padding: 14px 32px;
+    font-size: 0.9rem;
   }
 
   .citizen-announcement-indicators {
@@ -4934,90 +6561,142 @@ body.modal-open {
     width: 14px;
     height: 5px;
   }
+
+  .citizen-announcement-carousel-container {
+    padding: 0 45px;
+  }
+
+  .citizen-announcement-carousel-nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+  }
+
+  .citizen-announcement-carousel-content {
+    gap: 10px;
+  }
+
 }
 
 /* Responsive Adjustments for Training Programs */
-@media (max-width: 768px) {
+/* Laptop (1024px and above) */
+@media (min-width: 1024px) {
+  .citizen-training-featured {
+    margin-bottom: 30px;
+  }
+
   .citizen-training-carousel-container {
-    min-height: 480px;
-    padding: 0 5px;
+    min-height: 450px;
+    padding: 0 60px;
+  }
+
+  .citizen-training-carousel-nav-btn {
+    width: 55px;
+    height: 55px;
+    font-size: 20px;
+  }
+
+  .citizen-training-carousel-content {
+    gap: 20px;
+  }
+
+}
+
+/* Tablet (768px to 1023px) */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .citizen-training-featured {
+    margin-bottom: 28px;
+  }
+
+  .citizen-training-carousel-container {
+    min-height: 460px;
+    padding: 0 55px;
   }
 
   .citizen-training-carousel-nav-btn {
     width: 48px;
     height: 48px;
-    font-size: 15px;
+    font-size: 16px;
+  }
+
+  .citizen-training-carousel-content {
+    gap: 15px;
+  }
+}
+
+/* Mobile (below 768px) */
+@media (max-width: 768px) {
+  .citizen-training-featured {
+    margin-bottom: 25px;
+  }
+
+  .citizen-training-carousel-container {
+    min-height: 140px;
+    padding: 0 40px;
+  }
+
+  .citizen-training-carousel-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+    display: flex;
   }
 
   .citizen-training-carousel-nav-btn-left {
-    left: -15px;
+    left: 5px;
   }
 
   .citizen-training-carousel-nav-btn-right {
-    right: -15px;
+    right: 5px;
+  }
+
+  .citizen-training-carousel-content {
+    gap: 8px;
+    padding: 8px 0;
   }
 
   .citizen-training-card-wrapper {
-    border-radius: 16px;
-  }
-
-  .citizen-training-card-header-inline {
-    padding: 15px 22px;
-  }
-
-  .citizen-training-card-label {
-    font-size: 0.85rem;
-  }
-
-  .citizen-training-card-main-content {
-    padding: 18px 20px 22px 20px;
-  }
-
-  .citizen-training-badges-wrapper {
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .citizen-training-date-badge-inline,
-  .citizen-training-location-badge-inline {
-    padding: 6px 14px;
-    font-size: 0.8rem;
-  }
-
-  .citizen-training-title-inline {
-    font-size: 1.35rem;
-    margin-bottom: 14px;
-  }
-
-  .citizen-training-description-inline {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    margin-bottom: 18px;
-  }
-
-  .citizen-training-image-wrapper-inline {
-    height: 280px;
     border-radius: 12px;
-    margin-bottom: 20px;
   }
 
-  .citizen-training-view-details-btn {
-    padding: 12px 28px;
-    font-size: 0.85rem;
+  .citizen-training-carousel-item .citizen-training-card-wrapper {
+    margin: 0;
+  }
+
+  /* Override for carousel items - use horizontal layout */
+  .citizen-training-carousel-item {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .citizen-training-carousel-item .citizen-training-card-main-content {
+    padding: 0;
+  }
+
+  .citizen-training-carousel-item .citizen-training-image-wrapper-inline {
+    height: auto;
+    margin-bottom: 0;
   }
 }
 
 @media (max-width: 480px) {
   .citizen-training-carousel-container {
     min-height: 450px;
-    padding: 0;
+    padding: 0 45px;
   }
 
   .citizen-training-carousel-nav-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 14px;
+    width: 40px;
+    height: 40px;
+    font-size: 12px;
+    display: flex;
   }
+
+  .citizen-training-carousel-content {
+    gap: 10px;
+  }
+
 
   .citizen-training-card-wrapper {
     border-radius: 14px;
@@ -5037,7 +6716,7 @@ body.modal-open {
   }
 
   .citizen-training-card-main-content {
-    padding: 15px 15px 18px 15px;
+    padding: 20px 20px 25px 20px;
   }
 
   .citizen-training-badges-wrapper {
@@ -5068,14 +6747,36 @@ body.modal-open {
   }
 
   .citizen-training-image-wrapper-inline {
-    height: 240px;
-    border-radius: 10px;
+    height: 350px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+  }
+
+  .citizen-training-title-inline {
+    font-size: 1.6rem;
     margin-bottom: 18px;
+    line-height: 1.4;
+  }
+
+  .citizen-training-description-inline {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    margin-bottom: 25px;
+  }
+
+  .citizen-training-card-main-content {
+    padding: 25px 25px 30px 25px;
+  }
+
+  .citizen-training-date-badge-inline,
+  .citizen-training-location-badge-inline {
+    padding: 8px 16px;
+    font-size: 0.85rem;
   }
 
   .citizen-training-view-details-btn {
-    padding: 10px 24px;
-    font-size: 0.8rem;
+    padding: 14px 32px;
+    font-size: 0.9rem;
   }
 
   .citizen-training-indicators {
@@ -5092,5 +6793,216 @@ body.modal-open {
   .citizen-training-indicator-inactive {
     width: 14px;
     height: 5px;
+  }
+}
+
+/* Image Viewer Modal Styles */
+.citizen-image-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.citizen-image-viewer-content {
+  position: relative;
+  width: 100%;
+  max-width: 95vw;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.citizen-image-viewer-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.95) 0%, rgba(139, 20, 9, 0.95) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+  z-index: 100;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(165, 42, 26, 0.3);
+  font-weight: 700;
+}
+
+.citizen-image-viewer-close:hover {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 1) 0%, rgba(139, 20, 9, 1) 100%);
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 6px 20px rgba(165, 42, 26, 0.5);
+}
+
+.citizen-image-viewer-image-container {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.citizen-image-viewer-img {
+  max-width: 100%;
+  max-height: calc(95vh - 150px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.citizen-image-viewer-nav-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  box-sizing: border-box;
+}
+
+.citizen-image-viewer-nav-btn {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.95) 0%, rgba(139, 20, 9, 0.95) 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(165, 42, 26, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.citizen-image-viewer-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 1) 0%, rgba(139, 20, 9, 1) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(165, 42, 26, 0.6);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.citizen-image-viewer-nav-btn:active {
+  transform: translateY(0);
+}
+
+.citizen-image-viewer-counter {
+  background: linear-gradient(135deg, rgba(165, 42, 26, 0.95) 0%, rgba(139, 20, 9, 0.95) 100%);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Mobile Responsive for Image Viewer */
+@media (max-width: 768px) {
+  .citizen-image-viewer-content {
+    max-width: 100vw;
+    padding: 15px;
+  }
+
+  .citizen-image-viewer-close {
+    top: 5px;
+    right: 5px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .citizen-image-viewer-img {
+    max-height: calc(100vh - 200px);
+  }
+
+  .citizen-image-viewer-nav-buttons {
+    flex-direction: row;
+    gap: 12px;
+    padding: 12px 15px;
+  }
+
+  .citizen-image-viewer-nav-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .citizen-image-viewer-counter {
+    padding: 8px 16px;
+    font-size: 14px;
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .citizen-image-viewer-content {
+    padding: 10px;
+  }
+
+  .citizen-image-viewer-close {
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+  }
+
+  .citizen-image-viewer-img {
+    max-height: calc(100vh - 180px);
+  }
+
+  .citizen-image-viewer-nav-buttons {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .citizen-image-viewer-nav-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    gap: 5px;
+  }
+
+  .citizen-image-viewer-nav-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .citizen-image-viewer-counter {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 60px;
   }
 } 

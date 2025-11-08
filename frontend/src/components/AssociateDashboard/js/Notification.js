@@ -90,7 +90,7 @@ function NotificationProgress({ notification }) {
 function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({}); // Changed to object: { notificationId: errorMessage }
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(null);
   const [reload, setReload] = useState(false);
@@ -159,7 +159,12 @@ function Notification() {
 
   const handleRespond = async (id, response, selections = null) => {
     setLoading(true);
-    setError('');
+    // Clear error for this specific notification
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[id];
+      return newErrors;
+    });
     try {
       const payload = { response };
       if (response === 'accept' && selections) {
@@ -178,9 +183,16 @@ function Notification() {
       if (!res.ok) {
         const errorData = await res.json();
         if (errorData.details && Array.isArray(errorData.details)) {
-          setError(errorData.details.join(', '));
+          // Store error for this specific notification
+          setErrors(prev => ({
+            ...prev,
+            [id]: errorData.details.join(', ')
+          }));
         } else {
-          throw new Error('Failed to respond');
+          setErrors(prev => ({
+            ...prev,
+            [id]: errorData.error || 'Failed to respond'
+          }));
         }
         setLoading(false);
         return;
@@ -189,8 +201,18 @@ function Notification() {
       setLoading(false);
       setReload(r => !r);
       setVolunteerSelections({});
+      // Clear error on success
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
     } catch (err) {
-      setError(err.message);
+      // Store error for this specific notification
+      setErrors(prev => ({
+        ...prev,
+        [id]: err.message
+      }));
       setLoading(false);
     }
   };
@@ -542,6 +564,32 @@ function Notification() {
                                           </div>
                                         )}
                                         
+                                        {/* Error message displayed inside this notification container */}
+                                        {errors[n.id] && (
+                                          <div style={{ 
+                                            backgroundColor: '#fee', 
+                                            border: '1px solid #fcc', 
+                                            borderRadius: '8px',
+                                            padding: '12px 16px', 
+                                            margin: '12px 0',
+                                            color: '#c33',
+                                            fontSize: '14px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                          }}>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                              <circle cx="12" cy="12" r="10"/>
+                                              <line x1="12" y1="8" x2="12" y2="12"/>
+                                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                            </svg>
+                                            <span style={{ flex: 1 }}>
+                                              <strong>Unable to process your response:</strong> {errors[n.id]}
+                                            </span>
+                                          </div>
+                                        )}
+                                        
                                         {/* Action Buttons - Separate Row */}
                                         <div className="notification-item-actions">
                                           <div className="notification-item-action-buttons">
@@ -608,7 +656,6 @@ function Notification() {
             )}
           </>
         )}
-        {error && <div style={{ color: '#e74c3c', fontSize: '15px', marginTop: 20, textAlign: 'center' }}>{error}</div>}
       </div>
     </AssociateLayout>
   );

@@ -23,13 +23,11 @@ Modal.setAppElement('#root');
 function AssociateGroups() {
   const [selectedAssociate, setSelectedAssociate] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [pendingApplications, setPendingApplications] = useState([]);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedApplicationId, setSelectedApplicationId] = useState(null);
-  const [editMode, setEditMode] = useState(false);
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
   const [form, setForm] = useState({ 
@@ -201,36 +199,6 @@ function AssociateGroups() {
     setEditListMode(false);
   };
 
-  const handleEditAssociate = (associate) => {
-    // Directly set the form with the associate data
-    const formData = {
-      id: associate.id,
-      name: associate.name || '',
-      type: associate.type || '',
-      director: associate.director || '',
-      description: associate.description || '',
-      logo: associate.logo || '',
-      email: associate.email || '',
-      phone: associate.phone || '',
-      date_joined: associate.date_joined || new Date().toISOString().split('T')[0]
-    };
-    
-    setForm(formData);
-    setLogoFile(null);
-    setEditMode(true);
-    setError('');
-    setShowEditModal(true);
-    setEditListMode(false);
-  };
-
-  const closeEditModal = () => {
-    setShowEditModal(false);
-    setEditMode(false); // Reset edit mode when closing
-    setForm({ name: '', type: '', director: '', description: '', logo: '', email: '', phone: '', date_joined: new Date().toISOString().split('T')[0] });
-    setLogoFile(null);
-    setError('');
-  };
-
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -283,8 +251,8 @@ function AssociateGroups() {
       return false;
     }
 
-    // Validate logo for new associates (not for editing)
-    if (!editMode && !logoFile) {
+    // Validate logo for new associates
+    if (!logoFile) {
       setError('Please upload a logo');
       return false;
     }
@@ -338,61 +306,6 @@ function AssociateGroups() {
       setPopupError(friendlyMsg);
       setShowPopup(true);
       setError('');
-    }
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    // Check if form has required data
-    if (!form.name || !form.type || !form.director || !form.description || !form.email || !form.phone) {
-      setError('Please ensure all required fields are filled before submitting.');
-      return;
-    }
-    
-    if (!validateForm()) return;
-    
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      
-      const formData = new FormData();
-      formData.append('_method', 'PUT'); // Laravel method spoofing
-      formData.append('name', form.name);
-      formData.append('type', form.type);
-      formData.append('director', form.director);
-      formData.append('description', form.description);
-      formData.append('email', form.email);
-      formData.append('phone', form.phone);
-      formData.append('date_joined', form.date_joined);
-      if (logoFile) formData.append('logo', logoFile);
-      
-      const response = await axiosInstance.post(`${API_BASE}/api/associate-groups/${form.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-      });
-      
-      if (response.status === 200) {
-        setNotification('Associate group updated successfully!');
-        setShowEditModal(false);
-        setLogoFile(null);
-        setError('');
-        fetchAssociates();
-        
-        // Update selectedGroup if it's currently being viewed
-        if (selectedGroup && selectedGroup.id === form.id) {
-          setSelectedGroup(response.data);
-        }
-        
-        setTimeout(() => setNotification(''), 2000);
-      }
-    } catch (error) {
-      if (error.response?.data?.errors) {
-        // Handle validation errors from backend
-        const errorMessages = Object.values(error.response.data.errors).flat();
-        setError(errorMessages.join(', '));
-      } else {
-        setError(error.response?.data?.message || 'Failed to update associate. Please try again.');
-      }
     }
   };
 
@@ -883,7 +796,7 @@ function AssociateGroups() {
                           type="file" 
                           accept="image/jpeg,image/png,image/jpg,image/gif" 
                           onChange={handleLogoChange} 
-                          required={!editMode} 
+                          required
                           id="logo-upload"
                         />
                         <label htmlFor="logo-upload" className="file-upload-label">
@@ -901,173 +814,6 @@ function AssociateGroups() {
               <div className="form-actions">
                 <button type="submit" className="btn-submit">
                   <FontAwesomeIcon icon={faCheck} /> Add Associate
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Edit Associate Modal */}
-      {showEditModal && (
-        <div className="profile-modal-overlay">
-          <div className="profile-modal-card enhanced-modal">
-            <div className="profile-modal-header">
-              <h3>Edit Associate</h3>
-              <FontAwesomeIcon icon={faTimes} className="close-icon" onClick={closeEditModal} />
-            </div>
-            <form className="add-edit-form enhanced-form" onSubmit={handleEditSubmit}>
-              <div className="step-content">
-                <div className="step-header">
-                  <FontAwesomeIcon icon={faUser} className="step-icon" />
-                  <h4>Basic Information</h4>
-                  <p>Please provide the basic details for the associate organization.</p>
-                </div>
-                
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Organization Name *</label>
-                    <input 
-                      name="name" 
-                      value={form.name || ''} 
-                      onChange={handleFormChange} 
-                      placeholder="Enter organization name"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Organization Type *</label>
-                    <select 
-                      name="type" 
-                      value={form.type || ''} 
-                      onChange={handleFormChange} 
-                      required 
-                    >
-                      <option value="">Select organization type</option>
-                      <option value="Educational Institution">Educational Institution</option>
-                      <option value="Private Company">Private Company</option>
-                      <option value="Religious Organization">Religious Organization</option>
-                      <option value="Community Group">Community Group</option>
-                      <option value="Government Agency">Government Agency</option>
-                    </select>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Director Name *</label>
-                    <input 
-                      name="director" 
-                      value={form.director || ''} 
-                      onChange={handleFormChange} 
-                      placeholder="Enter director's full name"
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Email Address *</label>
-                    <input 
-                      name="email" 
-                      type="email" 
-                      value={form.email || ''} 
-                      onChange={handleFormChange} 
-                      placeholder="Enter email address"
-                      required 
-                      pattern="[^@\s]+@[^\s@]+\.[^\s@]+" 
-                      readOnly
-                      style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Phone Number *</label>
-                    <input 
-                      name="phone" 
-                      value={form.phone || ''} 
-                      onChange={handleFormChange} 
-                      onInput={e => {
-                        let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
-                        if (val.length === 1 && val !== '0') val = '';
-                        if (val.length === 2 && val !== '09') val = val[0] === '0' ? '0' : '';
-                        e.target.value = val;
-                        // Update form state with the validated value
-                        setForm(prev => ({ ...prev, phone: val }));
-                      }}
-                      placeholder="Enter 11-digit phone number"
-                      required 
-                      pattern="[0-9]{11}" 
-                      title="Phone number must start with 09 and be exactly 11 digits"
-                      maxLength="11"
-                      inputMode="numeric"
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Date Joined</label>
-                    <input 
-                      name="date_joined" 
-                      type="date" 
-                      value={form.date_joined || ''} 
-                      readOnly
-                      style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
-                      title="Date joined cannot be changed"
-                    />
-                  </div>
-                  
-                  <div className="form-group full-width">
-                    <label>Description *</label>
-                    <textarea 
-                      name="description" 
-                      value={form.description || ''} 
-                      onChange={handleFormChange} 
-                      placeholder="Describe the organization's mission and activities"
-                      required 
-                      rows="4"
-                    />
-                  </div>
-                  
-                  <div className="form-group full-width">
-                    <label>Organization Logo {!editMode ? '*' : '(Optional)'}</label>
-                    {/* Logo Preview */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '10px' }}>
-                      {logoFile ? (
-                        <img
-                          src={URL.createObjectURL(logoFile)}
-                          alt="New Logo Preview"
-                          style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'contain', border: '1.5px solid #eee', background: '#f8f8f8' }}
-                        />
-                      ) : (
-                        <img
-                          src={getLogoUrl(form.logo)}
-                          alt="Current Logo"
-                          style={{ width: 70, height: 70, borderRadius: '50%', objectFit: 'contain', border: '1.5px solid #eee', background: '#f8f8f8' }}
-                        />
-                      )}
-                    </div>
-                    <div className="file-upload-container">
-                      <input 
-                        type="file" 
-                        accept="image/jpeg,image/png,image/jpg,image/gif" 
-                        onChange={handleLogoChange} 
-                        id="logo-upload"
-                      />
-                      <label htmlFor="logo-upload" className="file-upload-label">
-                        <FontAwesomeIcon icon={faUser} />
-                        <span>{logoFile ? logoFile.name : 'Choose Logo File'}</span>
-                      </label>
-                    </div>
-                    <small>Accepted formats: JPEG, PNG, JPG, GIF (max 2MB)</small>
-                    {editMode && (
-                      <small style={{ display: 'block', marginTop: '4px', color: '#666', fontStyle: 'italic' }}>
-                        Logo upload is optional when editing. Leave unchanged to keep the current logo.
-                      </small>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {error && <div className="error-message">{error}</div>}
-              <div className="form-actions">
-                <button type="submit" className="btn-submit">
-                  <FontAwesomeIcon icon={faCheck} /> Save Changes
                 </button>
               </div>
             </form>

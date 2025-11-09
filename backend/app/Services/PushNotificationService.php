@@ -179,7 +179,7 @@ class PushNotificationService
             
             // Queue the push notification instead of sending synchronously
             SendPushNotificationJob::dispatch(
-                $report->user_id,
+                [$report->user_id], // Wrap user_id in array as expected by the job
                 'Report Approved',
                 'Your report has been approved',
                 [
@@ -205,7 +205,7 @@ class PushNotificationService
             
             // Queue the push notification instead of sending synchronously
             SendPushNotificationJob::dispatch(
-                $report->user_id,
+                [$report->user_id], // Wrap user_id in array as expected by the job
                 'Report Rejected',
                 'Your report has been rejected',
                 [

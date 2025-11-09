@@ -251,8 +251,9 @@ function ApprovalAOR() {
       );
 
       // Set all reports for history, and filter sent reports for main grid
+      // Exclude deleted reports from the main grid
       setAllReports(reportsWithGroups);
-      setReports(reportsWithGroups.filter(report => report.status === 'sent'));
+      setReports(reportsWithGroups.filter(report => report.status === 'sent' && !report.deleted_at));
       
       // Debug logging
       console.log('All reports fetched:', reportsWithGroups.length);
@@ -339,12 +340,28 @@ function ApprovalAOR() {
   };
 
   const handlePreview = async (report) => {
+    // Check if report is deleted before attempting to fetch
+    if (report.deleted_at) {
+      setError('This report has been deleted and is no longer available.');
+      // Refresh the list to remove deleted reports
+      await fetchReports();
+      return;
+    }
+    
     try {
       // Fetch the latest data for this report before showing the modal
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const reportResponse = await axiosInstance.get(`${API_BASE}/api/reports/${report.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      // Check if the fetched report is deleted
+      if (reportResponse.data.deleted_at) {
+        setError('This report has been deleted and is no longer available.');
+        // Refresh the list to remove deleted reports
+        await fetchReports();
+        return;
+      }
       
       // Fetch the latest associate group data
       if (reportResponse.data.user_id) {
@@ -359,20 +376,26 @@ function ApprovalAOR() {
       }
       
       setSelectedReport(reportResponse.data);
+      setError(''); // Clear any previous errors
+      setShowPreviewModal(true);
     } catch (error) {
       console.error('Error fetching latest report data:', error);
       
-      // If the report doesn't exist, show an error message
+      // If the report doesn't exist (404), it was likely deleted
       if (error.response && error.response.status === 404) {
         console.error(`Report with ID ${report.id} not found. It may have been deleted.`);
-        // Use the existing report data from the list instead
-        setSelectedReport(report);
+        setError('Report not found. It may have been deleted.');
+        // Refresh the list to remove deleted reports
+        await fetchReports();
+        // Don't show the modal for deleted reports
+        return;
       } else {
-        // For other errors, still use the existing report data
-      setSelectedReport(report);
+        // For other errors, show error but still allow viewing cached data
+        setError('Failed to fetch latest report data. Showing cached version.');
+        setSelectedReport(report);
+        setShowPreviewModal(true);
       }
     }
-    setShowPreviewModal(true);
   };
 
   const handleApprove = async (reportId) => {
@@ -384,9 +407,17 @@ function ApprovalAOR() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Approve response logged for debugging (remove in production)
-      await fetchReports(); // Refresh the list after approval
+      // Close preview modal first
       setShowPreviewModal(false);
+      setSelectedReport(null);
+      
+      // Clear any previous errors
+      setError('');
+      
+      // Refresh the list after approval
+      await fetchReports();
+      
+      // Show success notification
       setNotificationWithDebug('Report approved successfully!', 'approve');
       setTimeout(() => {
         setNotification('');
@@ -395,7 +426,19 @@ function ApprovalAOR() {
     } catch (err) {
       console.error('Approve error:', err);
       console.error('Approve error response:', err.response?.data);
-      setError('Failed to approve report: ' + (err.response?.data?.message || err.message));
+      
+      // Close modal even on error
+      setShowPreviewModal(false);
+      setSelectedReport(null);
+      
+      // Check if report was deleted
+      if (err.response?.status === 404) {
+        setError('Report not found. It may have been deleted.');
+        // Refresh to remove deleted report from list
+        await fetchReports();
+      } else {
+        setError('Failed to approve report: ' + (err.response?.data?.message || err.message));
+      }
     }
   };
 
@@ -410,9 +453,15 @@ function ApprovalAOR() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Reject response logged for debugging (remove in production)
-      await fetchReports(); // Refresh the list after rejection
+      // Close preview modal first
       setShowPreviewModal(false);
+      setSelectedReport(null);
+      
+      // Clear any previous errors
+      setError('');
+      
+      // Refresh the list after rejection
+      await fetchReports();
       
       // Set rejection notification with explicit type
       setNotificationWithDebug('Report rejected successfully!', 'reject');
@@ -426,11 +475,19 @@ function ApprovalAOR() {
       console.error('Reject error:', err);
       console.error('Reject error response:', err.response?.data);
       
+      // Close modal even on error
+      setShowPreviewModal(false);
+      setSelectedReport(null);
+      
       // Handle validation errors specifically
       if (err.response?.status === 422 && err.response?.data?.errors) {
         const validationErrors = err.response.data.errors;
         const errorMessages = Object.values(validationErrors).flat();
         setError('Validation failed: ' + errorMessages.join(', '));
+      } else if (err.response?.status === 404) {
+        setError('Report not found. It may have been deleted.');
+        // Refresh to remove deleted report from list
+        await fetchReports();
       } else {
         setError('Failed to reject report: ' + (err.response?.data?.message || err.message));
       }
@@ -456,8 +513,12 @@ function ApprovalAOR() {
   };
 
   const handleConfirmAction = async () => {
+    // Save action and reportId before clearing state
+    const action = confirmAction;
+    const reportId = confirmReportId;
+    
     // Validate rejection reason if rejecting
-    if (confirmAction === 'reject') {
+    if (action === 'reject') {
       if (rejectionReason.trim().length === 0) {
         setError('Please provide a rejection reason before proceeding.');
         return; // Don't proceed if no rejection reason
@@ -468,16 +529,21 @@ function ApprovalAOR() {
       }
     }
     
-    // Close modal immediately for better UX
+    // Close confirmation modal immediately for better UX
     setShowConfirmModal(false);
-    setConfirmAction(null);
-    setConfirmReportId(null);
     
     // Handle the action in the background
-    if (confirmAction === 'approve') {
-      await handleApprove(confirmReportId);
-    } else if (confirmAction === 'reject') {
-      await handleReject(confirmReportId);
+    try {
+      if (action === 'approve') {
+        await handleApprove(reportId);
+      } else if (action === 'reject') {
+        await handleReject(reportId);
+      }
+    } finally {
+      // Clear state after action completes
+      setConfirmAction(null);
+      setConfirmReportId(null);
+      setRejectionReason('');
     }
   };
 
@@ -521,8 +587,8 @@ function ApprovalAOR() {
           </div>
         ) : (
           <div className="reports-grid">
-            {reports.filter(report => report.status === 'sent').length > 0 ? (
-              reports.filter(report => report.status === 'sent').map(report => {
+            {reports.filter(report => report.status === 'sent' && !report.deleted_at).length > 0 ? (
+              reports.filter(report => report.status === 'sent' && !report.deleted_at).map(report => {
                 const logoUrl = getOrganizationLogo(report);
                 let displayStatus = report.status.toUpperCase();
                 

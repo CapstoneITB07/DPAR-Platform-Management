@@ -902,7 +902,7 @@
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden; /* Changed from overflow-y: auto to prevent double scrolling */
   position: relative;
   box-shadow: 0 8px 32px rgba(161,28,34,0.13), 0 2px 8px rgba(0,0,0,0.08);
   margin: 0 auto;
@@ -966,7 +966,9 @@
   padding: 20px;
   max-height: calc(90vh - 120px);
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  min-height: 0; /* Ensures flex child can shrink and enable scrolling */
 }
 
 /* History Controls */
@@ -1097,6 +1099,7 @@
   flex-direction: column;
   gap: 15px;
   margin-top: 20px;
+  min-height: 0; /* Ensures flex child can shrink and enable scrolling */
 }
 
 .history-item {

@@ -1540,7 +1540,7 @@ function CitizenPage() {
               : 'citizen-push-notification-fab-disabled'
           }`}
           onClick={togglePushNotifications}
-          title={pushNotificationsEnabled ? 'Push Notifications ON - Click to disable' : 'Push Notifications OFF - Click to enable'}
+          title={pushNotificationsEnabled ? 'Notifications ON - Click to disable' : 'Notifications OFF - Click to enable'}
         >
           {pushNotificationsEnabled ? <FaBell /> : <FaBellSlash />}
         </button>

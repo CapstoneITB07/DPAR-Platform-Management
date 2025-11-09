@@ -170,111 +170,127 @@ class NotificationController extends Controller
         ]);
 
         $user = $request->user();
-        $notification = Notification::with('recipients.user')->findOrFail($id);
+        
+        // Use database transaction with pessimistic locking to prevent race conditions
+        return DB::transaction(function () use ($request, $id, $user) {
+            // Lock the notification for update to prevent concurrent modifications
+            $notification = Notification::lockForUpdate()->with('recipients.user')->findOrFail($id);
 
-        // Check if notification is on hold
-        if ($notification->status === 'on_hold') {
-            return response()->json(['error' => 'This notification is currently on hold and cannot accept responses.'], 403);
-        }
-
-        $recipient = NotificationRecipient::where('notification_id', $id)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
-
-        // If accepting, validate volunteer selections against available capacity
-        if ($request->response === 'accept' && $request->volunteer_selections) {
-            $errors = [];
-
-            // Calculate current progress for each expertise
-            $currentProgress = [];
-            foreach ($notification->expertise_requirements as $requirement) {
-                $expertise = $requirement['expertise'];
-                $required = $requirement['count'];
-                $currentProgress[$expertise] = [
-                    'required' => $required,
-                    'provided' => 0,
-                    'remaining' => $required
-                ];
+            // Check if notification is on hold
+            if ($notification->status === 'on_hold') {
+                return response()->json(['error' => 'This notification is currently on hold and cannot accept responses.'], 403);
             }
 
-            // Calculate what's already been provided by other associates
-            foreach ($notification->recipients as $otherRecipient) {
-                if (
-                    $otherRecipient->user_id !== $user->id &&
-                    $otherRecipient->response === 'accept' &&
-                    $otherRecipient->volunteer_selections
-                ) {
+            // Lock the recipient record for update to prevent duplicate responses
+            $recipient = NotificationRecipient::where('notification_id', $id)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-                    foreach ($otherRecipient->volunteer_selections as $selection) {
-                        $expertise = $selection['expertise'];
-                        $count = $selection['count'];
+            // Check if already responded (prevent duplicate responses)
+            if ($recipient->response !== null) {
+                return response()->json([
+                    'error' => 'You have already responded to this notification.',
+                    'existing_response' => $recipient->response
+                ], 409);
+            }
 
-                        if (isset($currentProgress[$expertise])) {
-                            $currentProgress[$expertise]['provided'] += $count;
-                            $currentProgress[$expertise]['remaining'] = max(0, $currentProgress[$expertise]['required'] - $currentProgress[$expertise]['provided']);
+            // If accepting, validate volunteer selections against available capacity
+            if ($request->response === 'accept' && $request->volunteer_selections) {
+                $errors = [];
+
+                // Calculate current progress for each expertise
+                $currentProgress = [];
+                foreach ($notification->expertise_requirements as $requirement) {
+                    $expertise = $requirement['expertise'];
+                    $required = $requirement['count'];
+                    $currentProgress[$expertise] = [
+                        'required' => $required,
+                        'provided' => 0,
+                        'remaining' => $required
+                    ];
+                }
+
+                // Calculate what's already been provided by other associates
+                foreach ($notification->recipients as $otherRecipient) {
+                    if (
+                        $otherRecipient->user_id !== $user->id &&
+                        $otherRecipient->response === 'accept' &&
+                        $otherRecipient->volunteer_selections
+                    ) {
+
+                        foreach ($otherRecipient->volunteer_selections as $selection) {
+                            $expertise = $selection['expertise'];
+                            $count = $selection['count'];
+
+                            if (isset($currentProgress[$expertise])) {
+                                $currentProgress[$expertise]['provided'] += $count;
+                                $currentProgress[$expertise]['remaining'] = max(0, $currentProgress[$expertise]['required'] - $currentProgress[$expertise]['provided']);
+                            }
                         }
                     }
                 }
-            }
 
-            // Validate the new selections
-            foreach ($request->volunteer_selections as $selection) {
-                $expertise = $selection['expertise'];
-                $requestedCount = $selection['count'];
+                // Validate the new selections
+                foreach ($request->volunteer_selections as $selection) {
+                    $expertise = $selection['expertise'];
+                    $requestedCount = $selection['count'];
 
-                if (isset($currentProgress[$expertise])) {
-                    $available = $currentProgress[$expertise]['remaining'];
+                    if (isset($currentProgress[$expertise])) {
+                        $available = $currentProgress[$expertise]['remaining'];
 
-                    if ($requestedCount > $available) {
-                        $errors[] = "Cannot provide {$requestedCount} {$expertise} volunteers. Only {$available} remaining.";
+                        if ($requestedCount > $available) {
+                            $errors[] = "Cannot provide {$requestedCount} {$expertise} volunteers. Only {$available} remaining.";
+                        }
                     }
+                }
+
+                if (!empty($errors)) {
+                    return response()->json([
+                        'error' => 'Validation failed',
+                        'details' => $errors
+                    ], 422);
                 }
             }
 
-            if (!empty($errors)) {
-                return response()->json([
-                    'error' => 'Validation failed',
-                    'details' => $errors
-                ], 422);
+            // Update the recipient with the response
+            $recipient->update([
+                'response' => $request->response,
+                'volunteer_selections' => $request->volunteer_selections,
+                'responded_at' => now(),
+            ]);
+
+            // Queue push notification to admin about response (non-blocking)
+            try {
+                PushNotificationService::notifyAdminNotificationResponse($notification, $recipient);
+            } catch (\Exception $e) {
+                // Log error but don't fail the response
+                Log::error('Failed to queue push notification to admin: ' . $e->getMessage());
             }
-        }
 
-        $recipient->update([
-            'response' => $request->response,
-            'volunteer_selections' => $request->volunteer_selections,
-            'responded_at' => now(),
-        ]);
+            // Log activity for associates
+            if ($user->role === 'associate_group_leader') {
+                $activityType = $request->response === 'accept' ? 'notification_accepted' : 'notification_declined';
+                $description = $request->response === 'accept'
+                    ? 'Accepted notification and provided volunteer selections'
+                    : 'Declined notification';
 
-        // Send push notification to admin about response
-        try {
-            PushNotificationService::notifyAdminNotificationResponse($notification, $recipient);
-        } catch (\Exception $e) {
-            // Log error but don't fail the response
-            Log::error('Failed to send push notification to admin: ' . $e->getMessage());
-        }
+                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                ActivityLog::logActivity(
+                    $user->id,
+                    $activityType,
+                    $description,
+                    [
+                        'notification_id' => $notification->id,
+                        'notification_title' => $notification->title,
+                        'volunteer_selections' => $request->volunteer_selections
+                    ],
+                    $directorHistoryId
+                );
+            }
 
-        // Log activity for associates
-        if ($user->role === 'associate_group_leader') {
-            $activityType = $request->response === 'accept' ? 'notification_accepted' : 'notification_declined';
-            $description = $request->response === 'accept'
-                ? 'Accepted notification and provided volunteer selections'
-                : 'Declined notification';
-
-            $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
-            ActivityLog::logActivity(
-                $user->id,
-                $activityType,
-                $description,
-                [
-                    'notification_id' => $notification->id,
-                    'notification_title' => $notification->title,
-                    'volunteer_selections' => $request->volunteer_selections
-                ],
-                $directorHistoryId
-            );
-        }
-
-        return response()->json(['message' => 'Response recorded.']);
+            return response()->json(['message' => 'Response recorded.']);
+        });
     }
 
     // Get volunteer progress for a notification

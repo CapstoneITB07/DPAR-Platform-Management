@@ -83,7 +83,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociat
     // Resource Controllers
     Route::apiResource('/announcements', AnnouncementController::class)->except(['index']);
     Route::apiResource('/notifications', NotificationController::class);
-    Route::post('/notifications/{id}/respond', [NotificationController::class, 'respond']);
+    Route::post('/notifications/{id}/respond', [NotificationController::class, 'respond'])->middleware('throttle:10,1');
     Route::get('/notifications/{id}/volunteer-progress', [NotificationController::class, 'getVolunteerProgress']);
     Route::get('/notifications/{id}/available-capacity', [NotificationController::class, 'getAvailableCapacity']);
     Route::post('/notifications/{id}/toggle-hold', [NotificationController::class, 'toggleHold']);

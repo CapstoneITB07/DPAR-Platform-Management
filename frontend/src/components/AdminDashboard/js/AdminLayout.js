@@ -803,7 +803,7 @@ function AdminLayout({ children }) {
                   }}
                 >
                   <FontAwesomeIcon icon={pushNotificationsEnabled ? faBell : faBellSlash} />
-                  {pushNotificationsEnabled ? 'Push Notifications ON' : 'Push Notifications OFF'}
+                  {pushNotificationsEnabled ? 'Notifications ON' : 'Notifications OFF'}
                 </button>
               )}
               <button 

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Http\Controllers\PushNotificationController;
+use App\Jobs\SendPushNotificationJob;
 use Illuminate\Support\Facades\Log;
 
 class PushNotificationService
@@ -22,7 +23,8 @@ class PushNotificationService
             // Get all admin users
             $adminIds = \App\Models\User::where('role', 'head_admin')->pluck('id')->toArray();
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $adminIds,
                 'New Application Received',
                 "New application from {$application->name}",
@@ -32,7 +34,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send new application notification: ' . $e->getMessage());
+            Log::error('Failed to queue new application notification: ' . $e->getMessage());
         }
     }
     
@@ -62,7 +64,8 @@ class PushNotificationService
             $user = $report->user;
             $userName = $user ? $user->name : 'Unknown';
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $adminIds,
                 'New Report Submitted',
                 "New report submitted by {$userName}",
@@ -72,7 +75,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send new report notification: ' . $e->getMessage());
+            Log::error('Failed to queue new report notification: ' . $e->getMessage());
         }
     }
 
@@ -93,7 +96,8 @@ class PushNotificationService
             $user = $recipient->user;
             $userName = $user ? $user->name : 'Unknown';
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $adminIds,
                 'Notification Response Received',
                 "{$userName} responded to: {$notification->title}",
@@ -103,7 +107,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send notification response alert: ' . $e->getMessage());
+            Log::error('Failed to queue notification response alert: ' . $e->getMessage());
         }
     }
 
@@ -118,7 +122,8 @@ class PushNotificationService
                 return;
             }
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $recipientUserIds,
                 'New Notification',
                 $notification->title,
@@ -128,7 +133,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send notification to associates: ' . $e->getMessage());
+            Log::error('Failed to queue notification to associates: ' . $e->getMessage());
         }
     }
 
@@ -146,7 +151,8 @@ class PushNotificationService
             // Get all associate users
             $associateIds = \App\Models\User::where('role', 'associate_group_leader')->pluck('id')->toArray();
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $associateIds,
                 'New Announcement',
                 $announcement->title ?: 'A new announcement has been posted',
@@ -156,7 +162,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send announcement notification to associates: ' . $e->getMessage());
+            Log::error('Failed to queue announcement notification to associates: ' . $e->getMessage());
         }
     }
 
@@ -171,7 +177,8 @@ class PushNotificationService
                 return;
             }
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $report->user_id,
                 'Report Approved',
                 'Your report has been approved',
@@ -181,7 +188,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send report approved notification: ' . $e->getMessage());
+            Log::error('Failed to queue report approved notification: ' . $e->getMessage());
         }
     }
 
@@ -196,7 +203,8 @@ class PushNotificationService
                 return;
             }
             
-            PushNotificationController::sendNotification(
+            // Queue the push notification instead of sending synchronously
+            SendPushNotificationJob::dispatch(
                 $report->user_id,
                 'Report Rejected',
                 'Your report has been rejected',
@@ -206,7 +214,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send report rejected notification: ' . $e->getMessage());
+            Log::error('Failed to queue report rejected notification: ' . $e->getMessage());
         }
     }
 
@@ -221,8 +229,9 @@ class PushNotificationService
                 return;
             }
             
+            // Queue the push notification instead of sending synchronously
             // Send to all subscriptions (including those without user_id for citizens)
-            PushNotificationController::sendNotification(
+            SendPushNotificationJob::dispatch(
                 null, // null means all subscriptions
                 'New Announcement',
                 $announcement->title ?: 'A new announcement has been posted',
@@ -232,7 +241,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send announcement notification to citizens: ' . $e->getMessage());
+            Log::error('Failed to queue announcement notification to citizens: ' . $e->getMessage());
         }
     }
 
@@ -247,8 +256,9 @@ class PushNotificationService
                 return;
             }
             
+            // Queue the push notification instead of sending synchronously
             // Send to all subscriptions
-            PushNotificationController::sendNotification(
+            SendPushNotificationJob::dispatch(
                 null, // null means all subscriptions
                 'New Training Program',
                 $program->name ?: 'A new training program is available',
@@ -258,7 +268,7 @@ class PushNotificationService
                 ]
             );
         } catch (\Exception $e) {
-            Log::error('Failed to send training program notification: ' . $e->getMessage());
+            Log::error('Failed to queue training program notification: ' . $e->getMessage());
         }
     }
 }

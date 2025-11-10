@@ -153,7 +153,8 @@ function ApprovalAOR() {
   };
 
   const getFilteredReports = () => {
-    let filtered = allReports.filter(report => report.status === 'approved' || report.deleted_at);
+    // Only show approved reports in history (exclude deleted reports)
+    let filtered = allReports.filter(report => report.status === 'approved' && !report.deleted_at);
 
     // Filter by organization
     if (historyFilters.organization) {
@@ -735,24 +736,18 @@ function ApprovalAOR() {
                         <p className="history-date">
                           {new Date(report.created_at).toLocaleDateString()}
                         </p>
-                        {report.deleted_at ? (
-                          <p className="history-status deleted">
-                            Deleted on {new Date(report.deleted_at).toLocaleDateString()}
-                          </p>
-                        ) : (
-                          <p className="history-status approved">
-                            Approved on {new Date(report.approved_at).toLocaleDateString()}
-                          </p>
-                        )}
+                        <p className="history-status approved">
+                          Approved on {new Date(report.approved_at).toLocaleDateString()}
+                        </p>
                       </div>
                       <button 
                         className="generate-btn"
                         onClick={() => handleGenerateAOR(report.id)}
-                        disabled={generatingAOR[report.id] || report.deleted_at}
+                        disabled={generatingAOR[report.id]}
                         style={{
-                          opacity: (generatingAOR[report.id] || report.deleted_at) ? 0.7 : 1,
-                          cursor: (generatingAOR[report.id] || report.deleted_at) ? 'not-allowed' : 'pointer',
-                          pointerEvents: (generatingAOR[report.id] || report.deleted_at) ? 'none' : 'auto'
+                          opacity: generatingAOR[report.id] ? 0.7 : 1,
+                          cursor: generatingAOR[report.id] ? 'not-allowed' : 'pointer',
+                          pointerEvents: generatingAOR[report.id] ? 'none' : 'auto'
                         }}
                       >
                         {generatingAOR[report.id] ? (

@@ -944,7 +944,31 @@ function Reports() {
 
   const [confirm, setConfirm] = useState({ open: false, onConfirm: null, message: '' });
 
+  // Helper function to check if report can be deleted
+  const canDeleteReport = (report) => {
+    // Only draft and rejected reports can be deleted
+    return report.status === 'draft' || report.status === 'rejected';
+  };
+
   const handleDelete = async (id) => {
+    const report = reports.find(r => r.id === id);
+    if (!report) {
+      showError('Report not found');
+      return;
+    }
+
+    // Check if report can be deleted
+    if (!canDeleteReport(report)) {
+      if (report.status === 'approved') {
+        showError('Approved reports cannot be deleted.');
+      } else if (report.status === 'sent') {
+        showError('Submitted reports cannot be deleted. Please wait for admin approval or rejection.');
+      } else {
+        showError('This report cannot be deleted.');
+      }
+      return;
+    }
+
     setConfirm({
       open: true,
       message: 'Are you sure you want to delete this report?',
@@ -956,8 +980,9 @@ function Reports() {
             headers: { Authorization: `Bearer ${token}` }
           });
           fetchReports();
-        } catch {
-          showError('Failed to delete report');
+        } catch (error) {
+          const errorMessage = error.response?.data?.message || 'Failed to delete report';
+          showError(errorMessage);
         }
       }
     });
@@ -1140,15 +1165,27 @@ function Reports() {
 
   // Bulk delete handler
   const handleBulkDelete = () => {
+    // Filter to only deletable reports
+    const deletableReports = selectedReports.filter(id => {
+      const report = reports.find(r => r.id === id);
+      return report && canDeleteReport(report);
+    });
+
+    if (deletableReports.length === 0) {
+      showError('No deletable reports selected. Only draft and rejected reports can be deleted.');
+      setSelectedReports([]);
+      return;
+    }
+
     setConfirm({
       open: true,
-      message: `Are you sure you want to delete ${selectedReports.length} report(s)?`,
+      message: `Are you sure you want to delete ${deletableReports.length} report(s)?`,
       onConfirm: async () => {
         setConfirm({ ...confirm, open: false });
         try {
           const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           await Promise.all(
-            selectedReports.map(id =>
+            deletableReports.map(id =>
               axios.delete(`${API_BASE}/api/reports/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               })
@@ -1162,16 +1199,21 @@ function Reports() {
       }
     });
   };
-  // Select all handler
+  // Select all handler - only select deletable reports
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedReports(reports.map(r => r.id));
+      const deletableReportIds = reports.filter(r => canDeleteReport(r)).map(r => r.id);
+      setSelectedReports(deletableReportIds);
     } else {
       setSelectedReports([]);
     }
   };
-  // Select single handler
+  // Select single handler - prevent selecting non-deletable reports
   const handleSelectReport = (id) => {
+    const report = reports.find(r => r.id === id);
+    if (!report || !canDeleteReport(report)) {
+      return; // Don't allow selection of non-deletable reports
+    }
     setSelectedReports(prev =>
       prev.includes(id)
         ? prev.filter(rid => rid !== id)
@@ -1267,7 +1309,7 @@ function Reports() {
                     <th className="checkbox-col">
                       <input
                         type="checkbox"
-                        checked={selectedReports.length === reports.length && reports.length > 0}
+                        checked={selectedReports.length > 0 && selectedReports.length === reports.filter(r => canDeleteReport(r)).length && reports.filter(r => canDeleteReport(r)).length > 0}
                         onChange={handleSelectAll}
                       />
                     </th>
@@ -1294,6 +1336,16 @@ function Reports() {
                             checked={selectedReports.includes(report.id)}
                             onChange={() => handleSelectReport(report.id)}
                             onClick={e => e.stopPropagation()}
+                            disabled={!canDeleteReport(report)}
+                            style={{
+                              cursor: canDeleteReport(report) ? 'pointer' : 'not-allowed',
+                              opacity: canDeleteReport(report) ? 1 : 0.5
+                            }}
+                            title={!canDeleteReport(report) ? 
+                              (report.status === 'approved' ? 'Approved reports cannot be deleted' : 
+                               report.status === 'sent' ? 'Submitted reports cannot be deleted' : 
+                               'This report cannot be deleted') : 
+                              'Select for deletion'}
                           />
                         </td>
                         <td className="subject-cell subject-col">{report.subject || report.title}</td>

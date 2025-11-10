@@ -18,10 +18,12 @@ class ReportController extends Controller
     {
         $user = Auth::user();
 
-        // Admin can view all reports including soft-deleted ones, regular users can only view their own
+        // Admin can view all reports (excluding soft-deleted), regular users can only view their own
         if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
-            $reports = Report::withTrashed()->with('user')->orderBy('created_at', 'desc')->get();
+            // Admin sees all non-deleted reports
+            $reports = Report::with('user')->orderBy('created_at', 'desc')->get();
         } else {
+            // Regular users see only their own non-deleted reports
             $reports = Report::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
         }
 
@@ -658,20 +660,69 @@ class ReportController extends Controller
     public function destroy(string $id)
     {
         $user = Auth::user();
-        $report = Report::with('user')->where('user_id', $user->id)->findOrFail($id);
-
-        // Delete photos if they exist
-        $reportData = $report->data;
-        if (isset($reportData['photos']) && !empty($reportData['photos'])) {
-            foreach ($reportData['photos'] as $photoPath) {
-                if (Storage::disk('public')->exists($photoPath)) {
-                    Storage::disk('public')->delete($photoPath);
+        
+        // Admin can delete any report (permanently), regular users can only delete their own
+        if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
+            $report = Report::withTrashed()->with('user')->findOrFail($id);
+            
+            // Prevent deletion of approved reports even for admin
+            if ($report->status === 'approved') {
+                return response()->json([
+                    'message' => 'Approved reports cannot be deleted.'
+                ], 403);
+            }
+            
+            // Admin can permanently delete (force delete) non-approved reports
+            $reportData = $report->data;
+            if (isset($reportData['photos']) && !empty($reportData['photos'])) {
+                foreach ($reportData['photos'] as $photoPath) {
+                    if (Storage::disk('public')->exists($photoPath)) {
+                        Storage::disk('public')->delete($photoPath);
+                    }
                 }
             }
-        }
+            
+            // Permanently delete (force delete) - removes from database completely
+            $report->forceDelete();
+            return response()->json(['message' => 'Report permanently deleted.']);
+        } else {
+            // Regular users can only delete their own reports
+            $report = Report::with('user')->where('user_id', $user->id)->findOrFail($id);
+            
+            // Prevent deletion of approved and submitted reports
+            if ($report->status === 'approved') {
+                return response()->json([
+                    'message' => 'Approved reports cannot be deleted.'
+                ], 403);
+            }
+            
+            if ($report->status === 'sent') {
+                return response()->json([
+                    'message' => 'Submitted reports cannot be deleted. Please wait for admin approval or rejection.'
+                ], 403);
+            }
+            
+            // Only allow deletion of draft and rejected reports
+            if (!in_array($report->status, ['draft', 'rejected'])) {
+                return response()->json([
+                    'message' => 'This report cannot be deleted.'
+                ], 403);
+            }
 
-        $report->delete();
-        return response()->json(['message' => 'Report deleted.']);
+            // Delete photos if they exist
+            $reportData = $report->data;
+            if (isset($reportData['photos']) && !empty($reportData['photos'])) {
+                foreach ($reportData['photos'] as $photoPath) {
+                    if (Storage::disk('public')->exists($photoPath)) {
+                        Storage::disk('public')->delete($photoPath);
+                    }
+                }
+            }
+
+            // Soft delete for regular users
+            $report->delete();
+            return response()->json(['message' => 'Report deleted.']);
+        }
     }
 
     public function download(string $id)

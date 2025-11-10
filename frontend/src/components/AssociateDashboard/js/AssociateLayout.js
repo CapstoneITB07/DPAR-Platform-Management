@@ -508,53 +508,116 @@ function AssociateLayout({ children }) {
     return logoPath;
   };
 
-  const customModalStyles = {
-    content: {
-      top: '50%',
-      left: '50%',
-      right: 'auto',
-      bottom: 'auto',
-      transform: 'translate(-50%, -50%)',
-      width: '90%', // Responsive width
-      maxWidth: '600px', // Maximum width for larger screens
-      minWidth: '320px', // Minimum width for mobile
-      maxHeight: '90vh', // Responsive height
-      padding: '0',
-      borderRadius: '12px',
-      border: 'none',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-      zIndex: 1001,
-      // Mobile-first responsive design
-      '@media (max-width: 480px)': {
-        width: '95%',
-        maxHeight: '95vh',
-        margin: '10px',
-      },
-      '@media (min-width: 481px) and (max-width: 768px)': {
-        width: '90%',
-        maxWidth: '500px',
-      },
-      '@media (min-width: 769px) and (max-width: 1024px)': {
-        width: '85%',
-        maxWidth: '550px',
-      },
-      '@media (min-width: 1025px)': {
-        width: '80%',
-        maxWidth: '600px',
-      }
-    },
-    overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      zIndex: 1000,
-      padding: '10px', // Add padding for mobile
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      '@media (max-width: 480px)': {
-        padding: '5px',
-      }
+  // Function to get responsive modal styles based on window width
+  const getCustomModalStyles = () => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    let contentWidth = '90%';
+    let contentMaxWidth = '600px';
+    let contentMaxHeight = '90vh';
+    let contentMargin = 'auto';
+    let overlayPadding = '10px';
+    let contentTop = '50%';
+    let contentLeft = '50%';
+    let contentTransform = 'translate(-50%, -50%)';
+    let contentRight = 'auto';
+    let contentBottom = 'auto';
+
+    if (width <= 480) {
+      contentWidth = '95%';
+      contentMaxHeight = '85vh'; // Slightly smaller to ensure it fits and centers better
+      contentMargin = '20px auto'; // Vertical margin for better centering
+      overlayPadding = '10px';
+      // For mobile, keep transform but ensure proper centering
+      contentTop = '50%';
+      contentLeft = '50%';
+      contentRight = 'auto';
+      contentBottom = 'auto';
+      contentTransform = 'translate(-50%, -50%)';
+    } else if (width >= 481 && width <= 768) {
+      contentWidth = '90%';
+      contentMaxWidth = '500px';
+    } else if (width >= 769 && width <= 1024) {
+      contentWidth = '85%';
+      contentMaxWidth = '550px';
+    } else if (width >= 1025) {
+      contentWidth = '80%';
+      contentMaxWidth = '600px';
     }
+
+    return {
+      content: {
+        top: contentTop,
+        left: contentLeft,
+        right: contentRight,
+        bottom: contentBottom,
+        transform: contentTransform,
+        width: contentWidth,
+        maxWidth: contentMaxWidth,
+        minWidth: '320px',
+        maxHeight: contentMaxHeight,
+        margin: contentMargin,
+        padding: '0',
+        borderRadius: '12px',
+        border: 'none',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+        zIndex: 1001,
+        overflowY: 'auto',
+        overscrollBehavior: 'contain', // Prevent scroll chaining
+      },
+      overlay: {
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        zIndex: 1000,
+        padding: overlayPadding,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflowY: 'auto',
+        overscrollBehavior: 'contain', // Prevent scroll chaining
+      }
+    };
   };
+
+  const [customModalStyles, setCustomModalStyles] = useState(getCustomModalStyles());
+
+  // Update modal styles on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setCustomModalStyles(getCustomModalStyles());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Lock body scroll when modal is open and prevent scroll chaining
+  useEffect(() => {
+    if (isProfileModalOpen) {
+      // Store original body styles
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      const originalWidth = document.body.style.width;
+      const originalTop = document.body.style.top;
+      
+      // Lock body scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+
+      // Cleanup function to restore body scroll
+      return () => {
+        const scrollY = document.body.style.top;
+        document.body.style.overflow = originalOverflow;
+        document.body.style.position = originalPosition;
+        document.body.style.width = originalWidth;
+        document.body.style.top = originalTop;
+        if (scrollY) {
+          window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
+      };
+    }
+  }, [isProfileModalOpen]);
 
   useEffect(() => {
     // Set up periodic refresh of unread count
@@ -1104,12 +1167,47 @@ function AssociateLayout({ children }) {
           </div>
 
           {/* Content */}
-          <div style={{ 
-            padding: window.innerWidth <= 480 ? '20px' : '30px', 
-            overflowY: 'auto', 
-            flex: 1,
-            maxHeight: 'calc(90vh - 120px)'
-          }}>
+          <div 
+            style={{ 
+              padding: window.innerWidth <= 480 ? '20px' : '30px', 
+              overflowY: 'auto', 
+              flex: 1,
+              maxHeight: 'calc(90vh - 120px)',
+              overscrollBehavior: 'contain', // Prevent scroll chaining
+              WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+            }}
+            onWheel={(e) => {
+              const target = e.currentTarget;
+              const { scrollTop, scrollHeight, clientHeight } = target;
+              const isAtTop = scrollTop === 0;
+              const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
+              
+              // Prevent scroll propagation when at boundaries
+              if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+                e.stopPropagation();
+              }
+            }}
+            onTouchStart={(e) => {
+              const target = e.currentTarget;
+              const touch = e.touches[0];
+              target._touchStartY = touch.clientY;
+              target._touchStartScrollTop = target.scrollTop;
+            }}
+            onTouchMove={(e) => {
+              const target = e.currentTarget;
+              const touch = e.touches[0];
+              const { scrollTop, scrollHeight, clientHeight } = target;
+              const isAtTop = scrollTop === 0;
+              const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 1;
+              const deltaY = touch.clientY - (target._touchStartY || touch.clientY);
+              
+              // Prevent scroll propagation when at boundaries on touch devices
+              if ((isAtTop && deltaY > 0) || (isAtBottom && deltaY < 0)) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+          >
             {/* Profile Tab Error and Success Messages */}
             {activeTab === 'profile' && profileError && (
               <div style={{

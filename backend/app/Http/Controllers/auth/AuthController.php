@@ -1023,10 +1023,10 @@ class AuthController extends Controller
             'delay_minutes' => $delayMinutes
         ]);
 
-        // Check for account lockout (5 attempts = 24 hour lockout)
+        // Check for account lockout (5 attempts = 30 minute lockout - industry standard)
         if ($attempts >= 5) {
             $lockoutKey = 'account_lockout_' . $user->id;
-            $lockoutDuration = 24 * 60; // 24 hours in minutes
+            $lockoutDuration = 30; // 30 minutes (industry standard per OWASP/PCI DSS)
             cache()->put($lockoutKey, now()->addMinutes($lockoutDuration), now()->addMinutes($lockoutDuration));
 
             Log::critical('Account locked due to repeated failed login attempts', [

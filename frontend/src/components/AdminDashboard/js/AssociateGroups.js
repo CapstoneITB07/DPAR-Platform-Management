@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faBell, faChartBar, faTimes, faTrash, faUser, faCheck, faEnvelope, faPhone, faKey, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt, faChevronDown, faChevronUp, faIdCard } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faBell, faChartBar, faTimes, faTrash, faUser, faCheck, faEnvelope, faPhone, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt, faChevronDown, faChevronUp, faIdCard } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
 import Modal from 'react-modal';
 import { API_BASE } from '../../../utils/url';
@@ -834,11 +834,6 @@ function AssociateGroups() {
                 <span className="enhanced-error-icon" role="img" aria-label="Success">✅</span>
                 <h2>Associate Created Successfully!</h2>
               </>
-            ) : popupError.includes('Associate Recovery Passcodes:') ? (
-              <>
-                <span className="enhanced-error-icon" role="img" aria-label="Recovery Codes">🔑</span>
-                <h2>Recovery Passcodes</h2>
-              </>
             ) : (
               <>
                 <span className="enhanced-error-icon" role="img" aria-label="Error">⚠️</span>
@@ -853,63 +848,8 @@ function AssociateGroups() {
                 <p style={{ color: '#28a745', marginBottom: 16, fontWeight: 500 }}>
                   The associate group has been created successfully!
                 </p>
-                <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '16px', border: '2px solid #28a745' }}>
-                  {/* Recovery Passcodes Section */}
-                  {popupError.includes('Recovery Passcodes:') && (
-                    <>
-                      <p style={{ fontWeight: 600, color: '#28a745', marginBottom: '8px' }}>Recovery Passcodes:</p>
-                      <div style={{ marginBottom: '8px' }}>
-                        {popupError.split('Recovery Passcodes:')[1]?.split('\n\n')[0]?.split('\n').filter(line => line.trim() && line.includes('.'))?.map((line, index) => (
-                          <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            <code style={{ 
-                              background: '#fff', 
-                              padding: '6px 10px', 
-                              borderRadius: '4px', 
-                              border: '1px solid #ddd',
-                              fontFamily: 'monospace',
-                              fontSize: '12px',
-                              flex: 1
-                            }}>
-                              {line.split('. ')[1]}
-                            </code>
-                            <button 
-                              onClick={(e) => {
-                                navigator.clipboard.writeText(line.split('. ')[1]);
-                                // Show temporary feedback
-                                const btn = e.target;
-                                const originalText = btn.textContent;
-                                btn.textContent = 'Copied!';
-                                btn.style.background = '#28a745';
-                                setTimeout(() => {
-                                  btn.textContent = originalText;
-                                  btn.style.background = '#007bff';
-                                }, 2000);
-                              }}
-                              style={{ 
-                                background: '#007bff', 
-                                color: '#fff', 
-                                border: 'none', 
-                                padding: '6px 10px', 
-                                borderRadius: '4px', 
-                                cursor: 'pointer',
-                                whiteSpace: 'nowrap',
-                                fontSize: '11px'
-                              }}
-                            >
-                              Copy
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                  
-                  <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', marginBottom: 0 }}>
-                    ⚠️ Please copy these recovery passcodes and provide them to the associate group leader. They will not be shown again.
-                  </p>
-                </div>
                 <p style={{ color: '#555', fontSize: '0.95rem' }}>
-                  The associate can now log in using their email and a temporary password, or use any of the recovery passcodes if they forget their password.
+                  The associate can now log in using their email and a temporary password.
                 </p>
               </>
             ) : popupError.includes('Associate Password:') ? (

@@ -102,13 +102,6 @@ class AssociateGroupController extends Controller
             ]);
 
             // Auto-generate a strong password
-            // Generate three recovery passcodes
-            $recoveryPasscodes = [
-                $this->generateRecoveryPasscode(),
-                $this->generateRecoveryPasscode(),
-                $this->generateRecoveryPasscode()
-            ];
-
             // Create user account with a temporary password that must be changed on first login
             $tempPassword = 'TempPassword' . random_int(1000, 9999); // Simple temp password
             $user = User::create([
@@ -117,7 +110,6 @@ class AssociateGroupController extends Controller
                 'password' => Hash::make($tempPassword),
                 'role' => 'associate_group_leader',
                 'organization' => $request->name,
-                'recovery_passcodes' => $recoveryPasscodes,
                 'needs_password_change' => true, // Force password change on first login
             ]);
 
@@ -178,34 +170,6 @@ class AssociateGroupController extends Controller
                 'error' => $e->getMessage()
             ], 422);
         }
-    }
-
-
-    /**
-     * Generate a recovery passcode for new associate accounts
-     */
-    private function generateRecoveryPasscode()
-    {
-        $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $lowercase = 'abcdefghijklmnopqrstuvwxyz';
-        $numbers = '0123456789';
-        $symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
-
-        $passcode = '';
-
-        // Ensure at least one character from each category
-        $passcode .= $uppercase[random_int(0, strlen($uppercase) - 1)];
-        $passcode .= $lowercase[random_int(0, strlen($lowercase) - 1)];
-        $passcode .= $numbers[random_int(0, strlen($numbers) - 1)];
-        $passcode .= $symbols[random_int(0, strlen($symbols) - 1)];
-
-        // Fill the rest with random characters
-        $allChars = $uppercase . $lowercase . $numbers . $symbols;
-        for ($i = 4; $i < 10; $i++) { // Recovery passcodes are 10 characters long
-            $passcode .= $allChars[random_int(0, strlen($allChars) - 1)];
-        }
-
-        return str_shuffle($passcode);
     }
 
 

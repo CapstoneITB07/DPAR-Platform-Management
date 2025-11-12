@@ -109,6 +109,26 @@ class VolunteerController extends Controller
         }
 
         $volunteer->update($request->all());
+        
+        // Log activity for volunteer update
+        try {
+            $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId(Auth::id());
+            ActivityLog::logActivity(
+                Auth::id(),
+                'update',
+                'Updated volunteer: ' . $volunteer->name,
+                [
+                    'volunteer_id' => $volunteer->id,
+                    'volunteer_name' => $volunteer->name,
+                    'volunteer_gender' => $volunteer->gender,
+                    'volunteer_expertise' => $volunteer->expertise
+                ],
+                $directorHistoryId
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to log volunteer update activity: ' . $e->getMessage());
+        }
+        
         return response()->json($volunteer);
     }
 
@@ -119,7 +139,25 @@ class VolunteerController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
+        $volunteerName = $volunteer->name;
         $volunteer->delete();
+
+        // Log activity for volunteer deletion
+        try {
+            $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId(Auth::id());
+            ActivityLog::logActivity(
+                Auth::id(),
+                'delete',
+                'Deleted volunteer: ' . $volunteerName,
+                [
+                    'volunteer_id' => $volunteer->id,
+                    'volunteer_name' => $volunteerName
+                ],
+                $directorHistoryId
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to log volunteer deletion activity: ' . $e->getMessage());
+        }
 
         // Update current director's volunteer count
         DirectorHistory::where('associate_group_id', $associateGroup->id)

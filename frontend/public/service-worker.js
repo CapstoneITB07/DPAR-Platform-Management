@@ -150,19 +150,19 @@ function createErrorResponse(message, status = 503) {
   );
 }
 
-// Helper function to check if a request is for admin or associate pages
+// Helper function to check if a request is for admin, associate, or superadmin pages
 function isAdminOrAssociateRequest(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   
-  // Check if the request URL itself is for admin or associate pages
-  if (pathname.startsWith('/admin') || pathname.startsWith('/associate')) {
+  // Check if the request URL itself is for admin, associate, or superadmin pages
+  if (pathname.startsWith('/admin') || pathname.startsWith('/associate') || pathname.startsWith('/superadmin')) {
     return true;
   }
   
-  // Check the referrer header to see if request came from admin/associate pages
+  // Check the referrer header to see if request came from admin/associate/superadmin pages
   const referrer = request.referrer || '';
-  if (referrer.includes('/admin') || referrer.includes('/associate')) {
+  if (referrer.includes('/admin') || referrer.includes('/associate') || referrer.includes('/superadmin')) {
     return true;
   }
   
@@ -171,7 +171,7 @@ function isAdminOrAssociateRequest(request) {
 
 // Helper function to check if a request is for citizen pages
 function isCitizenRequest(request) {
-  // First check if it's admin/associate - if so, it's not citizen
+  // First check if it's admin/associate/superadmin - if so, it's not citizen
   if (isAdminOrAssociateRequest(request)) {
     return false;
   }
@@ -203,12 +203,12 @@ function isCitizenRequest(request) {
     return true;
   }
   
-  // For API requests to public/cacheable endpoints, assume citizen if not admin/associate
+  // For API requests to public/cacheable endpoints, assume citizen if not admin/associate/superadmin
   // These endpoints are public and used by citizen pages
   if (pathname.includes('/api/')) {
     const isPublicEndpoint = CACHEABLE_API_ENDPOINTS.some(endpoint => pathname.includes(endpoint));
     if (isPublicEndpoint) {
-      // Only treat as citizen if not explicitly from admin/associate
+      // Only treat as citizen if not explicitly from admin/associate/superadmin
       return !isAdminOrAssociateRequest(request);
     }
   }
@@ -231,7 +231,7 @@ function isCitizenRequest(request) {
   // For static assets (JS, CSS, images) requested from login page, allow caching
   // They might be needed for citizen pages too
   if (!pathname.includes('/api/') && (pathname.startsWith('/static/') || pathname.startsWith('/Assets/'))) {
-    // Only block if explicitly from admin/associate
+    // Only block if explicitly from admin/associate/superadmin
     return !isAdminOrAssociateRequest(request);
   }
   
@@ -306,15 +306,15 @@ self.addEventListener('fetch', event => {
       );
       return;
     }
-    // For non-citizen navigation, pass through (admin/associate)
+    // For non-citizen navigation, pass through (admin/associate/superadmin)
     event.respondWith(fetch(event.request));
     return;
   }
   
-  // For admin or associate routes, bypass service worker (don't use cache)
+  // For admin, associate, or superadmin routes, bypass service worker (don't use cache)
   // Only allow offline mode for citizen pages
   if (!isCitizen) {
-    // For admin/associate routes, just pass through to network
+    // For admin/associate/superadmin routes, just pass through to network
     // If offline, let it fail naturally (no cache fallback)
     event.respondWith(fetch(event.request));
     return;

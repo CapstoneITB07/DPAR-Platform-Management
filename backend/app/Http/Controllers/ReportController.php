@@ -797,6 +797,20 @@ class ReportController extends Controller
             $report->approved_by = $user->id;
             $report->save();
 
+            // Log activity for report approval
+            ActivityLog::logActivity(
+                $user->id,
+                'approve',
+                'Approved report: ' . $report->title,
+                [
+                    'report_id' => $report->id,
+                    'report_title' => $report->title,
+                    'submitted_by_user_id' => $report->user_id,
+                    'submitted_by' => $report->user ? $report->user->name : 'Unknown'
+                ],
+                null
+            );
+
             // Send push notification to associate about approval
             try {
                 PushNotificationService::notifyAssociateReportApproved($report);
@@ -850,6 +864,21 @@ class ReportController extends Controller
             $report->rejected_by = $user->id;
             $report->rejection_reason = $validated['rejection_reason'];
             $report->save();
+
+            // Log activity for report rejection
+            ActivityLog::logActivity(
+                $user->id,
+                'reject',
+                'Rejected report: ' . $report->title,
+                [
+                    'report_id' => $report->id,
+                    'report_title' => $report->title,
+                    'submitted_by_user_id' => $report->user_id,
+                    'submitted_by' => $report->user ? $report->user->name : 'Unknown',
+                    'rejection_reason' => $validated['rejection_reason']
+                ],
+                null
+            );
 
             // Send push notification to associate about rejection
             try {

@@ -62,20 +62,23 @@ class CalendarEventController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            // Log activity for event creation (only for associate group leaders)
+            // Log activity for event creation (for associate group leaders and head admins)
             $user = Auth::user();
-            if ($user && $user->role === 'associate_group_leader') {
-                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+            if ($user && in_array($user->role, ['associate_group_leader', 'head_admin'])) {
+                $directorHistoryId = $user->role === 'associate_group_leader' 
+                    ? DirectorHistory::getCurrentDirectorHistoryId($user->id) 
+                    : null;
                 ActivityLog::logActivity(
                     $user->id,
-                    'event_created',
+                    'create',
                     'Created a new event: ' . $event->title,
                     [
                         'event_id' => $event->id,
                         'event_title' => $event->title,
                         'event_location' => $event->location,
                         'start_date' => $event->start_date,
-                        'end_date' => $event->end_date
+                        'end_date' => $event->end_date,
+                        'resource_type' => 'calendar_event'
                     ],
                     $directorHistoryId
                 );
@@ -146,6 +149,28 @@ class CalendarEventController extends Controller
                 'end_date' => $request->end_date,
             ]);
 
+            // Log activity for event update (for associate group leaders and head admins)
+            $user = Auth::user();
+            if ($user && in_array($user->role, ['associate_group_leader', 'head_admin'])) {
+                $directorHistoryId = $user->role === 'associate_group_leader' 
+                    ? DirectorHistory::getCurrentDirectorHistoryId($user->id) 
+                    : null;
+                ActivityLog::logActivity(
+                    $user->id,
+                    'update',
+                    'Updated event: ' . $calendarEvent->title,
+                    [
+                        'event_id' => $calendarEvent->id,
+                        'event_title' => $calendarEvent->title,
+                        'event_location' => $calendarEvent->location,
+                        'start_date' => $calendarEvent->start_date,
+                        'end_date' => $calendarEvent->end_date,
+                        'resource_type' => 'calendar_event'
+                    ],
+                    $directorHistoryId
+                );
+            }
+
             $calendarEvent->load('creator');
 
             return response()->json([
@@ -167,7 +192,29 @@ class CalendarEventController extends Controller
     public function destroy(CalendarEvent $calendarEvent)
     {
         try {
+            $eventTitle = $calendarEvent->title;
+            $eventId = $calendarEvent->id;
+            
             $calendarEvent->delete();
+
+            // Log activity for event deletion (for associate group leaders and head admins)
+            $user = Auth::user();
+            if ($user && in_array($user->role, ['associate_group_leader', 'head_admin'])) {
+                $directorHistoryId = $user->role === 'associate_group_leader' 
+                    ? DirectorHistory::getCurrentDirectorHistoryId($user->id) 
+                    : null;
+                ActivityLog::logActivity(
+                    $user->id,
+                    'delete',
+                    'Deleted event: ' . $eventTitle,
+                    [
+                        'event_id' => $eventId,
+                        'event_title' => $eventTitle,
+                        'resource_type' => 'calendar_event'
+                    ],
+                    $directorHistoryId
+                );
+            }
 
             return response()->json([
                 'success' => true,

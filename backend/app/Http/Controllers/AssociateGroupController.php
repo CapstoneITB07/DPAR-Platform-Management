@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\DirectorHistory;
 use App\Models\DirectorAchievement;
 use App\Models\Volunteer;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -159,6 +160,24 @@ class AssociateGroupController extends Controller
 
             // Return the group data without recovery passcodes
             $responseData = $group->load('user')->toArray();
+
+            // Log activity for associate group creation
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'create',
+                    'Created associate group: ' . $group->name,
+                    [
+                        'associate_group_id' => $group->id,
+                        'associate_group_name' => $group->name,
+                        'director' => $group->director,
+                        'email' => $group->email
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log associate group creation activity: ' . $e->getMessage());
+            }
 
             DB::commit();
             return response()->json($responseData, 201);
@@ -355,6 +374,24 @@ class AssociateGroupController extends Controller
                 $group->logo = Storage::url($group->logo);
             }
 
+            // Log activity for associate group update
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'update',
+                    'Updated associate group: ' . $group->name,
+                    [
+                        'associate_group_id' => $group->id,
+                        'associate_group_name' => $group->name,
+                        'director' => $group->director,
+                        'email' => $group->email
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log associate group update activity: ' . $e->getMessage());
+            }
+
             DB::commit();
             return response()->json($group);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -380,8 +417,25 @@ class AssociateGroupController extends Controller
         try {
             $group = AssociateGroup::with('user')->findOrFail($id);
 
+            $groupName = $group->name;
             // Soft delete using Laravel's built-in method
             $group->delete();
+
+            // Log activity for associate group deletion
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'delete',
+                    'Deleted associate group: ' . $groupName,
+                    [
+                        'associate_group_id' => $id,
+                        'associate_group_name' => $groupName
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log associate group deletion activity: ' . $e->getMessage());
+            }
 
             DB::commit();
             return response()->json(['message' => 'Associate group deleted successfully']);

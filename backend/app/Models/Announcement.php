@@ -12,9 +12,13 @@ class Announcement extends Model
         'title',
         'description',
         'photos',
+        'visible_to_citizens',
+        'featured',
     ];
 
     protected $casts = [
         'photos' => 'array',
+        'visible_to_citizens' => 'boolean',
+        'featured' => 'boolean',
     ];
 }

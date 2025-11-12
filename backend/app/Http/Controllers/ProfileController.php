@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use App\Models\AssociateGroup;
 use App\Models\DirectorHistory;
 use App\Models\Volunteer;
+use App\Models\ActivityLog;
+use App\Services\BrevoEmailService;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -61,6 +64,25 @@ class ProfileController extends Controller
                     $associateGroup->save();
                 }
 
+                // Log activity for profile picture update
+                try {
+                    ActivityLog::logActivity(
+                        $user->id,
+                        'profile_updated',
+                        'Updated profile picture',
+                        [
+                            'update_type' => 'profile_picture',
+                            'user_id' => $user->id,
+                            'user_name' => $user->name,
+                            'associate_group_id' => $associateGroup ? $associateGroup->id : null,
+                            'associate_group_name' => $associateGroup ? $associateGroup->name : null
+                        ],
+                        null
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Failed to log profile picture update activity: ' . $e->getMessage());
+                }
+
                 return response()->json([
                     'message' => 'Profile picture updated successfully',
                     'profile_picture_url' => asset('storage/' . $path)
@@ -73,19 +95,68 @@ class ProfileController extends Controller
         }
     }
 
+    /**
+     * Validate username format and check for TLD patterns and reserved words
+     */
+    private function validateUsername($username)
+    {
+        // Basic format validation: alphanumeric, underscore, hyphen only (no dots)
+        if (!preg_match('/^[A-Za-z0-9_-]{3,30}$/', $username)) {
+            return [
+                'valid' => false,
+                'message' => 'Username must be 3-30 characters and contain only letters, numbers, underscore, or hyphen.'
+            ];
+        }
+
+        // Check for TLD patterns (case-insensitive)
+        $tlds = ['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'co', 'io', 'ai', 'tv', 'me', 'info', 'biz', 'name', 'pro', 'xyz', 'online', 'site', 'website', 'tech', 'app', 'dev', 'cloud', 'store', 'shop'];
+        $lowerUsername = strtolower($username);
+        
+        foreach ($tlds as $tld) {
+            // Check if username ends with .tld or contains .tld pattern
+            if (preg_match('/\.' . preg_quote($tld, '/') . '$/i', $lowerUsername) || 
+                preg_match('/\.' . preg_quote($tld, '/') . '[^a-z0-9]/i', $lowerUsername)) {
+                return [
+                    'valid' => false,
+                    'message' => 'Username cannot contain domain extensions like .com, .net, etc.'
+                ];
+            }
+        }
+
+        // Check for reserved words (case-insensitive)
+        $reservedWords = ['admin', 'administrator', 'root', 'system', 'superadmin', 'super', 'api', 'www', 'mail', 'email', 'support', 'help', 'info', 'contact', 'test', 'testing', 'null', 'undefined', 'true', 'false', 'delete', 'remove', 'update', 'create', 'edit', 'modify', 'user', 'users', 'account', 'accounts', 'login', 'logout', 'register', 'signup', 'password', 'reset', 'recover', 'verify', 'confirm', 'activate', 'deactivate', 'suspend', 'ban', 'block', 'unblock', 'activate', 'deactivate'];
+        
+        if (in_array($lowerUsername, $reservedWords)) {
+            return [
+                'valid' => false,
+                'message' => 'This username is reserved and cannot be used.'
+            ];
+        }
+
+        return ['valid' => true];
+    }
+
     public function updateProfile(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|regex:/^[A-Za-z0-9._-]{3,30}$/|unique:users,username,' . Auth::id(),
+            'username' => 'required|string|max:30|min:3|unique:users,username,' . Auth::id(),
             'email' => 'required|email|unique:users,email,' . Auth::id(),
             'director' => 'nullable|string|max:255',
             'type' => 'nullable|string|max:255',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ], [
-            'username.regex' => 'Username must be 3-30 characters and contain only letters, numbers, dot, underscore, or hyphen.',
             'username.unique' => 'This username is already taken.'
         ]);
+
+        // Validate username format, TLD patterns, and reserved words
+        $usernameValidation = $this->validateUsername($request->username);
+        if (!$usernameValidation['valid']) {
+            return response()->json([
+                'message' => $usernameValidation['message'],
+                'errors' => ['username' => [$usernameValidation['message']]]
+            ], 422);
+        }
 
         DB::beginTransaction();
         try {
@@ -95,10 +166,62 @@ class ProfileController extends Controller
             // Store original values for comparison
             $originalName = $user->name;
             $originalEmail = $user->email;
+            $originalUsername = $user->username;
 
             $user->name = $request->name;
             $user->username = $request->username;
-            $user->email = $request->email;
+            
+            // Check if email is being changed
+            $emailChanged = false;
+            if ($request->email !== $originalEmail) {
+                $emailChanged = true;
+                $newEmail = $request->email;
+
+                // Generate OTP code
+                $otpCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $otpExpiresAt = now()->addHours(24); // OTP expires in 24 hours
+
+                // Store OTP in user data
+                $user->email = $newEmail;
+                $user->email_verification_otp = $otpCode;
+                $user->email_verification_otp_expires_at = $otpExpiresAt;
+                $user->needs_otp_verification = true;
+
+                // Revoke all existing tokens to force re-login with OTP
+                $user->tokens()->delete();
+
+                // Send OTP email to new email address
+                try {
+                    $brevoService = new BrevoEmailService();
+                    $result = $brevoService->sendOtpEmail($newEmail, $otpCode, 'Email Verification');
+
+                    if ($result['success']) {
+                        Log::info('Email verification OTP sent to user', [
+                            'user_id' => $user->id,
+                            'role' => $user->role,
+                            'old_email' => $originalEmail,
+                            'new_email' => $newEmail,
+                            'messageId' => $result['messageId'] ?? null
+                        ]);
+                    } else {
+                        Log::error('Failed to send email verification OTP to user', [
+                            'user_id' => $user->id,
+                            'role' => $user->role,
+                            'new_email' => $newEmail,
+                            'error' => $result['error'] ?? 'Unknown error'
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Exception sending OTP to user', [
+                        'user_id' => $user->id,
+                        'role' => $user->role,
+                        'new_email' => $newEmail,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            } else {
+                $user->email = $request->email;
+            }
 
             // Handle profile image upload
             if ($request->hasFile('profile_image')) {
@@ -116,9 +239,9 @@ class ProfileController extends Controller
 
             // If user is an associate group leader, handle director changes
             $associateGroup = AssociateGroup::where('user_id', $user->id)->first();
+            $directorChanged = false;
             if ($associateGroup) {
                 // Check if director name or email changed (indicating a director change)
-                $directorChanged = false;
                 $originalDirector = $associateGroup->director;
                 $originalDirectorName = $associateGroup->director; // Use stored director name from associate group
 
@@ -204,9 +327,49 @@ class ProfileController extends Controller
             }
 
             DB::commit();
+
+            // Track what was changed for logging
+            $changes = [];
+            if ($originalName !== $user->name) $changes[] = 'name';
+            if ($originalEmail !== $user->email) $changes[] = 'email';
+            if ($originalUsername !== $user->username) $changes[] = 'username';
+            if ($request->hasFile('profile_image')) $changes[] = 'profile_picture';
+            if ($directorChanged) {
+                $changes[] = 'director';
+            }
+
+            // Log activity for profile update
+            if (!empty($changes)) {
+                try {
+                    ActivityLog::logActivity(
+                        $user->id,
+                        'profile_updated',
+                        'Updated profile: ' . implode(', ', $changes),
+                        [
+                            'update_type' => 'profile_info',
+                            'user_id' => $user->id,
+                            'user_name' => $user->name,
+                            'changes' => $changes,
+                            'associate_group_id' => $associateGroup ? $associateGroup->id : null,
+                            'associate_group_name' => $associateGroup ? $associateGroup->name : null,
+                            'director_changed' => $associateGroup && in_array('director', $changes)
+                        ],
+                        null
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Failed to log profile update activity: ' . $e->getMessage());
+                }
+            }
+
+            $message = 'Profile updated successfully';
+            if ($emailChanged) {
+                $message .= '. An OTP has been sent to your new email address. Please verify the email before logging in again.';
+            }
+
             return response()->json([
-                'message' => 'Profile updated successfully',
-                'profile_picture_url' => $user->profile_picture ? asset('storage/' . $user->profile_picture) : null
+                'message' => $message,
+                'profile_picture_url' => $user->profile_picture ? asset('storage/' . $user->profile_picture) : null,
+                'email_changed' => $emailChanged
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

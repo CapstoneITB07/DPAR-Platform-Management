@@ -16,6 +16,19 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'throttle.login' => \App\Http\Middleware\ThrottleLoginAttempts::class,
         ]);
+        
+        // Exclude all superadmin routes and system alerts from maintenance mode
+        // This allows superadmin to access everything during maintenance to disable it
+        $middleware->preventRequestsDuringMaintenance(
+            except: [
+                '/api/superadmin/*',
+                '/api/superadmin',
+                'api/superadmin/*',
+                'api/superadmin',
+                '/api/system-alerts/active',
+                'api/system-alerts/active'
+            ]
+        );
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

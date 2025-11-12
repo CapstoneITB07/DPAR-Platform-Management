@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Maintenance Mode Secret
+    |--------------------------------------------------------------------------
+    |
+    | This secret allows Super Admins to bypass maintenance mode by adding
+    | ?secret=YOUR_SECRET to any URL. Set this in your ".env" file.
+    |
+    */
+
+    'maintenance_secret' => env('APP_MAINTENANCE_SECRET', 'maintenance'),
+
 ];

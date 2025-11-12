@@ -569,12 +569,30 @@ function RegistrationForm({ onSuccess, onCancel }) {
     
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
-    } else if (!/^[A-Za-z0-9._-]{3,30}$/.test(formData.username)) {
-      newErrors.username = 'Use 3-30 of letters, numbers, dot, underscore, or hyphen';
-    } else if (usernameAvailability && !usernameAvailability.available) {
-      newErrors.username = 'This username is already taken.';
-    } else if (isCheckingUsername) {
-      newErrors.username = 'Checking username availability...';
+    } else if (!/^[A-Za-z0-9_-]{3,30}$/.test(formData.username)) {
+      newErrors.username = 'Username must be 3-30 characters and contain only letters, numbers, underscore, or hyphen';
+    } else {
+      // Check for TLD patterns (case-insensitive)
+      const tlds = ['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'co', 'io', 'ai', 'tv', 'me', 'info', 'biz', 'name', 'pro', 'xyz', 'online', 'site', 'website', 'tech', 'app', 'dev', 'cloud', 'store', 'shop'];
+      const lowerUsername = formData.username.toLowerCase();
+      const hasTld = tlds.some(tld => {
+        return lowerUsername.endsWith('.' + tld) || new RegExp('\\.' + tld + '[^a-z0-9]', 'i').test(lowerUsername);
+      });
+      
+      if (hasTld) {
+        newErrors.username = 'Username cannot contain domain extensions like .com, .net, etc.';
+      } else {
+        // Check for reserved words (case-insensitive)
+        const reservedWords = ['admin', 'administrator', 'root', 'system', 'superadmin', 'super', 'api', 'www', 'mail', 'email', 'support', 'help', 'info', 'contact', 'test', 'testing', 'null', 'undefined', 'true', 'false', 'delete', 'remove', 'update', 'create', 'edit', 'modify', 'user', 'users', 'account', 'accounts', 'login', 'logout', 'register', 'signup', 'password', 'reset', 'recover', 'verify', 'confirm', 'activate', 'deactivate', 'suspend', 'ban', 'block', 'unblock'];
+        
+        if (reservedWords.includes(lowerUsername)) {
+          newErrors.username = 'This username is reserved and cannot be used.';
+        } else if (usernameAvailability && !usernameAvailability.available) {
+          newErrors.username = 'This username is already taken.';
+        } else if (isCheckingUsername) {
+          newErrors.username = 'Checking username availability...';
+        }
+      }
     }
     
     if (!formData.email.trim()) {

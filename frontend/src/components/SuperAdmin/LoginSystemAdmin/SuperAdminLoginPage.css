@@ -1,0 +1,389 @@
+/* Super Admin Login Page Styles - Based on existing theme with unique styling */
+
+.superadminLoginPageWrapper {
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.superadminLoginPageWrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.75);
+  z-index: 0;
+}
+
+.superadminLoginPageWrapper > * {
+  position: relative;
+  z-index: 1;
+}
+
+.superadminLoginPageWrapper .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 400px;
+  height: auto;
+  font-family: 'Arial', sans-serif;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background: white;
+  border-radius: 8px;
+}
+
+.superadminLoginPageWrapper .loginSection {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  background-color: white;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.superadminHeader {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.superadminIcon {
+  font-size: 48px;
+  color: #1a1a2e;
+  margin-bottom: 15px;
+}
+
+.superadminSubtitle {
+  color: #666;
+  font-size: 14px;
+  margin-top: 5px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.superadminLoginPageWrapper .signInTitle {
+  font-size: clamp(1.3rem, 2.5vw, 2.2rem);
+  margin-bottom: 20px;
+  color: #1a1a2e;
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.superadminLoginPageWrapper .inputGroup {
+  margin-bottom: 20px;
+}
+
+.superadminLoginPageWrapper .label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  font-weight: 600;
+  color: #1a1a2e;
+  text-align: left;
+}
+
+.superadminLoginPageWrapper .passwordInputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.superadminLoginPageWrapper .input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.superadminLoginPageWrapper .input:focus {
+  outline: none;
+  border-color: #1a1a2e;
+  box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.1);
+}
+
+.superadminLoginPageWrapper .passwordInput {
+  width: 100%;
+  padding: 12px 16px;
+  padding-right: 50px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+  /* Hide browser's default password reveal button (Edge, IE) */
+  -ms-reveal: none;
+  /* Hide browser's default password reveal button (Chrome, Safari, Firefox) */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Hide Edge/IE password reveal button */
+.superadminLoginPageWrapper .passwordInput::-ms-reveal {
+  display: none;
+}
+
+/* Hide Chrome/Safari password reveal button */
+.superadminLoginPageWrapper .passwordInput::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.superadminLoginPageWrapper .passwordInput:focus {
+  outline: none;
+  border-color: #1a1a2e;
+  box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.1);
+}
+
+.superadminLoginPageWrapper .passwordToggleIcon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  color: #666;
+}
+
+.superadminLoginPageWrapper .passwordToggleIcon:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.superadminLoginPageWrapper .signInButton {
+  width: 100%;
+  padding: 14px 16px;
+  background-color: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0px;
+  transition: all 0.3s ease;
+}
+
+.superadminLoginPageWrapper .signInButton:hover:not(:disabled) {
+  background-color: #16213e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.3);
+}
+
+.superadminLoginPageWrapper .signInButton:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.3);
+}
+
+.superadminLoginPageWrapper .superadminButton {
+  background-color: #1a1a2e;
+}
+
+.superadminLoginPageWrapper .superadminButton:hover:not(:disabled) {
+  background-color: #16213e;
+}
+
+.superadminLoginPageWrapper .errorMessage {
+  color: #e74c3c;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 14px;
+  padding: 8px 12px;
+  background-color: #fdf2f2;
+  border-radius: 4px;
+  border: 1px solid #fecaca;
+}
+
+.superadminLoginPageWrapper .welcomeSection {
+  background-color: #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+  padding: 40px;
+  box-sizing: border-box;
+  height: 100%;
+  border-right: 1px solid #ccc;
+}
+
+.superadminLoginPageWrapper .welcomeContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+
+.superadminLoginPageWrapper .loginLogo {
+  max-width: 120px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.superadminLoginPageWrapper .coalitionText {
+  font-size: clamp(0.7rem, 1.2vw, 1.1rem);
+  margin-bottom: 20px;
+  font-weight: bold;
+  margin-top: 0;
+  line-height: 1.4;
+}
+
+.superadminLoginPageWrapper .welcomeTitle {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  margin-bottom: 10px;
+  margin-top: 0;
+  line-height: 1.2;
+}
+
+.superadminLoginPageWrapper .welcomeSubtitle {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  margin-top: 0;
+  line-height: 1.3;
+}
+
+.superadminFeatures {
+  margin-top: 30px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 20px;
+  border-radius: 6px;
+}
+
+.superadminFeatures p {
+  margin: 10px 0;
+  font-size: 14px;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .superadminLoginPageWrapper .container {
+    max-width: 95%;
+  }
+
+  .superadminLoginPageWrapper .loginSection {
+    padding: 32px;
+  }
+
+  .superadminLoginPageWrapper .welcomeSection {
+    padding: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .superadminLoginPageWrapper {
+    padding: 16px;
+  }
+
+  .superadminLoginPageWrapper .container {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    border-radius: 8px;
+  }
+
+  .superadminLoginPageWrapper .loginSection {
+    border-bottom: 1px solid #ccc;
+    padding: 24px;
+  }
+
+  .superadminLoginPageWrapper .welcomeSection {
+    border-right: none;
+    display: none; /* Hide welcome section on mobile for space */
+  }
+
+  .superadminHeader {
+    margin-bottom: 24px;
+  }
+
+  .superadminIcon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .superadminLoginPageWrapper .signInTitle {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .superadminSubtitle {
+    font-size: 13px;
+  }
+
+  .superadminLoginPageWrapper .inputGroup {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .superadminLoginPageWrapper {
+    padding: 12px;
+  }
+
+  .superadminLoginPageWrapper .container {
+    border-radius: 6px;
+  }
+
+  .superadminLoginPageWrapper .loginSection {
+    padding: 20px;
+  }
+
+  .superadminHeader {
+    margin-bottom: 20px;
+  }
+
+  .superadminIcon {
+    font-size: 36px;
+    margin-bottom: 10px;
+  }
+
+  .superadminLoginPageWrapper .signInTitle {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .superadminSubtitle {
+    font-size: 12px;
+  }
+
+  .superadminLoginPageWrapper .label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .superadminLoginPageWrapper .input,
+  .superadminLoginPageWrapper .passwordInput {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .superadminLoginPageWrapper .signInButton {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
+

@@ -19,6 +19,49 @@ use App\Services\BrevoEmailService;
 
 class AuthController extends Controller
 {
+    /**
+     * Validate username format and check for TLD patterns and reserved words
+     */
+    private function validateUsername($username)
+    {
+        // Basic format validation: alphanumeric, underscore, hyphen only (no dots)
+        if (!preg_match('/^[A-Za-z0-9_-]{3,30}$/', $username)) {
+            return [
+                'valid' => false,
+                'message' => 'Username must be 3-30 characters and contain only letters, numbers, underscore, or hyphen.'
+            ];
+        }
+
+        // Check for TLD patterns (case-insensitive)
+        $tlds = ['com', 'net', 'org', 'edu', 'gov', 'mil', 'int', 'co', 'io', 'ai', 'tv', 'me', 'info', 'biz', 'name', 'pro', 'xyz', 'online', 'site', 'website', 'tech', 'app', 'dev', 'cloud', 'store', 'shop'];
+        $lowerUsername = strtolower($username);
+
+        foreach ($tlds as $tld) {
+            // Check if username ends with .tld or contains .tld pattern
+            if (
+                preg_match('/\.' . preg_quote($tld, '/') . '$/i', $lowerUsername) ||
+                preg_match('/\.' . preg_quote($tld, '/') . '[^a-z0-9]/i', $lowerUsername)
+            ) {
+                return [
+                    'valid' => false,
+                    'message' => 'Username cannot contain domain extensions like .com, .net, etc.'
+                ];
+            }
+        }
+
+        // Check for reserved words (case-insensitive)
+        $reservedWords = ['admin', 'administrator', 'root', 'system', 'superadmin', 'super', 'api', 'www', 'mail', 'email', 'support', 'help', 'info', 'contact', 'test', 'testing', 'null', 'undefined', 'true', 'false', 'delete', 'remove', 'update', 'create', 'edit', 'modify', 'user', 'users', 'account', 'accounts', 'login', 'logout', 'register', 'signup', 'password', 'reset', 'recover', 'verify', 'confirm', 'activate', 'deactivate', 'suspend', 'ban', 'block', 'unblock', 'activate', 'deactivate'];
+
+        if (in_array($lowerUsername, $reservedWords)) {
+            return [
+                'valid' => false,
+                'message' => 'This username is reserved and cannot be used.'
+            ];
+        }
+
+        return ['valid' => true];
+    }
+
     // Check if organization name is available
     public function checkOrganizationName(Request $request)
     {
@@ -63,9 +106,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/'],
-            ], [
-                'username.regex' => 'Invalid username format.'
+                'username' => ['required', 'string', 'max:30', 'min:3'],
             ]);
 
             $user = User::where('username', $request->username)->first();
@@ -146,10 +187,8 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/'],
+                'username' => ['required', 'string', 'max:30', 'min:3'],
                 'code' => 'required|string|size:6'
-            ], [
-                'username.regex' => 'Invalid username format.'
             ]);
 
             $user = User::where('username', $request->username)->first();
@@ -304,13 +343,19 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                // Allow letters, numbers, dots, underscores, hyphens; 3-30 chars
-                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/']
-            ], [
-                'username.regex' => 'Username must be 3-30 characters and contain only letters, numbers, dot, underscore, or hyphen.'
+                'username' => ['required', 'string', 'max:30', 'min:3']
             ]);
 
             $username = $request->username;
+
+            // Validate username format, TLD patterns, and reserved words
+            $validation = $this->validateUsername($username);
+            if (!$validation['valid']) {
+                return response()->json([
+                    'available' => false,
+                    'message' => $validation['message']
+                ], 422);
+            }
 
             $pendingExists = PendingApplication::whereRaw('LOWER(username) = ?', [strtolower($username)])
                 ->where('status', '!=', 'rejected')
@@ -347,7 +392,7 @@ class AuthController extends Controller
                 'organization_name' => 'required|string|max:255',
                 'organization_type' => 'required|string|max:255',
                 'director_name' => 'required|string|max:255',
-                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/', 'unique:users,username'],
+                'username' => ['required', 'string', 'max:30', 'min:3', 'unique:users,username'],
                 'email' => 'required|string|email|max:255|unique:users,email',
                 'phone' => ['required', 'string', 'size:11', 'regex:/^09[0-9]{9}$/'],
                 'password' => 'required|string|min:8|confirmed',
@@ -358,7 +403,6 @@ class AuthController extends Controller
                 'organization_type.required' => 'Organization type is required.',
                 'director_name.required' => 'Director name is required.',
                 'username.required' => 'Username is required.',
-                'username.regex' => 'Username must be 3-30 characters and may include letters, numbers, dot, underscore, or hyphen.',
                 'username.unique' => 'This username is already taken.',
                 'email.required' => 'Email address is required.',
                 'email.email' => 'Please enter a valid email address.',
@@ -386,6 +430,15 @@ class AuthController extends Controller
                 return response()->json([
                     'message' => 'This email is already registered.',
                     'errors' => ['email' => ['This email is already registered.']]
+                ], 422);
+            }
+
+            // Validate username format, TLD patterns, and reserved words
+            $usernameValidation = $this->validateUsername($request->username);
+            if (!$usernameValidation['valid']) {
+                return response()->json([
+                    'message' => $usernameValidation['message'],
+                    'errors' => ['username' => [$usernameValidation['message']]]
                 ], 422);
             }
 
@@ -449,13 +502,22 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'username' => ['required', 'string', 'regex:/^[A-Za-z0-9._-]{3,30}$/'],
+                'username' => ['required', 'string', 'max:30', 'min:3'],
                 'password' => 'required|string',
-            ], [
-                'username.regex' => 'Invalid username format.'
             ]);
 
-            $user = User::where('username', $request['username'])->first();
+            // Check for soft-deleted users - exclude them from login
+            $user = User::where('username', $request['username'])
+                ->whereNull('deleted_at')
+                ->first();
+
+            // Additional safety check: if user is soft-deleted, block login
+            if ($user && $user->trashed()) {
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['username' => ['Invalid credentials.']]
+                ], 401);
+            }
 
             if (!$user) {
                 // Check if there's a pending application with this username
@@ -524,21 +586,46 @@ class AuthController extends Controller
                 ], 401);
             }
 
+            // Block superadmin logins through regular login endpoint for security
+            // Return generic error to prevent revealing superadmin login page exists
+            if ($user->role === 'superadmin') {
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['username' => ['Invalid credentials.']]
+                ], 401);
+            }
+
             // Clear failed attempts on successful login
             $this->clearFailedAttempts($user, $request);
 
-            // Check if user needs OTP verification (first-time login after approval)
-            if ($user->role === 'associate_group_leader' && $user->needs_otp_verification) {
-                Log::info('User requires OTP verification', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'needs_otp_verification' => $user->needs_otp_verification
-                ]);
-                return response()->json([
-                    'message' => 'OTP verification required. Please check your email for the authentication code.',
-                    'requires_otp' => true,
-                    'user_id' => $user->id
-                ], 200);
+            // Check if user needs OTP verification (first-time login after approval or email change)
+            if ($user->needs_otp_verification) {
+                $reason = '';
+                if ($user->role === 'associate_group_leader') {
+                    // Check if it's first-time login or email change
+                    if ($user->email_verification_otp) {
+                        $reason = 'email change verification';
+                    } else {
+                        $reason = 'first-time login after approval';
+                    }
+                } elseif ($user->role === 'head_admin' && $user->email_verification_otp) {
+                    $reason = 'email change verification';
+                }
+
+                if ($reason) {
+                    Log::info('User requires OTP verification', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'reason' => $reason,
+                        'needs_otp_verification' => $user->needs_otp_verification
+                    ]);
+                    return response()->json([
+                        'message' => 'OTP verification required. Please check your email for the authentication code.',
+                        'requires_otp' => true,
+                        'user_id' => $user->id
+                    ], 200);
+                }
             }
 
             // Log successful login for debugging
@@ -555,9 +642,13 @@ class AuthController extends Controller
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
-            // Log login activity for associates
-            if ($user->role === 'associate_group_leader') {
-                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+            // Log login activity for associates and head admins
+            // Note: Superadmin logins are excluded from system logs view, so we don't log them here
+            if (in_array($user->role, ['associate_group_leader', 'head_admin'])) {
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
                 ActivityLog::logActivity(
                     $user->id,
                     'login',
@@ -591,11 +682,122 @@ class AuthController extends Controller
         }
     }
 
+    // Superadmin login - separate endpoint for security
+    public function superadminLogin(Request $request)
+    {
+        try {
+            // Ensure maintenance file has correct route exclusion (in case maintenance was enabled manually)
+            // The route is excluded from maintenance mode, so superadmin can always login to disable maintenance
+            $this->ensureMaintenanceRouteExclusion();
+
+            $request->validate([
+                'username' => ['required', 'string', 'max:30', 'min:3'],
+                'password' => 'required|string',
+            ]);
+
+            // Check for soft-deleted users - exclude them from login
+            $user = User::where('username', $request['username'])
+                ->whereNull('deleted_at')
+                ->first();
+
+            // Additional safety check: if user is soft-deleted, block login
+            if ($user && $user->trashed()) {
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['username' => ['Invalid credentials.']]
+                ], 401);
+            }
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['username' => ['Invalid credentials.']]
+                ], 401);
+            }
+
+            // Only allow superadmin role through this endpoint
+            if ($user->role !== 'superadmin') {
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['username' => ['Invalid credentials.']]
+                ], 401);
+            }
+
+            // Enhanced security: Check for account lockout and progressive delays
+            $this->checkAccountSecurity($user, $request);
+
+            // Now check password
+            if (!Hash::check($request->password, $user->password)) {
+                // Record failed login attempt with enhanced security
+                $this->recordFailedLoginAttempt($user, $request);
+                return response()->json([
+                    'message' => 'Invalid credentials.',
+                    'errors' => ['username' => ['Invalid credentials.']]
+                ], 401);
+            }
+
+            // Clear failed attempts on successful login
+            $this->clearFailedAttempts($user, $request);
+
+            // Log successful login for debugging
+            Log::info('Superadmin login successful', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role
+            ]);
+
+            // Revoke all existing tokens for this user (industry standard for security)
+            $user->tokens()->delete();
+
+            // Create token with 7-day expiration
+            $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
+
+            return response()->json([
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'organization' => $user->organization
+                ],
+                'token' => $token
+            ], 200)->header('Access-Control-Allow-Credentials', 'true');
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Superadmin login error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred during login.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Logout user
     public function logout(Request $request)
     {
         try {
-            $request->user()->tokens()->delete();
+            $user = $request->user();
+
+            // Log logout activity before deleting tokens
+            if ($user) {
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'logout',
+                    'User logged out successfully',
+                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent()],
+                    $directorHistoryId
+                );
+            }
+
+            $user->tokens()->delete();
             return response()->json(['message' => 'Logged out successfully'], 200);
         } catch (\Exception $e) {
             Log::error('Logout error: ' . $e->getMessage());
@@ -608,7 +810,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'username' => 'required|string|min:3|max:30|alpha_num|exists:users,username',
+                'username' => 'required|string|min:3|max:30|exists:users,username',
                 'recovery_passcode' => 'required|string|min:10|max:10',
             ]);
 
@@ -711,9 +913,13 @@ class AuthController extends Controller
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
-            // Log login activity for associates
-            if ($user->role === 'associate_group_leader') {
-                $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+            // Log login activity for associates and head admins
+            // Note: Superadmin logins are excluded from system logs view, so we don't log them here
+            if (in_array($user->role, ['associate_group_leader', 'head_admin'])) {
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
                 ActivityLog::logActivity(
                     $user->id,
                     'login',
@@ -840,6 +1046,14 @@ class AuthController extends Controller
 
             $user = User::findOrFail($request->user_id);
 
+            // Block superadmin OTP verification through regular endpoint for security
+            if ($user->role === 'superadmin') {
+                return response()->json([
+                    'message' => 'Invalid or expired OTP code.',
+                    'errors' => ['otp_code' => ['Invalid or expired OTP code.']]
+                ], 401);
+            }
+
             // Check if the user's associate group has been soft deleted
             if ($user->role === 'associate_group_leader') {
                 $associateGroup = \App\Models\AssociateGroup::withTrashed()
@@ -885,14 +1099,30 @@ class AuthController extends Controller
                 }
             }
 
-            // Check if user has a pending application with matching OTP
-            $pendingApplication = PendingApplication::where('email', $user->email)
-                ->where('status', 'approved')
-                ->where('otp_code', $request->otp_code)
-                ->where('otp_expires_at', '>', now())
-                ->first();
+            // Check if user has a pending application with matching OTP (for associates)
+            $pendingApplication = null;
+            if ($user->role === 'associate_group_leader') {
+                $pendingApplication = PendingApplication::where('email', $user->email)
+                    ->where('status', 'approved')
+                    ->where('otp_code', $request->otp_code)
+                    ->where('otp_expires_at', '>', now())
+                    ->first();
+            }
 
-            if (!$pendingApplication) {
+            // Check if user has email verification OTP (for head admin or associate)
+            $emailVerificationOtpValid = false;
+            if (($user->role === 'head_admin' || $user->role === 'associate_group_leader') && $user->email_verification_otp) {
+                if (
+                    $user->email_verification_otp === $request->otp_code &&
+                    $user->email_verification_otp_expires_at &&
+                    $user->email_verification_otp_expires_at > now()
+                ) {
+                    $emailVerificationOtpValid = true;
+                }
+            }
+
+            // If neither OTP is valid, return error
+            if (!$pendingApplication && !$emailVerificationOtpValid) {
                 // Increment attempt counter
                 $attempts++;
                 cache()->put($attemptKey, $attempts, 300); // Store for 5 minutes
@@ -918,10 +1148,19 @@ class AuthController extends Controller
             }
 
             // Clear the OTP and mark user as verified
-            $pendingApplication->update([
-                'otp_code' => null,
-                'otp_expires_at' => null
-            ]);
+            if ($pendingApplication) {
+                $pendingApplication->update([
+                    'otp_code' => null,
+                    'otp_expires_at' => null
+                ]);
+            }
+
+            if ($emailVerificationOtpValid) {
+                $user->update([
+                    'email_verification_otp' => null,
+                    'email_verification_otp_expires_at' => null
+                ]);
+            }
 
             $user->update(['needs_otp_verification' => false]);
             // Clear attempt counter on successful verification
@@ -934,15 +1173,21 @@ class AuthController extends Controller
             // Create token with 7-day expiration
             $token = $user->createToken('auth_token', ['*'], now()->addDays(7))->plainTextToken;
 
-            // Log login activity
-            $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
-            ActivityLog::logActivity(
-                $user->id,
-                'login',
-                'User logged in successfully with OTP verification',
-                ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'otp_verification'],
-                $directorHistoryId
-            );
+            // Log login activity for associates and head admins
+            // Note: Superadmin logins are excluded from system logs view, so we don't log them here
+            if (in_array($user->role, ['associate_group_leader', 'head_admin'])) {
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'login',
+                    'User logged in successfully with OTP verification',
+                    ['ip_address' => $request->ip(), 'user_agent' => $request->userAgent(), 'method' => 'otp_verification'],
+                    $directorHistoryId
+                );
+            }
 
             return response()->json([
                 'user' => [
@@ -1058,6 +1303,45 @@ class AuthController extends Controller
         cache()->forget($attemptKey);
         cache()->forget($delayKey);
         cache()->forget($lockoutKey);
+    }
+
+    /**
+     * Ensure the maintenance file has the correct route exclusion
+     * This is called on every superadmin login attempt to ensure the route is always excluded
+     */
+    private function ensureMaintenanceRouteExclusion()
+    {
+        $maintenanceFile = storage_path('framework/down');
+        if (file_exists($maintenanceFile)) {
+            try {
+                $data = json_decode(file_get_contents($maintenanceFile), true);
+                if ($data && is_array($data)) {
+                    if (!isset($data['except'])) {
+                        $data['except'] = [];
+                    }
+                    // Add routes with leading slash (Laravel checks the full request path)
+                    // Exclude all superadmin routes so superadmin can access everything during maintenance
+                    $excludedRoutes = [
+                        '/api/superadmin/*',
+                        '/api/superadmin',
+                        '/api/system-alerts/active'
+                    ];
+                    $updated = false;
+                    foreach ($excludedRoutes as $route) {
+                        if (!in_array($route, $data['except'])) {
+                            $data['except'][] = $route;
+                            $updated = true;
+                        }
+                    }
+                    if ($updated) {
+                        file_put_contents($maintenanceFile, json_encode($data, JSON_PRETTY_PRINT));
+                        Log::info('Updated maintenance file to include superadmin login route exclusion');
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to update maintenance file', ['error' => $e->getMessage()]);
+            }
+        }
     }
 
     /**

@@ -1,0 +1,466 @@
+.sa-allusers-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sa-allusers-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.sa-allusers-page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-allusers-page-header h1 svg {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.sa-allusers-filters-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sa-allusers-search-box {
+  flex: 0 1 auto;
+  max-width: 500px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sa-allusers-search-box svg {
+  position: absolute;
+  left: 12px;
+  color: #999;
+  z-index: 1;
+}
+
+.sa-allusers-search-box input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.sa-allusers-search-box input:focus {
+  outline: none;
+  border-color: #1a1a2e;
+}
+
+.sa-allusers-role-filter {
+  padding: 12px 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.sa-allusers-role-filter:focus {
+  outline: none;
+  border-color: #1a1a2e;
+}
+
+.sa-allusers-table-container {
+  background: white;
+  border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: calc(5 * 60px + 60px);
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.sa-allusers-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  min-width: 1000px;
+}
+
+.sa-allusers-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8f9fa;
+}
+
+.sa-allusers-table-header {
+  background: #f8f9fa;
+}
+
+.sa-allusers-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #1a1a2e;
+  border-bottom: 2px solid #eee;
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.sa-allusers-table-body {
+  display: table-row-group;
+}
+
+.sa-allusers-table-body tr {
+  display: table-row;
+}
+
+/* Column width definitions */
+.sa-allusers-col-name {
+  width: 18%;
+  min-width: 150px;
+}
+
+.sa-allusers-col-username {
+  width: 12%;
+  min-width: 120px;
+}
+
+.sa-allusers-col-email {
+  width: 28%;
+  min-width: 220px;
+}
+
+.sa-allusers-col-role {
+  width: 20%;
+  min-width: 180px;
+}
+
+.sa-allusers-col-org {
+  width: 12%;
+  min-width: 120px;
+}
+
+.sa-allusers-col-created {
+  width: 10%;
+  min-width: 100px;
+}
+
+.sa-allusers-table td {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.sa-allusers-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.sa-allusers-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-allusers-user-icon {
+  color: #1a1a2e;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sa-allusers-role-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.sa-allusers-badge-superadmin {
+  background: #1a1a2e;
+  color: white;
+}
+
+.sa-allusers-badge-headadmin {
+  background: #16213e;
+  color: white;
+}
+
+.sa-allusers-badge-associate {
+  background: #0f3460;
+  color: white;
+}
+
+.sa-allusers-badge-default {
+  background: #e9ecef;
+  color: #333;
+}
+
+.sa-allusers-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.sa-allusers-empty-state svg {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.sa-allusers-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.sa-allusers-page-btn {
+  padding: 10px 20px;
+  border: 2px solid #1a1a2e;
+  background: white;
+  color: #1a1a2e;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.sa-allusers-page-btn:hover:not(:disabled) {
+  background: #1a1a2e;
+  color: white;
+}
+
+.sa-allusers-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-allusers-page-info {
+  font-weight: 600;
+  color: #666;
+}
+
+.sa-allusers-error-message {
+  background: #fdf2f2;
+  color: #e74c3c;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
+}
+
+.sa-allusers-loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 1440px) {
+  .sa-allusers-container {
+    max-width: 1200px;
+    padding: 24px;
+  }
+
+  .sa-allusers-page-header h1 {
+    font-size: 26px;
+  }
+
+  .sa-allusers-page-header h1 svg {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .sa-allusers-container {
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  .sa-allusers-page-header {
+    padding: 20px;
+  }
+
+  .sa-allusers-page-header h1 {
+    font-size: 24px;
+  }
+
+  .sa-allusers-page-header h1 svg {
+    font-size: 22px;
+  }
+
+  .sa-allusers-table {
+    font-size: 14px;
+  }
+
+  .sa-allusers-table th,
+  .sa-allusers-table td {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .sa-allusers-container {
+    padding: 20px;
+  }
+
+  .sa-allusers-table {
+    min-width: 950px;
+    font-size: 14px;
+  }
+
+  .sa-allusers-table th,
+  .sa-allusers-table td {
+    padding: 12px 10px;
+  }
+
+  .sa-allusers-col-name { min-width: 140px; }
+  .sa-allusers-col-username { min-width: 110px; }
+  .sa-allusers-col-email { min-width: 200px; }
+  .sa-allusers-col-role { min-width: 160px; }
+  .sa-allusers-col-org { min-width: 110px; }
+  .sa-allusers-col-created { min-width: 100px; }
+}
+
+@media (max-width: 768px) {
+  .sa-allusers-container {
+    padding: 16px;
+  }
+
+  .sa-allusers-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .sa-allusers-page-header h1 {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+
+  .sa-allusers-page-header h1 svg {
+    font-size: clamp(18px, 4vw, 22px);
+  }
+
+  .sa-allusers-filters-section {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sa-allusers-search-box,
+  .sa-allusers-role-filter {
+    width: 100%;
+  }
+
+  .sa-allusers-table-container {
+    max-height: calc(5 * 60px + 60px);
+  }
+
+  .sa-allusers-table {
+    font-size: 13px;
+    min-width: 850px;
+  }
+
+  .sa-allusers-table th,
+  .sa-allusers-table td {
+    padding: 12px 10px;
+  }
+
+  .sa-allusers-col-name { min-width: 130px; }
+  .sa-allusers-col-username { min-width: 100px; }
+  .sa-allusers-col-email { min-width: 190px; }
+  .sa-allusers-col-role { min-width: 150px; }
+  .sa-allusers-col-org { min-width: 100px; }
+  .sa-allusers-col-created { min-width: 90px; }
+
+  .sa-allusers-pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sa-allusers-page-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sa-allusers-container {
+    padding: 12px;
+  }
+
+  .sa-allusers-page-header {
+    padding: 16px;
+  }
+
+  .sa-allusers-page-header h1 {
+    font-size: 20px;
+  }
+
+  .sa-allusers-page-header h1 svg {
+    font-size: 18px;
+  }
+
+  .sa-allusers-table-container {
+    max-height: calc(5 * 55px + 55px);
+  }
+
+  .sa-allusers-table {
+    min-width: 750px;
+    font-size: 12px;
+  }
+
+  .sa-allusers-table th,
+  .sa-allusers-table td {
+    padding: 10px 8px;
+  }
+
+  .sa-allusers-col-name { min-width: 120px; }
+  .sa-allusers-col-username { min-width: 90px; }
+  .sa-allusers-col-email { min-width: 170px; }
+  .sa-allusers-col-role { min-width: 140px; }
+  .sa-allusers-col-org { min-width: 90px; }
+  .sa-allusers-col-created { min-width: 80px; }
+
+  .sa-allusers-user-cell {
+    gap: 6px;
+  }
+
+  .sa-allusers-user-icon {
+    font-size: 16px;
+  }
+
+  .sa-allusers-pagination {
+    gap: 6px;
+  }
+
+  .sa-allusers-page-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .sa-allusers-page-info {
+    font-size: 12px;
+  }
+}

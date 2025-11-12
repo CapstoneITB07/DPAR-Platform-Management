@@ -1,0 +1,242 @@
+/* System Alert Banner Container */
+/* Rendered via portal to document.body, so it's always at top level */
+.system-alert-banner-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001; /* Above offline banner (10000) but below modals */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  pointer-events: none;
+  background: transparent;
+  contain: none;
+  isolation: isolate;
+}
+
+/* When offline banner is also present, push system alert banner down */
+body:has(.citizen-offline-banner) .system-alert-banner-container {
+  top: 44px; /* Height of offline banner (padding 12px * 2 + content ~20px) */
+}
+
+/* Individual Alert Banner */
+.system-alert-banner {
+  background: white;
+  border-left: 4px solid;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  pointer-events: auto;
+  animation: slideDown 0.3s ease-out;
+  min-height: 56px;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Banner Content */
+.system-alert-banner-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.system-alert-banner-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.system-alert-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.system-alert-banner-text strong {
+  font-size: 16px;
+  color: #1a1a2e;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.system-alert-banner-text span {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Dismiss Button */
+.system-alert-banner-dismiss {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+}
+
+.system-alert-banner-dismiss:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Adjust Citizen Page Layout */
+/* Banner appears BELOW the navbar (navbar is 60px high) */
+/* For citizen page, position banner below navbar instead of above */
+body:has(.citizen-page-wrapper) .system-alert-banner-container {
+  top: 60px !important; /* Navbar height is 60px */
+  z-index: 10000; /* Below navbar (10001) but above content */
+}
+
+/* When offline banner is also present on citizen page */
+body:has(.citizen-page-wrapper):has(.citizen-offline-banner) .system-alert-banner-container {
+  top: 104px !important; /* 44px (offline banner) + 60px (navbar) */
+}
+
+/* Remove margin-top from navbar since banner is below it now */
+body.has-system-alert-banner .citizen-navbar,
+body:has(.system-alert-banner-container:not(:empty)) .citizen-navbar {
+  margin-top: 0 !important;
+  position: relative !important;
+  z-index: 10001; /* Above banner but below modals */
+}
+
+/* Ensure citizen page wrapper doesn't add extra padding */
+body.has-system-alert-banner .citizen-page-wrapper,
+body:has(.system-alert-banner-container:not(:empty)) .citizen-page-wrapper {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Adjust main content to account for banner below navbar */
+body.has-system-alert-banner .citizen-page-wrapper .citizen-main-content,
+body:has(.system-alert-banner-container:not(:empty)) .citizen-page-wrapper .citizen-main-content {
+  margin-top: 72px; /* Space for banner below navbar */
+  transition: margin-top 0.3s ease-out;
+}
+
+/* Adjust Admin Dashboard Layout */
+body.has-system-alert-banner .admin-dashboard-container .header,
+body:has(.system-alert-banner-container:not(:empty)) .admin-dashboard-container .header {
+  top: 72px !important;
+  transition: top 0.3s ease-out;
+}
+
+body.has-system-alert-banner .admin-dashboard-container .content-wrapper,
+body.has-system-alert-banner .admin-dashboard-container .main-content,
+body:has(.system-alert-banner-container:not(:empty)) .admin-dashboard-container .content-wrapper,
+body:has(.system-alert-banner-container:not(:empty)) .admin-dashboard-container .main-content {
+  margin-top: 72px;
+  transition: margin-top 0.3s ease-out;
+}
+
+/* Adjust Associate Dashboard Layout */
+body.has-system-alert-banner .associate-dashboard-container .header,
+body:has(.system-alert-banner-container:not(:empty)) .associate-dashboard-container .header {
+  top: 72px !important;
+  transition: top 0.3s ease-out;
+}
+
+body.has-system-alert-banner .associate-dashboard-container .main-content,
+body:has(.system-alert-banner-container:not(:empty)) .associate-dashboard-container .main-content {
+  margin-top: 72px;
+  transition: margin-top 0.3s ease-out;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .system-alert-banner-container {
+    padding: 6px 8px;
+  }
+
+  .system-alert-banner {
+    padding: 10px 12px;
+    min-height: 52px;
+  }
+
+  .system-alert-banner-icon {
+    font-size: 18px;
+  }
+
+  .system-alert-banner-text strong {
+    font-size: 14px;
+  }
+
+  .system-alert-banner-text span {
+    font-size: 13px;
+  }
+
+  .system-alert-banner-dismiss {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Adjust spacing for mobile - citizen page */
+  /* Banner below navbar on mobile too */
+  body:has(.citizen-page-wrapper) .system-alert-banner-container {
+    top: 60px !important; /* Navbar height is 60px on mobile too */
+  }
+
+  /* When offline banner is also present on citizen page mobile */
+  body:has(.citizen-page-wrapper):has(.citizen-offline-banner) .system-alert-banner-container {
+    top: 104px !important; /* 44px (offline banner) + 60px (navbar) */
+  }
+
+  /* Remove margin-top from navbar on mobile */
+  body.has-system-alert-banner .citizen-navbar,
+  body:has(.system-alert-banner-container:not(:empty)) .citizen-navbar {
+    margin-top: 0 !important;
+  }
+
+  /* Adjust main content for mobile */
+  body.has-system-alert-banner .citizen-page-wrapper .citizen-main-content,
+  body:has(.system-alert-banner-container:not(:empty)) .citizen-page-wrapper .citizen-main-content {
+    margin-top: 68px; /* Space for banner below navbar on mobile */
+  }
+
+  body.has-system-alert-banner .admin-dashboard-container .header,
+  body.has-system-alert-banner .associate-dashboard-container .header,
+  body:has(.system-alert-banner-container:not(:empty)) .admin-dashboard-container .header,
+  body:has(.system-alert-banner-container:not(:empty)) .associate-dashboard-container .header {
+    top: 68px !important;
+  }
+
+  body.has-system-alert-banner .admin-dashboard-container .content-wrapper,
+  body.has-system-alert-banner .admin-dashboard-container .main-content,
+  body.has-system-alert-banner .associate-dashboard-container .main-content,
+  body:has(.system-alert-banner-container:not(:empty)) .admin-dashboard-container .content-wrapper,
+  body:has(.system-alert-banner-container:not(:empty)) .admin-dashboard-container .main-content,
+  body:has(.system-alert-banner-container:not(:empty)) .associate-dashboard-container .main-content {
+    margin-top: 68px;
+  }
+}
+

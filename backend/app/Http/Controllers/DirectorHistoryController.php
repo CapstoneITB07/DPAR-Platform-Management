@@ -77,6 +77,24 @@ class DirectorHistoryController extends Controller
             AssociateGroup::where('id', $associateGroupId)
                 ->update(['director' => $request->director_name]);
 
+            // Log activity for director history creation
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'create',
+                    'Created director history for: ' . $directorHistory->director_name,
+                    [
+                        'director_history_id' => $directorHistory->id,
+                        'director_name' => $directorHistory->director_name,
+                        'associate_group_id' => $associateGroupId,
+                        'is_new_director' => $request->is_new_director ?? false
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log director history creation activity: ' . $e->getMessage());
+            }
+
             DB::commit();
 
             return response()->json($directorHistory->load(['user', 'achievements']), 201);
@@ -239,6 +257,96 @@ class DirectorHistoryController extends Controller
             DB::rollBack();
             Log::error('Error ending directorship: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to end directorship'], 500);
+        }
+    }
+
+    /**
+     * Update director history
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $directorHistory = DirectorHistory::findOrFail($id);
+
+            $request->validate([
+                'director_name' => 'sometimes|required|string|max:255',
+                'director_email' => 'nullable|email|max:255',
+                'contributions' => 'sometimes|required|string',
+                'volunteers_recruited' => 'sometimes|integer|min:0',
+                'events_organized' => 'sometimes|integer|min:0',
+                'start_date' => 'sometimes|required|date',
+                'end_date' => 'nullable|date',
+                'reason_for_leaving' => 'nullable|string|max:255',
+            ]);
+
+            $directorHistory->update($request->only([
+                'director_name',
+                'director_email',
+                'contributions',
+                'volunteers_recruited',
+                'events_organized',
+                'start_date',
+                'end_date',
+                'reason_for_leaving'
+            ]));
+
+            // Log activity for director history update
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'update',
+                    'Updated director history for: ' . $directorHistory->director_name,
+                    [
+                        'director_history_id' => $directorHistory->id,
+                        'director_name' => $directorHistory->director_name,
+                        'associate_group_id' => $directorHistory->associate_group_id
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log director history update activity: ' . $e->getMessage());
+            }
+
+            return response()->json($directorHistory->load(['user', 'achievements']));
+        } catch (\Exception $e) {
+            Log::error('Error updating director history: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to update director history'], 500);
+        }
+    }
+
+    /**
+     * Delete director history
+     */
+    public function destroy($id)
+    {
+        try {
+            $directorHistory = DirectorHistory::findOrFail($id);
+            $directorName = $directorHistory->director_name;
+            $associateGroupId = $directorHistory->associate_group_id;
+
+            $directorHistory->delete();
+
+            // Log activity for director history deletion
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'delete',
+                    'Deleted director history for: ' . $directorName,
+                    [
+                        'director_history_id' => $id,
+                        'director_name' => $directorName,
+                        'associate_group_id' => $associateGroupId
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log director history deletion activity: ' . $e->getMessage());
+            }
+
+            return response()->json(['message' => 'Director history deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting director history: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to delete director history'], 500);
         }
     }
 

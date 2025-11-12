@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TrainingProgram;
+use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use App\Services\PushNotificationService;
 
 class TrainingProgramController extends Controller
@@ -14,7 +17,12 @@ class TrainingProgramController extends Controller
      */
     public function index()
     {
-        $programs = TrainingProgram::orderBy('created_at', 'desc')->get();
+        // For public API, only show visible training programs
+        $programs = TrainingProgram::where('visible_to_citizens', true)
+            ->orderBy('featured', 'desc')
+            ->orderBy('date', 'asc')
+            ->orderBy('created_at', 'desc')
+            ->get();
         foreach ($programs as $p) {
             // Ensure photos is always an array and convert to full URLs
             if (!$p->photos) {
@@ -60,6 +68,31 @@ class TrainingProgramController extends Controller
         }
 
         $program = TrainingProgram::create($data);
+
+        // Log activity for training program creation
+        if (Auth::check()) {
+            try {
+                $user = Auth::user();
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'create',
+                    'Created a new training program: ' . $program->name,
+                    [
+                        'training_program_id' => $program->id,
+                        'training_program_name' => $program->name,
+                        'date' => $program->date,
+                        'location' => $program->location
+                    ],
+                    $directorHistoryId
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to log training program creation activity: ' . $e->getMessage());
+            }
+        }
 
         // Add photo_urls to response for consistency
         if (!empty($photoUrls)) {
@@ -151,6 +184,31 @@ class TrainingProgramController extends Controller
         $program->description = $request->input('description');
         $program->save();
 
+        // Log activity for training program update
+        if (Auth::check()) {
+            try {
+                $user = Auth::user();
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'update',
+                    'Updated training program: ' . $program->name,
+                    [
+                        'training_program_id' => $program->id,
+                        'training_program_name' => $program->name,
+                        'date' => $program->date,
+                        'location' => $program->location
+                    ],
+                    $directorHistoryId
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to log training program update activity: ' . $e->getMessage());
+            }
+        }
+
         // Add photo_urls to response for consistency
         if ($program->photos && is_array($program->photos)) {
             $program->photo_urls = array_map(function ($photoPath) {
@@ -169,7 +227,32 @@ class TrainingProgramController extends Controller
     public function destroy(string $id)
     {
         $program = TrainingProgram::findOrFail($id);
+        $programName = $program->name;
         $program->delete();
+
+        // Log activity for training program deletion
+        if (Auth::check()) {
+            try {
+                $user = Auth::user();
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'delete',
+                    'Deleted training program: ' . $programName,
+                    [
+                        'training_program_id' => $id,
+                        'training_program_name' => $programName
+                    ],
+                    $directorHistoryId
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to log training program deletion activity: ' . $e->getMessage());
+            }
+        }
+
         return response()->json(['message' => 'Training program deleted.']);
     }
 }

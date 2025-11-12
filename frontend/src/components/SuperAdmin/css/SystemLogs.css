@@ -1,0 +1,560 @@
+/* Super Admin System Logs Styles - Unique Naming to Prevent Conflicts */
+
+.sa-systemlogs-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sa-systemlogs-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.sa-systemlogs-page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-systemlogs-page-header h1 svg {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.sa-systemlogs-header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.sa-systemlogs-cleanup-btn {
+  padding: 10px 20px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.sa-systemlogs-cleanup-btn:hover {
+  background: #c82333;
+}
+
+.sa-systemlogs-cleanup-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.sa-systemlogs-success-message {
+  padding: 12px 20px;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.sa-systemlogs-total-info {
+  padding: 12px 20px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #495057;
+}
+
+.sa-systemlogs-total-info strong {
+  color: #1a1a2e;
+  font-size: 16px;
+}
+
+.sa-systemlogs-filters-section {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.sa-systemlogs-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sa-systemlogs-filter-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.sa-systemlogs-filter-group label svg {
+  margin-right: 4px;
+}
+
+.sa-systemlogs-reset-btn {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.sa-systemlogs-reset-btn:hover {
+  background: #5a6268;
+}
+
+.sa-systemlogs-filter-select, .sa-systemlogs-filter-input {
+  padding: 10px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.sa-systemlogs-filter-select:focus, .sa-systemlogs-filter-input:focus {
+  outline: none;
+  border-color: #1a1a2e;
+}
+
+.sa-systemlogs-table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sa-systemlogs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sa-systemlogs-table thead {
+  background: #f8f9fa;
+}
+
+.sa-systemlogs-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #1a1a2e;
+  border-bottom: 2px solid #eee;
+}
+
+.sa-systemlogs-table td {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.sa-systemlogs-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.sa-systemlogs-user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sa-systemlogs-user-id {
+  font-size: 11px;
+  color: #999;
+}
+
+.sa-systemlogs-activity-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.sa-systemlogs-type-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.sa-systemlogs-type-login { background: #d4edda; color: #155724; }
+.sa-systemlogs-type-logout { background: #fff3cd; color: #856404; }
+.sa-systemlogs-type-create { background: #cfe2ff; color: #084298; }
+.sa-systemlogs-type-update { background: #fff3cd; color: #856404; }
+.sa-systemlogs-type-delete { background: #f8d7da; color: #721c24; }
+.sa-systemlogs-type-approve { background: #d1e7dd; color: #0f5132; }
+.sa-systemlogs-type-reject { background: #f8d7da; color: #842029; }
+.sa-systemlogs-type-notification_accepted { background: #d1e7dd; color: #0f5132; }
+.sa-systemlogs-type-notification_declined { background: #f8d7da; color: #842029; }
+.sa-systemlogs-type-report_submitted { background: #cfe2ff; color: #084298; }
+.sa-systemlogs-type-volunteer_recruited { background: #e7d5ff; color: #6f42c1; }
+.sa-systemlogs-type-event_created { background: #d1ecf1; color: #0c5460; }
+
+.sa-systemlogs-details {
+  cursor: pointer;
+}
+
+.sa-systemlogs-details summary {
+  color: #1a1a2e;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sa-systemlogs-details pre {
+  margin-top: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-x: auto;
+  max-width: 400px;
+}
+
+.sa-systemlogs-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.sa-systemlogs-empty-state svg {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.sa-systemlogs-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.sa-systemlogs-page-btn {
+  padding: 10px 20px;
+  border: 2px solid #1a1a2e;
+  background: white;
+  color: #1a1a2e;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.sa-systemlogs-page-btn:hover:not(:disabled) {
+  background: #1a1a2e;
+  color: white;
+}
+
+.sa-systemlogs-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sa-systemlogs-page-btn.active {
+  background: #1a1a2e;
+  color: white;
+}
+
+.sa-systemlogs-page-info {
+  font-weight: 600;
+  color: #666;
+  margin-left: 8px;
+}
+
+/* Modal Styles */
+.sa-systemlogs-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.sa-systemlogs-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.sa-systemlogs-modal-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px 12px 0 0;
+}
+
+.sa-systemlogs-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.sa-systemlogs-modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 28px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.sa-systemlogs-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.sa-systemlogs-modal-content {
+  padding: 28px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sa-systemlogs-modal-content p {
+  margin-bottom: 20px;
+  color: #495057;
+  line-height: 1.6;
+}
+
+.sa-systemlogs-modal-form-group {
+  margin-bottom: 24px;
+}
+
+.sa-systemlogs-modal-form-group label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.sa-systemlogs-modal-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.sa-systemlogs-modal-input:focus {
+  outline: none;
+  border-color: #1a1a2e;
+}
+
+.sa-systemlogs-modal-form-group small {
+  display: block;
+  margin-top: 6px;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.sa-systemlogs-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.sa-systemlogs-modal-cancel,
+.sa-systemlogs-modal-confirm {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sa-systemlogs-modal-cancel {
+  background: #6c757d;
+  color: white;
+}
+
+.sa-systemlogs-modal-cancel:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.sa-systemlogs-modal-confirm {
+  background: #dc3545;
+  color: white;
+}
+
+.sa-systemlogs-modal-confirm:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.sa-systemlogs-modal-cancel:disabled,
+.sa-systemlogs-modal-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sa-systemlogs-error-message {
+  background: #fdf2f2;
+  color: #e74c3c;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
+}
+
+.sa-systemlogs-loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sa-systemlogs-container {
+    padding: 20px;
+  }
+
+  .sa-systemlogs-table {
+    font-size: 14px;
+  }
+
+  .sa-systemlogs-table th,
+  .sa-systemlogs-table td {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sa-systemlogs-container {
+    padding: 16px;
+  }
+
+  .sa-systemlogs-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .sa-systemlogs-page-header h1 {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+
+  .sa-systemlogs-filters-section {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sa-systemlogs-filter-group {
+    width: 100%;
+  }
+
+  .sa-systemlogs-filter-select,
+  .sa-systemlogs-filter-input {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .sa-systemlogs-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sa-systemlogs-table {
+    min-width: 700px;
+    font-size: 13px;
+  }
+
+  .sa-systemlogs-table th,
+  .sa-systemlogs-table td {
+    padding: 10px 8px;
+  }
+
+  .sa-systemlogs-details pre {
+    max-width: 100%;
+    font-size: 11px;
+  }
+
+  .sa-systemlogs-pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sa-systemlogs-page-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sa-systemlogs-container {
+    padding: 12px;
+  }
+
+  .sa-systemlogs-page-header {
+    padding: 16px;
+  }
+
+  .sa-systemlogs-table {
+    min-width: 600px;
+    font-size: 12px;
+  }
+
+  .sa-systemlogs-table th,
+  .sa-systemlogs-table td {
+    padding: 8px 6px;
+  }
+
+  .sa-systemlogs-pagination {
+    gap: 6px;
+  }
+
+  .sa-systemlogs-page-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .sa-systemlogs-page-info {
+    font-size: 12px;
+  }
+}

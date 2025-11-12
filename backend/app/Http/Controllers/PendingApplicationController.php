@@ -6,6 +6,7 @@ use App\Models\PendingApplication;
 use App\Models\User;
 use App\Models\AssociateGroup;
 use App\Models\DirectorHistory;
+use App\Models\ActivityLog;
 use App\Services\BrevoEmailService;
 use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
@@ -180,6 +181,23 @@ class PendingApplicationController extends Controller
                 ]);
             }
 
+            // Log activity for application approval
+            $approver = Auth::user();
+            if ($approver) {
+                ActivityLog::logActivity(
+                    $approver->id,
+                    'approve',
+                    'Approved application for: ' . $application->organization_name,
+                    [
+                        'application_id' => $application->id,
+                        'organization_name' => $application->organization_name,
+                        'director_name' => $application->director_name,
+                        'email' => $application->email
+                    ],
+                    null
+                );
+            }
+
             // Send push notification to admin about the approval/new application
             // This is actually a new application being submitted, so we should notify when it's created
             // But we can send a notification here too if needed
@@ -218,6 +236,24 @@ class PendingApplicationController extends Controller
             }
 
             $application->update(['status' => 'rejected']);
+
+            // Log activity for application rejection
+            $rejector = Auth::user();
+            if ($rejector) {
+                ActivityLog::logActivity(
+                    $rejector->id,
+                    'reject',
+                    'Rejected application for: ' . $application->organization_name,
+                    [
+                        'application_id' => $application->id,
+                        'organization_name' => $application->organization_name,
+                        'director_name' => $application->director_name,
+                        'email' => $application->email,
+                        'rejection_reason' => $request->rejection_reason
+                    ],
+                    null
+                );
+            }
 
             // Send rejection email to user using Brevo API
             try {

@@ -14,6 +14,7 @@ import {
   unsubscribeFromPushNotifications,
   isPushNotificationSubscribed 
 } from '../../../utils/pushNotifications';
+import { trackCitizenView } from '../../../utils/citizenTracking';
 
 // Helper for formatting date
 function formatDate(dateStr) {
@@ -100,6 +101,9 @@ function CitizenPage() {
   const isAboutActive = location.pathname === '/citizen/about';
 
   useEffect(() => {
+    // Track page view
+    trackCitizenView('/citizen');
+    
     fetchPrograms();
     fetchAssociateGroups();
     checkPushNotificationStatus();
@@ -344,27 +348,39 @@ function CitizenPage() {
     return () => window.removeEventListener('resize', updateCarouselItemsPerView);
   }, []);
 
-  // Sort announcements by date (latest first) and separate featured from list
+  // Sort announcements: featured first, then by date (latest first)
   const sortedAnnouncements = [...announcements].sort((a, b) => {
+    // First, prioritize featured announcements
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    // If both have same featured status, sort by date
     const dateA = new Date(a.created_at || a.date || 0);
     const dateB = new Date(b.created_at || b.date || 0);
     return dateB - dateA;
   });
   
-  const featuredAnnouncement = sortedAnnouncements.length > 0 ? sortedAnnouncements[0] : null;
-  const listAnnouncements = sortedAnnouncements.slice(1, 4); // 2nd, 3rd, 4th announcements only
-  const carouselAnnouncements = sortedAnnouncements.slice(4); // 5th+ announcements for carousel
+  // Get featured announcement (first featured one, or first one if none are featured)
+  const featuredAnnouncement = sortedAnnouncements.find(a => a.featured) || (sortedAnnouncements.length > 0 ? sortedAnnouncements[0] : null);
+  // Get list announcements (exclude the featured one from the list)
+  const listAnnouncements = sortedAnnouncements.filter(a => a.id !== featuredAnnouncement?.id).slice(0, 3); // First 3 non-featured
+  const carouselAnnouncements = sortedAnnouncements.filter(a => a.id !== featuredAnnouncement?.id).slice(3); // Rest for carousel
 
-  // Sort training programs by date (latest first) and separate featured from list
+  // Sort training programs: featured first, then by date (latest first)
   const sortedPrograms = [...programs].sort((a, b) => {
+    // First, prioritize featured programs
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    // If both have same featured status, sort by date
     const dateA = new Date(a.date || a.created_at || 0);
     const dateB = new Date(b.date || b.created_at || 0);
     return dateB - dateA;
   });
   
-  const featuredProgram = sortedPrograms.length > 0 ? sortedPrograms[0] : null;
-  const listPrograms = sortedPrograms.slice(1, 4); // 2nd, 3rd, 4th programs only
-  const carouselPrograms = sortedPrograms.slice(4); // 5th+ programs for carousel
+  // Get featured program (first featured one, or first one if none are featured)
+  const featuredProgram = sortedPrograms.find(p => p.featured) || (sortedPrograms.length > 0 ? sortedPrograms[0] : null);
+  // Get list programs (exclude the featured one from the list)
+  const listPrograms = sortedPrograms.filter(p => p.id !== featuredProgram?.id).slice(0, 3); // First 3 non-featured
+  const carouselPrograms = sortedPrograms.filter(p => p.id !== featuredProgram?.id).slice(3); // Rest for carousel
 
   // Navigation handlers for announcements list (scroll through list)
   const goToPreviousAnnouncement = () => {
@@ -517,6 +533,10 @@ function CitizenPage() {
     setSelectedProgram(program);
     setShowProgramModal(true);
     setCurrentPhotoIndex(0);
+    // Track training program view
+    if (program.id) {
+      trackCitizenView('/citizen', 'training_program', program.id);
+    }
   };
 
   // Handle announcement click to show details
@@ -524,6 +544,10 @@ function CitizenPage() {
     setSelectedAnnouncement(announcement);
     setShowAnnouncementModal(true);
     setCurrentPhotoIndex(0);
+    // Track announcement view
+    if (announcement.id) {
+      trackCitizenView('/citizen', 'announcement', announcement.id);
+    }
   };
 
   // Handle image click to open viewer
@@ -739,10 +763,16 @@ function CitizenPage() {
               {/* Featured Announcement (Left Side) */}
               {featuredAnnouncement && (
                 <div className="citizen-announcement-featured-container">
-                  {/* NEW Badge */}
-                  <div className="citizen-announcement-new-badge">
-                    <span className="citizen-announcement-new-text">NEW</span>
-                  </div>
+                  {/* NEW Badge - Only show if announcement is less than 7 days old */}
+                  {(() => {
+                    const announcementDate = new Date(featuredAnnouncement.created_at || featuredAnnouncement.date);
+                    const daysSinceCreation = (Date.now() - announcementDate.getTime()) / (1000 * 60 * 60 * 24);
+                    return daysSinceCreation <= 7 ? (
+                      <div className="citizen-announcement-new-badge">
+                        <span className="citizen-announcement-new-text">NEW</span>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="citizen-announcement-card-wrapper citizen-announcement-featured-card" onClick={() => handleAnnouncementClick(featuredAnnouncement)}>
                     {/* Image or Icon */}
                     {featuredAnnouncement.photo_urls && featuredAnnouncement.photo_urls.length > 0 ? (

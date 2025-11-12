@@ -1,0 +1,1013 @@
+.sa-headadmin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sa-headadmin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.sa-headadmin-page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-headadmin-page-header h1 svg {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.sa-headadmin-btn-primary {
+  background: white;
+  color: #1a1a2e;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+
+.sa-headadmin-btn-primary svg {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.sa-headadmin-btn-primary:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message {
+  background: #fdf2f2;
+  color: #e74c3c;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
+}
+
+.sa-headadmin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.admin-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.admin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.admin-avatar {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 28px;
+}
+
+.admin-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  color: #1a1a2e;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.admin-email {
+  margin: 4px 0;
+  color: #666;
+  font-size: 14px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.admin-username {
+  margin: 4px 0 0 0;
+  color: #999;
+  font-size: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.sa-headadmin-btn-edit, .sa-headadmin-btn-delete {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.sa-headadmin-btn-edit svg,
+.sa-headadmin-btn-delete svg {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sa-headadmin-btn-edit {
+  background: #17a2b8;
+  color: white;
+}
+
+.sa-headadmin-btn-edit:hover {
+  background: #138496;
+}
+
+.sa-headadmin-btn-delete {
+  background: #dc3545;
+  color: white;
+}
+
+.sa-headadmin-btn-delete:hover {
+  background: #c82333;
+}
+
+.sa-headadmin-btn-permanent-delete {
+  padding: 10px 16px;
+  border: 2px solid #dc3545;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-size: 13px;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+  color: #dc3545;
+  min-width: auto;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+  flex: 0 0 auto;
+  order: 3;
+}
+
+.sa-headadmin-btn-permanent-delete:hover {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  border-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.sa-headadmin-btn-permanent-delete svg {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.sa-headadmin-permanent-icon {
+  font-size: 12px;
+  animation: saHeadadminPulse 2s infinite;
+}
+
+@keyframes saHeadadminPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.sa-headadmin-permanent-delete-text {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.sa-headadmin-btn-restore {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+  font-size: 14px;
+  background: #28a745;
+  color: white;
+}
+
+.sa-headadmin-btn-restore:hover {
+  background: #218838;
+}
+
+.sa-headadmin-btn-restore svg {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.admin-card-deleted {
+  opacity: 0.7;
+  border: 2px dashed #dc3545;
+}
+
+.admin-deleted-badge {
+  margin: 4px 0 0 0;
+  color: #dc3545;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f8d7da;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.admin-meta {
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  font-size: 12px;
+  color: #999;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state svg {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Modal Styles - Super Admin Head Admins Specific (Unique Naming) */
+.sa-headadmin-modal {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 550px;
+  width: 90%;
+  max-height: 85vh;
+  overflow: hidden;
+  margin: auto;
+  outline: none;
+  box-shadow: 0 4px 16px rgba(26, 26, 46, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.sa-headadmin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/* Delete Confirmation Modal Styles - Super Admin Head Admins Specific (Unique Naming) */
+.sa-headadmin-delete-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.sa-headadmin-confirm-modal {
+  position: relative;
+  max-width: 450px;
+  width: 100%;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  animation: saHeadadminModalSlideIn 0.3s ease-out;
+}
+
+@keyframes saHeadadminModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sa-headadmin-confirm-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.sa-headadmin-confirm-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #374151;
+  transform: rotate(90deg);
+}
+
+.sa-headadmin-confirm-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.sa-headadmin-confirm-message {
+  font-size: 1.1rem;
+  color: #374151;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.sa-headadmin-confirm-message strong {
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.sa-headadmin-warning-text {
+  display: block;
+  margin-top: 16px;
+  font-size: 0.95rem;
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.sa-headadmin-info-text {
+  display: block;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: #17a2b8;
+  font-weight: 500;
+}
+
+.sa-headadmin-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.sa-headadmin-delete-btn {
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.sa-headadmin-delete-btn:hover {
+  background: #c82333;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.sa-headadmin-cancel-btn {
+  background: white;
+  border: 2px solid #1a1a2e;
+  color: #1a1a2e;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.sa-headadmin-cancel-btn:hover {
+  background: #1a1a2e;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.2);
+}
+
+.sa-headadmin-permanent-delete-btn {
+  background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%);
+  color: white;
+  border: 2px solid #dc3545;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+  font-size: 15px;
+}
+
+.sa-headadmin-permanent-delete-btn:hover {
+  background: linear-gradient(135deg, #bd2130 0%, #a71e2a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.5);
+}
+
+.sa-headadmin-permanent-delete-modal {
+  border: 3px solid #dc3545;
+}
+
+.sa-headadmin-permanent-delete-modal .sa-headadmin-confirm-icon svg circle {
+  stroke: #dc3545;
+  stroke-width: 5;
+}
+
+.sa-headadmin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-bottom: none;
+  flex-shrink: 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.sa-headadmin-modal-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.sa-headadmin-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 20px;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sa-headadmin-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.sa-headadmin-modal-form {
+  padding: 28px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(85vh - 200px);
+}
+
+.sa-headadmin-modal-error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sa-headadmin-form-group-error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-top: 8px;
+  border: 1px solid #f5c6cb;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sa-headadmin-form-group {
+  margin-bottom: 24px;
+}
+
+.sa-headadmin-form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.sa-headadmin-form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.sa-headadmin-form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+  transition: all 0.2s;
+  background: white;
+}
+
+.sa-headadmin-form-group input:focus {
+  outline: none;
+  border-color: #1a1a2e;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.1);
+}
+
+.sa-headadmin-form-group input:hover:not(:focus) {
+  border-color: #1a1a2e;
+  background: white;
+}
+
+.modal-content {
+  padding: 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-content p {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.modal-content p:last-child {
+  margin-bottom: 0;
+}
+
+.modal-content p strong {
+  color: #1a1a2e;
+  font-weight: 700;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-weight: 600;
+  margin-top: 16px;
+  font-size: 15px;
+  display: block;
+}
+
+.sa-headadmin-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 28px 28px 28px;
+  border-top: 1px solid #eee;
+  flex-shrink: 0;
+  background: white;
+}
+
+.sa-headadmin-btn-cancel {
+  background: none !important;
+  color: #333 !important;
+  border: none !important;
+  padding: 14px 28px;
+  border-radius: 0;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-size: 15px;
+  min-width: 120px;
+  text-decoration: none;
+  box-shadow: none !important;
+}
+
+.sa-headadmin-btn-cancel:hover {
+  background: none !important;
+  color: #1a1a2e !important;
+  text-decoration: underline;
+  transform: none;
+  box-shadow: none !important;
+}
+
+.sa-headadmin-btn-submit {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 15px;
+  min-width: 120px;
+  background: #28a745;
+  color: white;
+}
+
+.sa-headadmin-btn-submit:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.sa-headadmin-btn-submit:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Responsive - Laptop and Desktop */
+@media (max-width: 1440px) {
+  .sa-headadmin-container {
+    max-width: 1200px;
+    padding: 24px;
+  }
+
+  .sa-headadmin-page-header h1 {
+    font-size: 26px;
+  }
+
+  .sa-headadmin-page-header h1 svg {
+    font-size: 24px;
+  }
+
+  .admin-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
+  }
+
+  .admin-info h3 {
+    font-size: 19px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .sa-headadmin-container {
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  .sa-headadmin-page-header {
+    padding: 20px;
+  }
+
+  .sa-headadmin-page-header h1 {
+    font-size: 24px;
+  }
+
+  .sa-headadmin-page-header h1 svg {
+    font-size: 22px;
+  }
+
+  .sa-headadmin-btn-primary {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .sa-headadmin-btn-primary svg {
+    font-size: 14px;
+  }
+
+  .sa-headadmin-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .admin-card {
+    padding: 20px;
+  }
+
+  .admin-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+
+  .admin-info h3 {
+    font-size: 18px;
+  }
+
+  .sa-headadmin-btn-edit svg,
+  .sa-headadmin-btn-delete svg {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .sa-headadmin-container {
+    padding: 20px;
+  }
+
+  .sa-headadmin-page-header {
+    padding: 18px;
+  }
+
+  .sa-headadmin-page-header h1 {
+    font-size: 22px;
+  }
+
+  .sa-headadmin-page-header h1 svg {
+    font-size: 20px;
+  }
+
+  .sa-headadmin-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .admin-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .admin-info h3 {
+    font-size: 17px;
+  }
+
+  .sa-headadmin-modal {
+    max-width: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sa-headadmin-container {
+    padding: 16px;
+  }
+
+  .sa-headadmin-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .sa-headadmin-page-header h1 {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+
+  .sa-headadmin-page-header h1 svg {
+    font-size: clamp(18px, 4vw, 22px);
+  }
+
+  .sa-headadmin-btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+
+  .sa-headadmin-btn-primary svg {
+    font-size: 16px;
+  }
+
+  .sa-headadmin-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .admin-card {
+    padding: 20px;
+  }
+
+  .admin-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+
+  .admin-info h3 {
+    font-size: 18px;
+  }
+
+  .sa-headadmin-btn-edit svg,
+  .sa-headadmin-btn-delete svg {
+    font-size: 14px;
+  }
+
+  .sa-headadmin-modal {
+    max-width: 95%;
+    width: 95%;
+  }
+
+  .sa-headadmin-modal-header {
+    padding: 24px 20px 20px 20px;
+  }
+
+  .sa-headadmin-modal-header h2 {
+    font-size: 20px;
+  }
+
+  .sa-headadmin-modal-form {
+    padding: 24px 20px;
+  }
+
+  .sa-headadmin-modal-actions {
+    flex-direction: column-reverse;
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .sa-headadmin-btn-cancel, 
+  .sa-headadmin-btn-submit {
+    width: 100%;
+    margin: 0;
+  }
+
+  .sa-headadmin-delete-overlay {
+    padding: 16px;
+  }
+
+  .sa-headadmin-confirm-modal {
+    max-width: 100%;
+    padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+  }
+
+  .sa-headadmin-confirm-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sa-headadmin-delete-btn,
+  .sa-headadmin-cancel-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+@media (max-width: 480px) {
+  .sa-headadmin-container {
+    padding: 12px;
+  }
+
+  .sa-headadmin-page-header {
+    padding: 16px;
+  }
+
+  .sa-headadmin-page-header h1 {
+    font-size: 20px;
+  }
+
+  .sa-headadmin-page-header h1 svg {
+    font-size: 18px;
+  }
+
+  .sa-headadmin-btn-primary {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  .sa-headadmin-btn-primary svg {
+    font-size: 14px;
+  }
+
+  .admin-card {
+    padding: 16px;
+  }
+
+  .admin-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .admin-info h3 {
+    font-size: 16px;
+  }
+
+  .admin-actions {
+    flex-direction: column;
+  }
+
+  .sa-headadmin-btn-edit, .sa-headadmin-btn-delete {
+    width: 100%;
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .sa-headadmin-btn-edit svg,
+  .sa-headadmin-btn-delete svg {
+    font-size: 13px;
+  }
+
+  .sa-headadmin-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .sa-headadmin-form-group {
+    margin-bottom: 16px;
+  }
+}
+

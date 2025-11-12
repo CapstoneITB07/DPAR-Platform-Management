@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/CitizenPage.css';
 import '../css/AboutUs.css';
+import { trackCitizenView } from '../../../utils/citizenTracking';
 // import disasterLogo from '../../../public/Assets/disaster_logo.png';
 
 function AboutUs() {
@@ -17,6 +18,9 @@ function AboutUs() {
   const location = useLocation();
 
   useEffect(() => {
+    // Track page view
+    trackCitizenView('/citizen/about');
+    
     // Reset loading when location changes
     setIsLoading(true);
     const timer = setTimeout(() => {

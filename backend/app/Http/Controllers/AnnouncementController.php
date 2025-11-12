@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Announcement;
+use App\Models\ActivityLog;
+use App\Models\DirectorHistory;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use App\Services\PushNotificationService;
 
 class AnnouncementController extends Controller
@@ -13,7 +16,11 @@ class AnnouncementController extends Controller
     // Placeholder methods for resource controller
     public function index()
     {
-        $announcements = Announcement::orderBy('created_at', 'desc')->get();
+        // For public API, only show visible announcements
+        $announcements = Announcement::where('visible_to_citizens', true)
+            ->orderBy('featured', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
         foreach ($announcements as $a) {
             if ($a->photos && is_array($a->photos)) {
                 $a->photo_urls = array_map(function ($photoPath) {
@@ -55,6 +62,29 @@ class AnnouncementController extends Controller
             'description' => $data['description'] ?? null,
             'photos' => $photoPaths,
         ]);
+
+        // Log activity for announcement creation
+        if (Auth::check()) {
+            try {
+                $user = Auth::user();
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'create',
+                    'Created announcement: ' . ($announcement->title ?? 'Untitled'),
+                    [
+                        'announcement_id' => $announcement->id,
+                        'announcement_title' => $announcement->title
+                    ],
+                    $directorHistoryId
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to log announcement creation activity: ' . $e->getMessage());
+            }
+        }
 
         // Add photo_urls to response
         if (!empty($photoPaths)) {
@@ -144,6 +174,29 @@ class AnnouncementController extends Controller
         $announcement->description = $data['description'] ?? $announcement->description;
         $announcement->save();
 
+        // Log activity for announcement update
+        if (Auth::check()) {
+            try {
+                $user = Auth::user();
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'update',
+                    'Updated announcement: ' . ($announcement->title ?? 'Untitled'),
+                    [
+                        'announcement_id' => $announcement->id,
+                        'announcement_title' => $announcement->title
+                    ],
+                    $directorHistoryId
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to log announcement update activity: ' . $e->getMessage());
+            }
+        }
+
         // Add photo_urls to response
         if ($announcement->photos && is_array($announcement->photos)) {
             $announcement->photo_urls = array_map(function ($photoPath) {
@@ -159,7 +212,32 @@ class AnnouncementController extends Controller
     public function destroy(string $id)
     {
         $announcement = Announcement::findOrFail($id);
+        $announcementTitle = $announcement->title ?? 'Untitled';
         $announcement->delete();
+
+        // Log activity for announcement deletion
+        if (Auth::check()) {
+            try {
+                $user = Auth::user();
+                $directorHistoryId = null;
+                if ($user->role === 'associate_group_leader') {
+                    $directorHistoryId = DirectorHistory::getCurrentDirectorHistoryId($user->id);
+                }
+                ActivityLog::logActivity(
+                    $user->id,
+                    'delete',
+                    'Deleted announcement: ' . $announcementTitle,
+                    [
+                        'announcement_id' => $id,
+                        'announcement_title' => $announcementTitle
+                    ],
+                    $directorHistoryId
+                );
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to log announcement deletion activity: ' . $e->getMessage());
+            }
+        }
+
         return response()->json(['message' => 'Announcement deleted.']);
     }
 }

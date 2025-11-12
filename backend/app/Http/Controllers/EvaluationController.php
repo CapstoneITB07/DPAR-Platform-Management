@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Evaluation;
+use App\Models\ActivityLog;
+use App\Models\AssociateGroup;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class EvaluationController extends Controller
 {
@@ -113,6 +116,30 @@ class EvaluationController extends Controller
 
             // Load the user relationship and return formatted data
             $evaluation->load('user:id,name,organization');
+            
+            // Get associate group information for logging
+            $associateGroup = AssociateGroup::where('user_id', $request->user_id)->first();
+            
+            // Log activity for evaluation creation
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'evaluation_created',
+                    'Evaluated associate group: ' . ($associateGroup ? $associateGroup->name : $evaluation->user->name),
+                    [
+                        'evaluation_id' => $evaluation->id,
+                        'evaluated_user_id' => $request->user_id,
+                        'evaluated_user_name' => $evaluation->user->name,
+                        'associate_group_id' => $associateGroup ? $associateGroup->id : null,
+                        'associate_group_name' => $associateGroup ? $associateGroup->name : null,
+                        'total_score' => round($averageScore, 2),
+                        'action_by' => Auth::user()->role
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log evaluation creation activity: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'message' => 'Evaluation created successfully',
@@ -175,6 +202,31 @@ class EvaluationController extends Controller
                 'evaluation_data' => json_encode($request->evaluation_data),
                 'total_score' => round($averageScore, 2)
             ]);
+            
+            // Load user and associate group for logging
+            $evaluation->load('user:id,name,organization');
+            $associateGroup = AssociateGroup::where('user_id', $evaluation->user_id)->first();
+            
+            // Log activity for evaluation update
+            try {
+                ActivityLog::logActivity(
+                    Auth::id(),
+                    'evaluation_updated',
+                    'Updated evaluation for associate group: ' . ($associateGroup ? $associateGroup->name : $evaluation->user->name),
+                    [
+                        'evaluation_id' => $evaluation->id,
+                        'evaluated_user_id' => $evaluation->user_id,
+                        'evaluated_user_name' => $evaluation->user->name,
+                        'associate_group_id' => $associateGroup ? $associateGroup->id : null,
+                        'associate_group_name' => $associateGroup ? $associateGroup->name : null,
+                        'total_score' => round($averageScore, 2),
+                        'action_by' => Auth::user()->role
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log evaluation update activity: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'message' => 'Evaluation updated successfully',

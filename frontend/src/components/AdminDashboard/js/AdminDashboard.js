@@ -3,6 +3,7 @@ import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faCertificate, faPlus, faChevronLeft, faChevronRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
+import { startMaintenanceCheck, stopMaintenanceCheck } from '../../../utils/maintenanceChecker';
 import '../css/AdminDashboard.css';
 import {
   Chart as ChartJS,
@@ -676,6 +677,18 @@ function AdminDashboard() {
   }, [selectedAssociate]);
 
   // Update selected associate data whenever selectedAssociate or associatesPerformance changes
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
+  // Update selected associate data whenever selectedAssociate or associatesPerformance changes
   useEffect(() => {
     if (selectedAssociate && associatesPerformance.length > 0) {
       const currentAssociateData = associatesPerformance.find(a => String(a.id) === String(selectedAssociate));
@@ -706,6 +719,17 @@ function AdminDashboard() {
   }, [fetchDashboardData, fetchUserProfile]);
 
   // Fetch active members after initial data is loaded
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     if (!loading) {
       fetchActiveMembers(activityPeriod);
@@ -770,11 +794,33 @@ function AdminDashboard() {
   };
 
   // Debug calendar events
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     console.log('Calendar events state updated:', calendarEvents);
   }, [calendarEvents]);
 
   // Polling for live updates (debounced to 10 seconds)
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     const pollInterval = setInterval(() => {
       if (!loading && !refreshNow) {
@@ -785,11 +831,33 @@ function AdminDashboard() {
   }, [selectedAssociate, loading, refreshNow, fetchDashboardData]);
 
   // Listen for refreshNow flag (set by Evaluation.js after evaluation)
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     if (window.refreshNow) {
       setRefreshNow(true);
       window.refreshNow = false;
     }
+  }, []);
+
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
   }, []);
 
   useEffect(() => {
@@ -799,6 +867,17 @@ function AdminDashboard() {
   }, [refreshNow, selectedAssociate, fetchDashboardData]);
 
   // Add event listener for dashboard refresh trigger
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     const refreshListener = () => {
       fetchDashboardData(selectedAssociate, true);
@@ -808,6 +887,17 @@ function AdminDashboard() {
   }, [selectedAssociate, fetchDashboardData]);
 
   // Add useEffect to force refresh when switching associates
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     if (selectedAssociate) {
       const selectedData = associatesPerformance.find(a => String(a.id) === String(selectedAssociate));
@@ -854,6 +944,17 @@ function AdminDashboard() {
   );
 
   // Add debugging useEffect
+  // Start maintenance mode checking for logged-in users
+  useEffect(() => {
+    // Start periodic maintenance check
+    startMaintenanceCheck();
+    
+    // Cleanup on unmount
+    return () => {
+      stopMaintenanceCheck();
+    };
+  }, []);
+
   useEffect(() => {
     console.log('Selected Associate:', selectedAssociate);
     console.log('Associates Performance:', associatesPerformance);

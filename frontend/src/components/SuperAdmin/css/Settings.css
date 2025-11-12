@@ -1,0 +1,379 @@
+/* Super Admin Settings Styles - Unique Naming to Prevent Conflicts */
+
+.sa-settings-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.sa-settings-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  color: white;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.sa-settings-page-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sa-settings-page-header h1 svg {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.sa-settings-page-header p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sa-settings-btn-refresh {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.sa-settings-btn-refresh:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.sa-settings-btn-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sa-settings-btn-refresh svg {
+  margin-right: -4px;
+}
+
+.sa-settings-loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+.sa-settings-error-message {
+  background: #fdf2f2;
+  color: #e74c3c;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
+}
+
+.sa-settings-message {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.sa-settings-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.sa-settings-error {
+  background: #fdf2f2;
+  color: #e74c3c;
+  border: 1px solid #fecaca;
+}
+
+.sa-settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.sa-settings-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sa-settings-section h2 {
+  margin: 0 0 24px 0;
+  color: #1a1a2e;
+  font-size: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 12px;
+}
+
+.sa-settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.sa-settings-item:last-child {
+  border-bottom: none;
+}
+
+.sa-settings-info {
+  flex: 1;
+  padding-right: 20px;
+}
+
+.sa-settings-info label {
+  display: block;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.sa-settings-info p {
+  margin: 0 0 8px 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sa-settings-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  color: #999;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.sa-settings-note code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #666;
+}
+
+.sa-settings-note svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.sa-settings-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.sa-settings-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sa-settings-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.sa-settings-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.sa-settings-toggle-switch input:checked + .sa-settings-slider {
+  background-color: #1a1a2e;
+}
+
+.sa-settings-toggle-switch input:checked + .sa-settings-slider:before {
+  transform: translateX(26px);
+}
+
+.sa-settings-toggle-switch input:disabled + .sa-settings-slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sa-settings-select {
+  padding: 10px 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  min-width: 150px;
+  transition: border-color 0.2s;
+}
+
+.sa-settings-select:focus {
+  outline: none;
+  border-color: #1a1a2e;
+}
+
+.sa-settings-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sa-settings-actions {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sa-settings-btn-save {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(26, 26, 46, 0.2);
+  font-size: 15px;
+}
+
+.sa-settings-btn-save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.3);
+}
+
+.sa-settings-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sa-settings-container {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sa-settings-container {
+    padding: 16px;
+  }
+
+  .sa-settings-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .sa-settings-page-header h1 {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+
+  .sa-settings-section {
+    padding: 20px;
+  }
+
+  .sa-settings-section h2 {
+    font-size: 18px;
+  }
+
+  .sa-settings-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 0;
+  }
+
+  .sa-settings-info {
+    width: 100%;
+    padding-right: 0;
+  }
+
+  .sa-settings-toggle-switch,
+  .sa-settings-select {
+    align-self: flex-end;
+  }
+
+  .sa-settings-actions {
+    justify-content: center;
+  }
+
+  .sa-settings-btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .sa-settings-container {
+    padding: 12px;
+  }
+
+  .sa-settings-page-header {
+    padding: 16px;
+  }
+
+  .sa-settings-section {
+    padding: 16px;
+  }
+
+  .sa-settings-section h2 {
+    font-size: 16px;
+  }
+
+  .sa-settings-item {
+    padding: 12px 0;
+  }
+
+  .sa-settings-info label {
+    font-size: 14px;
+  }
+
+  .sa-settings-info p {
+    font-size: 13px;
+  }
+
+  .sa-settings-select {
+    width: 100%;
+    min-width: unset;
+  }
+}

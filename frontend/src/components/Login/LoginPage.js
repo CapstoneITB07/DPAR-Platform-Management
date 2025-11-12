@@ -110,6 +110,43 @@ function LoginPage() {
   const navigate = useNavigate(); // For react-router-dom v6
   const { login, logout, isAuthenticated, user, isLoading } = useAuth();
 
+  // Check for maintenance mode - redirect to maintenance page if active
+  useEffect(() => {
+    const checkMaintenanceMode = async () => {
+      try {
+        // Try to access a regular API endpoint that's NOT excluded from maintenance
+        // If maintenance is active, this will return 503
+        const response = await fetch(`${API_BASE}/api/login`, {
+          method: 'OPTIONS', // Use OPTIONS to avoid triggering actual login
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // If we get 503, maintenance mode is active
+        if (response.status === 503) {
+          window.location.href = '/maintenance?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+          return;
+        }
+      } catch (error) {
+        // Try alternative check - check if we can reach a non-excluded endpoint
+        try {
+          const checkResponse = await fetch(`${API_BASE}/api/register`, {
+            method: 'OPTIONS',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (checkResponse.status === 503) {
+            window.location.href = '/maintenance?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+          }
+        } catch (e) {
+          // If both fail, assume maintenance mode and redirect
+          window.location.href = '/maintenance?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+        }
+      }
+    };
+
+    checkMaintenanceMode();
+  }, []);
+
   // Redirect if already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated() && user) {

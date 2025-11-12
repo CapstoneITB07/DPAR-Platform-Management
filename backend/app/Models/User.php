@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Notification;
 use App\Models\Report;
 use App\Models\ActivityLog;
@@ -17,7 +18,7 @@ use App\Models\CalendarEvent;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -30,6 +31,8 @@ class User extends Authenticatable
         'temp_password',
         'recovery_passcodes',
         'needs_otp_verification',
+        'email_verification_otp',
+        'email_verification_otp_expires_at',
     ];
 
     protected $hidden = [
@@ -37,6 +40,7 @@ class User extends Authenticatable
         'remember_token',
         'temp_password', // Hide temp_password from API responses
         'recovery_passcodes', // Hide recovery_passcodes from API responses
+        'email_verification_otp', // Hide email verification OTP from API responses
     ];
 
     protected $appends = ['photo_url'];
@@ -46,6 +50,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'recovery_passcodes' => 'array',
         'needs_otp_verification' => 'boolean',
+        'email_verification_otp_expires_at' => 'datetime',
     ];
 
     protected static function booted()

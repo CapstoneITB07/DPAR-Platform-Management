@@ -88,6 +88,23 @@ class PasswordController extends Controller
                 'password' => Hash::make($request->new_password)
             ]);
 
+            // Log activity for password change
+            try {
+                ActivityLog::logActivity(
+                    $user->id,
+                    'password_changed',
+                    'Changed password',
+                    [
+                        'user_id' => $user->id,
+                        'user_name' => $user->name,
+                        'used_recovery_passcode' => $isRecoveryPasscode
+                    ],
+                    null
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to log password change activity: ' . $e->getMessage());
+            }
+
             // If recovery passcode was used, remove it from the list to prevent reuse
             if ($isRecoveryPasscode) {
                 try {

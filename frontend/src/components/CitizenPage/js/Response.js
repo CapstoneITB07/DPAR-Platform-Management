@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/CitizenPage.css';
 import '../css/Response.css';
+import { trackCitizenView } from '../../../utils/citizenTracking';
 
 function Response() {
   const navigate = useNavigate();
@@ -17,6 +18,9 @@ function Response() {
   const location = useLocation();
 
   useEffect(() => {
+    // Track page view
+    trackCitizenView('/citizen/response');
+    
     // Reset loading when location changes
     setIsLoading(true);
     const timer = setTimeout(() => {

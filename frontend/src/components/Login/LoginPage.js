@@ -111,7 +111,7 @@ function LoginPage() {
   const { login, logout, isAuthenticated, user, isLoading } = useAuth();
 
   // Check for maintenance mode - redirect to maintenance page if active
-  // Skip this check on superadmin subdomain or superadmin login path
+  // Skip this check on superadmin subdomain, superadmin login path, or citizen routes
   useEffect(() => {
     const checkMaintenanceMode = async () => {
       const currentPath = window.location.pathname;
@@ -119,7 +119,8 @@ function LoginPage() {
       // Skip maintenance check if:
       // 1. On superadmin subdomain
       // 2. On superadmin login path (even on main domain)
-      if (isSuperAdminSubdomain() || currentPath.startsWith('/superadmin/login')) {
+      // 3. On citizen routes - citizen pages should work offline
+      if (isSuperAdminSubdomain() || currentPath.startsWith('/superadmin/login') || currentPath.startsWith('/citizen')) {
         return;
       }
       

@@ -42,6 +42,13 @@ export const startMaintenanceCheck = (onMaintenanceDetected) => {
         return;
       }
       
+      // Don't check if we're on citizen routes - citizen pages should work offline
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/citizen') || currentPath.startsWith('/maintenance')) {
+        isChecking = false;
+        return;
+      }
+      
       // Check if maintenance mode is active by trying a non-excluded endpoint
       const response = await fetch(`${API_BASE}/api/login`, {
         method: 'OPTIONS',
@@ -54,7 +61,6 @@ export const startMaintenanceCheck = (onMaintenanceDetected) => {
           onMaintenanceDetected();
         } else {
           // Default behavior: redirect to maintenance page
-          const currentPath = window.location.pathname;
           if (!currentPath.includes('/maintenance')) {
             const redirectPath = currentPath + (window.location.search || '');
             window.location.href = `/maintenance?redirect=${encodeURIComponent(redirectPath)}`;
@@ -88,6 +94,12 @@ export const checkMaintenanceMode = async () => {
   try {
     // Don't check maintenance mode on superadmin subdomain - superadmin always has access
     if (isSuperAdminSubdomain()) {
+      return false;
+    }
+    
+    // Don't check if we're on citizen routes - citizen pages should work offline
+    const currentPath = window.location.pathname;
+    if (currentPath.startsWith('/citizen') || currentPath.startsWith('/maintenance')) {
       return false;
     }
     

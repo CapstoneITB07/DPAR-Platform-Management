@@ -2459,10 +2459,12 @@ class SuperAdminController extends Controller
                         }
                         // Add routes with leading slash (Laravel checks the full request path)
                         // Exclude all superadmin routes so superadmin can access everything during maintenance
+                        // Also exclude citizen routes so citizen pages can work offline
                         $excludedRoutes = [
                             '/api/superadmin/*',
                             '/api/superadmin',
-                            '/api/system-alerts/active'
+                            '/api/system-alerts/active',
+                            '/api/citizen/*'
                         ];
                         foreach ($excludedRoutes as $route) {
                             if (!in_array($route, $data['except'])) {

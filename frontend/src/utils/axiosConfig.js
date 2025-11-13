@@ -46,13 +46,14 @@ axiosInstance.interceptors.response.use(
         // 1. On superadmin subdomain
         // 2. On superadmin path
         // 3. User is superadmin
-        if (isSuperAdminDomain || currentPath.startsWith('/superadmin') || userRole === 'superadmin') {
-          // Superadmin routes are excluded from maintenance - don't redirect
+        // 4. On citizen routes - citizen pages should work offline
+        if (isSuperAdminDomain || currentPath.startsWith('/superadmin') || userRole === 'superadmin' || currentPath.startsWith('/citizen')) {
+          // Superadmin and citizen routes are excluded from maintenance - don't redirect
           // Let the component handle the error
           return Promise.reject(error);
         }
         
-        // For logged-in users (head admin, associate, citizen), redirect to maintenance page
+        // For logged-in users (head admin, associate), redirect to maintenance page
         // Save their current location so they can return after maintenance
         if (!currentPath.includes('/maintenance')) {
           // Store the current path before redirecting

@@ -6,6 +6,7 @@ return [
     'allowed_origins' => [
         env('FRONTEND_URL', 'http://localhost:3000'),
         'https://dparvc.com', // Main domain
+        'https://superadmin.dparvc.com',
         'https://citizen.dparvc.com', // Citizen subdomain
     ],
     'allowed_origins_patterns' => [

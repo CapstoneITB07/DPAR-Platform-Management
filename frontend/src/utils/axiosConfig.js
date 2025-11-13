@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE } from './url';
+import { API_BASE, isSuperAdminSubdomain } from './url';
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -40,8 +40,13 @@ axiosInstance.interceptors.response.use(
         // Don't redirect superadmin pages - they should have access during maintenance
         const currentPath = window.location.pathname;
         const userRole = localStorage.getItem('userRole');
+        const isSuperAdminDomain = isSuperAdminSubdomain();
         
-        if (currentPath.startsWith('/superadmin') || userRole === 'superadmin') {
+        // Skip redirect if:
+        // 1. On superadmin subdomain
+        // 2. On superadmin path
+        // 3. User is superadmin
+        if (isSuperAdminDomain || currentPath.startsWith('/superadmin') || userRole === 'superadmin') {
           // Superadmin routes are excluded from maintenance - don't redirect
           // Let the component handle the error
           return Promise.reject(error);

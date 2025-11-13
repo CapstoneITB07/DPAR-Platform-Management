@@ -4,7 +4,7 @@
  * and redirects them appropriately
  */
 
-import { API_BASE } from './url';
+import { API_BASE, isSuperAdminSubdomain } from './url';
 
 let maintenanceCheckInterval = null;
 let isChecking = false;
@@ -17,6 +17,11 @@ export const startMaintenanceCheck = (onMaintenanceDetected) => {
   // Clear any existing interval
   stopMaintenanceCheck();
   
+  // Don't check maintenance mode on superadmin subdomain - superadmin always has access
+  if (isSuperAdminSubdomain()) {
+    return;
+  }
+  
   // Check every 30 seconds
   maintenanceCheckInterval = setInterval(async () => {
     if (isChecking) return;
@@ -27,6 +32,12 @@ export const startMaintenanceCheck = (onMaintenanceDetected) => {
       
       // Don't check for superadmin - they have access during maintenance
       if (userRole === 'superadmin') {
+        isChecking = false;
+        return;
+      }
+      
+      // Don't check if we're on superadmin subdomain
+      if (isSuperAdminSubdomain()) {
         isChecking = false;
         return;
       }
@@ -75,6 +86,11 @@ export const stopMaintenanceCheck = () => {
  */
 export const checkMaintenanceMode = async () => {
   try {
+    // Don't check maintenance mode on superadmin subdomain - superadmin always has access
+    if (isSuperAdminSubdomain()) {
+      return false;
+    }
+    
     const userRole = localStorage.getItem('userRole');
     
     // Superadmin always has access

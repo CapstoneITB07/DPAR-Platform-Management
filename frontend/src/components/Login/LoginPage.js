@@ -7,7 +7,7 @@ import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus, fa
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
 import { useAuth } from '../../contexts/AuthContext';
 import RegistrationForm from '../Registration/RegistrationForm';
-import { API_BASE } from '../../utils/url';
+import { API_BASE, isSuperAdminSubdomain } from '../../utils/url';
 
 // Password strength calculation functions
 const getPasswordStrength = (password) => {
@@ -111,8 +111,18 @@ function LoginPage() {
   const { login, logout, isAuthenticated, user, isLoading } = useAuth();
 
   // Check for maintenance mode - redirect to maintenance page if active
+  // Skip this check on superadmin subdomain or superadmin login path
   useEffect(() => {
     const checkMaintenanceMode = async () => {
+      const currentPath = window.location.pathname;
+      
+      // Skip maintenance check if:
+      // 1. On superadmin subdomain
+      // 2. On superadmin login path (even on main domain)
+      if (isSuperAdminSubdomain() || currentPath.startsWith('/superadmin/login')) {
+        return;
+      }
+      
       try {
         // Try to access a regular API endpoint that's NOT excluded from maintenance
         // If maintenance is active, this will return 503

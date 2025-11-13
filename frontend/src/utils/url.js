@@ -1,4 +1,19 @@
-export const API_BASE = process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : 'https://dparvc.com';
+// Helper function to detect if we're on superadmin subdomain
+export const isSuperAdminSubdomain = () => {
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname === 'superadmin.dparvc.com' || 
+         window.location.hostname.includes('superadmin.');
+};
+
+// Helper function to get the API base URL dynamically
+const getApiBase = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
+  }
+  return 'https://dparvc.com';
+};
+
+export const API_BASE = getApiBase();
 
 export const getLogoUrl = (logoPath) => {
   if (!logoPath) {

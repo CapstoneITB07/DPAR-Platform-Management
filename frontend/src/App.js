@@ -40,6 +40,25 @@ import SystemAlertBanner from './components/SuperAdmin/js/SystemAlertBanner';
 
 import './App.css'; // Assuming you have an App.css for general styling
 
+const RootRouteComponent = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname.toLowerCase();
+    
+    // If on superadmin subdomain, redirect to superadmin login
+    if (hostname === 'superadmin.dparvc.com' || hostname.startsWith('superadmin.')) {
+      return <Navigate to="/superadmin/login" replace />;
+    }
+    
+    // If on citizen subdomain, redirect to citizen page
+    if (hostname === 'citizen.dparvc.com' || hostname.startsWith('citizen.')) {
+      return <Navigate to="/citizen" replace />;
+    }
+  }
+  
+  // Default: show regular login page for head admin/associate (main domain)
+  return <LoginPage />;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -48,9 +67,10 @@ function App() {
           <SystemAlertBanner />
           <Routes>
             {/* Route for the Login Page - Protected from authenticated users */}
+            {/* RootRouteComponent detects subdomain and routes accordingly */}
             <Route path="/" element={
               <ProtectedRoute requireGuest={true}>
-                <LoginPage />
+                <RootRouteComponent />
               </ProtectedRoute>
             } />
 

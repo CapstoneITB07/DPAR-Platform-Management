@@ -17,8 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'throttle.login' => \App\Http\Middleware\ThrottleLoginAttempts::class,
         ]);
         
-        // Exclude all superadmin routes and system alerts from maintenance mode
+        // Exclude all superadmin routes, system alerts, and citizen routes from maintenance mode
         // This allows superadmin to access everything during maintenance to disable it
+        // Citizen routes are excluded so citizen pages can work offline
         $middleware->preventRequestsDuringMaintenance(
             except: [
                 '/api/superadmin/*',
@@ -26,7 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 'api/superadmin/*',
                 'api/superadmin',
                 '/api/system-alerts/active',
-                'api/system-alerts/active'
+                'api/system-alerts/active',
+                '/api/citizen/*',
+                'api/citizen/*'
             ]
         );
     })

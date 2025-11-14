@@ -1,5 +1,6 @@
-const CACHE_NAME = 'dpar-citizen-cache-v1';
-const API_CACHE_NAME = 'dpar-api-cache-v1';
+// Update cache version when deploying new builds to force cache refresh
+const CACHE_NAME = 'dpar-citizen-cache-v2';
+const API_CACHE_NAME = 'dpar-api-cache-v2';
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB limit per cache
 
 const urlsToCache = [

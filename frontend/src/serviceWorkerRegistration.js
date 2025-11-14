@@ -21,6 +21,22 @@ const isLocalhost = Boolean(
 );
 
 export function register(config) {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname === 'superadmin.dparvc.com' || 
+        hostname.startsWith('superadmin.') ||
+        hostname === 'dparvc.com' && window.location.pathname.startsWith('/admin') ||
+        hostname === 'dparvc.com' && window.location.pathname.startsWith('/superadmin')) {
+      // Unregister any existing service worker for admin/superadmin routes
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.unregister().catch(() => {});
+        });
+      }
+      return;
+    }
+  }
+
   // Enable service worker in both development and production for push notifications
   if ('serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.

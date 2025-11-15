@@ -83,8 +83,8 @@ class SuperAdminController extends Controller
                 'head_admins' => User::where('role', 'head_admin')->whereNull('deleted_at')->count(),
                 'associate_groups' => AssociateGroup::whereNull('deleted_at')->count(),
                 'pending_applications' => PendingApplication::where('status', 'pending')->count(),
-                'total_reports' => Report::count(),
-                'pending_reports' => Report::where('status', 'pending')->count(),
+                'total_reports' => Report::whereNull('deleted_at')->count(),
+                'pending_reports' => Report::where('status', 'sent')->whereNull('deleted_at')->count(),
                 'total_notifications' => Notification::count(),
                 'total_announcements' => Announcement::count(),
                 'total_training_programs' => TrainingProgram::count(),
@@ -2931,6 +2931,157 @@ class SuperAdminController extends Controller
         } catch (\Exception $e) {
             Log::error('Error permanently deleting system alert: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to permanently delete alert'], 500);
+        }
+    }
+
+    /**
+     * Get deleted reports (super admin only)
+     */
+    public function getDeletedReports()
+    {
+        try {
+            $reports = Report::withTrashed()
+                ->whereNotNull('deleted_at')
+                ->with('user')
+                ->orderBy('deleted_at', 'desc')
+                ->get();
+
+            // Add photo URLs to each report
+            $reports->each(function ($report) {
+                $reportData = $report->data;
+                if (isset($reportData['photos']) && !empty($reportData['photos'])) {
+                    $report->photo_urls = array_map(function ($path) {
+                        return asset('storage/' . $path);
+                    }, $reportData['photos']);
+                }
+            });
+
+            return response()->json($reports);
+        } catch (\Exception $e) {
+            Log::error('Error fetching deleted reports: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to fetch deleted reports'], 500);
+        }
+    }
+
+    /**
+     * Soft delete report (super admin only)
+     */
+    public function deleteReport($id)
+    {
+        try {
+            $report = Report::findOrFail($id);
+
+            if ($report->deleted_at) {
+                return response()->json(['message' => 'Report is already deleted'], 400);
+            }
+
+            $reportTitle = $report->data['heading'] ?? 'Untitled Report';
+            $report->delete();
+
+            ActivityLog::logActivity(
+                Auth::id(),
+                'delete',
+                'Super admin deleted report: ' . $reportTitle,
+                [
+                    'report_id' => $id,
+                    'report_title' => $reportTitle,
+                    'resource_type' => 'report',
+                    'action_by' => 'super_admin'
+                ],
+                null
+            );
+
+            return response()->json(['message' => 'Report deleted successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting report: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to delete report'], 500);
+        }
+    }
+
+    /**
+     * Permanently delete report (super admin only)
+     */
+    public function permanentDeleteReport($id)
+    {
+        try {
+            $report = Report::withTrashed()->findOrFail($id);
+
+            if (!$report->trashed()) {
+                return response()->json(['message' => 'Report must be soft-deleted before permanent deletion'], 400);
+            }
+
+            $reportTitle = $report->data['heading'] ?? 'Untitled Report';
+
+            // Delete associated photos
+            if (isset($report->data['photos']) && is_array($report->data['photos'])) {
+                foreach ($report->data['photos'] as $photoPath) {
+                    if (Storage::disk('public')->exists($photoPath)) {
+                        Storage::disk('public')->delete($photoPath);
+                    }
+                }
+            }
+
+            $report->forceDelete();
+
+            ActivityLog::logActivity(
+                Auth::id(),
+                'delete',
+                'Super admin permanently deleted report: ' . $reportTitle,
+                [
+                    'report_id' => $id,
+                    'report_title' => $reportTitle,
+                    'resource_type' => 'report',
+                    'permanent' => true,
+                    'action_by' => 'super_admin'
+                ],
+                null
+            );
+
+            Log::warning('Super admin permanently deleted report', [
+                'superadmin_id' => Auth::id(),
+                'report_id' => $id,
+                'report_title' => $reportTitle
+            ]);
+
+            return response()->json(['message' => 'Report permanently deleted']);
+        } catch (\Exception $e) {
+            Log::error('Error permanently deleting report: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to permanently delete report'], 500);
+        }
+    }
+
+    /**
+     * Restore report (super admin only)
+     */
+    public function restoreReport($id)
+    {
+        try {
+            $report = Report::withTrashed()->findOrFail($id);
+
+            if (!$report->trashed()) {
+                return response()->json(['message' => 'Report is not deleted'], 400);
+            }
+
+            $reportTitle = $report->data['heading'] ?? 'Untitled Report';
+            $report->restore();
+
+            ActivityLog::logActivity(
+                Auth::id(),
+                'update',
+                'Super admin restored report: ' . $reportTitle,
+                [
+                    'report_id' => $id,
+                    'report_title' => $reportTitle,
+                    'resource_type' => 'report',
+                    'action_by' => 'super_admin'
+                ],
+                null
+            );
+
+            return response()->json(['message' => 'Report restored successfully']);
+        } catch (\Exception $e) {
+            Log::error('Error restoring report: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to restore report'], 500);
         }
     }
 }

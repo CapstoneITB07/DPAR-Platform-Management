@@ -19,12 +19,12 @@ class ReportController extends Controller
         $user = Auth::user();
 
         // Admin can view all reports (excluding soft-deleted), regular users can only view their own
-        if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
+        if (in_array($user->role, ['admin', 'head_admin', 'superadmin'])) {
             // Admin sees all non-deleted reports
-            $reports = Report::with('user')->orderBy('created_at', 'desc')->get();
+            $reports = Report::whereNull('deleted_at')->with('user')->orderBy('created_at', 'desc')->get();
         } else {
             // Regular users see only their own non-deleted reports
-            $reports = Report::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+            $reports = Report::where('user_id', $user->id)->whereNull('deleted_at')->orderBy('created_at', 'desc')->get();
         }
 
         // Add photo URLs to each report
@@ -330,10 +330,10 @@ class ReportController extends Controller
         ]);
 
         // Admin can view any report, regular users can only view their own
-        if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
-            $report = Report::with('user')->findOrFail($id);
+        if (in_array($user->role, ['admin', 'head_admin', 'superadmin'])) {
+            $report = Report::whereNull('deleted_at')->with('user')->findOrFail($id);
         } else {
-            $report = Report::with('user')->where('user_id', $user->id)->findOrFail($id);
+            $report = Report::whereNull('deleted_at')->with('user')->where('user_id', $user->id)->findOrFail($id);
         }
 
         // Add photo URLs to response
@@ -662,7 +662,7 @@ class ReportController extends Controller
         $user = Auth::user();
         
         // Admin can delete any report (permanently), regular users can only delete their own
-        if (in_array($user->role, ['admin', 'head_admin', 'super_admin'])) {
+        if (in_array($user->role, ['admin', 'head_admin', 'superadmin'])) {
             $report = Report::withTrashed()->with('user')->findOrFail($id);
             
             // Prevent deletion of approved reports even for admin
@@ -781,9 +781,9 @@ class ReportController extends Controller
         try {
             $user = Auth::user();
 
-            // Only head_admin can approve reports
-            if ($user->role !== 'head_admin') {
-                return response()->json(['message' => 'Unauthorized. Only head admin can approve reports.'], 403);
+            // Only head_admin and superadmin can approve reports
+            if (!in_array($user->role, ['head_admin', 'superadmin'])) {
+                return response()->json(['message' => 'Unauthorized. Only head admin or superadmin can approve reports.'], 403);
             }
 
             $report = Report::with('user')->findOrFail($id);
@@ -843,9 +843,9 @@ class ReportController extends Controller
         try {
             $user = Auth::user();
 
-            // Only head_admin can reject reports
-            if ($user->role !== 'head_admin') {
-                return response()->json(['message' => 'Unauthorized. Only head admin can reject reports.'], 403);
+            // Only head_admin and superadmin can reject reports
+            if (!in_array($user->role, ['head_admin', 'superadmin'])) {
+                return response()->json(['message' => 'Unauthorized. Only head admin or superadmin can reject reports.'], 403);
             }
 
             // Validate rejection reason

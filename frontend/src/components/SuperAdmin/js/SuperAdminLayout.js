@@ -6,7 +6,7 @@ import {
   faFileAlt, faCog, faSignOutAlt, faBars, faTimes,
   faShieldAlt, faChartLine, faHistory, faExclamationTriangle,
   faEdit, faUser, faEnvelope, faLock, faEye, faEyeSlash,
-  faBell, faBullhorn, faGraduationCap, faGlobe
+  faBell, faBullhorn, faGraduationCap, faGlobe, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -528,6 +528,10 @@ function SuperAdminLayout({ children }) {
                 <li className={isActive('/superadmin/pending-applications') ? 'active' : ''} 
                     onClick={() => { navigate('/superadmin/pending-applications'); closeSidebar(); }}>
                   <FontAwesomeIcon icon={faFileAlt} /> APPLICATIONS
+                </li>
+                <li className={isActive('/superadmin/reports') ? 'active' : ''} 
+                    onClick={() => { navigate('/superadmin/reports'); closeSidebar(); }}>
+                  <FontAwesomeIcon icon={faClipboardList} /> REPORTS
                 </li>
                 <li className={isActive('/superadmin/system-logs') ? 'active' : ''} 
                     onClick={() => { navigate('/superadmin/system-logs'); closeSidebar(); }}>

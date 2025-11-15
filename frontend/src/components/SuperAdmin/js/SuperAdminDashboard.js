@@ -129,7 +129,7 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
-          <div className="sa-stat-card clickable" onClick={() => navigate('/superadmin/system-logs')}>
+          <div className="sa-stat-card clickable" onClick={() => navigate('/superadmin/reports')}>
             <div className="sa-stat-icon" style={{ background: 'linear-gradient(135deg, #28a745 0%, #218838 100%)' }}>
               <FontAwesomeIcon icon={faCheckCircle} />
             </div>
@@ -139,7 +139,7 @@ function SuperAdminDashboard() {
             </div>
           </div>
 
-          <div className="sa-stat-card clickable" onClick={() => navigate('/superadmin/system-logs')}>
+          <div className="sa-stat-card clickable" onClick={() => navigate('/superadmin/reports')}>
             <div className="sa-stat-icon" style={{ background: 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)' }}>
               <FontAwesomeIcon icon={faExclamationTriangle} />
             </div>

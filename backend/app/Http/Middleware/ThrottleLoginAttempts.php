@@ -47,12 +47,12 @@ class ThrottleLoginAttempts
 
     /**
      * Resolve request signature for rate limiting.
-     * Use email instead of IP for user-based limiting.
+     * Use username instead of IP for user-based limiting.
      */
     protected function resolveRequestSignature(Request $request)
     {
-        $email = $request->input('email');
-        return 'login_attempts:' . sha1($email ?? $request->ip());
+        $username = $request->input('username');
+        return 'login_attempts:' . sha1($username ?? $request->ip());
     }
 
     /**

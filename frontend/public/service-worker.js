@@ -1,5 +1,5 @@
 // Update cache version when deploying new builds to force cache refresh
-const CACHE_NAME = 'dpar-citizen-cache-v2';
+const CACHE_NAME = 'dpar-citizen-cache-v3';
 const API_CACHE_NAME = 'dpar-api-cache-v2';
 const MAX_CACHE_SIZE = 50 * 1024 * 1024; // 50MB limit per cache
 
@@ -33,6 +33,7 @@ function isNavigationRequest(request, url) {
           (url.pathname === '/' || 
            url.pathname === '/index.html' || 
            url.pathname.startsWith('/citizen') || 
+           url.pathname === '/superadmin/login' ||
            url.pathname === ''));
 }
 
@@ -41,6 +42,14 @@ function isCitizenPath(pathname) {
   return pathname === '/' || 
          pathname === '/index.html' || 
          pathname.startsWith('/citizen') || 
+         pathname === '';
+}
+
+// Helper: Check if path is a login page (public, can be cached)
+function isLoginPath(pathname) {
+  return pathname === '/' || 
+         pathname === '/index.html' || 
+         pathname === '/superadmin/login' ||
          pathname === '';
 }
 
@@ -156,6 +165,11 @@ function isAdminOrAssociateRequest(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   
+  // Exclude login pages from admin/associate blocking (they should be cacheable)
+  if (pathname === '/' || pathname === '/superadmin/login' || pathname === '/index.html') {
+    return false;
+  }
+  
   // Check if the request URL itself is for admin, associate, or superadmin pages
   if (pathname.startsWith('/admin') || pathname.startsWith('/associate') || pathname.startsWith('/superadmin')) {
     return true;
@@ -163,7 +177,9 @@ function isAdminOrAssociateRequest(request) {
   
   // Check the referrer header to see if request came from admin/associate/superadmin pages
   const referrer = request.referrer || '';
-  if (referrer.includes('/admin') || referrer.includes('/associate') || referrer.includes('/superadmin')) {
+  // Exclude login pages from referrer check
+  if (referrer.includes('/admin') || referrer.includes('/associate') || 
+      (referrer.includes('/superadmin') && !referrer.includes('/superadmin/login'))) {
     return true;
   }
   
@@ -215,7 +231,7 @@ function isCitizenRequest(request) {
   }
   
   // For navigation requests or initial page load, check if it's login or citizen page
-  // (login page is OK to cache as it's public)
+  // (login pages are OK to cache as they're public)
   // Mobile browsers may handle navigation differently, so be more permissive
   const isNavRequest = request.mode === 'navigate' || 
                        (request.method === 'GET' && 
@@ -225,7 +241,7 @@ function isCitizenRequest(request) {
                         !pathname.includes('.') && // No file extensions
                         pathname !== '/service-worker.js');
   
-  if (isNavRequest && isCitizenPath(pathname)) {
+  if (isNavRequest && (isCitizenPath(pathname) || isLoginPath(pathname))) {
     return true;
   }
   
@@ -254,11 +270,12 @@ self.addEventListener('install', event => {
             });
           })
         ).then(() => {
-          // Also cache index.html for root and citizen routes
-          // This ensures offline reload works for all citizen pages
+          // Also cache index.html for root, citizen routes, and login pages
+          // This ensures offline reload works for all public pages
           return Promise.allSettled([
             cache.add(new Request('/', { cache: 'reload' })).catch(() => {}),
-            cache.add(new Request('/citizen', { cache: 'reload' })).catch(() => {})
+            cache.add(new Request('/citizen', { cache: 'reload' })).catch(() => {}),
+            cache.add(new Request('/superadmin/login', { cache: 'reload' })).catch(() => {})
           ]);
         });
       }),
@@ -284,8 +301,8 @@ self.addEventListener('fetch', event => {
   // This ensures immediate response for page reloads
   // Critical for mobile browsers and localhost, especially when dev tools are open
   if (isNavigation) {
-    // Check if it's a citizen route (either detected or by path)
-    if (isCitizen || isCitizenPath(url.pathname) || url.pathname.startsWith('/citizen')) {
+    // Check if it's a citizen route or login page (either detected or by path)
+    if (isCitizen || isCitizenPath(url.pathname) || url.pathname.startsWith('/citizen') || isLoginPath(url.pathname)) {
       // CRITICAL: Always respond, even if service worker isn't fully ready
       // This prevents blank pages on localhost and mobile
       event.respondWith(
@@ -294,10 +311,13 @@ self.addEventListener('fetch', event => {
           console.log('Navigation handler error:', error);
           
           // Try to get cached HTML with multiple keys in parallel
+          const cacheKeys = ['/index.html', event.request.url, '/'];
+          if (url.pathname === '/superadmin/login') {
+            cacheKeys.push('/superadmin/login');
+          }
+          
           return Promise.race([
-            caches.match('/index.html'),
-            caches.match(event.request),
-            caches.match('/'),
+            ...cacheKeys.map(key => caches.match(key)),
             // If all cache lookups fail, return fallback immediately
             Promise.resolve(null).then(() => getFallbackHTML())
           ]).then(result => {
@@ -307,7 +327,7 @@ self.addEventListener('fetch', event => {
       );
       return;
     }
-    // For non-citizen navigation, pass through (admin/associate/superadmin)
+    // For non-citizen/login navigation (admin/associate/superadmin dashboard pages), pass through
     event.respondWith(fetch(event.request));
     return;
   }

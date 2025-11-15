@@ -109,7 +109,7 @@ class AuthController extends Controller
                 'username' => ['required', 'string', 'max:30', 'min:3'],
             ]);
 
-            $user = User::where('username', $request->username)->first();
+            $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->username)])->first();
 
             // Respond with generic message to avoid user enumeration
             if (!$user) {
@@ -191,7 +191,7 @@ class AuthController extends Controller
                 'code' => 'required|string|size:6'
             ]);
 
-            $user = User::where('username', $request->username)->first();
+            $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->username)])->first();
             if (!$user) {
                 return response()->json(['message' => 'Invalid code or user.'], 401);
             }
@@ -507,7 +507,8 @@ class AuthController extends Controller
             ]);
 
             // Check for soft-deleted users - exclude them from login
-            $user = User::where('username', $request['username'])
+            // Use case-insensitive username lookup to prevent login issues
+            $user = User::whereRaw('LOWER(username) = ?', [strtolower($request['username'])])
                 ->whereNull('deleted_at')
                 ->first();
 
@@ -521,7 +522,7 @@ class AuthController extends Controller
 
             if (!$user) {
                 // Check if there's a pending application with this username
-                $pendingApplication = PendingApplication::where('username', $request['username'])
+                $pendingApplication = PendingApplication::whereRaw('LOWER(username) = ?', [strtolower($request['username'])])
                     ->where('status', 'pending')
                     ->first();
 
@@ -674,6 +675,19 @@ class AuthController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            // Check if this is an account lockout exception
+            if (str_contains($e->getMessage(), 'Account temporarily locked')) {
+                Log::warning('Login blocked - account locked', [
+                    'username' => $request->input('username'),
+                    'message' => $e->getMessage()
+                ]);
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => ['username' => [$e->getMessage()]],
+                    'account_locked' => true
+                ], 429);
+            }
+            
             Log::error('Login error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'An error occurred during login.',
@@ -696,7 +710,8 @@ class AuthController extends Controller
             ]);
 
             // Check for soft-deleted users - exclude them from login
-            $user = User::where('username', $request['username'])
+            // Use case-insensitive username lookup to prevent login issues
+            $user = User::whereRaw('LOWER(username) = ?', [strtolower($request['username'])])
                 ->whereNull('deleted_at')
                 ->first();
 
@@ -768,6 +783,19 @@ class AuthController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            // Check if this is an account lockout exception
+            if (str_contains($e->getMessage(), 'Account temporarily locked')) {
+                Log::warning('Superadmin login blocked - account locked', [
+                    'username' => $request->input('username'),
+                    'message' => $e->getMessage()
+                ]);
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => ['username' => [$e->getMessage()]],
+                    'account_locked' => true
+                ], 429);
+            }
+            
             Log::error('Superadmin login error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'An error occurred during login.',
@@ -814,7 +842,7 @@ class AuthController extends Controller
                 'recovery_passcode' => 'required|string|min:10|max:10',
             ]);
 
-            $user = User::where('username', $request->username)->first();
+            $user = User::whereRaw('LOWER(username) = ?', [strtolower($request->username)])->first();
 
             if (!$user) {
                 return response()->json([

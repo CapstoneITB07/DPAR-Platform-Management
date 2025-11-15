@@ -195,7 +195,29 @@ function SuperAdminDashboard() {
                 <FontAwesomeIcon icon={faChartLine} />
                 View Analytics & Monitoring
               </button>
-              <a href="/citizen" target="_blank" rel="noopener noreferrer" className="sa-citizen-link-secondary">
+              <a 
+                href={(() => {
+                  const hostname = window.location.hostname;
+                  // Replace current subdomain with 'citizen' subdomain
+                  if (hostname.includes('.')) {
+                    const parts = hostname.split('.');
+                    // If first part looks like a subdomain (not a TLD), replace it
+                    if (parts.length > 2) {
+                      // Has subdomain: superadmin.dparvc.com -> citizen.dparvc.com
+                      parts[0] = 'citizen';
+                      return `https://${parts.join('.')}/citizen`;
+                    } else {
+                      // No subdomain: dparvc.com -> citizen.dparvc.com
+                      return `https://citizen.${hostname}/citizen`;
+                    }
+                  }
+                  // Fallback for localhost or if no subdomain
+                  return 'https://citizen.dparvc.com/citizen';
+                })()}
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="sa-citizen-link-secondary"
+              >
                 <FontAwesomeIcon icon={faGlobe} />
                 View Citizen Portal
               </a>

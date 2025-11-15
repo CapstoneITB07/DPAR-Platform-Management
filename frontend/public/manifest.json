@@ -20,7 +20,7 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/citizen",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

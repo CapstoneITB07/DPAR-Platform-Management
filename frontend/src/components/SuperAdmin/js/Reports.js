@@ -3,7 +3,7 @@ import SuperAdminLayout from './SuperAdminLayout';
 import axiosInstance from '../../../utils/axiosConfig';
 import '../css/Reports.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faTimes, faCheck, faBan, faTrash, faUndo, faTrashAlt, faClipboardList, faCheckCircle, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faTimes, faCheck, faBan, faTrash, faUndo, faTrashAlt, faClipboardList, faCheckCircle, faSearch } from '@fortawesome/free-solid-svg-icons'; 
 import { API_BASE } from '../../../utils/url';
 
 // Format date helper

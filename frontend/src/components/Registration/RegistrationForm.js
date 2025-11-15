@@ -9,6 +9,7 @@ function RegistrationForm({ onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
     organization_name: '',
     organization_type: '',
+    other_organization_type: '',
     director_name: '',
     username: '',
     email: '',
@@ -498,7 +499,8 @@ function RegistrationForm({ onSuccess, onCancel }) {
     // Define the order of fields as they appear in the form
     const fieldOrder = [
       'organization_name',
-      'organization_type', 
+      'organization_type',
+      'other_organization_type',
       'director_name',
       'username',
       'description',
@@ -557,6 +559,8 @@ function RegistrationForm({ onSuccess, onCancel }) {
     
     if (!formData.organization_type.trim()) {
       newErrors.organization_type = 'Organization type is required';
+    } else if (formData.organization_type === 'Others' && !formData.other_organization_type.trim()) {
+      newErrors.other_organization_type = 'Please specify the organization type';
     }
     
     if (!formData.director_name.trim()) {
@@ -679,7 +683,11 @@ function RegistrationForm({ onSuccess, onCancel }) {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('organization_name', formData.organization_name);
-      formDataToSend.append('organization_type', formData.organization_type);
+      // If "Others" is selected, use the custom value, otherwise use the selected type
+      const finalOrganizationType = formData.organization_type === 'Others' 
+        ? formData.other_organization_type 
+        : formData.organization_type;
+      formDataToSend.append('organization_type', finalOrganizationType);
       formDataToSend.append('director_name', formData.director_name);
       formDataToSend.append('username', formData.username);
       formDataToSend.append('email', formData.email);
@@ -760,7 +768,13 @@ function RegistrationForm({ onSuccess, onCancel }) {
               id="organization_type"
               name="organization_type"
               value={formData.organization_type}
-              onChange={handleInputChange}
+              onChange={(e) => {
+                handleInputChange(e);
+                // Clear other_organization_type when switching away from "Others"
+                if (e.target.value !== 'Others') {
+                  setFormData(prev => ({ ...prev, other_organization_type: '' }));
+                }
+              }}
               className={errors.organization_type ? 'error' : ''}
             >
               <option value="">Select organization type</option>
@@ -769,8 +783,22 @@ function RegistrationForm({ onSuccess, onCancel }) {
               <option value="Religious Organization">Religious Organization</option>
               <option value="Community Group">Community Group</option>
               <option value="Government Agency">Government Agency</option>
+              <option value="NGO">NGO</option>
+              <option value="Others">Others</option>
             </select>
             {errors.organization_type && <span className="error-text">{errors.organization_type}</span>}
+            {formData.organization_type === 'Others' && (
+              <input
+                type="text"
+                name="other_organization_type"
+                value={formData.other_organization_type}
+                onChange={handleInputChange}
+                placeholder="Please specify the organization type"
+                className={errors.other_organization_type ? 'error' : ''}
+                style={{ marginTop: '8px' }}
+              />
+            )}
+            {errors.other_organization_type && <span className="error-text">{errors.other_organization_type}</span>}
           </div>
           
           <div className="form-group">

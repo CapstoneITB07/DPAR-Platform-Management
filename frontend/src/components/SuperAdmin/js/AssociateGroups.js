@@ -453,6 +453,8 @@ function AssociateGroups() {
                 <option value="Religious Organization">Religious Organization</option>
                 <option value="Community Group">Community Group</option>
                 <option value="Government Agency">Government Agency</option>
+                <option value="NGO">NGO</option>
+                <option value="Others">Others</option>
               </select>
             </div>
             <div className="sa-associategroups-form-group">

@@ -228,6 +228,12 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->gr
     Route::delete('/system-alerts/{id}', [SuperAdminController::class, 'deleteSystemAlert']);
     Route::post('/system-alerts/{id}/restore', [SuperAdminController::class, 'restoreSystemAlert']);
     Route::delete('/system-alerts/{id}/permanent', [SuperAdminController::class, 'permanentDeleteSystemAlert']);
+    
+    // Reports Management
+    Route::get('/reports/deleted', [SuperAdminController::class, 'getDeletedReports']);
+    Route::delete('/reports/{id}', [SuperAdminController::class, 'deleteReport']);
+    Route::delete('/reports/{id}/permanent', [SuperAdminController::class, 'permanentDeleteReport']);
+    Route::post('/reports/{id}/restore', [SuperAdminController::class, 'restoreReport']);
 });
 
 // Public route for active system alerts (no auth required, but respects user role if authenticated)

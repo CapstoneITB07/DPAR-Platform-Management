@@ -37,6 +37,7 @@ import CitizenMonitoring from './components/SuperAdmin/js/CitizenMonitoring';
 import SystemAlerts from './components/SuperAdmin/js/SystemAlerts';
 import MaintenancePage from './components/SuperAdmin/js/MaintenancePage';
 import SystemAlertBanner from './components/SuperAdmin/js/SystemAlertBanner';
+import SuperAdminReports from './components/SuperAdmin/js/Reports';
 
 import './App.css'; // Assuming you have an App.css for general styling
 
@@ -161,6 +162,11 @@ function App() {
             <Route path="/superadmin/system-alerts" element={
               <ProtectedRoute requiredRole="superadmin">
                 <SystemAlerts />
+              </ProtectedRoute>
+            } />
+            <Route path="/superadmin/reports" element={
+              <ProtectedRoute requiredRole="superadmin">
+                <SuperAdminReports />
               </ProtectedRoute>
             } />
 

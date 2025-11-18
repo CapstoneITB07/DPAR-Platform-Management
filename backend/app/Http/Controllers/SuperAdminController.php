@@ -79,7 +79,7 @@ class SuperAdminController extends Controller
     {
         try {
             $stats = [
-                'total_users' => User::count(),
+                'total_users' => User::whereNull('deleted_at')->count(),
                 'head_admins' => User::where('role', 'head_admin')->whereNull('deleted_at')->count(),
                 'associate_groups' => AssociateGroup::whereNull('deleted_at')->count(),
                 'pending_applications' => PendingApplication::where('status', 'pending')->count(),
@@ -571,6 +571,7 @@ class SuperAdminController extends Controller
      */
     public function permanentDeleteHeadAdmin($id)
     {
+        DB::beginTransaction();
         try {
             $headAdmin = User::where('role', 'head_admin')->withTrashed()->findOrFail($id);
 
@@ -582,21 +583,27 @@ class SuperAdminController extends Controller
                 ], 400);
             }
 
+            // Store name and email before deletion for logging
+            $headAdminName = $headAdmin->name;
+            $headAdminEmail = $headAdmin->email;
+
             // Revoke all tokens
             $headAdmin->tokens()->delete();
 
             // Permanently delete (force delete)
             $headAdmin->forceDelete();
 
+            DB::commit();
             Log::warning('Super admin permanently deleted head admin', [
                 'superadmin_id' => Auth::id(),
                 'head_admin_id' => $id,
-                'head_admin_name' => $headAdmin->name,
-                'head_admin_email' => $headAdmin->email
+                'head_admin_name' => $headAdminName,
+                'head_admin_email' => $headAdminEmail
             ]);
 
             return response()->json(['message' => 'Head admin permanently deleted']);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error permanently deleting head admin: ' . $e->getMessage());
             return response()->json(['message' => 'Failed to permanently delete head admin'], 500);
         }
@@ -1000,16 +1007,50 @@ class SuperAdminController extends Controller
         try {
             $group = AssociateGroup::with('user')->withTrashed()->findOrFail($id);
 
+            $associatedUser = $group->user;
+            $associatedUserId = $associatedUser?->id;
+            $associatedUserEmail = $associatedUser?->email;
+            $associatedUserName = $associatedUser?->name;
+
             // Revoke all tokens for the associated user
-            if ($group->user) {
-                $group->user->tokens()->delete();
+            if ($associatedUser) {
+                $associatedUser->tokens()->delete();
             }
 
-            // Permanently delete
+            // Store email and name before deletion to find related PendingApplication and for logging
+            $groupEmail = $group->email;
+            $groupName = $group->name;
+
+            // Permanently delete the associate group
             $group->forceDelete();
 
+            // Also delete the related PendingApplication if it exists (approved applications)
+            $pendingApplication = PendingApplication::where('email', $groupEmail)
+                ->where('status', 'approved')
+                ->first();
+
+            if ($pendingApplication) {
+                // Delete logo file if exists
+                if ($pendingApplication->logo && Storage::disk('public')->exists($pendingApplication->logo)) {
+                    Storage::disk('public')->delete($pendingApplication->logo);
+                }
+
+                $pendingApplication->delete();
+                Log::info("Deleted related PendingApplication for permanently deleted associate group: {$groupEmail}");
+            }
+
+            // Soft delete the associated user account so it no longer counts toward totals
+            if ($associatedUser) {
+                $associatedUser->delete();
+                Log::info('Soft deleted user account for permanently deleted associate group', [
+                    'user_id' => $associatedUserId,
+                    'user_email' => $associatedUserEmail,
+                    'associate_group_email' => $groupEmail
+                ]);
+            }
+
             DB::commit();
-            Log::warning("Super Admin permanently deleted associate group: {$group->name} (ID: {$id})");
+            Log::warning("Super Admin permanently deleted associate group: {$groupName} (ID: {$id})");
             return response()->json(['message' => 'Associate group permanently deleted']);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1137,12 +1178,19 @@ class SuperAdminController extends Controller
 
             $applications = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-            foreach ($applications as $app) {
-                // For approved applications, get logo from associate_group table
-                // since the logo was moved and renamed when approved
+            // Filter out approved applications where the AssociateGroup no longer exists
+            $applications->getCollection()->transform(function ($app) {
+                // For approved applications, check if AssociateGroup still exists
                 if ($app->status === 'approved') {
                     $associateGroup = AssociateGroup::where('email', $app->email)->first();
-                    if ($associateGroup && $associateGroup->logo) {
+
+                    // If AssociateGroup doesn't exist, exclude this application from results
+                    if (!$associateGroup) {
+                        return null;
+                    }
+
+                    // Get logo from associate_group table since the logo was moved and renamed when approved
+                    if ($associateGroup->logo) {
                         $app->logo = $associateGroup->logo;
                     }
                 }
@@ -1154,7 +1202,14 @@ class SuperAdminController extends Controller
                 } elseif (!$app->logo) {
                     $app->logo = '/Assets/disaster_logo.png';
                 }
-            }
+
+                return $app;
+            });
+
+            // Remove null values (approved apps without AssociateGroup)
+            $applications->setCollection($applications->getCollection()->filter(function ($app) {
+                return $app !== null;
+            }));
 
             return response()->json($applications);
         } catch (\Exception $e) {
@@ -1599,12 +1654,17 @@ class SuperAdminController extends Controller
                 ], 400);
             }
 
+            // Store data before deletion for logging
+            $organizationName = $application->organization_name;
+            $directorName = $application->director_name;
+            $email = $application->email;
+
             // Delete logo file if exists
             if ($application->logo && Storage::disk('public')->exists($application->logo)) {
                 Storage::disk('public')->delete($application->logo);
             }
 
-            $organizationName = $application->organization_name;
+            // Permanently delete (PendingApplication doesn't use SoftDeletes, so delete() permanently removes it)
             $application->delete();
 
             // Log activity for application deletion
@@ -1615,8 +1675,8 @@ class SuperAdminController extends Controller
                 [
                     'application_id' => $id,
                     'organization_name' => $organizationName,
-                    'director_name' => $application->director_name,
-                    'email' => $application->email,
+                    'director_name' => $directorName,
+                    'email' => $email,
                     'action_by' => 'super_admin'
                 ],
                 null
@@ -1696,7 +1756,7 @@ class SuperAdminController extends Controller
     {
         try {
             $stats = [
-                'users' => User::count(),
+                'users' => User::whereNull('deleted_at')->count(),
                 'associate_groups' => AssociateGroup::count(),
                 'pending_applications' => PendingApplication::count(),
                 'reports' => Report::count(),
@@ -2547,6 +2607,22 @@ class SuperAdminController extends Controller
 
             $alerts = $query->paginate($perPage);
 
+            // Automatically deactivate expired alerts
+            $now = now();
+            $deactivatedCount = 0;
+            foreach ($alerts->items() as $alert) {
+                // Check if alert has expired and is still active
+                if ($alert->expires_at && $alert->expires_at <= $now && $alert->is_active) {
+                    $alert->is_active = false;
+                    $alert->save();
+                    $deactivatedCount++;
+                }
+            }
+
+            if ($deactivatedCount > 0) {
+                Log::info("Automatically deactivated {$deactivatedCount} expired system alert(s)");
+            }
+
             return response()->json($alerts);
         } catch (\Exception $e) {
             Log::error('Error fetching system alerts: ' . $e->getMessage());
@@ -2678,15 +2754,27 @@ class SuperAdminController extends Controller
                 $showToRoles = null;
             }
 
+            $expiresAt = $request->expires_at ? now()->parse($request->expires_at) : null;
+            $isActive = $request->get('is_active', true);
+
+            // If expiration date is in the past, automatically set is_active to false
+            if ($expiresAt && $expiresAt <= now()) {
+                $isActive = false;
+                Log::info("System alert created with past expiration date, automatically deactivated", [
+                    'expires_at' => $expiresAt,
+                    'title' => $request->title
+                ]);
+            }
+
             $alert = SystemAlert::create([
                 'title' => $request->title,
                 'message' => $request->message,
                 'type' => $request->type,
-                'is_active' => $request->get('is_active', true),
+                'is_active' => $isActive,
                 'show_to_roles' => $showToRoles,
                 'dismissible' => $request->get('dismissible', true),
                 'send_push_notification' => $request->get('send_push_notification', false),
-                'expires_at' => $request->expires_at ? now()->parse($request->expires_at) : null,
+                'expires_at' => $expiresAt,
                 'created_by' => Auth::id(),
             ]);
 
@@ -2774,15 +2862,36 @@ class SuperAdminController extends Controller
             $wasActive = $alert->is_active;
             $hadPushEnabled = $alert->send_push_notification;
 
+            // Handle expiration date update
+            $expiresAt = $alert->expires_at;
+            if ($request->has('expires_at')) {
+                $expiresAt = $request->expires_at ? now()->parse($request->expires_at) : null;
+            }
+
+            // Determine is_active value
+            $isActive = $request->has('is_active') ? $request->is_active : $alert->is_active;
+
+            // If expiration date is in the past or was just set to past, automatically deactivate
+            if ($expiresAt && $expiresAt <= now()) {
+                $isActive = false;
+                if ($wasActive) {
+                    Log::info("System alert updated with past expiration date, automatically deactivated", [
+                        'alert_id' => $alert->id,
+                        'expires_at' => $expiresAt,
+                        'title' => $alert->title
+                    ]);
+                }
+            }
+
             $alert->update([
                 'title' => $request->get('title', $alert->title),
                 'message' => $request->get('message', $alert->message),
                 'type' => $request->get('type', $alert->type),
-                'is_active' => $request->has('is_active') ? $request->is_active : $alert->is_active,
+                'is_active' => $isActive,
                 'show_to_roles' => $showToRoles,
                 'dismissible' => $request->has('dismissible') ? $request->dismissible : $alert->dismissible,
                 'send_push_notification' => $request->has('send_push_notification') ? $request->send_push_notification : $alert->send_push_notification,
-                'expires_at' => $request->has('expires_at') ? ($request->expires_at ? now()->parse($request->expires_at) : null) : $alert->expires_at,
+                'expires_at' => $expiresAt,
             ]);
 
             // Refresh alert to get updated values

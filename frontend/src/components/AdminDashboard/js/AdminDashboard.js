@@ -59,18 +59,16 @@ function CustomCalendarToolbar({ date, onNavigate, onAddEvent, onToday }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 240, justifyContent: 'center' }}>
-        {/* TD Button */}
+        {/* Today Button */}
         <button
           className="add-event-btn calendar-today-btn"
           onClick={onToday}
           aria-label="Today"
           style={{
             minWidth: 0,
-            padding: '8px 16px',
-            fontSize: '1rem',
             fontWeight: 700,
             marginRight: 8,
-            letterSpacing: '0.5px',
+            letterSpacing: '0.3px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -83,7 +81,7 @@ function CustomCalendarToolbar({ date, onNavigate, onAddEvent, onToday }) {
             lineHeight: 1,
           }}
         >
-          TD
+          Today
         </button>
         {/* Existing left arrow */}
         <button
@@ -93,7 +91,7 @@ function CustomCalendarToolbar({ date, onNavigate, onAddEvent, onToday }) {
         >
           <FontAwesomeIcon icon={faChevronLeft} style={{ fontSize: '1rem' }} />
         </button>
-        <span style={{ fontWeight: 600, fontSize: 18, minWidth: 120, textAlign: 'center' }}>{monthYear}</span>
+        <span className="calendar-month-year" style={{ fontWeight: 600, minWidth: 120, textAlign: 'center' }}>{monthYear}</span>
         <button
           className="calendar-nav-btn calendar-nav-btn-icon"
           onClick={() => onNavigate('NEXT')}
@@ -102,13 +100,16 @@ function CustomCalendarToolbar({ date, onNavigate, onAddEvent, onToday }) {
           <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: '1rem' }} />
         </button>
         <button
-          className="add-event-btn"
+          className="add-event-btn calendar-add-event-btn"
           onClick={onAddEvent}
-          style={{ marginLeft: 8 }}
+          style={{ 
+            marginLeft: 8,
+            fontWeight: 700
+          }}
           aria-label="Add Event"
         >
-          <FontAwesomeIcon icon={faPlus} />
-          <span>EV</span>
+          <FontAwesomeIcon icon={faPlus} className="add-event-icon" />
+          <span>Event</span>
         </button>
       </div>
     </div>
@@ -1609,6 +1610,60 @@ function AdminDashboard() {
                   onNavigate={date => setCalendarDate(date)}
                   onSelectEvent={handleEventClick}
                   onView={() => console.log('Calendar view changed, events:', calendarEvents)}
+                  eventPropGetter={(event) => {
+                    const now = new Date();
+                    let backgroundColor = '#A11C22'; // Default red color
+                    let className = '';
+                    
+                    // Check if event has resource with events array
+                    if (event.resource && event.resource.events && event.resource.events.length > 0) {
+                      const events = event.resource.events;
+                      let hasInProgress = false;
+                      let allNotStarted = true;
+                      
+                      // Check each event in the group
+                      events.forEach(eventItem => {
+                        const startDate = new Date(eventItem.start_date);
+                        const endDate = new Date(eventItem.end_date);
+                        
+                        // Check if event is in progress (started but not finished)
+                        if (startDate <= now && endDate >= now) {
+                          hasInProgress = true;
+                          allNotStarted = false;
+                        }
+                        // Check if event has started
+                        else if (startDate <= now) {
+                          allNotStarted = false;
+                        }
+                      });
+                      
+                      // Apply colors based on status
+                      if (hasInProgress) {
+                        // Green for events in progress
+                        backgroundColor = '#28a745';
+                        className = 'event-in-progress';
+                      } else if (allNotStarted) {
+                        // Grey for events not started
+                        backgroundColor = '#6c757d';
+                        className = 'event-not-started';
+                      }
+                    }
+                    
+                    return {
+                      style: {
+                        backgroundColor: backgroundColor,
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        opacity: 1,
+                        visibility: 'visible'
+                      },
+                      className: className
+                    };
+                  }}
                 />
               </div>
               <div style={{ marginTop: 12, textAlign: 'center' }}>

@@ -17,6 +17,39 @@ class CalendarEventController extends Controller
     public function index()
     {
         try {
+            // Get current date/time for comparison
+            $now = now();
+            
+            // Find all finished events (where end_date has passed)
+            $finishedEvents = CalendarEvent::where('end_date', '<', $now)->get();
+            
+            // Automatically delete finished events
+            foreach ($finishedEvents as $finishedEvent) {
+                $eventTitle = $finishedEvent->title;
+                $eventId = $finishedEvent->id;
+                
+                $finishedEvent->delete();
+                
+                // Log activity for automatic event deletion (for head admins only)
+                $user = Auth::user();
+                if ($user && $user->role === 'head_admin') {
+                    ActivityLog::logActivity(
+                        $user->id,
+                        'delete',
+                        'Automatically deleted finished event: ' . $eventTitle,
+                        [
+                            'event_id' => $eventId,
+                            'event_title' => $eventTitle,
+                            'end_date' => $finishedEvent->end_date,
+                            'resource_type' => 'calendar_event',
+                            'auto_deleted' => true
+                        ],
+                        null
+                    );
+                }
+            }
+            
+            // Get remaining (non-finished) events
             $events = CalendarEvent::with('creator')->orderBy('start_date', 'asc')->get();
 
             return response()->json([

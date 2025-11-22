@@ -12,20 +12,18 @@ function AllUsers() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchTerm, roleFilter]);
+  }, [searchTerm, roleFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
+      // Fetch all users by setting a high per_page value
       const params = new URLSearchParams({
-        page: currentPage,
-        per_page: 5,
+        page: 1,
+        per_page: 1000, // High number to get all users
         ...(searchTerm && { search: searchTerm }),
         ...(roleFilter && { role: roleFilter })
       });
@@ -33,7 +31,6 @@ function AllUsers() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(response.data.data || []);
-      setTotalPages(response.data.last_page || 1);
       setError('');
     } catch (err) {
       setError('Failed to fetch users');
@@ -87,7 +84,6 @@ function AllUsers() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1);
               }}
             />
           </div>
@@ -96,7 +92,6 @@ function AllUsers() {
             value={roleFilter}
             onChange={(e) => {
               setRoleFilter(e.target.value);
-              setCurrentPage(1);
             }}
           >
             <option value="">All Roles</option>
@@ -159,23 +154,9 @@ function AllUsers() {
           </div>
         )}
 
-        {totalPages > 1 && (
+        {users.length > 0 && (
           <div className="sa-allusers-pagination">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="sa-allusers-page-btn"
-            >
-              Previous
-            </button>
-            <span className="sa-allusers-page-info">Page {currentPage} of {totalPages}</span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="sa-allusers-page-btn"
-            >
-              Next
-            </button>
+            <span className="sa-allusers-page-info">Total Users: {users.length}</span>
           </div>
         )}
       </div>

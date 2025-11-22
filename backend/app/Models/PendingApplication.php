@@ -18,11 +18,18 @@ class PendingApplication extends Model
         'phone',
         'password',
         'logo',
+        'interview_proof',
         'description',
         'status',
         'approved_at',
         'otp_code',
-        'otp_expires_at'
+        'otp_expires_at',
+        'sec_number',
+        'sec_file',
+        'accept_terms',
+        'accept_privacy',
+        'terms_accepted_at',
+        'privacy_accepted_at'
     ];
 
     protected $hidden = [
@@ -33,6 +40,10 @@ class PendingApplication extends Model
     protected $casts = [
         'approved_at' => 'datetime',
         'otp_expires_at' => 'datetime',
-        'password' => 'hashed'
+        'terms_accepted_at' => 'datetime',
+        'privacy_accepted_at' => 'datetime',
+        'password' => 'hashed',
+        'accept_terms' => 'boolean',
+        'accept_privacy' => 'boolean'
     ];
 }

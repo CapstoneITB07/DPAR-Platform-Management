@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AssociateLayout from './AssociateLayout';
 import axios from '../../../utils/axiosConfig';
 import '../css/Announcements.css';
-import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaFire, FaCheckDouble, FaWater, FaSnowflake, FaShieldAlt, FaChevronLeft, FaChevronRight, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import { API_BASE } from '../../../utils/url';
 
 const slides = [
@@ -116,10 +116,41 @@ function Announcements() {
   const [loading, setLoading] = useState(true);
   const [fullAnnouncementModal, setFullAnnouncementModal] = useState(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
 
   useEffect(() => {
     fetchAnnouncements();
   }, []);
+
+  useEffect(() => {
+    filterAnnouncements();
+  }, [announcements, searchTerm, dateFilter]);
+
+  const filterAnnouncements = () => {
+    let filtered = [...announcements];
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(a => 
+        (a.title && a.title.toLowerCase().includes(searchLower)) ||
+        (a.description && a.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Filter by date
+    if (dateFilter) {
+      filtered = filtered.filter(a => {
+        const announcementDate = new Date(a.created_at);
+        const filterDate = new Date(dateFilter);
+        return announcementDate.toDateString() === filterDate.toDateString();
+      });
+    }
+
+    setFilteredAnnouncements(filtered);
+  };
 
   const fetchAnnouncements = async () => {
     try {
@@ -189,6 +220,86 @@ function Announcements() {
           <h1 className="announcements-header">Important Updates & Announcements</h1>
           {error && <div style={{ color: 'red', margin: '10px 0' }}>{error}</div>}
           
+          {/* Search and Filter Section */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '15px', 
+            marginBottom: '20px', 
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            padding: '0 20px'
+          }}>
+            <div style={{ 
+              position: 'relative', 
+              flex: '1', 
+              minWidth: '250px',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <FaSearch style={{ 
+                position: 'absolute', 
+                left: '12px', 
+                color: '#666',
+                zIndex: 1
+              }} />
+              <input
+                type="text"
+                placeholder="Search announcements..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 15px 10px 40px',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div style={{ 
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <FaCalendarAlt style={{ 
+                position: 'absolute', 
+                left: '12px', 
+                color: '#666',
+                zIndex: 1
+              }} />
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                style={{
+                  padding: '10px 15px 10px 40px',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  minWidth: '200px'
+                }}
+              />
+              {dateFilter && (
+                <button
+                  onClick={() => setDateFilter('')}
+                  style={{
+                    marginLeft: '8px',
+                    padding: '10px 15px',
+                    background: '#e74c3c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Clear Date
+                </button>
+              )}
+            </div>
+          </div>
 
 
           {/* Modal for full announcement */}
@@ -301,8 +412,25 @@ function Announcements() {
                  }}>
                    No announcements found yet. <br />It will appear here when the coalition creates one.
                  </div>
+              ) : filteredAnnouncements.length === 0 ? (
+                 <div style={{ 
+                   gridColumn: '1 / -1',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                    textAlign: 'center',
+                    fontStyle: 'italic',
+                   padding: '60px 20px', 
+                   color: '#666', 
+                   fontSize: '16px', 
+                   fontWeight: '400',
+                   width: '100%',
+                   minHeight: '200px'
+                 }}>
+                   No announcements match your search criteria.
+                 </div>
               ) : (
-                announcements.map(a => (
+                filteredAnnouncements.map(a => (
                   <div 
                     key={a.id} 
                     className="announcement-card"

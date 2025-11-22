@@ -398,6 +398,11 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8|confirmed',
                 'description' => 'required|string|min:20',
                 'logo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'interview_proof' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'sec_file' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:5120',
+                'sec_number' => 'nullable|string|max:50',
+                'accept_terms' => 'required|accepted',
+                'accept_privacy' => 'required|accepted',
             ], [
                 'organization_name.required' => 'Organization name is required.',
                 'organization_type.required' => 'Organization type is required.',
@@ -419,6 +424,17 @@ class AuthController extends Controller
                 'logo.image' => 'Logo must be a valid image file.',
                 'logo.mimes' => 'Logo must be in JPEG, PNG, JPG, or GIF format.',
                 'logo.max' => 'Logo file size must not exceed 2MB.',
+                'interview_proof.required' => 'Interview proof/photo is required.',
+                'interview_proof.image' => 'Interview proof must be a valid image file.',
+                'interview_proof.mimes' => 'Interview proof must be in JPEG, PNG, JPG, or GIF format.',
+                'interview_proof.max' => 'Interview proof file size must not exceed 2MB.',
+                'sec_file.file' => 'SEC document must be a valid file.',
+                'sec_file.mimes' => 'SEC document must be in JPEG, PNG, JPG, GIF, or PDF format.',
+                'sec_file.max' => 'SEC document file size must not exceed 5MB.',
+                'accept_terms.required' => 'You must accept the Terms and Conditions to register.',
+                'accept_terms.accepted' => 'You must accept the Terms and Conditions to register.',
+                'accept_privacy.required' => 'You must accept the Data Privacy Policy to register.',
+                'accept_privacy.accepted' => 'You must accept the Data Privacy Policy to register.',
             ]);
 
             // Check for duplicates in pending applications (excluding rejected)
@@ -432,6 +448,23 @@ class AuthController extends Controller
                     'errors' => ['email' => ['This email is already registered.']]
                 ], 422);
             }
+
+            // Validate terms and privacy acceptance
+            if (!$request->has('accept_terms') || !in_array($request->accept_terms, ['1', 'true', 'yes', 'on'])) {
+                return response()->json([
+                    'message' => 'You must accept the Terms and Conditions to register.',
+                    'errors' => ['accept_terms' => ['You must accept the Terms and Conditions to register.']]
+                ], 422);
+            }
+
+            if (!$request->has('accept_privacy') || !in_array($request->accept_privacy, ['1', 'true', 'yes', 'on'])) {
+                return response()->json([
+                    'message' => 'You must accept the Data Privacy Policy to register.',
+                    'errors' => ['accept_privacy' => ['You must accept the Data Privacy Policy to register.']]
+                ], 422);
+            }
+
+            // SEC number and file are optional - no format validation needed
 
             // Validate username format, TLD patterns, and reserved words
             $usernameValidation = $this->validateUsername($request->username);
@@ -458,8 +491,20 @@ class AuthController extends Controller
                 $logoPath = $request->file('logo')->store('pending_logos', 'public');
             }
 
+            // Handle interview proof upload
+            $interviewProofPath = null;
+            if ($request->hasFile('interview_proof')) {
+                $interviewProofPath = $request->file('interview_proof')->store('pending_interview_proofs', 'public');
+            }
+
+            // Handle SEC file upload
+            $secFilePath = null;
+            if ($request->hasFile('sec_file')) {
+                $secFilePath = $request->file('sec_file')->store('pending_sec_files', 'public');
+            }
+
             // Create pending application
-            $application = PendingApplication::create([
+            $applicationData = [
                 'organization_name' => $request->organization_name,
                 'organization_type' => $request->organization_type,
                 'director_name' => $request->director_name,
@@ -469,8 +514,21 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
                 'description' => $request->description,
                 'logo' => $logoPath,
-                'status' => 'pending'
-            ]);
+                'interview_proof' => $interviewProofPath,
+                'sec_file' => $secFilePath,
+                'status' => 'pending',
+                'accept_terms' => true,
+                'accept_privacy' => true,
+                'terms_accepted_at' => now(),
+                'privacy_accepted_at' => now()
+            ];
+
+            // Add SEC number if provided (optional, no strict validation)
+            if ($request->has('sec_number') && $request->sec_number) {
+                $applicationData['sec_number'] = trim($request->sec_number);
+            }
+
+            $application = PendingApplication::create($applicationData);
 
             // Send push notification to admin about new application
             try {
@@ -687,7 +745,7 @@ class AuthController extends Controller
                     'account_locked' => true
                 ], 429);
             }
-            
+
             Log::error('Login error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'An error occurred during login.',
@@ -795,7 +853,7 @@ class AuthController extends Controller
                     'account_locked' => true
                 ], 429);
             }
-            
+
             Log::error('Superadmin login error: ' . $e->getMessage());
             return response()->json([
                 'message' => 'An error occurred during login.',

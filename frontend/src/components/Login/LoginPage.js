@@ -7,6 +7,8 @@ import { faEye, faEyeSlash, faKey, faLock, faTimes, faInfoCircle, faUserPlus, fa
 import { useNavigate } from 'react-router-dom'; // For react-router-dom v6
 import { useAuth } from '../../contexts/AuthContext';
 import RegistrationForm from '../Registration/RegistrationForm';
+import TermsAndConditions from '../Legal/TermsAndConditions';
+import DataPrivacyPolicy from '../Legal/DataPrivacyPolicy';
 import { API_BASE, isSuperAdminSubdomain } from '../../utils/url';
 
 // Password strength calculation functions
@@ -86,6 +88,8 @@ function LoginPage() {
   const [showRA, setShowRA] = useState(false); // State for the pop-up
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [isRecoveryMode, setIsRecoveryMode] = useState(false); // State for recovery mode
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   
   // New states for change password modal
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -837,6 +841,24 @@ function LoginPage() {
                 Don't have an account? Register your organization
               </a>
             </div>
+            
+            <div className="legalLinks">
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="legalLink"
+              >
+                Terms and Conditions
+              </button>
+              <span className="legalLinkSeparator">|</span>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="legalLink"
+              >
+                Data Privacy Policy
+              </button>
+            </div>
           </form>
         </div>
         <div className="welcomeSection"> {/* Right (Welcome) section */}
@@ -1065,6 +1087,15 @@ function LoginPage() {
         </div>
       )}
 
+      {/* Terms and Privacy Modals */}
+      {showTermsModal && (
+        <TermsAndConditions onClose={() => setShowTermsModal(false)} />
+      )}
+      
+      {showPrivacyModal && (
+        <DataPrivacyPolicy onClose={() => setShowPrivacyModal(false)} />
+      )}
+      
       {/* Registration Form Modal */}
       {showRegistration && (
         <div className="registration-modal-overlay">

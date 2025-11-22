@@ -141,6 +141,74 @@
   margin-top: 4px;
 }
 
+.terms-checkbox-group {
+  margin-bottom: 15px;
+}
+
+.terms-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+  background: transparent !important;
+  padding: 0;
+  margin: 0;
+}
+
+.terms-checkbox-label input[type="checkbox"] {
+  margin-top: 2px;
+  margin-right: 12px;
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+  accent-color: #c0392b;
+  flex-shrink: 0;
+}
+
+.terms-checkbox-label input[type="checkbox"].error {
+  outline: 2px solid #dc3545;
+  outline-offset: 2px;
+}
+
+.terms-checkbox-label span {
+  flex: 1;
+}
+
+.terms-link {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #c0392b !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+  transition: text-decoration 0.2s ease;
+  display: inline;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.terms-link:hover {
+  color: #c0392b !important;
+  text-decoration: underline !important;
+}
+
+.terms-link:focus {
+  outline: none;
+  text-decoration: underline !important;
+  color: #c0392b !important;
+}
+
+.terms-link:active {
+  background: none !important;
+  color: #c0392b !important;
+}
+
 .logo-preview {
   margin-top: 10px;
   text-align: center;

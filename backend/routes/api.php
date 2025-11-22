@@ -189,6 +189,7 @@ Route::middleware(['auth:sanctum', 'role:superadmin'])->prefix('superadmin')->gr
     // Pending Applications Management
     Route::get('/pending-applications', [SuperAdminController::class, 'getAllPendingApplications']);
     Route::post('/pending-applications/{id}/override', [SuperAdminController::class, 'overrideApplicationDecision']);
+    Route::put('/pending-applications/{id}/sec', [SuperAdminController::class, 'updateApplicationSEC']);
     Route::delete('/pending-applications/{id}/permanent', [SuperAdminController::class, 'permanentDeleteApplication']);
     
     // System Logs

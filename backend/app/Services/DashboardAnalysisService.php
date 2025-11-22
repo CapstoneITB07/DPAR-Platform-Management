@@ -401,6 +401,45 @@ class DashboardAnalysisService
         return 'Poor';
     }
 
+    /**
+     * Bold numeric values in text strings for PDF display
+     * This function finds numeric values (decimals, percentages, scores) and wraps them in <strong> tags
+     */
+    private function boldNumericValues($text)
+    {
+        // Skip if text already contains HTML tags (to avoid double processing)
+        if (strpos($text, '<strong>') !== false || strpos($text, '<') !== false) {
+            return $text;
+        }
+        
+        // Match percentages first (e.g., 30%, 15.5%) - must be before other patterns
+        $text = preg_replace('/(\d+\.?\d*)%/i', '<strong>$1%</strong>', $text);
+        
+        // Match scores with / (e.g., 3.5/4.0) - must be before decimal matching
+        $text = preg_replace('/(\d+\.?\d*)\/(\d+\.?\d*)/', '<strong>$1/$2</strong>', $text);
+        
+        // Match numbers followed by "points" (e.g., "3.5 points", "0.2 points", "increase of 0.5 points")
+        $text = preg_replace('/(\d+\.?\d*)\s+points?/i', '<strong>$1</strong> points', $text);
+        
+        // Match numbers followed by metric words (e.g., "30 of evaluations", "15 groups")
+        $text = preg_replace('/(\d+\.?\d*)\s+(of|evaluations?|groups?|associates?|members?|range|count|portion)/i', '<strong>$1</strong> $2', $text);
+        
+        // Match decimal numbers in context (e.g., "score of 3.5", "with 2.75", "average of 3.0")
+        $text = preg_replace('/(score of|average of|average score of|with|an average|increase of|decrease of|gain of|change of|improvement of|with a|with an|only|about|approximately|over|under|above|below|at|around)\s+(\d+\.\d+)/i', '$1 <strong>$2</strong>', $text);
+        
+        // Match standalone decimal numbers (e.g., "3.5", "2.75") not already in strong tags
+        $text = preg_replace('/(?<!<strong>)(?<!>)(\d+\.\d+)(?!<\/strong>)(?=\s|$|,|\.|%)/', '<strong>$1</strong>', $text);
+        
+        // Match whole numbers in metric contexts (2+ digits to avoid single digits in text)
+        // Match numbers followed by specific words or at end of phrases
+        $text = preg_replace('/(\d{2,})(?=\s+(evaluations?|groups?|associates?|members?|range|count|portion|percent|percentage)|$|,|\.)/', '<strong>$1</strong>', $text);
+        
+        // Clean up any double bolding
+        $text = preg_replace('/<strong><strong>(.*?)<\/strong><\/strong>/', '<strong>$1</strong>', $text);
+        
+        return $text;
+    }
+
     private function calculatePerformanceInsights($evaluations, $averageScore, $performanceDistribution)
     {
         $totalEvals = $evaluations->count();
@@ -1007,9 +1046,9 @@ class DashboardAnalysisService
 
             <div class="section">
                 <h2>Executive Summary</h2>
-                <p>This comprehensive performance analysis report provides an in-depth evaluation of the DPAR (Disaster Preparedness and Response) platform\'s associate groups and their collective impact on disaster preparedness initiatives. The analysis encompasses ' . $data['overall_stats']['total_associates'] . ' active associate groups with ' . $data['overall_stats']['total_evaluations'] . ' comprehensive evaluations conducted across multiple performance dimensions.</p>
+                <p>This comprehensive performance analysis report provides an in-depth evaluation of the DPAR (Disaster Preparedness and Response) platform\'s associate groups and their collective impact on disaster preparedness initiatives. The analysis encompasses <strong>' . $data['overall_stats']['total_associates'] . '</strong> active associate groups with <strong>' . $data['overall_stats']['total_evaluations'] . '</strong> comprehensive evaluations conducted across multiple performance dimensions.</p>
                 
-                <p>The coalition has achieved an average performance score of ' . $data['overall_stats']['average_score'] . '/4.0, which indicates ' . ($data['overall_stats']['average_score'] >= 3.0 ? 'exceptional commitment and effectiveness' : ($data['overall_stats']['average_score'] >= 2.5 ? 'strong performance with consistent engagement' : ($data['overall_stats']['average_score'] >= 2.0 ? 'moderate performance with opportunities for growth' : 'significant potential for improvement and development'))) . ' in disaster preparedness activities. This performance level reflects the collective efforts of all participating groups in building resilient communities and enhancing disaster response capabilities.</p>
+                <p>The coalition has achieved an average performance score of <strong>' . $data['overall_stats']['average_score'] . '/4.0</strong>, which indicates ' . ($data['overall_stats']['average_score'] >= 3.0 ? 'exceptional commitment and effectiveness' : ($data['overall_stats']['average_score'] >= 2.5 ? 'strong performance with consistent engagement' : ($data['overall_stats']['average_score'] >= 2.0 ? 'moderate performance with opportunities for growth' : 'significant potential for improvement and development'))) . ' in disaster preparedness activities. This performance level reflects the collective efforts of all participating groups in building resilient communities and enhancing disaster response capabilities.</p>
                 
                 <p>The evaluation framework assesses five critical performance categories: Volunteer Participation, Community Engagement, Leadership & Initiative, Communication & Collaboration, and Professional Development. Each category is designed to measure different aspects of disaster preparedness effectiveness, ensuring a holistic view of each group\'s contribution to the broader disaster resilience ecosystem.</p>
             </div>
@@ -1041,27 +1080,27 @@ class DashboardAnalysisService
                 <div class="insights-container">
                     <div class="insight-section">
                         <h3>Overall Performance Assessment</h3>
-                        <p>' . $data['performance_insights']['overall_performance'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['overall_performance']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Performance Distribution Analysis</h3>
-                        <p>' . $data['performance_insights']['distribution_analysis'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['distribution_analysis']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Excellence Indicators</h3>
-                        <p>' . $data['performance_insights']['excellent_performance'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['excellent_performance']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Improvement Opportunities</h3>
-                        <p>' . $data['performance_insights']['improvement_needed'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['improvement_needed']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Network Health Assessment</h3>
-                        <p>' . $data['performance_insights']['network_health'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['network_health']) . '</p>
                     </div>
                 </div>
             </div>
@@ -1095,8 +1134,8 @@ class DashboardAnalysisService
             $html .= '<tr>
                 <td class="' . strtolower($level) . '">' . $level . '</td>
                 <td>' . $info['range'] . '</td>
-                <td>' . $info['count'] . '</td>
-                <td>' . $percentage . '%</td>
+                <td><strong>' . $info['count'] . '</strong></td>
+                <td><strong>' . $percentage . '%</strong></td>
                 <td>' . $info['description'] . '</td>
             </tr>';
         }
@@ -1118,14 +1157,14 @@ class DashboardAnalysisService
         foreach ($data['quarterly_trends'] as $quarter) {
             $html .= '<div class="quarter-data">
                 <span><strong>' . $quarter['quarter'] . ' (' . $quarter['period'] . ')</strong></span>
-                <span>Average Score: <strong>' . round($quarter['average_score'], 2) . '</strong> | Evaluations: ' . $quarter['total_evaluations'] . '</span>
+                <span>Average Score: <strong>' . round($quarter['average_score'], 2) . '</strong> | Evaluations: <strong>' . $quarter['total_evaluations'] . '</strong></span>
             </div>';
         }
 
         $html .= '</div>
                 <div class="trend-analysis">
                     <h4>Trend Analysis:</h4>
-                    <p>' . $trendAnalysis . '</p>
+                    <p>' . $this->boldNumericValues($trendAnalysis) . '</p>
                 </div>';
 
         $html .= '</div>
@@ -1154,9 +1193,9 @@ class DashboardAnalysisService
             $html .= '<tr>
                 <td>' . $performer['user_name'] . '</td>
                 <td>' . $performer['organization'] . '</td>
-                <td>' . $performer['latest_score'] . '</td>
-                <td>' . $performer['average_score'] . '</td>
-                <td>' . $performer['total_evaluations'] . '</td>
+                <td><strong>' . $performer['latest_score'] . '</strong></td>
+                <td><strong>' . $performer['average_score'] . '</strong></td>
+                <td><strong>' . $performer['total_evaluations'] . '</strong></td>
                 <td class="' . strtolower($performer['performance_level']) . '">' . $performer['performance_level'] . '</td>
             </tr>';
         }
@@ -1188,9 +1227,9 @@ class DashboardAnalysisService
             $html .= '<tr>
                 <td>' . $performer['user_name'] . '</td>
                 <td>' . $performer['organization'] . '</td>
-                <td>' . $performer['latest_score'] . '</td>
-                <td>' . $performer['average_score'] . '</td>
-                <td>' . $performer['total_evaluations'] . '</td>
+                <td><strong>' . $performer['latest_score'] . '</strong></td>
+                <td><strong>' . $performer['average_score'] . '</strong></td>
+                <td><strong>' . $performer['total_evaluations'] . '</strong></td>
                 <td class="' . strtolower($performer['performance_level']) . '">' . $performer['performance_level'] . '</td>
             </tr>';
         }
@@ -1217,9 +1256,9 @@ class DashboardAnalysisService
         foreach ($data['category_analysis'] as $category => $analysis) {
             $html .= '<div class="category-card">
                 <div class="category-title">' . $category . '</div>
-                <div class="category-score">' . $analysis['average_score'] . '/4.0</div>
+                <div class="category-score"><strong>' . $analysis['average_score'] . '/4.0</strong></div>
                 <div>Performance Level: <span class="' . strtolower($analysis['performance_level']) . '">' . $analysis['performance_level'] . '</span></div>
-                <div>Evaluations: ' . $analysis['total_evaluations'] . '</div>
+                <div>Evaluations: <strong>' . $analysis['total_evaluations'] . '</strong></div>
             </div>';
         }
 
@@ -1250,10 +1289,10 @@ class DashboardAnalysisService
             $html .= '<tr>
                 <td>' . $individual['user_name'] . '</td>
                 <td>' . $individual['organization'] . '</td>
-                <td>' . $individual['latest_score'] . '</td>
-                <td>' . $individual['average_score'] . '</td>
+                <td><strong>' . $individual['latest_score'] . '</strong></td>
+                <td><strong>' . $individual['average_score'] . '</strong></td>
                 <td>' . $trendIcon . ' ' . ucfirst($individual['trend']) . '</td>
-                <td>' . $individual['total_evaluations'] . '</td>
+                <td><strong>' . $individual['total_evaluations'] . '</strong></td>
             </tr>';
         }
 
@@ -1564,27 +1603,27 @@ class DashboardAnalysisService
                 <div class="insights-container">
                     <div class="insight-section">
                         <h3>Overall Performance Assessment</h3>
-                        <p>' . $data['performance_insights']['overall_performance'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['overall_performance']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Performance Trend Analysis</h3>
-                        <p>' . $data['performance_insights']['trend_analysis'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['trend_analysis']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Key Strengths</h3>
-                        <p>' . $data['performance_insights']['strengths'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['strengths']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Areas for Improvement</h3>
-                        <p>' . $data['performance_insights']['improvement_areas'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['improvement_areas']) . '</p>
                     </div>
                     
                     <div class="insight-section">
                         <h3>Recommendations</h3>
-                        <p>' . $data['performance_insights']['recommendations'] . '</p>
+                        <p>' . $this->boldNumericValues($data['performance_insights']['recommendations']) . '</p>
                     </div>
                 </div>
             </div>';
@@ -1621,8 +1660,8 @@ class DashboardAnalysisService
                 $html .= '<tr>
                     <td class="' . strtolower($level) . '">' . $level . '</td>
                     <td>' . $info['range'] . '</td>
-                    <td>' . $info['count'] . '</td>
-                    <td>' . $percentage . '%</td>
+                    <td><strong>' . $info['count'] . '</strong></td>
+                    <td><strong>' . $percentage . '%</strong></td>
                     <td>' . $info['description'] . '</td>
                 </tr>';
             }
@@ -1645,7 +1684,7 @@ class DashboardAnalysisService
                 foreach ($data['quarterly_trends'] as $quarter) {
                     $html .= '<div class="quarter-data">
                         <span><strong>' . $quarter['quarter'] . ' (' . $quarter['period'] . ')</strong></span>
-                        <span>Average Score: <strong>' . round($quarter['average_score'], 2) . '</strong> | Evaluations: ' . $quarter['total_evaluations'] . '</span>
+                        <span>Average Score: <strong>' . round($quarter['average_score'], 2) . '</strong> | Evaluations: <strong>' . $quarter['total_evaluations'] . '</strong></span>
                     </div>';
                 }
 
@@ -1665,9 +1704,9 @@ class DashboardAnalysisService
                 foreach ($data['category_analysis'] as $category => $analysis) {
                     $html .= '<div class="category-card">
                         <div class="category-title">' . $category . '</div>
-                        <div class="category-score">' . $analysis['average_score'] . '/4.0</div>
+                        <div class="category-score"><strong>' . $analysis['average_score'] . '/4.0</strong></div>
                         <div>Performance Level: <span class="' . strtolower($analysis['performance_level']) . '">' . $analysis['performance_level'] . '</span></div>
-                        <div>Evaluations: ' . $analysis['total_evaluations'] . '</div>
+                        <div>Evaluations: <strong>' . $analysis['total_evaluations'] . '</strong></div>
                     </div>';
                 }
 
@@ -1696,7 +1735,7 @@ class DashboardAnalysisService
                 foreach ($data['evaluation_history'] as $evaluation) {
                     $html .= '<tr>
                         <td>' . $evaluation['date'] . '</td>
-                        <td>' . $evaluation['total_score'] . '</td>
+                        <td><strong>' . $evaluation['total_score'] . '</strong></td>
                         <td class="' . strtolower($evaluation['performance_level']) . '">' . $evaluation['performance_level'] . '</td>
                         <td>' . $evaluation['notes'] . '</td>
                     </tr>';

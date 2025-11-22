@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import axiosInstance from '../../../utils/axiosConfig';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaCloudUploadAlt, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import '../css/announcement.css';
 import { API_BASE } from '../../../utils/url';
 
@@ -34,10 +34,41 @@ function Announcement() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [fileSizeError, setFileSizeError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
 
   useEffect(() => {
     fetchAnnouncements(true); // Initial load with loading state
   }, []);
+
+  useEffect(() => {
+    filterAnnouncements();
+  }, [announcements, searchTerm, dateFilter]);
+
+  const filterAnnouncements = () => {
+    let filtered = [...announcements];
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(a => 
+        (a.title && a.title.toLowerCase().includes(searchLower)) ||
+        (a.description && a.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Filter by date
+    if (dateFilter) {
+      filtered = filtered.filter(a => {
+        const announcementDate = new Date(a.created_at);
+        const filterDate = new Date(dateFilter);
+        return announcementDate.toDateString() === filterDate.toDateString();
+      });
+    }
+
+    setFilteredAnnouncements(filtered);
+  };
 
   const fetchAnnouncements = async (isInitialLoad = false) => {
     try {
@@ -61,8 +92,15 @@ function Announcement() {
     
     
     const formData = new FormData();
-    if (title) formData.append('title', title);
-    if (description) formData.append('description', description);
+    // Always append title and description when editing, even if empty
+    if (editId) {
+      formData.append('title', title || '');
+      formData.append('description', description || '');
+    } else {
+      // For create mode, only append if they have values
+      if (title) formData.append('title', title);
+      if (description) formData.append('description', description);
+    }
     
     // Append multiple photos
     photos.forEach((photo, index) => {
@@ -109,13 +147,17 @@ function Announcement() {
   };
 
   const handleEdit = (a) => {
+    // Set all state first, then open modal to ensure form is properly initialized
     setEditId(a.id);
     setTitle(a.title || '');
     setDescription(a.description || '');
     setPhotos([]);
     setPreviews(a.photo_urls || []);
-    setShowModal(true);
     setMenuOpenId(null);
+    // Use setTimeout to ensure state updates are applied before modal opens
+    setTimeout(() => {
+      setShowModal(true);
+    }, 0);
   };
 
   const handleDelete = (id) => {
@@ -266,6 +308,94 @@ function Announcement() {
         </button>
       </div>
       {error && <div className="announcement-error">{error}</div>}
+      
+      {/* Search and Filter Section */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '20px', 
+        flexWrap: 'wrap',
+        alignItems: 'center'
+      }}>
+        <div style={{ 
+          position: 'relative', 
+          maxWidth: '320px',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <FaSearch style={{ 
+            position: 'absolute', 
+            left: '12px', 
+            color: '#666',
+            zIndex: 1,
+            fontSize: '14px'
+          }} />
+          <input
+            type="text"
+            placeholder="Search announcements..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 40px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '13px',
+              outline: 'none'
+            }}
+          />
+        </div>
+        <div style={{ 
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          maxWidth: '200px',
+          width: '100%'
+        }}>
+          <FaCalendarAlt style={{ 
+            position: 'absolute', 
+            left: '12px', 
+            color: '#666',
+            zIndex: 1,
+            fontSize: '14px'
+          }} />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 40px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '13px',
+              outline: 'none'
+            }}
+          />
+          {dateFilter && (
+            <button
+              onClick={() => setDateFilter('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                padding: '4px 8px',
+                background: '#e74c3c',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '11px',
+                zIndex: 2
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
       {/* Modal */}
       {showModal && (
         <div className="announcement-modal-overlay">
@@ -393,8 +523,20 @@ function Announcement() {
           }}>
             No announcements found. Click "Create Announcement" to create your first announcement.
           </div>
+        ) : filteredAnnouncements.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px', 
+            color: '#6c757d', 
+            fontSize: '18px', 
+            fontWeight: '500',
+            width: '100%',
+            gridColumn: '1 / -1'
+          }}>
+            No announcements match your search criteria.
+          </div>
         ) : (
-          announcements.map(a => (
+          filteredAnnouncements.map(a => (
             <div key={a.id} className="announcement-card"
               onClick={() => openFullModal(a)}
               style={{ cursor: 'pointer' }}

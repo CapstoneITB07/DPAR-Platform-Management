@@ -1203,6 +1203,16 @@ class SuperAdminController extends Controller
                     $app->logo = '/Assets/disaster_logo.png';
                 }
 
+                // Add full URLs for interview proof
+                if ($app->interview_proof && !str_starts_with($app->interview_proof, 'http')) {
+                    $app->interview_proof = Storage::url($app->interview_proof);
+                }
+
+                // Add full URLs for SEC file
+                if ($app->sec_file && !str_starts_with($app->sec_file, 'http')) {
+                    $app->sec_file = Storage::url($app->sec_file);
+                }
+
                 return $app;
             });
 
@@ -1916,6 +1926,58 @@ class SuperAdminController extends Controller
     }
 
     /**
+     * Update application SEC information (super admin only)
+     */
+    public function updateApplicationSEC(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'sec_number' => 'nullable|string|max:50',
+                'sec_file' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:5120'
+            ], [
+                'sec_number.max' => 'SEC number must not exceed 50 characters.',
+                'sec_file.file' => 'SEC document must be a valid file.',
+                'sec_file.mimes' => 'SEC document must be in JPEG, PNG, JPG, GIF, or PDF format.',
+                'sec_file.max' => 'SEC document file size must not exceed 5MB.'
+            ]);
+
+            $application = PendingApplication::findOrFail($id);
+
+            // Update SEC number if provided
+            if ($request->has('sec_number')) {
+                $application->sec_number = $request->sec_number ? trim($request->sec_number) : null;
+            }
+
+            // Handle SEC file upload if provided
+            if ($request->hasFile('sec_file')) {
+                // Delete old SEC file if exists
+                if ($application->sec_file && Storage::disk('public')->exists($application->sec_file)) {
+                    Storage::disk('public')->delete($application->sec_file);
+                }
+
+                // Store new SEC file
+                $secFilePath = $request->file('sec_file')->store('pending_sec_files', 'public');
+                $application->sec_file = $secFilePath;
+            }
+
+            $application->save();
+
+            // Add full URL for SEC file if it exists
+            if ($application->sec_file && !str_starts_with($application->sec_file, 'http')) {
+                $application->sec_file = Storage::url($application->sec_file);
+            }
+
+            return response()->json([
+                'message' => 'Application SEC information updated successfully',
+                'application' => $application
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error updating application SEC: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to update application SEC information'], 500);
+        }
+    }
+
+    /**
      * Get all announcements for super admin
      */
     public function getAllAnnouncements(Request $request)
@@ -1923,6 +1985,7 @@ class SuperAdminController extends Controller
         try {
             $perPage = $request->get('per_page', 15);
             $search = $request->get('search');
+            $date = $request->get('date');
 
             // Include soft-deleted announcements so super admin can see and restore them
             $query = Announcement::withTrashed();
@@ -1932,6 +1995,10 @@ class SuperAdminController extends Controller
                     $q->where('title', 'like', "%{$search}%")
                         ->orWhere('description', 'like', "%{$search}%");
                 });
+            }
+
+            if ($date) {
+                $query->whereDate('created_at', $date);
             }
 
             $announcements = $query->orderBy('created_at', 'desc')->paginate($perPage);
@@ -2065,6 +2132,7 @@ class SuperAdminController extends Controller
         try {
             $perPage = $request->get('per_page', 15);
             $search = $request->get('search');
+            $date = $request->get('date');
 
             // Include soft-deleted training programs so super admin can see and restore them
             $query = TrainingProgram::withTrashed();
@@ -2075,6 +2143,10 @@ class SuperAdminController extends Controller
                         ->orWhere('description', 'like', "%{$search}%")
                         ->orWhere('location', 'like', "%{$search}%");
                 });
+            }
+
+            if ($date) {
+                $query->whereDate('date', $date);
             }
 
             $programs = $query->orderBy('created_at', 'desc')->paginate($perPage);

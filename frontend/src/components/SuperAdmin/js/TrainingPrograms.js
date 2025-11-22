@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SuperAdminLayout from './SuperAdminLayout';
 import '../css/TrainingPrograms.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGraduationCap, faSearch, faTrash, faCalendar, faMapMarkerAlt, faImage, faEye, faEyeSlash, faStar, faSync, faTimes, faUndo, faBan, faExclamationTriangle, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faGraduationCap, faSearch, faTrash, faCalendar, faMapMarkerAlt, faImage, faEye, faEyeSlash, faStar, faSync, faTimes, faUndo, faBan, faExclamationTriangle, faChevronLeft, faChevronRight, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
 import { API_BASE } from '../../../utils/url';
 
@@ -12,6 +12,7 @@ function TrainingPrograms() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
@@ -35,7 +36,8 @@ function TrainingPrograms() {
       const params = new URLSearchParams({
         page: currentPage,
         per_page: 15,
-        ...(searchTerm && { search: searchTerm })
+        ...(searchTerm && { search: searchTerm }),
+        ...(dateFilter && { date: dateFilter })
       });
       const response = await axiosInstance.get(`${API_BASE}/api/superadmin/training-programs?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -50,7 +52,7 @@ function TrainingPrograms() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, dateFilter]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -282,6 +284,39 @@ function TrainingPrograms() {
                 setCurrentPage(1);
               }}
             />
+          </div>
+          <div className="sa-trainingprograms-search-box" style={{ maxWidth: '200px' }}>
+            <FontAwesomeIcon icon={faCalendarAlt} />
+            <input
+              type="date"
+              placeholder="Filter by date..."
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            {dateFilter && (
+              <button
+                onClick={() => setDateFilter('')}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '4px 8px',
+                  background: '#e74c3c',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  zIndex: 2
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
         </div>
 

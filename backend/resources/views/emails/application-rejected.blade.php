@@ -45,6 +45,32 @@
             margin: 15px 0;
         }
 
+        .reapply-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 25px 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .reapply-button:hover {
+            background: linear-gradient(135deg, #218838, #1ea080);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .reapply-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
         .footer {
             text-align: center;
             margin-top: 30px;
@@ -84,6 +110,13 @@
         </ul>
 
         <p>We appreciate your understanding and encourage you to reapply in the future if your circumstances change.</p>
+
+        <div class="reapply-container">
+            <a href="{{ env('FRONTEND_URL', config('app.url')) }}" class="reapply-button">
+                🔄 Reapply Now
+            </a>
+            <p style="margin-top: 10px; color: #666; font-size: 14px;">Click the button above to submit a new application with updated information.</p>
+        </div>
 
         <p>If you have any questions, please don't hesitate to contact our support team.</p>
 

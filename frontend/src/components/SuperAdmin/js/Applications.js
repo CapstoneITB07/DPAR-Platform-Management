@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SuperAdminLayout from './SuperAdminLayout';
 import '../css/Applications.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileAlt, faCheckCircle, faTimesCircle, faEye, faSearch, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faFileAlt, faCheckCircle, faTimesCircle, faEye, faSearch, faTrash, faFileImage, faIdCard, faImage } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
 import { API_BASE } from '../../../utils/url';
 import Modal from 'react-modal';
@@ -23,6 +23,10 @@ function Applications() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [processingAppId, setProcessingAppId] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [editingSEC, setEditingSEC] = useState(false);
+  const [secNumber, setSecNumber] = useState('');
+  const [secFile, setSecFile] = useState(null);
+  const [updatingSEC, setUpdatingSEC] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -53,9 +57,89 @@ function Applications() {
     }
   };
 
+  const getFileUrl = (filePath) => {
+    if (!filePath) return null;
+    // If already a full URL, return as is
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    // If starts with /storage/, it's already a storage URL from backend
+    if (filePath.startsWith('/storage/')) {
+      return `${API_BASE}${filePath}`;
+    }
+    // If it's a storage path without leading slash
+    if (filePath.startsWith('storage/')) {
+      return `${API_BASE}/${filePath}`;
+    }
+    // Otherwise, assume it's a storage path and prepend API_BASE
+    return `${API_BASE}/storage/${filePath}`;
+  };
+
   const viewApplication = (app) => {
     setSelectedApp(app);
+    setSecNumber(app.sec_number || '');
+    setSecFile(null);
+    setEditingSEC(false);
     setShowModal(true);
+  };
+
+  const handleEditSEC = () => {
+    setEditingSEC(true);
+  };
+
+  const handleCancelEditSEC = () => {
+    setEditingSEC(false);
+    setSecNumber(selectedApp?.sec_number || '');
+    setSecFile(null);
+  };
+
+  const handleSaveSEC = async () => {
+    if (!selectedApp) return;
+
+    try {
+      setUpdatingSEC(true);
+      const formData = new FormData();
+      if (secNumber !== null) {
+        formData.append('sec_number', secNumber || '');
+      }
+      if (secFile) {
+        formData.append('sec_file', secFile);
+      }
+
+      const response = await axiosInstance.put(
+        `${API_BASE}/api/superadmin/pending-applications/${selectedApp.id}/sec`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      // Update the selected app with new data
+      setSelectedApp({
+        ...selectedApp,
+        sec_number: response.data.application.sec_number,
+        sec_file: response.data.application.sec_file
+      });
+
+      // Update in the applications list
+      setApplications(prev => prev.map(app => 
+        app.id === selectedApp.id 
+          ? { ...app, sec_number: response.data.application.sec_number, sec_file: response.data.application.sec_file }
+          : app
+      ));
+
+      setEditingSEC(false);
+      setSecFile(null);
+      setSuccessMessage('SEC information updated successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating SEC:', error);
+      alert('Failed to update SEC information: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setUpdatingSEC(false);
+    }
   };
 
   const handleApprove = async (appId) => {
@@ -243,6 +327,35 @@ function Applications() {
           <h1><FontAwesomeIcon icon={faFileAlt} /> Applications</h1>
         </div>
 
+        {successMessage && (
+          <div style={{
+            padding: '12px 16px',
+            backgroundColor: '#d4edda',
+            color: '#155724',
+            border: '1px solid #c3e6cb',
+            borderRadius: '4px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span>{successMessage}</span>
+            <button
+              onClick={() => setSuccessMessage('')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#155724',
+                cursor: 'pointer',
+                fontSize: '18px',
+                padding: '0 8px'
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="sa-applications-filters-section">
           <div className="sa-applications-search-box">
             <FontAwesomeIcon icon={faSearch} />
@@ -428,6 +541,221 @@ function Applications() {
                   <p><strong>Phone:</strong> {selectedApp.phone}</p>
                   <p><strong>Username:</strong> {selectedApp.username}</p>
                 </div>
+                <div className="sa-applications-detail-group">
+                  <h3>Interview Proof <span style={{color: '#dc3545'}}>*</span></h3>
+                  {selectedApp.interview_proof ? (
+                    <div style={{ marginTop: '10px' }}>
+                      {(() => {
+                        const proofUrl = getFileUrl(selectedApp.interview_proof);
+                        return (
+                          <>
+                            <a 
+                              href={proofUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '8px',
+                                color: '#c0392b',
+                                textDecoration: 'none',
+                                fontWeight: '500'
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faImage} />
+                              View Interview Proof
+                            </a>
+                            <div style={{ marginTop: '10px' }}>
+                              <img 
+                                src={proofUrl} 
+                                alt="Interview Proof" 
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  maxHeight: '300px', 
+                                  border: '1px solid #ddd',
+                                  borderRadius: '8px',
+                                  padding: '5px',
+                                  backgroundColor: '#fff'
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  const errorDiv = e.target.nextSibling;
+                                  if (errorDiv) errorDiv.style.display = 'block';
+                                }}
+                              />
+                              <div style={{ display: 'none', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                                <p style={{ margin: 0, color: '#666' }}>Unable to display image. <a href={proofUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#c0392b' }}>Click to open</a></p>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <p style={{ color: '#dc3545', fontStyle: 'italic' }}>No interview proof uploaded</p>
+                  )}
+                </div>
+
+                <div className="sa-applications-detail-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <h3 style={{ margin: 0 }}>SEC Registration (Optional)</h3>
+                    {!editingSEC && selectedApp.status === 'pending' && (
+                      <button
+                        onClick={handleEditSEC}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#c0392b',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Edit SEC
+                      </button>
+                    )}
+                  </div>
+                  
+                  {editingSEC ? (
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                          SEC Number:
+                        </label>
+                        <input
+                          type="text"
+                          value={secNumber}
+                          onChange={(e) => setSecNumber(e.target.value)}
+                          placeholder="Enter SEC number (optional)"
+                          maxLength="50"
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '5px', fontWeight: '500' }}>
+                          SEC Document (Optional):
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => setSecFile(e.target.files[0])}
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}
+                        />
+                        <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+                          Supported formats: JPEG, PNG, JPG, GIF, PDF (Max 5MB)
+                        </small>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button
+                          onClick={handleSaveSEC}
+                          disabled={updatingSEC}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: updatingSEC ? 'not-allowed' : 'pointer',
+                            fontSize: '14px',
+                            opacity: updatingSEC ? 0.7 : 1
+                          }}
+                        >
+                          {updatingSEC ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={handleCancelEditSEC}
+                          disabled={updatingSEC}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#6c757d',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: updatingSEC ? 'not-allowed' : 'pointer',
+                            fontSize: '14px'
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {selectedApp.sec_number && (
+                        <p><strong>SEC Number:</strong> {selectedApp.sec_number}</p>
+                      )}
+                      {selectedApp.sec_file ? (
+                        (() => {
+                          const secUrl = getFileUrl(selectedApp.sec_file);
+                          const isPdf = secUrl.toLowerCase().includes('.pdf');
+                          return (
+                            <div style={{ marginTop: '10px' }}>
+                              <a 
+                                href={secUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                style={{ 
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '8px',
+                                  color: '#c0392b',
+                                  textDecoration: 'none',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                <FontAwesomeIcon icon={faIdCard} />
+                                {isPdf ? 'View SEC Document (PDF)' : 'View SEC Document'}
+                              </a>
+                              {!isPdf && (
+                                <div style={{ marginTop: '10px' }}>
+                                  <img 
+                                    src={secUrl} 
+                                    alt="SEC Document" 
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '300px', 
+                                      border: '1px solid #ddd',
+                                      borderRadius: '8px',
+                                      padding: '5px',
+                                      backgroundColor: '#fff'
+                                    }}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      const errorDiv = e.target.nextSibling;
+                                      if (errorDiv) errorDiv.style.display = 'block';
+                                    }}
+                                  />
+                                  <div style={{ display: 'none', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                                    <p style={{ margin: 0, color: '#666' }}>Unable to display image. <a href={secUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#c0392b' }}>Click to open</a></p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <p style={{ color: '#666', fontStyle: 'italic' }}>No SEC document uploaded</p>
+                      )}
+                      {!selectedApp.sec_number && !selectedApp.sec_file && (
+                        <p style={{ color: '#666', fontStyle: 'italic' }}>No SEC information provided</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
                 <div className="sa-applications-detail-group">
                   <h3>Application Status</h3>
                   <p><strong>Status:</strong> <span className={`sa-applications-badge sa-applications-badge-${selectedApp.status}`}>

@@ -5,7 +5,24 @@ import axiosInstance from '../../../utils/axiosConfig';
 import '../css/CertificateModal.css';
 
 const CertificateModal = ({ show, onClose, associates, certificateData, onCertificateDataChange }) => {
-  const [localData, setLocalData] = useState(certificateData);
+  const [localData, setLocalData] = useState({
+    ...certificateData,
+    // Customization defaults
+    backgroundColor: certificateData?.backgroundColor || '#014A9B',
+    accentColor: certificateData?.accentColor || '#F7B737',
+    lightAccentColor: certificateData?.lightAccentColor || '#4AC2E0',
+    borderColor: certificateData?.borderColor || '#2563b6',
+    showTransparentBox: certificateData?.showTransparentBox !== undefined ? certificateData.showTransparentBox : true,
+    // Per-part font settings
+    titleFontFamily: certificateData?.titleFontFamily || 'Playfair Display',
+    titleFontSize: certificateData?.titleFontSize || 'medium',
+    nameFontFamily: certificateData?.nameFontFamily || 'Playfair Display',
+    nameFontSize: certificateData?.nameFontSize || 'medium',
+    messageFontFamily: certificateData?.messageFontFamily || 'Montserrat',
+    messageFontSize: certificateData?.messageFontSize || 'medium',
+    signatoryFontFamily: certificateData?.signatoryFontFamily || 'Montserrat',
+    signatoryFontSize: certificateData?.signatoryFontSize || 'medium',
+  });
   const [downloading, setDownloading] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [recipients, setRecipients] = useState([{ name: '' }]);
@@ -13,6 +30,10 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   const [debounceTimer, setDebounceTimer] = useState(null);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [backgroundImagePreview, setBackgroundImagePreview] = useState(null);
+  const [designImage, setDesignImage] = useState(null);
+  const [designImagePreview, setDesignImagePreview] = useState(null);
 
   // Helper function to calculate word count
   const getWordCount = (text) => {
@@ -51,7 +72,23 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   };
 
   useEffect(() => {
-    setLocalData(certificateData);
+    setLocalData({
+      ...certificateData,
+      backgroundColor: certificateData?.backgroundColor || '#014A9B',
+      accentColor: certificateData?.accentColor || '#F7B737',
+      lightAccentColor: certificateData?.lightAccentColor || '#4AC2E0',
+      borderColor: certificateData?.borderColor || '#2563b6',
+      showTransparentBox: certificateData?.showTransparentBox !== undefined ? certificateData.showTransparentBox : true,
+      // Per-part font settings
+      titleFontFamily: certificateData?.titleFontFamily || 'Playfair Display',
+      titleFontSize: certificateData?.titleFontSize || 'medium',
+      nameFontFamily: certificateData?.nameFontFamily || 'Playfair Display',
+      nameFontSize: certificateData?.nameFontSize || 'medium',
+      messageFontFamily: certificateData?.messageFontFamily || 'Montserrat',
+      messageFontSize: certificateData?.messageFontSize || 'medium',
+      signatoryFontFamily: certificateData?.signatoryFontFamily || 'Montserrat',
+      signatoryFontSize: certificateData?.signatoryFontSize || 'medium',
+    });
   }, [certificateData]);
 
   // Cleanup timer on unmount
@@ -64,7 +101,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   }, [debounceTimer]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     
     // Special handling for message field to prevent spam
     if (name === 'message') {
@@ -84,11 +121,100 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
       }
     }
     
-    const updated = { ...localData, [name]: value };
+    const updated = { 
+      ...localData, 
+      [name]: type === 'checkbox' ? checked : value 
+    };
     setLocalData(updated);
     
     // Use debounced update for parent component
     debouncedUpdate(updated);
+  };
+
+  const handleBackgroundImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type - check specific MIME types
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showWarningMessage('Image format not allowed. Please upload JPEG, PNG, GIF, or WebP format.');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Validate file extension
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      const extension = file.name.split('.').pop().toLowerCase();
+      if (!allowedExtensions.includes(extension)) {
+        showWarningMessage('File type not allowed. Allowed types: .jpg, .jpeg, .png, .gif, .webp');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showWarningMessage('Image size must be less than 5MB.');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      setBackgroundImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBackgroundImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDesignImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type - check specific MIME types
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        showWarningMessage('Image format not allowed. Please upload JPEG, PNG, GIF, or WebP format.');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Validate file extension
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      const extension = file.name.split('.').pop().toLowerCase();
+      if (!allowedExtensions.includes(extension)) {
+        showWarningMessage('File type not allowed. Allowed types: .jpg, .jpeg, .png, .gif, .webp');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showWarningMessage('Image size must be less than 5MB.');
+        e.target.value = ''; // Clear the input
+        return;
+      }
+      
+      setDesignImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDesignImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeBackgroundImage = (e) => {
+    setBackgroundImage(null);
+    setBackgroundImagePreview(null);
+    const fileInput = document.getElementById('backgroundImage');
+    if (fileInput) fileInput.value = '';
+  };
+
+  const removeDesignImage = (e) => {
+    setDesignImage(null);
+    setDesignImagePreview(null);
+    const fileInput = document.getElementById('designImage');
+    if (fileInput) fileInput.value = '';
   };
 
   const handleSignatoryChange = (index, field, value) => {
@@ -233,22 +359,55 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
         ? `${assetBaseUrl}/${selectedAssociateObj.logo.replace('/Assets/', '')}`
         : `${assetBaseUrl}/disaster_logo.png`;
 
-      const swirlTopUrl = `${assetBaseUrl}/swirl_top_left.png`;
-      const swirlBottomUrl = `${assetBaseUrl}/swirl_bottom_right.png`;
-      const medalUrl = `${assetBaseUrl}/star.png`;
+      // Create FormData for file uploads
+      const formData = new FormData();
+      
+      // Add required design image
+      if (designImage) {
+        formData.append('designImage', designImage);
+      }
+      
+      // Add optional background image
+      if (backgroundImage) {
+        formData.append('backgroundImage', backgroundImage);
+      }
+      
+      // Add certificate data
+      const certificatePayload = {
+        name: localData.name,
+        date: localData.date,
+        signatories: localData.signatories || [{ name: '', title: '' }],
+        message: localData.message,
+        logoUrl: logoUrl,
+        format: 'pdf',
+        timestamp: Date.now(),
+        // Customization options
+        backgroundColor: localData.backgroundColor || '#014A9B',
+        accentColor: localData.accentColor || '#F7B737',
+        lightAccentColor: localData.lightAccentColor || '#4AC2E0',
+        borderColor: localData.borderColor || '#2563b6',
+        showTransparentBox: localData.showTransparentBox !== undefined ? localData.showTransparentBox : true,
+        // Per-part font settings
+        titleFontFamily: localData.titleFontFamily || 'Playfair Display',
+        titleFontSize: localData.titleFontSize || 'medium',
+        nameFontFamily: localData.nameFontFamily || 'Playfair Display',
+        nameFontSize: localData.nameFontSize || 'medium',
+        messageFontFamily: localData.messageFontFamily || 'Montserrat',
+        messageFontSize: localData.messageFontSize || 'medium',
+        signatoryFontFamily: localData.signatoryFontFamily || 'Montserrat',
+        signatoryFontSize: localData.signatoryFontSize || 'medium',
+      };
+      
+      formData.append('certificateData', JSON.stringify(certificatePayload));
 
       if (isBulkMode) {
+        // Add bulk recipients
+        formData.append('recipients', JSON.stringify(recipients));
+        
         // Bulk generation
         const response = await axiosInstance.post(
           `${backendBaseUrl}/api/certificates/bulk`,
-          {
-            recipients: recipients,
-            signatories: localData.signatories || [{ name: '', title: '' }],
-            message: localData.message,
-            logoUrl: logoUrl,
-            format: 'pdf',
-            timestamp: Date.now(),
-          },
+          formData,
           {
             responseType: 'blob',
             headers: {
@@ -273,18 +432,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
         // Single generation
         const response = await axiosInstance.post(
           `${backendBaseUrl}/api/certificates`,
-          {
-            name: localData.name,
-            date: localData.date,
-            signatories: localData.signatories || [{ name: '', title: '' }],
-            message: localData.message,
-            logoUrl: logoUrl,
-            swirlTopUrl: swirlTopUrl,
-            swirlBottomUrl: swirlBottomUrl,
-            medalUrl: medalUrl,
-            format: 'pdf',
-            timestamp: Date.now(),
-          },
+          formData,
           {
             responseType: 'blob',
             headers: {
@@ -591,6 +739,443 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                     </div>
                   </div>
                 </div>
+
+                {/* Certificate Customization Section */}
+                <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '2px solid #e0e0e0' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px', color: '#333' }}>
+                    Certificate Customization
+                  </h3>
+
+                  {/* Image Uploads */}
+                  <div className="certificate-form-group">
+                    <label htmlFor="backgroundImage" style={{ display: 'block', marginBottom: '8px' }}>
+                      Background Image (Optional):
+                      <small style={{ color: '#666', marginLeft: '8px', fontWeight: 'normal' }}>
+                        Recommended: 1123x794px (A4 Landscape)
+                      </small>
+                    </label>
+                    <input
+                      type="file"
+                      id="backgroundImage"
+                      accept="image/*"
+                      onChange={handleBackgroundImageChange}
+                      style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
+                    />
+                    {backgroundImagePreview && (
+                      <div style={{ position: 'relative', display: 'inline-block', marginTop: '8px' }}>
+                        <img 
+                          src={backgroundImagePreview} 
+                          alt="Background preview" 
+                          style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '4px', border: '1px solid #ddd' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={removeBackgroundImage}
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#f44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="certificate-form-group">
+                    <label htmlFor="designImage" style={{ display: 'block', marginBottom: '8px' }}>
+                      Design Overlay Image (Optional):
+                      <small style={{ color: '#666', marginLeft: '8px', fontWeight: 'normal' }}>
+                        If not provided, default geometric pattern will be used
+                      </small>
+                    </label>
+                    <input
+                      type="file"
+                      id="designImage"
+                      accept="image/*"
+                      onChange={handleDesignImageChange}
+                      style={{ width: '100%', padding: '8px', marginBottom: '8px' }}
+                    />
+                    {designImagePreview && (
+                      <div style={{ position: 'relative', display: 'inline-block', marginTop: '8px' }}>
+                        <img 
+                          src={designImagePreview} 
+                          alt="Design preview" 
+                          style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '4px', border: '1px solid #ddd' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={removeDesignImage}
+                          style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: '#f44336',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Color Customization */}
+                  <div style={{ marginTop: '16px' }}>
+                    {designImagePreview && (
+                      <div style={{ 
+                        padding: '8px 12px', 
+                        marginBottom: '12px', 
+                        backgroundColor: '#fff3cd', 
+                        border: '1px solid #ffc107', 
+                        borderRadius: '4px',
+                        color: '#856404',
+                        fontSize: '0.9rem'
+                      }}>
+                        <strong>Note:</strong> Color customization is disabled because a design overlay image is active. Remove the design overlay to enable color customization.
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="certificate-form-group">
+                        <label htmlFor="backgroundColor" style={{ opacity: designImagePreview ? 0.6 : 1 }}>
+                          Primary Color (Background):
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            id="backgroundColor"
+                            name="backgroundColor"
+                            value={localData.backgroundColor || '#014A9B'}
+                            onChange={handleChange}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              width: '60px', 
+                              height: '40px', 
+                              cursor: designImagePreview ? 'not-allowed' : 'pointer', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1
+                            }}
+                          />
+                          <input
+                            type="text"
+                            value={localData.backgroundColor || '#014A9B'}
+                            onChange={(e) => handleChange({ target: { name: 'backgroundColor', value: e.target.value } })}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              flex: 1, 
+                              padding: '8px', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1,
+                              cursor: designImagePreview ? 'not-allowed' : 'text',
+                              backgroundColor: designImagePreview ? '#f5f5f5' : 'white'
+                            }}
+                            placeholder="#014A9B"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="certificate-form-group">
+                        <label htmlFor="accentColor" style={{ opacity: designImagePreview ? 0.6 : 1 }}>
+                          Accent Color (Yellow):
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            id="accentColor"
+                            name="accentColor"
+                            value={localData.accentColor || '#F7B737'}
+                            onChange={handleChange}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              width: '60px', 
+                              height: '40px', 
+                              cursor: designImagePreview ? 'not-allowed' : 'pointer', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1
+                            }}
+                          />
+                          <input
+                            type="text"
+                            value={localData.accentColor || '#F7B737'}
+                            onChange={(e) => handleChange({ target: { name: 'accentColor', value: e.target.value } })}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              flex: 1, 
+                              padding: '8px', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1,
+                              cursor: designImagePreview ? 'not-allowed' : 'text',
+                              backgroundColor: designImagePreview ? '#f5f5f5' : 'white'
+                            }}
+                            placeholder="#F7B737"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="certificate-form-group">
+                        <label htmlFor="lightAccentColor" style={{ opacity: designImagePreview ? 0.6 : 1 }}>
+                          Light Accent Color (Light Blue):
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            id="lightAccentColor"
+                            name="lightAccentColor"
+                            value={localData.lightAccentColor || '#4AC2E0'}
+                            onChange={handleChange}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              width: '60px', 
+                              height: '40px', 
+                              cursor: designImagePreview ? 'not-allowed' : 'pointer', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1
+                            }}
+                          />
+                          <input
+                            type="text"
+                            value={localData.lightAccentColor || '#4AC2E0'}
+                            onChange={(e) => handleChange({ target: { name: 'lightAccentColor', value: e.target.value } })}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              flex: 1, 
+                              padding: '8px', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1,
+                              cursor: designImagePreview ? 'not-allowed' : 'text',
+                              backgroundColor: designImagePreview ? '#f5f5f5' : 'white'
+                            }}
+                            placeholder="#4AC2E0"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="certificate-form-group">
+                        <label htmlFor="borderColor" style={{ opacity: designImagePreview ? 0.6 : 1 }}>
+                          Border Color (Center Box):
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="color"
+                            id="borderColor"
+                            name="borderColor"
+                            value={localData.borderColor || '#2563b6'}
+                            onChange={handleChange}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              width: '60px', 
+                              height: '40px', 
+                              cursor: designImagePreview ? 'not-allowed' : 'pointer', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1
+                            }}
+                          />
+                          <input
+                            type="text"
+                            value={localData.borderColor || '#2563b6'}
+                            onChange={(e) => handleChange({ target: { name: 'borderColor', value: e.target.value } })}
+                            disabled={!!designImagePreview}
+                            style={{ 
+                              flex: 1, 
+                              padding: '8px', 
+                              border: '1px solid #ddd', 
+                              borderRadius: '4px',
+                              opacity: designImagePreview ? 0.5 : 1,
+                              cursor: designImagePreview ? 'not-allowed' : 'text',
+                              backgroundColor: designImagePreview ? '#f5f5f5' : 'white'
+                            }}
+                            placeholder="#2563b6"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transparent Box Toggle */}
+                  <div className="certificate-form-group" style={{ marginTop: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        name="showTransparentBox"
+                        checked={localData.showTransparentBox !== undefined ? localData.showTransparentBox : true}
+                        onChange={handleChange}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span>Show Transparent White Box (Center Panel)</span>
+                    </label>
+                  </div>
+
+                  {/* Font Customization - Per Part */}
+                  <div style={{ marginTop: '16px' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px', color: '#333' }}>
+                      Font Customization (Per Part)
+                    </h4>
+                    
+                    {/* Title Font */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div className="certificate-form-group">
+                        <label htmlFor="titleFontFamily">Title Font Family:</label>
+                        <select
+                          id="titleFontFamily"
+                          name="titleFontFamily"
+                          value={localData.titleFontFamily || 'Playfair Display'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="Playfair Display">Playfair Display (Elegant)</option>
+                          <option value="Montserrat">Montserrat (Modern)</option>
+                          <option value="Roboto">Roboto (Clean)</option>
+                          <option value="Open Sans">Open Sans (Professional)</option>
+                          <option value="Lato">Lato (Classic)</option>
+                        </select>
+                      </div>
+                      <div className="certificate-form-group">
+                        <label htmlFor="titleFontSize">Title Font Size:</label>
+                        <select
+                          id="titleFontSize"
+                          name="titleFontSize"
+                          value={localData.titleFontSize || 'medium'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="small">Small</option>
+                          <option value="medium">Medium</option>
+                          <option value="large">Large</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Name Font */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div className="certificate-form-group">
+                        <label htmlFor="nameFontFamily">Name Font Family:</label>
+                        <select
+                          id="nameFontFamily"
+                          name="nameFontFamily"
+                          value={localData.nameFontFamily || 'Playfair Display'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="Playfair Display">Playfair Display (Elegant)</option>
+                          <option value="Montserrat">Montserrat (Modern)</option>
+                          <option value="Roboto">Roboto (Clean)</option>
+                          <option value="Open Sans">Open Sans (Professional)</option>
+                          <option value="Lato">Lato (Classic)</option>
+                        </select>
+                      </div>
+                      <div className="certificate-form-group">
+                        <label htmlFor="nameFontSize">Name Font Size:</label>
+                        <select
+                          id="nameFontSize"
+                          name="nameFontSize"
+                          value={localData.nameFontSize || 'medium'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="small">Small</option>
+                          <option value="medium">Medium</option>
+                          <option value="large">Large</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Message Font */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div className="certificate-form-group">
+                        <label htmlFor="messageFontFamily">Message Font Family:</label>
+                        <select
+                          id="messageFontFamily"
+                          name="messageFontFamily"
+                          value={localData.messageFontFamily || 'Montserrat'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="Montserrat">Montserrat (Default)</option>
+                          <option value="Playfair Display">Playfair Display (Elegant)</option>
+                          <option value="Roboto">Roboto (Modern)</option>
+                          <option value="Open Sans">Open Sans (Clean)</option>
+                          <option value="Lato">Lato (Professional)</option>
+                        </select>
+                      </div>
+                      <div className="certificate-form-group">
+                        <label htmlFor="messageFontSize">Message Font Size:</label>
+                        <select
+                          id="messageFontSize"
+                          name="messageFontSize"
+                          value={localData.messageFontSize || 'medium'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="small">Small</option>
+                          <option value="medium">Medium</option>
+                          <option value="large">Large</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Signatory Font */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="certificate-form-group">
+                        <label htmlFor="signatoryFontFamily">Signatory Font Family:</label>
+                        <select
+                          id="signatoryFontFamily"
+                          name="signatoryFontFamily"
+                          value={localData.signatoryFontFamily || 'Montserrat'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="Montserrat">Montserrat (Default)</option>
+                          <option value="Playfair Display">Playfair Display (Elegant)</option>
+                          <option value="Roboto">Roboto (Modern)</option>
+                          <option value="Open Sans">Open Sans (Clean)</option>
+                          <option value="Lato">Lato (Professional)</option>
+                        </select>
+                      </div>
+                      <div className="certificate-form-group">
+                        <label htmlFor="signatoryFontSize">Signatory Font Size:</label>
+                        <select
+                          id="signatoryFontSize"
+                          name="signatoryFontSize"
+                          value={localData.signatoryFontSize || 'medium'}
+                          onChange={handleChange}
+                          style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        >
+                          <option value="small">Small</option>
+                          <option value="medium">Medium</option>
+                          <option value="large">Large</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </form>
             </div>
 
@@ -599,7 +1184,12 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                 Certificate Preview
               </h3>
               <div className="certificate-preview-section enhanced-preview-section" style={{ marginBottom: 8 }}>
-                <CertificatePreview data={localData} logoUrl={logoUrl} />
+                <CertificatePreview 
+                  data={localData} 
+                  logoUrl={logoUrl}
+                  backgroundImagePreview={backgroundImagePreview}
+                  designImagePreview={designImagePreview}
+                />
                 {downloading && (
                   <div className="enhanced-spinner-overlay">
                     <div className="enhanced-spinner" />

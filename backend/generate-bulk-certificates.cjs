@@ -17,6 +17,101 @@ function imageToBase64(imagePath) {
 function processTemplate(template, data) {
   let result = template;
   
+  // Handle if/elif/else conditions - process multiple times to handle nested structures
+  let maxIterations = 10;
+  let iteration = 0;
+  
+  while (result.includes('{% if') && iteration < maxIterations) {
+    iteration++;
+    
+    // Handle if/elif/else chains
+    const elifPattern = /{%\s*if\s+([^%]+)\s*%}([\s\S]*?)(?:{%\s*elif\s+([^%]+)\s*%}([\s\S]*?))*(?:{%\s*else\s*%}([\s\S]*?))?{%\s*endif\s*%}/g;
+    result = result.replace(elifPattern, (match) => {
+      // Extract all parts
+      const ifMatch = match.match(/{%\s*if\s+([^%]+)\s*%}([\s\S]*?)(?:{%\s*elif|{%\s*else|{%\s*endif)/);
+      if (!ifMatch) return match;
+      
+      const firstCondition = ifMatch[1].trim();
+      const firstContent = ifMatch[2];
+      
+      // Extract elif blocks
+      const elifMatches = [...match.matchAll(/{%\s*elif\s+([^%]+)\s*%}([\s\S]*?)(?:{%\s*elif|{%\s*else|{%\s*endif)/g)];
+      const conditions = [firstCondition];
+      const contents = [firstContent];
+      
+      elifMatches.forEach(elifMatch => {
+        conditions.push(elifMatch[1].trim());
+        contents.push(elifMatch[2]);
+      });
+      
+      // Extract else content
+      const elseMatch = match.match(/{%\s*else\s*%}([\s\S]*?){%\s*endif\s*%}/);
+      const elseContent = elseMatch ? elseMatch[1] : '';
+      
+      // Evaluate conditions
+      for (let i = 0; i < conditions.length; i++) {
+        const condition = conditions[i];
+        let conditionMet = false;
+        
+        // Check for variable existence or equality
+        if (condition.includes('==')) {
+          const [varName, value] = condition.split('==').map(s => s.trim().replace(/['"]/g, ''));
+          conditionMet = String(data[varName] || '') === value;
+        } else if (condition.includes('backgroundBase64')) {
+          conditionMet = !!(data.backgroundBase64 && String(data.backgroundBase64).trim() !== '');
+        } else if (condition.includes('backgroundImageUrl')) {
+          conditionMet = !!(data.backgroundImageUrl && String(data.backgroundImageUrl).trim() !== '');
+        } else if (condition.includes('designImageBase64')) {
+          conditionMet = !!(data.designImageBase64 && String(data.designImageBase64).trim() !== '');
+        } else if (condition.includes('designImageUrl')) {
+          conditionMet = !!(data.designImageUrl && String(data.designImageUrl).trim() !== '');
+        } else if (condition.includes('showTransparentBox')) {
+          conditionMet = data.showTransparentBox !== false;
+        } else {
+          const varName = condition.trim();
+          conditionMet = data[varName] !== undefined && data[varName] !== null && data[varName] !== false && data[varName] !== '';
+        }
+        
+        if (conditionMet) {
+          return contents[i];
+        }
+      }
+      
+      return elseContent || '';
+    });
+    
+    // Handle simple if/else (without elif)
+    const ifRegex = /{%\s*if\s+([^%]+)\s*%}([\s\S]*?)(?:{%\s*else\s*%}([\s\S]*?))?{%\s*endif\s*%}/g;
+    result = result.replace(ifRegex, (match, condition, ifContent, elseContent) => {
+      // Skip if already processed (contains elif)
+      if (match.includes('elif')) {
+        return match;
+      }
+      
+      let conditionMet = false;
+      
+      if (condition.includes('==')) {
+        const [varName, value] = condition.split('==').map(s => s.trim().replace(/['"]/g, ''));
+        conditionMet = String(data[varName] || '') === value;
+      } else if (condition.includes('backgroundBase64')) {
+        conditionMet = !!(data.backgroundBase64 && String(data.backgroundBase64).trim() !== '');
+      } else if (condition.includes('backgroundImageUrl')) {
+        conditionMet = !!(data.backgroundImageUrl && String(data.backgroundImageUrl).trim() !== '');
+      } else if (condition.includes('designImageBase64')) {
+        conditionMet = !!(data.designImageBase64 && String(data.designImageBase64).trim() !== '');
+      } else if (condition.includes('designImageUrl')) {
+        conditionMet = !!(data.designImageUrl && String(data.designImageUrl).trim() !== '');
+      } else if (condition.includes('showTransparentBox')) {
+        conditionMet = data.showTransparentBox !== false;
+      } else {
+        const varName = condition.trim();
+        conditionMet = data[varName] !== undefined && data[varName] !== null && data[varName] !== false && data[varName] !== '';
+      }
+      
+      return conditionMet ? ifContent : (elseContent || '');
+    });
+  }
+  
   // Handle for loops: {% for item in items %} ... {% endfor %}
   const forLoopRegex = /{%\s*for\s+(\w+)\s+in\s+(\w+)\s*%}([\s\S]*?){%\s*endfor\s*%}/g;
   result = result.replace(forLoopRegex, (match, itemVar, arrayVar, loopContent) => {
@@ -39,7 +134,7 @@ function processTemplate(template, data) {
   
   // Handle simple variable replacements: {{variable}}
   Object.keys(data).forEach(key => {
-    if (typeof data[key] === 'string' || typeof data[key] === 'number') {
+    if (typeof data[key] === 'string' || typeof data[key] === 'number' || typeof data[key] === 'boolean') {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
       let value = data[key] || '';
       
@@ -64,6 +159,17 @@ function processTemplate(template, data) {
     result = result.replace(lengthRegex, `signatures-${data.signatories.length}`);
   }
   
+  // Handle pipe filters like {{variable|replace:'#','%23'}}
+  const pipeFilterRegex = /{{\s*(\w+)\s*\|\s*replace:['"]([^'"]+)['"],['"]([^'"]+)['"]\s*}}/g;
+  result = result.replace(pipeFilterRegex, (match, varName, search, replace) => {
+    const value = data[varName] || '';
+    return String(value).replace(new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replace);
+  });
+  
+  // CRITICAL: Ensure borderColor is ALWAYS replaced, even if it wasn't in the data object
+  const finalBorderColor = (data.borderColor && String(data.borderColor).trim()) || '#2563b6';
+  result = result.replace(/{{\s*borderColor\s*}}/g, finalBorderColor);
+  
   return result;
 }
 
@@ -72,10 +178,152 @@ async function generateBulkCertificates(data) {
   const templatePath = path.join(__dirname, 'resources', 'certificate_template.html');
   let htmlTemplate = fs.readFileSync(templatePath, 'utf8');
 
-  // Convert background.jpg to base64 and add to data
-  const backgroundPath = path.join(__dirname, 'public', 'Assets', 'background.jpg');
-  if (fs.existsSync(backgroundPath)) {
-    data.backgroundBase64 = imageToBase64(backgroundPath);
+  // Set default values for customization if not provided
+  // Ensure these are always valid strings (not empty strings, null, or undefined)
+  data.backgroundColor = (data.backgroundColor && String(data.backgroundColor).trim()) || '#014A9B';
+  data.accentColor = (data.accentColor && String(data.accentColor).trim()) || '#F7B737';
+  data.lightAccentColor = (data.lightAccentColor && String(data.lightAccentColor).trim()) || '#4AC2E0';
+  data.borderColor = (data.borderColor && String(data.borderColor).trim()) || '#2563b6';
+  data.showTransparentBox = data.showTransparentBox !== undefined ? data.showTransparentBox : true;
+  // Per-part font settings
+  data.titleFontFamily = data.titleFontFamily || 'Playfair Display';
+  data.titleFontSize = data.titleFontSize || 'medium';
+  data.nameFontFamily = data.nameFontFamily || 'Playfair Display';
+  data.nameFontSize = data.nameFontSize || 'medium';
+  data.messageFontFamily = data.messageFontFamily || 'Montserrat';
+  data.messageFontSize = data.messageFontSize || 'medium';
+  data.signatoryFontFamily = data.signatoryFontFamily || 'Montserrat';
+  data.signatoryFontSize = data.signatoryFontSize || 'medium';
+
+  // Convert background.jpg to base64 only if no custom background image is provided
+  if (!data.backgroundImageUrl) {
+    const backgroundPath = path.join(__dirname, 'public', 'Assets', 'background.jpg');
+    if (fs.existsSync(backgroundPath)) {
+      data.backgroundBase64 = imageToBase64(backgroundPath);
+    }
+  }
+
+  // Convert custom images to base64 if URLs are provided
+  if (data.backgroundImageUrl) {
+    console.log('Processing background image from:', data.backgroundImageUrl);
+    try {
+      // Try to read from local storage first (if URL contains /storage/)
+      let urlPath;
+      try {
+        const urlObj = new URL(data.backgroundImageUrl);
+        urlPath = urlObj.pathname;
+      } catch (e) {
+        // If URL parsing fails, try to extract path manually
+        urlPath = data.backgroundImageUrl.replace(/^https?:\/\/[^\/]+/, '');
+      }
+      
+      if (urlPath && urlPath.includes('/storage/')) {
+        const relativePath = urlPath.replace('/storage/', '');
+        const storagePath = path.join(__dirname, '..', 'storage', 'app', 'public', relativePath);
+        if (fs.existsSync(storagePath)) {
+          console.log('Reading background image from local storage:', storagePath);
+          data.backgroundBase64 = imageToBase64(storagePath);
+          console.log('Background image converted to base64 from local file');
+        } else {
+          throw new Error('Local file not found, trying HTTP download');
+        }
+      } else {
+        // Fall back to HTTP download
+        const https = require('https');
+        const http = require('http');
+        const url = require('url');
+        
+        const imageUrl = data.backgroundImageUrl;
+        const parsedUrl = url.parse(imageUrl);
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+        
+        data.backgroundBase64 = await new Promise((resolve, reject) => {
+          client.get(imageUrl, (response) => {
+            if (response.statusCode !== 200) {
+              reject(new Error(`Failed to download image: ${response.statusCode}`));
+              return;
+            }
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () => {
+              const buffer = Buffer.concat(chunks);
+              const base64 = buffer.toString('base64');
+              const ext = path.extname(parsedUrl.pathname).slice(1) || 'jpg';
+              const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+              console.log('Background image converted to base64 via HTTP, size:', base64.length);
+              resolve(`data:${mime};base64,${base64}`);
+            });
+            response.on('error', reject);
+          }).on('error', reject);
+        });
+      }
+    } catch (error) {
+      console.error('Error processing background image:', error);
+      data.backgroundImageUrl = null; // Fall back to default
+    }
+  }
+
+  // Convert design overlay image to base64 if URL is provided
+  if (data.designImageUrl) {
+    console.log('Processing design image from:', data.designImageUrl);
+    try {
+      // Try to read from local storage first (if URL contains /storage/)
+      let urlPath;
+      try {
+        const urlObj = new URL(data.designImageUrl);
+        urlPath = urlObj.pathname;
+      } catch (e) {
+        // If URL parsing fails, try to extract path manually
+        urlPath = data.designImageUrl.replace(/^https?:\/\/[^\/]+/, '');
+      }
+      
+      if (urlPath && urlPath.includes('/storage/')) {
+        const relativePath = urlPath.replace('/storage/', '');
+        const storagePath = path.join(__dirname, '..', 'storage', 'app', 'public', relativePath);
+        if (fs.existsSync(storagePath)) {
+          console.log('Reading design image from local storage:', storagePath);
+          data.designImageBase64 = imageToBase64(storagePath);
+          console.log('Design image converted to base64 from local file');
+        } else {
+          throw new Error('Local file not found, trying HTTP download');
+        }
+      } else {
+        // Fall back to HTTP download
+        const https = require('https');
+        const http = require('http');
+        const url = require('url');
+        
+        const imageUrl = data.designImageUrl;
+        const parsedUrl = url.parse(imageUrl);
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+        
+        data.designImageBase64 = await new Promise((resolve, reject) => {
+          client.get(imageUrl, (response) => {
+            if (response.statusCode !== 200) {
+              reject(new Error(`Failed to download image: ${response.statusCode}`));
+              return;
+            }
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () => {
+              const buffer = Buffer.concat(chunks);
+              const base64 = buffer.toString('base64');
+              const ext = path.extname(parsedUrl.pathname).slice(1) || 'png';
+              const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+              console.log('Design image converted to base64 via HTTP, size:', base64.length);
+              resolve(`data:${mime};base64,${base64}`);
+            });
+            response.on('error', reject);
+          }).on('error', reject);
+        });
+      }
+    } catch (error) {
+      console.error('Error processing design image:', error);
+      data.designImageUrl = null; // Fall back to default pattern
+      data.designImageBase64 = null;
+    }
+  } else {
+    console.log('No design image URL provided, using default geometric pattern');
   }
 
   // Convert disaster_logo.png to base64 if it exists
@@ -103,7 +351,7 @@ async function generateBulkCertificates(data) {
     for (let i = 0; i < data.recipients.length; i++) {
       const recipient = data.recipients[i];
       
-      // Create data object for this recipient
+      // Create data object for this recipient - MUST include all customization options
       const certificateData = {
         name: recipient.name,
         associate: recipient.name,
@@ -112,6 +360,24 @@ async function generateBulkCertificates(data) {
         logoUrl: data.logoUrl,
         baseUrl: data.baseUrl,
         backgroundBase64: data.backgroundBase64,
+        backgroundImageUrl: data.backgroundImageUrl,
+        designImageUrl: data.designImageUrl,
+        designImageBase64: data.designImageBase64,
+        // Customization options - CRITICAL: These must be included
+        backgroundColor: data.backgroundColor,
+        accentColor: data.accentColor,
+        lightAccentColor: data.lightAccentColor,
+        borderColor: data.borderColor,
+        showTransparentBox: data.showTransparentBox,
+        // Per-part font settings
+        titleFontFamily: data.titleFontFamily,
+        titleFontSize: data.titleFontSize,
+        nameFontFamily: data.nameFontFamily,
+        nameFontSize: data.nameFontSize,
+        messageFontFamily: data.messageFontFamily,
+        messageFontSize: data.messageFontSize,
+        signatoryFontFamily: data.signatoryFontFamily,
+        signatoryFontSize: data.signatoryFontSize,
       };
 
       // Process the template for this recipient
@@ -334,7 +600,7 @@ async function generateBulkCertificates(data) {
           }
           .content-box {
             background: rgba(255,255,255,0.05);
-            border: 6px solid #2563b6;
+            border: 6px solid ${(data.borderColor && String(data.borderColor).trim()) || '#2563b6'};
             border-radius: 20px;
             padding: 36px 40px;
             margin: 0;
@@ -458,6 +724,15 @@ async function generateBulkCertificates(data) {
     fs.writeFileSync('debug-bulk-certificates.html', completeHTML);
 
     await page.setContent(completeHTML, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    // Wait for fonts to load (check if document.fonts is available)
+    try {
+      await page.evaluate(() => {
+        return document.fonts.ready;
+      });
+    } catch (e) {
+      // If fonts API not available, wait a short time for fonts to load
+      await page.waitForTimeout(500);
+    }
     
     const pdfBuffer = await page.pdf({
       format: 'A4',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaEllipsisH, FaChevronLeft, FaChevronRight, FaGraduationCap, FaCloudUploadAlt, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import axiosInstance from '../../../utils/axiosConfig';
 import '../css/TrainingProgram.css';
 import { API_BASE } from '../../../utils/url';
@@ -57,10 +57,43 @@ function TrainingProgram() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [fileSizeError, setFileSizeError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [filteredPrograms, setFilteredPrograms] = useState([]);
 
   useEffect(() => {
     fetchPrograms(true); // Initial load with loading state
   }, []);
+
+  useEffect(() => {
+    filterPrograms();
+  }, [programs, searchTerm, dateFilter]);
+
+  const filterPrograms = () => {
+    let filtered = [...programs];
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(p => 
+        (p.name && p.name.toLowerCase().includes(searchLower)) ||
+        (p.description && p.description.toLowerCase().includes(searchLower)) ||
+        (p.location && p.location.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Filter by date
+    if (dateFilter) {
+      filtered = filtered.filter(p => {
+        if (!p.date) return false;
+        const programDate = new Date(p.date);
+        const filterDate = new Date(dateFilter);
+        return programDate.toDateString() === filterDate.toDateString();
+      });
+    }
+
+    setFilteredPrograms(filtered);
+  };
 
   const fetchPrograms = async (isInitialLoad = false) => {
     try {
@@ -77,13 +110,15 @@ function TrainingProgram() {
   const openModal = (index = null) => {
     if (index !== null) {
       const prog = programs[index];
+      // Use photo_urls if available, otherwise fall back to photos
+      const photoUrls = prog.photo_urls || prog.photos || [];
       setForm({
         name: prog.name || '',
         date: prog.date || '',
         location: prog.location || '',
         description: prog.description || '',
         photos: [], // Keep empty for new uploads
-        previews: prog.photos || [] // Show existing photos as previews
+        previews: photoUrls // Show existing photos as previews (full URLs)
       });
       setEditIndex(index);
       setEditId(prog.id);
@@ -99,7 +134,10 @@ function TrainingProgram() {
       setEditIndex(null);
       setEditId(null);
     }
-    setModalOpen(true);
+    // Use setTimeout to ensure state updates are applied before modal opens
+    setTimeout(() => {
+      setModalOpen(true);
+    }, 0);
   };
 
   const closeModal = () => {
@@ -323,6 +361,94 @@ function TrainingProgram() {
         </button>
       </div>
       {error && <div className="training-error">{error}</div>}
+      
+      {/* Search and Filter Section */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '20px', 
+        flexWrap: 'wrap',
+        alignItems: 'center'
+      }}>
+        <div style={{ 
+          position: 'relative', 
+          maxWidth: '320px',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <FaSearch style={{ 
+            position: 'absolute', 
+            left: '12px', 
+            color: '#666',
+            zIndex: 1,
+            fontSize: '14px'
+          }} />
+          <input
+            type="text"
+            placeholder="Search training programs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 40px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '13px',
+              outline: 'none'
+            }}
+          />
+        </div>
+        <div style={{ 
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          maxWidth: '200px',
+          width: '100%'
+        }}>
+          <FaCalendarAlt style={{ 
+            position: 'absolute', 
+            left: '12px', 
+            color: '#666',
+            zIndex: 1,
+            fontSize: '14px'
+          }} />
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px 12px 8px 40px',
+              border: '1px solid #ddd',
+              borderRadius: '6px',
+              fontSize: '13px',
+              outline: 'none'
+            }}
+          />
+          {dateFilter && (
+            <button
+              onClick={() => setDateFilter('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                padding: '4px 8px',
+                background: '#e74c3c',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '11px',
+                zIndex: 2
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
       {/* Add/Edit Modal Popup */}
       {modalOpen && (
         <div className="training-modal-overlay">
@@ -465,8 +591,20 @@ function TrainingProgram() {
           }}>
             No training programs found. Click "ADD PROGRAM" to create your first training program.
           </div>
+        ) : filteredPrograms.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px', 
+            color: '#6c757d', 
+            fontSize: '18px', 
+            fontWeight: '500',
+            width: '100%',
+            gridColumn: '1 / -1'
+          }}>
+            No training programs match your search criteria.
+          </div>
         ) : (
-          programs.map((program, idx) => {
+          filteredPrograms.map((program, idx) => {
             const title = program.name || '';
             const description = program.description || '';
             return (

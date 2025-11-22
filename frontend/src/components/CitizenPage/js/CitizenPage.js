@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../../logo.svg';
 import axios from 'axios';
-import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight, FaBell, FaBellSlash, FaUserTie, FaUsers } from 'react-icons/fa';
+import { FaBullhorn, FaShieldAlt, FaClipboardList, FaHandsHelping, FaRedo, FaChevronLeft, FaChevronRight, FaBell, FaBellSlash, FaUserTie, FaUsers, FaSearch } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import '../css/CitizenPage.css';
@@ -60,6 +60,9 @@ function CitizenPage() {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [viewerPhotos, setViewerPhotos] = useState([]);
   const [viewerCurrentIndex, setViewerCurrentIndex] = useState(0);
+
+  // Unified search state
+  const [unifiedSearchTerm, setUnifiedSearchTerm] = useState('');
 
   const handleDropdown = () => setDropdownOpen(!dropdownOpen);
   const closeDropdown = () => setDropdownOpen(false);
@@ -348,39 +351,52 @@ function CitizenPage() {
     return () => window.removeEventListener('resize', updateCarouselItemsPerView);
   }, []);
 
+  // Check if user is searching
+  const isSearching = unifiedSearchTerm.trim().length > 0;
+
   // Sort announcements: featured first, then by date (latest first)
-  const sortedAnnouncements = [...announcements].sort((a, b) => {
-    // First, prioritize featured announcements
+  let sortedAnnouncements = [...announcements].sort((a, b) => {
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
-    // If both have same featured status, sort by date
     const dateA = new Date(a.created_at || a.date || 0);
     const dateB = new Date(b.created_at || b.date || 0);
     return dateB - dateA;
   });
-  
-  // Get featured announcement (first featured one, or first one if none are featured)
-  const featuredAnnouncement = sortedAnnouncements.find(a => a.featured) || (sortedAnnouncements.length > 0 ? sortedAnnouncements[0] : null);
-  // Get list announcements (exclude the featured one from the list)
-  const listAnnouncements = sortedAnnouncements.filter(a => a.id !== featuredAnnouncement?.id).slice(0, 3); // First 3 non-featured
-  const carouselAnnouncements = sortedAnnouncements.filter(a => a.id !== featuredAnnouncement?.id).slice(3); // Rest for carousel
 
   // Sort training programs: featured first, then by date (latest first)
-  const sortedPrograms = [...programs].sort((a, b) => {
-    // First, prioritize featured programs
+  let sortedPrograms = [...programs].sort((a, b) => {
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
-    // If both have same featured status, sort by date
     const dateA = new Date(a.date || a.created_at || 0);
     const dateB = new Date(b.date || b.created_at || 0);
     return dateB - dateA;
   });
+
+  // Filter by unified search term
+  let filteredAnnouncements = sortedAnnouncements;
+  let filteredPrograms = sortedPrograms;
   
-  // Get featured program (first featured one, or first one if none are featured)
-  const featuredProgram = sortedPrograms.find(p => p.featured) || (sortedPrograms.length > 0 ? sortedPrograms[0] : null);
-  // Get list programs (exclude the featured one from the list)
-  const listPrograms = sortedPrograms.filter(p => p.id !== featuredProgram?.id).slice(0, 3); // First 3 non-featured
-  const carouselPrograms = sortedPrograms.filter(p => p.id !== featuredProgram?.id).slice(3); // Rest for carousel
+  if (isSearching) {
+    const searchLower = unifiedSearchTerm.toLowerCase();
+    filteredAnnouncements = sortedAnnouncements.filter(a => 
+      (a.title && a.title.toLowerCase().includes(searchLower)) ||
+      (a.description && a.description.toLowerCase().includes(searchLower))
+    );
+    filteredPrograms = sortedPrograms.filter(p => 
+      (p.name && p.name.toLowerCase().includes(searchLower)) ||
+      (p.description && p.description.toLowerCase().includes(searchLower)) ||
+      (p.location && p.location.toLowerCase().includes(searchLower))
+    );
+  }
+
+  // For non-search mode, use the original featured/list structure
+  const featuredAnnouncement = !isSearching ? (filteredAnnouncements.find(a => a.featured) || (filteredAnnouncements.length > 0 ? filteredAnnouncements[0] : null)) : null;
+  const listAnnouncements = !isSearching ? filteredAnnouncements.filter(a => a.id !== featuredAnnouncement?.id).slice(0, 3) : [];
+  const carouselAnnouncements = !isSearching ? filteredAnnouncements.filter(a => a.id !== featuredAnnouncement?.id).slice(3) : [];
+
+  const featuredProgram = !isSearching ? (filteredPrograms.find(p => p.featured) || (filteredPrograms.length > 0 ? filteredPrograms[0] : null)) : null;
+  const listPrograms = !isSearching ? filteredPrograms.filter(p => p.id !== featuredProgram?.id).slice(0, 3) : [];
+  const carouselPrograms = !isSearching ? filteredPrograms.filter(p => p.id !== featuredProgram?.id).slice(3) : [];
 
   // Navigation handlers for announcements list (scroll through list)
   const goToPreviousAnnouncement = () => {
@@ -705,6 +721,83 @@ function CitizenPage() {
           </li>
         </ul>
       </nav>
+      
+      {/* Unified Search Bar */}
+      <div style={{ 
+        width: '100%',
+        margin: '20px 0 30px', 
+        padding: '0 20px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ 
+          position: 'relative',
+          maxWidth: '600px',
+          minWidth: '300px',
+          marginRight: '40px'
+        }}>
+          <FaSearch style={{ 
+            position: 'absolute', 
+            left: '16px', 
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#666',
+            zIndex: 1,
+            fontSize: '18px'
+          }} />
+          <input
+            type="text"
+            placeholder="Search announcements and training programs..."
+            value={unifiedSearchTerm}
+            onChange={(e) => setUnifiedSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '14px 20px 14px 50px',
+              border: '2px solid #a52a1a',
+              borderRadius: '30px',
+              fontSize: '16px',
+              outline: 'none',
+              boxShadow: '0 2px 8px rgba(165, 42, 26, 0.1)',
+              transition: 'all 0.3s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.boxShadow = '0 4px 12px rgba(165, 42, 26, 0.2)';
+              e.target.style.borderColor = '#8b1f1a';
+            }}
+            onBlur={(e) => {
+              e.target.style.boxShadow = '0 2px 8px rgba(165, 42, 26, 0.1)';
+              e.target.style.borderColor = '#a52a1a';
+            }}
+          />
+          {unifiedSearchTerm && (
+            <button
+              onClick={() => setUnifiedSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: '#e74c3c',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 2
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Main Content: Dynamic Organization Logos Carousel */}
       <div className="citizen-logos-container">
         {groupsLoading ? (
@@ -742,9 +835,252 @@ function CitizenPage() {
       {/* Vertical Container for Announcements and Training Programs */}
       <div className="citizen-side-by-side-container">
         <div className="citizen-content-columns">
-          {/* Announcements Section */}
+          {/* Search Results View */}
+          {isSearching ? (
+            <div style={{ width: '100%', padding: '0 20px' }}>
+              {/* Search Results Header */}
+              <div style={{ 
+                marginBottom: '30px',
+                textAlign: 'center'
+              }}>
+                <h2 style={{ 
+                  color: '#a52a1a', 
+                  fontSize: '24px', 
+                  marginBottom: '10px',
+                  fontWeight: '600'
+                }}>
+                  Search Results
+                </h2>
+                <p style={{ 
+                  color: '#666', 
+                  fontSize: '14px'
+                }}>
+                  Found {filteredAnnouncements.length} announcement{filteredAnnouncements.length !== 1 ? 's' : ''} and {filteredPrograms.length} training program{filteredPrograms.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {/* Combined Results */}
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '20px',
+                maxWidth: '900px',
+                margin: '0 auto',
+                padding: '0 10px'
+              }}>
+                {/* Announcements Results */}
+                {filteredAnnouncements.length > 0 && (
+                  <div>
+                    <h3 style={{ 
+                      color: '#a52a1a', 
+                      fontSize: '20px', 
+                      marginBottom: '15px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <FaBullhorn /> Announcements ({filteredAnnouncements.length})
+                    </h3>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
+                      gap: '20px'
+                    }}
+                    >
+                      {filteredAnnouncements.map((a) => (
+                        <div
+                          key={a.id}
+                          onClick={() => handleAnnouncementClick(a)}
+                          style={{
+                            background: '#fff',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            border: '1px solid #f0f0f0'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(165, 42, 26, 0.15)';
+                            e.currentTarget.style.borderColor = '#a52a1a';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.borderColor = '#f0f0f0';
+                          }}
+                        >
+                          {a.photo_urls && a.photo_urls.length > 0 && (
+                            <img
+                              src={a.photo_urls[0]}
+                              alt="Announcement"
+                              style={{
+                                width: '100%',
+                                height: '180px',
+                                objectFit: 'cover',
+                                borderRadius: '8px',
+                                marginBottom: '12px'
+                              }}
+                            />
+                          )}
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: '#888', 
+                            marginBottom: '8px' 
+                          }}>
+                            {formatDate(a.created_at)}
+                          </div>
+                          <h4 style={{ 
+                            color: '#333', 
+                            fontSize: '18px', 
+                            marginBottom: '10px',
+                            fontWeight: '600'
+                          }}>
+                            {a.title || 'Untitled Announcement'}
+                          </h4>
+                          <p style={{ 
+                            color: '#666', 
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {a.description || 'No description'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Training Programs Results */}
+                {filteredPrograms.length > 0 && (
+                  <div>
+                    <h3 style={{ 
+                      color: '#a52a1a', 
+                      fontSize: '20px', 
+                      marginBottom: '15px',
+                      marginTop: filteredAnnouncements.length > 0 ? '30px' : '0',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <FaClipboardList /> Training Programs ({filteredPrograms.length})
+                    </h3>
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
+                      gap: '20px'
+                    }}
+                    >
+                      {filteredPrograms.map((program) => (
+                        <div
+                          key={program.id}
+                          onClick={() => handleProgramClick(program)}
+                          style={{
+                            background: '#fff',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            border: '1px solid #f0f0f0'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-4px)';
+                            e.currentTarget.style.boxShadow = '0 4px 16px rgba(165, 42, 26, 0.15)';
+                            e.currentTarget.style.borderColor = '#a52a1a';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.borderColor = '#f0f0f0';
+                          }}
+                        >
+                          {program.photos && program.photos.length > 0 && (
+                            <img
+                              src={program.photos[0]}
+                              alt="Training Program"
+                              style={{
+                                width: '100%',
+                                height: '180px',
+                                objectFit: 'cover',
+                                borderRadius: '8px',
+                                marginBottom: '12px'
+                              }}
+                            />
+                          )}
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: '#888', 
+                            marginBottom: '8px',
+                            display: 'flex',
+                            gap: '15px',
+                            flexWrap: 'wrap'
+                          }}>
+                            {program.date && (
+                              <span>{new Date(program.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            )}
+                            {program.location && (
+                              <span>📍 {program.location}</span>
+                            )}
+                          </div>
+                          <h4 style={{ 
+                            color: '#333', 
+                            fontSize: '18px', 
+                            marginBottom: '10px',
+                            fontWeight: '600'
+                          }}>
+                            {program.name || 'Untitled Training Program'}
+                          </h4>
+                          <p style={{ 
+                            color: '#666', 
+                            fontSize: '14px',
+                            lineHeight: '1.5',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {program.description || 'No description'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Results */}
+                {filteredAnnouncements.length === 0 && filteredPrograms.length === 0 && (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '60px 20px',
+                    color: '#999'
+                  }}>
+                    <FaSearch size={60} style={{ marginBottom: '20px', opacity: 0.5 }} />
+                    <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#666' }}>
+                      No results found
+                    </h3>
+                    <p style={{ fontSize: '14px' }}>
+                      Try different keywords or check your spelling
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+          {/* Announcements Section - Normal View */}
           <div className="citizen-announcements-section">
           <h2 className="citizen-announcements-title">Announcements</h2>
+
         {annLoading ? (
             <div className="citizen-loading-container">
               <div className="citizen-loading-spinner"></div>
@@ -998,6 +1334,7 @@ function CitizenPage() {
       {/* Training Programs as Posts */}
         <div className="citizen-training-section">
           <h2 className="citizen-training-title">Training Programs</h2>
+
         <div>
           {loading ? (
             <div className="citizen-loading-container">
@@ -1177,7 +1514,7 @@ function CitizenPage() {
           )}
 
           {/* More Training Programs Section with Carousel */}
-          {carouselPrograms.length > 0 && (
+          {!isSearching && carouselPrograms.length > 0 && (
             <div className="citizen-announcements-carousel-section">
               <h3 className="citizen-announcements-carousel-title">More Training Programs</h3>
               <div className="citizen-announcement-carousel-container-static">
@@ -1285,6 +1622,8 @@ function CitizenPage() {
           )}
       </div>
         </div>
+            </>
+          )}
         </div>
       </div>
 

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './RegistrationForm.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faUser, faEnvelope, faPhone, faImage, faCheck, faEye, faEyeSlash, faUpload, faTimes, faFileImage } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faUser, faEnvelope, faPhone, faImage, faCheck, faEye, faEyeSlash, faUpload, faTimes, faFileImage, faIdCard } from '@fortawesome/free-solid-svg-icons';
+import TermsAndConditions from '../Legal/TermsAndConditions';
+import DataPrivacyPolicy from '../Legal/DataPrivacyPolicy';
 
 import { API_BASE } from '../../utils/url';
 
@@ -17,16 +19,28 @@ function RegistrationForm({ onSuccess, onCancel }) {
     password: '',
     password_confirmation: '',
     description: '',
-    logo: null
+    logo: null,
+    interview_proof: null,
+    sec_number: '',
+    sec_file: null,
+    accept_terms: false,
+    accept_privacy: false
   });
+  
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [logoPreview, setLogoPreview] = useState(null);
+  const [interviewProofPreview, setInterviewProofPreview] = useState(null);
+  const [secFilePreview, setSecFilePreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isDragOverInterviewProof, setIsDragOverInterviewProof] = useState(false);
+  const [isDragOverSecFile, setIsDragOverSecFile] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '' });
   const [isCheckingName, setIsCheckingName] = useState(false);
   const [nameAvailability, setNameAvailability] = useState(null);
@@ -375,6 +389,14 @@ function RegistrationForm({ onSuccess, onCancel }) {
           [name]: numericValue
         }));
       }
+    } else if (name === 'sec_number') {
+      // SEC number validation: Allow alphanumeric, hyphens, and spaces (will sanitize on submit)
+      // Format: CSYYYY-NNNNN, CNYYYY-NNNNN, FDN-YYYY-NNNNN, PGYYYY-NNNNN, AYYYY-NNNNN, or old format (6-7 digits)
+      const sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9\-\s]/g, '');
+      setFormData(prev => ({
+        ...prev,
+        [name]: sanitizedValue
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -494,6 +516,170 @@ function RegistrationForm({ onSuccess, onCancel }) {
     }));
   };
 
+  const handleInterviewProofChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      validateAndSetInterviewProof(file);
+    }
+  };
+
+  const validateAndSetInterviewProof = (file) => {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors(prev => ({
+        ...prev,
+        interview_proof: 'Please upload a valid image file (JPEG, PNG, JPG, GIF)'
+      }));
+      return;
+    }
+
+    // Validate file size (2MB = 2 * 1024 * 1024 bytes)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setErrors(prev => ({
+        ...prev,
+        interview_proof: 'File size must be less than 2MB'
+      }));
+      return;
+    }
+
+    // Clear any previous errors
+    setErrors(prev => ({
+      ...prev,
+      interview_proof: ''
+    }));
+
+    setFormData(prev => ({
+      ...prev,
+      interview_proof: file
+    }));
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setInterviewProofPreview(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOverInterviewProof = (e) => {
+    e.preventDefault();
+    setIsDragOverInterviewProof(true);
+  };
+
+  const handleDragLeaveInterviewProof = (e) => {
+    e.preventDefault();
+    setIsDragOverInterviewProof(false);
+  };
+
+  const handleDropInterviewProof = (e) => {
+    e.preventDefault();
+    setIsDragOverInterviewProof(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      validateAndSetInterviewProof(files[0]);
+    }
+  };
+
+  const removeInterviewProof = () => {
+    setFormData(prev => ({
+      ...prev,
+      interview_proof: null
+    }));
+    setInterviewProofPreview(null);
+    setErrors(prev => ({
+      ...prev,
+      interview_proof: ''
+    }));
+  };
+
+  const handleSecFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      validateAndSetSecFile(file);
+    }
+  };
+
+  const validateAndSetSecFile = (file) => {
+    // Validate file type - allow images and PDF
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors(prev => ({
+        ...prev,
+        sec_file: 'Please upload a valid file (JPEG, PNG, JPG, GIF, or PDF)'
+      }));
+      return;
+    }
+
+    // Validate file size (5MB = 5 * 1024 * 1024 bytes) - PDFs might be larger
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setErrors(prev => ({
+        ...prev,
+        sec_file: 'File size must be less than 5MB'
+      }));
+      return;
+    }
+
+    // Clear any previous errors
+    setErrors(prev => ({
+      ...prev,
+      sec_file: ''
+    }));
+
+    setFormData(prev => ({
+      ...prev,
+      sec_file: file
+    }));
+    
+    // Create preview for images only
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSecFilePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // For PDF, just set a placeholder
+      setSecFilePreview('pdf');
+    }
+  };
+
+  const handleDragOverSecFile = (e) => {
+    e.preventDefault();
+    setIsDragOverSecFile(true);
+  };
+
+  const handleDragLeaveSecFile = (e) => {
+    e.preventDefault();
+    setIsDragOverSecFile(false);
+  };
+
+  const handleDropSecFile = (e) => {
+    e.preventDefault();
+    setIsDragOverSecFile(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      validateAndSetSecFile(files[0]);
+    }
+  };
+
+  const removeSecFile = () => {
+    setFormData(prev => ({
+      ...prev,
+      sec_file: null,
+      sec_number: '' // Also clear the number if file is removed
+    }));
+    setSecFilePreview(null);
+    setErrors(prev => ({
+      ...prev,
+      sec_file: ''
+    }));
+  };
+
   // Helper function to scroll to the first field with an error
   const scrollToFirstError = (errorFields) => {
     // Define the order of fields as they appear in the form
@@ -506,9 +692,12 @@ function RegistrationForm({ onSuccess, onCancel }) {
       'description',
       'email',
       'phone',
+      'sec_number',
       'password',
       'password_confirmation',
-      'logo'
+      'logo',
+      'interview_proof',
+      'sec_file'
     ];
     
     // Find the first field with an error based on the form order
@@ -658,6 +847,20 @@ function RegistrationForm({ onSuccess, onCancel }) {
       newErrors.logo = 'Organization logo is required';
     }
     
+    if (!formData.interview_proof) {
+      newErrors.interview_proof = 'Interview proof/photo is required';
+    }
+    
+    if (!formData.accept_terms) {
+      newErrors.accept_terms = 'You must accept the Terms and Conditions to register';
+    }
+    
+    if (!formData.accept_privacy) {
+      newErrors.accept_privacy = 'You must accept the Data Privacy Policy to register';
+    }
+    
+    // SEC number and file are optional - no validation needed
+    
     setErrors(newErrors);
     
     // If there are errors, scroll to the first one
@@ -696,6 +899,18 @@ function RegistrationForm({ onSuccess, onCancel }) {
       formDataToSend.append('password_confirmation', formData.password_confirmation);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('logo', formData.logo);
+      formDataToSend.append('interview_proof', formData.interview_proof);
+      // Add SEC file if provided
+      if (formData.sec_file) {
+        formDataToSend.append('sec_file', formData.sec_file);
+      }
+      // Add SEC number if provided (sanitize by removing spaces) - optional
+      if (formData.sec_number && formData.sec_number.trim()) {
+        formDataToSend.append('sec_number', formData.sec_number.trim().replace(/\s+/g, ''));
+      }
+      // Add terms acceptance
+      formDataToSend.append('accept_terms', formData.accept_terms ? '1' : '0');
+      formDataToSend.append('accept_privacy', formData.accept_privacy ? '1' : '0');
       
       const response = await fetch(`${API_BASE}/api/register`, {
         method: 'POST',
@@ -905,6 +1120,94 @@ function RegistrationForm({ onSuccess, onCancel }) {
           </div>
           
           <div className="form-group">
+            <label htmlFor="sec_file">
+              <FontAwesomeIcon icon={faIdCard} className="form-icon" />
+              SEC Registration Document (Optional)
+            </label>
+            
+            {!secFilePreview ? (
+              <div 
+                className={`file-upload-area ${isDragOverSecFile ? 'drag-over' : ''} ${errors.sec_file ? 'error' : ''}`}
+                onDragOver={handleDragOverSecFile}
+                onDragLeave={handleDragLeaveSecFile}
+                onDrop={handleDropSecFile}
+                onClick={() => document.getElementById('sec_file').click()}
+              >
+                <div className="file-upload-content">
+                  <FontAwesomeIcon icon={faUpload} className="upload-icon" />
+                  <h3>Upload SEC Registration Document</h3>
+                  <p>Drag and drop scanned front page here, or <span className="browse-link">browse files</span></p>
+                  <div className="file-requirements">
+                    <small>Supported formats: JPEG, PNG, JPG, GIF, PDF</small>
+                    <small>Maximum size: 5MB</small>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  id="sec_file"
+                  name="sec_file"
+                  accept="image/*,.pdf"
+                  onChange={handleSecFileChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            ) : (
+              <div className="file-preview-container">
+                <div className="file-preview">
+                  {secFilePreview !== 'pdf' ? (
+                    <img src={secFilePreview} alt="SEC document preview" className="preview-image" />
+                  ) : (
+                    <div className="preview-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f0f0', color: '#c0392b', fontSize: '24px' }}>
+                      <FontAwesomeIcon icon={faFileImage} />
+                    </div>
+                  )}
+                  <div className="file-info">
+                    <div className="file-name">
+                      <FontAwesomeIcon icon={faFileImage} className="file-icon" />
+                      <span>{formData.sec_file?.name}</span>
+                    </div>
+                    <div className="file-size">
+                      {(formData.sec_file?.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={removeSecFile} 
+                    className="remove-file-btn"
+                    aria-label="Remove file"
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  id="sec_file"
+                  name="sec_file"
+                  accept="image/*,.pdf"
+                  onChange={handleSecFileChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
+            
+            {errors.sec_file && <span className="error-text">{errors.sec_file}</span>}
+            <small className="form-help">Upload scanned front page of your SEC registration document (JPEG, PNG, JPG, GIF, PDF - Max 5MB). You may also enter the SEC number below if you wish.</small>
+            
+            <input
+              type="text"
+              id="sec_number"
+              name="sec_number"
+              value={formData.sec_number}
+              onChange={handleInputChange}
+              className={errors.sec_number ? 'error' : ''}
+              placeholder="Optional: Enter SEC registration number (e.g., CS2023-00001)"
+              maxLength="50"
+              style={{ marginTop: '10px' }}
+            />
+            {errors.sec_number && <span className="error-text">{errors.sec_number}</span>}
+          </div>
+          
+          <div className="form-group">
             <label htmlFor="password">
               <FontAwesomeIcon icon={faCheck} className="form-icon" />
               Password *
@@ -1087,6 +1390,125 @@ function RegistrationForm({ onSuccess, onCancel }) {
             <small className="form-help">Upload your organization logo (JPEG, PNG, JPG, GIF - Max 2MB)</small>
           </div>
           
+          <div className="form-group">
+            <label htmlFor="interview_proof">
+              <FontAwesomeIcon icon={faIdCard} className="form-icon" />
+              Interview Proof / Photo *
+            </label>
+            
+            {!interviewProofPreview ? (
+              <div 
+                className={`file-upload-area ${isDragOverInterviewProof ? 'drag-over' : ''} ${errors.interview_proof ? 'error' : ''}`}
+                onDragOver={handleDragOverInterviewProof}
+                onDragLeave={handleDragLeaveInterviewProof}
+                onDrop={handleDropInterviewProof}
+                onClick={() => document.getElementById('interview_proof').click()}
+              >
+                <div className="file-upload-content">
+                  <FontAwesomeIcon icon={faUpload} className="upload-icon" />
+                  <h3>Upload Interview Proof</h3>
+                  <p>Drag and drop your photo/proof here, or <span className="browse-link">browse files</span></p>
+                  <div className="file-requirements">
+                    <small>Supported formats: JPEG, PNG, JPG, GIF</small>
+                    <small>Maximum size: 2MB</small>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  id="interview_proof"
+                  name="interview_proof"
+                  accept="image/*"
+                  onChange={handleInterviewProofChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            ) : (
+              <div className="file-preview-container">
+                <div className="file-preview">
+                  <img src={interviewProofPreview} alt="Interview proof preview" className="preview-image" />
+                  <div className="file-info">
+                    <div className="file-name">
+                      <FontAwesomeIcon icon={faFileImage} className="file-icon" />
+                      <span>{formData.interview_proof?.name}</span>
+                    </div>
+                    <div className="file-size">
+                      {(formData.interview_proof?.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={removeInterviewProof} 
+                    className="remove-file-btn"
+                    aria-label="Remove file"
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  id="interview_proof"
+                  name="interview_proof"
+                  accept="image/*"
+                  onChange={handleInterviewProofChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
+            
+            {errors.interview_proof && <span className="error-text">{errors.interview_proof}</span>}
+            <small className="form-help">Upload a photo or proof that your organization/associate group is being interviewed (JPEG, PNG, JPG, GIF - Max 2MB)</small>
+          </div>
+          
+          <div className="form-group">
+            <div className="terms-checkbox-group">
+              <label className="terms-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="accept_terms"
+                  checked={formData.accept_terms}
+                  onChange={(e) => setFormData(prev => ({ ...prev, accept_terms: e.target.checked }))}
+                  className={errors.accept_terms ? 'error' : ''}
+                />
+                <span>
+                  I have read and agree to the{''}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="terms-link"
+                  >
+                    Terms and Conditions
+                  </button>
+                  *
+                </span>
+              </label>
+              {errors.accept_terms && <span className="error-text">{errors.accept_terms}</span>}
+            </div>
+            
+            <div className="terms-checkbox-group">
+              <label className="terms-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="accept_privacy"
+                  checked={formData.accept_privacy}
+                  onChange={(e) => setFormData(prev => ({ ...prev, accept_privacy: e.target.checked }))}
+                  className={errors.accept_privacy ? 'error' : ''}
+                />
+                <span>
+                  I have read and agree to the{''}
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacyModal(true)}
+                    className="terms-link"
+                  >
+                    Data Privacy Policy
+                  </button>
+                  *
+                </span>
+              </label>
+              {errors.accept_privacy && <span className="error-text">{errors.accept_privacy}</span>}
+            </div>
+          </div>
+          
           {message && (
             <div className={`registration-message ${message.includes('successfully') ? 'success' : 'error'}`}>
               {message}
@@ -1111,6 +1533,14 @@ function RegistrationForm({ onSuccess, onCancel }) {
             </button>
           </div>
         </form>
+        
+        {showTermsModal && (
+          <TermsAndConditions onClose={() => setShowTermsModal(false)} />
+        )}
+        
+        {showPrivacyModal && (
+          <DataPrivacyPolicy onClose={() => setShowPrivacyModal(false)} />
+        )}
       </div>
     </div>
   );

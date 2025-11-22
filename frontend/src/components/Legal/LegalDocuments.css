@@ -1,0 +1,593 @@
+.legal-document-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 10000;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legal-document-content {
+  background: white;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin: auto;
+}
+
+.legal-document-header {
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  color: white;
+  padding: 30px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 8px 8px 0 0;
+  text-align: left;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.legal-document-header-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 11;
+  line-height: 1;
+  padding: 0;
+}
+
+.legal-document-header-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.legal-document-header-close:active {
+  transform: scale(0.95);
+}
+
+.legal-document-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.legal-document-subtitle {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+.legal-document-date {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.legal-document-notice {
+  margin: 10px 0 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+.legal-document-body {
+  padding: 40px;
+  line-height: 1.8;
+  color: #333;
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.legal-document-body section {
+  margin-bottom: 35px;
+}
+
+.legal-document-body h2 {
+  color: #c0392b;
+  font-size: 22px;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+  text-align: left;
+}
+
+.legal-document-body h3 {
+  color: #555;
+  font-size: 18px;
+  margin: 20px 0 10px 0;
+  font-weight: 600;
+  text-align: left;
+}
+
+.legal-document-body p {
+  margin: 0 0 15px 0;
+  font-size: 15px;
+  text-align: left;
+  line-height: 1.7;
+}
+
+.legal-document-body ul {
+  margin: 15px 0;
+  padding-left: 25px;
+}
+
+.legal-document-body li {
+  margin: 10px 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.legal-document-body li strong {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.legal-document-body a {
+  color: #c0392b;
+  text-decoration: underline;
+}
+
+.legal-document-body a:hover {
+  color: #a93226;
+}
+
+.legal-document-footer {
+  padding: 20px 40px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+.legal-document-close-btn {
+  background-color: #c0392b;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.legal-document-close-btn:hover {
+  background-color: #a93226;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
+}
+
+.legal-document-close-btn:active {
+  transform: translateY(0);
+}
+
+/* Hide scrollbar but keep scrolling functionality */
+.legal-document-content {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.legal-document-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Responsive design - Mobile Small (up to 479px) */
+@media (max-width: 479px) {
+  .legal-document-container {
+    padding: 4px;
+    align-items: flex-start;
+    padding-top: 10px;
+  }
+  
+  .legal-document-content {
+    max-height: 70vh;
+    height: auto;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100vw;
+  }
+  
+  .legal-document-header {
+    padding: 12px 15px;
+    padding-top: 45px;
+    border-radius: 8px 8px 0 0;
+    position: sticky;
+    top: 0;
+    gap: 6px;
+  }
+  
+  .legal-document-header-close {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .legal-document-header h1 {
+    font-size: 18px;
+    margin: 0 0 6px 0;
+  }
+
+  .legal-document-subtitle {
+    font-size: 12px;
+    margin: 0 0 4px 0;
+  }
+
+  .legal-document-date {
+    font-size: 10px;
+    margin: 0;
+  }
+  
+  .legal-document-notice {
+    font-size: 11px;
+    margin: 6px 0 0 0;
+  }
+
+  .legal-document-body {
+    padding: 15px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .legal-document-body h2 {
+    font-size: 18px;
+  }
+
+  .legal-document-body h3 {
+    font-size: 15px;
+  }
+
+  .legal-document-body p,
+  .legal-document-body li {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .legal-document-footer {
+    padding: 12px 15px;
+    border-radius: 0 0 6px 6px;
+    position: sticky;
+    bottom: 0;
+  }
+
+  .legal-document-close-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* Responsive design - Mobile Large (480px to 599px) */
+@media (min-width: 480px) and (max-width: 599px) {
+  .legal-document-container {
+    padding: 8px;
+    align-items: flex-start;
+    padding-top: 15px;
+  }
+  
+  .legal-document-content {
+    max-width: 98vw;
+    max-height: 75vh;
+    height: auto;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .legal-document-header {
+    padding: 14px 15px;
+    padding-top: 48px;
+    border-radius: 10px 10px 0 0;
+    position: sticky;
+    top: 0;
+    gap: 6px;
+  }
+  
+  .legal-document-header-close {
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    font-size: 19px;
+  }
+
+  .legal-document-header h1 {
+    font-size: 20px;
+    margin: 0 0 6px 0;
+  }
+
+  .legal-document-subtitle {
+    font-size: 13px;
+    margin: 0 0 4px 0;
+  }
+
+  .legal-document-date {
+    font-size: 11px;
+    margin: 0;
+  }
+  
+  .legal-document-notice {
+    font-size: 11px;
+    margin: 6px 0 0 0;
+  }
+
+  .legal-document-body {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .legal-document-body h2 {
+    font-size: 19px;
+  }
+
+  .legal-document-body h3 {
+    font-size: 16px;
+  }
+
+  .legal-document-body p,
+  .legal-document-body li {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .legal-document-footer {
+    padding: 15px 20px;
+    border-radius: 0 0 10px 10px;
+    position: sticky;
+    bottom: 0;
+  }
+
+  .legal-document-close-btn {
+    padding: 10px 24px;
+    font-size: 15px;
+  }
+}
+
+/* Responsive design - Tablet Portrait (600px to 767px) */
+@media (min-width: 600px) and (max-width: 767px) {
+  .legal-document-container {
+    padding: 12px;
+  }
+  
+  .legal-document-content {
+    max-width: 95vw;
+    max-height: 88vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .legal-document-header {
+    padding: 20px;
+    position: sticky;
+    top: 0;
+  }
+
+  .legal-document-header h1 {
+    font-size: 24px;
+  }
+
+  .legal-document-body {
+    padding: 25px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .legal-document-body h2 {
+    font-size: 20px;
+  }
+
+  .legal-document-body h3 {
+    font-size: 16px;
+  }
+
+  .legal-document-body p,
+  .legal-document-body li {
+    font-size: 14px;
+  }
+
+  .legal-document-footer {
+    padding: 15px 25px;
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+/* Responsive design - Tablet Landscape (768px to 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .legal-document-container {
+    padding: 15px;
+  }
+  
+  .legal-document-content {
+    max-width: 90vw;
+    max-height: 85vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .legal-document-header {
+    padding: 25px;
+    position: sticky;
+    top: 0;
+  }
+
+  .legal-document-header h1 {
+    font-size: 26px;
+  }
+
+  .legal-document-body {
+    padding: 30px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .legal-document-body h2 {
+    font-size: 21px;
+  }
+
+  .legal-document-body h3 {
+    font-size: 17px;
+  }
+
+  .legal-document-body p,
+  .legal-document-body li {
+    font-size: 15px;
+  }
+
+  .legal-document-footer {
+    padding: 18px 30px;
+    position: sticky;
+    bottom: 0;
+  }
+  
+  .legal-document-header {
+    padding: 20px;
+    position: sticky;
+    top: 0;
+  }
+
+  .legal-document-header h1 {
+    font-size: 24px;
+  }
+
+  .legal-document-body {
+    padding: 25px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .legal-document-body h2 {
+    font-size: 20px;
+  }
+
+  .legal-document-body h3 {
+    font-size: 16px;
+  }
+
+  .legal-document-body p,
+  .legal-document-body li {
+    font-size: 14px;
+  }
+
+  .legal-document-footer {
+    padding: 15px 25px;
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+/* Responsive design - Laptop (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .legal-document-container {
+    padding: 20px;
+  }
+  
+  .legal-document-content {
+    max-width: 900px;
+    max-height: 88vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .legal-document-header {
+    position: sticky;
+    top: 0;
+  }
+  
+  .legal-document-body {
+    padding: 35px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  
+  .legal-document-footer {
+    position: sticky;
+    bottom: 0;
+  }
+}
+
+/* Responsive design - Desktop (1025px and above) */
+@media (min-width: 1025px) {
+  .legal-document-container {
+    padding: 20px;
+  }
+  
+  .legal-document-content {
+    max-width: 900px;
+    max-height: 90vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .legal-document-header {
+    position: sticky;
+    top: 0;
+  }
+  
+  .legal-document-body {
+    padding: 40px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  
+  .legal-document-footer {
+    position: sticky;
+    bottom: 0;
+  }
+}
+

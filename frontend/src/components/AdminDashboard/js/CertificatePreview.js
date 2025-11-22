@@ -4,25 +4,97 @@ import { API_BASE } from '../../../utils/url';
 const A4_WIDTH = 1123;
 const A4_HEIGHT = 794;
 
-const CertificatePreview = ({ data }) => {
-  const { name, associate, signatories = [], message } = data || {};
+const CertificatePreview = ({ data, logoUrl, backgroundImagePreview, designImagePreview }) => {
+  const { 
+    name, 
+    associate, 
+    signatories = [], 
+    message,
+    backgroundColor = '#014A9B',
+    accentColor = '#F7B737',
+    lightAccentColor = '#4AC2E0',
+    borderColor = '#2563b6',
+    showTransparentBox = true,
+    titleFontFamily = 'Playfair Display',
+    titleFontSize = 'medium',
+    nameFontFamily = 'Playfair Display',
+    nameFontSize = 'medium',
+    messageFontFamily = 'Montserrat',
+    messageFontSize = 'medium',
+    signatoryFontFamily = 'Montserrat',
+    signatoryFontSize = 'medium',
+  } = data || {};
   const backendBaseUrl = process.env.REACT_APP_BACKEND_URL || API_BASE;
-  const logoSrc = backendBaseUrl + '/Assets/disaster_logo.png';
-  const backgroundSrc = backendBaseUrl + '/Assets/background.jpg';
+  const logoSrc = logoUrl || (backendBaseUrl + '/Assets/disaster_logo.png');
+  // Use custom background preview if available, otherwise use default
+  const backgroundSrc = backgroundImagePreview || (backendBaseUrl + '/Assets/background.jpg');
+  
+  // Debug: Log font values to console
+  console.log('CertificatePreview - Font values:', {
+    titleFontFamily,
+    titleFontSize,
+    nameFontFamily,
+    nameFontSize,
+    messageFontFamily,
+    messageFontSize,
+    signatoryFontFamily,
+    signatoryFontSize,
+  });
+  
+  // Font size mappings
+  const getFontSize = (size, baseSize) => {
+    const sizes = {
+      small: { title: 2.0, name: 1.8, message: 0.95, signatory: 1.0 },
+      medium: { title: 2.5, name: 2.2, message: 1.08, signatory: 1.1 },
+      large: { title: 2.8, name: 2.4, message: 1.15, signatory: 1.2 },
+    };
+    return sizes[size]?.[baseSize] || sizes.medium[baseSize];
+  };
 
   const previewRef = useRef(null);
   const containerRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [imageError, setImageError] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [containerHeight, setContainerHeight] = useState('100dvh');
+  const [containerWidth, setContainerWidth] = useState('100%');
+  const [containerPadding, setContainerPadding] = useState('1rem');
 
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
-        const calculatedScale = containerWidth / A4_WIDTH;
-        setScale(Math.min(1, calculatedScale));
+      const width = window.innerWidth;
+      
+      // Set responsive container dimensions
+      if (width <= 479) {
+        setContainerHeight('120px'); // Very small height for mobile small
+        setContainerWidth('95%'); // Slightly smaller width
+        setContainerPadding('0.3rem');
+      } else if (width <= 599) {
+        setContainerHeight('140px'); // Small height for mobile large
+        setContainerWidth('96%'); // Slightly smaller width
+        setContainerPadding('0.4rem');
+      } else if (width <= 767) {
+        setContainerHeight('220px'); // Medium height for tablet portrait
+        setContainerWidth('98%'); // Almost full width
+        setContainerPadding('0.5rem');
+      } else if (width <= 1023) {
+        setContainerHeight('320px'); // Larger height for tablet landscape
+        setContainerWidth('100%'); // Full width
+        setContainerPadding('0.7rem');
+      } else {
+        setContainerHeight('100dvh'); // Full height for desktop
+        setContainerWidth('100%'); // Full width
+        setContainerPadding('1rem');
       }
+      
+      // Calculate scale based on container width (use a small delay to ensure DOM is updated)
+      setTimeout(() => {
+        if (containerRef.current) {
+          const containerWidthValue = containerRef.current.offsetWidth;
+          const calculatedScale = containerWidthValue / A4_WIDTH;
+          setScale(Math.min(1, calculatedScale));
+        }
+      }, 10);
     };
 
     handleResize();
@@ -58,7 +130,8 @@ const CertificatePreview = ({ data }) => {
       className="signature-item"
       style={{
         textAlign: 'center',
-        fontSize: '1.1rem',
+        fontSize: `${getFontSize(signatoryFontSize, 'signatory')}rem`,
+        fontFamily: `'${signatoryFontFamily}', sans-serif`,
         color: '#222',
         fontWeight: 500,
         flex: '1 1 180px',
@@ -74,7 +147,13 @@ const CertificatePreview = ({ data }) => {
           width: '80%',
         }}
       />
-      <div style={{ fontSize: '1rem', color: '#222', fontWeight: 400, marginTop: '0.5rem' }}>
+      <div style={{ 
+        fontSize: `${getFontSize(signatoryFontSize, 'signatory') * 0.9}rem`, 
+        fontFamily: `'${signatoryFontFamily}', sans-serif`,
+        color: '#222', 
+        fontWeight: 400, 
+        marginTop: '0.5rem' 
+      }}>
         {sig.title}
       </div>
     </div>
@@ -138,13 +217,14 @@ const CertificatePreview = ({ data }) => {
       ref={containerRef}
       onClick={handleToggleFullscreen}
       style={{
-        width: '100%',
-        height: '100dvh',
+        width: containerWidth,
+        height: containerHeight,
         overflow: 'auto',
         backgroundColor: '#f0f0f0',
-        padding: '1rem',
+        padding: containerPadding,
         boxSizing: 'border-box',
         touchAction: 'manipulation',
+        margin: '0 auto', // Center the container when width is less than 100%
       }}
     >
       <div
@@ -156,16 +236,20 @@ const CertificatePreview = ({ data }) => {
           transformOrigin: 'top center',
           margin: '0 auto',
           position: 'relative',
-          backgroundColor: 'white',
-          fontFamily: `'Montserrat', 'Playfair Display', serif`,
+          backgroundColor: backgroundColor,
+          fontFamily: `'Montserrat', 'Playfair Display', 'Roboto', 'Open Sans', 'Lato', serif, sans-serif`,
           overflow: 'hidden',
         }}
       >
-        {!imageError && (
+        {/* Background image - use custom if available, otherwise default */}
+        {!imageError && backgroundSrc && (
           <img
             src={backgroundSrc}
             alt="Background"
-            onError={() => setImageError(true)}
+            onError={() => {
+              console.error('Background image failed to load:', backgroundSrc);
+              setImageError(true);
+            }}
             style={{
               position: 'absolute',
               top: 0,
@@ -173,49 +257,70 @@ const CertificatePreview = ({ data }) => {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              opacity: 0.78,
+              opacity: backgroundImagePreview ? 1 : 0.78,
               zIndex: 0,
             }}
           />
         )}
 
-        <svg
-          width={A4_WIDTH}
-          height={A4_HEIGHT}
-          viewBox="0 0 1123 794"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
-          <g transform="rotate(180,150,150)">
-            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
-            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
-            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
-          </g>
-          <g transform="translate(823,0) rotate(270,150,150)">
-            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
-            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
-            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
-          </g>
-          <g transform="translate(0,494) rotate(90,150,150)">
-            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
-            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
-            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
-          </g>
-          <g transform="translate(823,494)">
-            <polygon points="0,300 300,0 300,300" fill="#014A9B" />
-            <polygon points="75,300 300,75 300,135 135,300" fill="#4AC2E0" />
-            <polygon points="0,300 120,300 300,120 300,75" fill="#F7B737" />
-          </g>
-        </svg>
+        {/* Design overlay image */}
+        {designImagePreview && (
+          <img
+            src={designImagePreview}
+            alt="Design Overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 1,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        
+        {/* Geometric pattern SVG (only if no design image) */}
+        {!designImagePreview && (
+          <svg
+            width={A4_WIDTH}
+            height={A4_HEIGHT}
+            viewBox="0 0 1123 794"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 1,
+              pointerEvents: 'none',
+            }}
+          >
+            <g transform="rotate(180,150,150)">
+              <polygon points="0,300 300,0 300,300" fill={backgroundColor} />
+              <polygon points="75,300 300,75 300,135 135,300" fill={lightAccentColor} />
+              <polygon points="0,300 120,300 300,120 300,75" fill={accentColor} />
+            </g>
+            <g transform="translate(823,0) rotate(270,150,150)">
+              <polygon points="0,300 300,0 300,300" fill={backgroundColor} />
+              <polygon points="75,300 300,75 300,135 135,300" fill={lightAccentColor} />
+              <polygon points="0,300 120,300 300,120 300,75" fill={accentColor} />
+            </g>
+            <g transform="translate(0,494) rotate(90,150,150)">
+              <polygon points="0,300 300,0 300,300" fill={backgroundColor} />
+              <polygon points="75,300 300,75 300,135 135,300" fill={lightAccentColor} />
+              <polygon points="0,300 120,300 300,120 300,75" fill={accentColor} />
+            </g>
+            <g transform="translate(823,494)">
+              <polygon points="0,300 300,0 300,300" fill={backgroundColor} />
+              <polygon points="75,300 300,75 300,135 135,300" fill={lightAccentColor} />
+              <polygon points="0,300 120,300 300,120 300,75" fill={accentColor} />
+            </g>
+          </svg>
+        )}
 
         <div
           style={{
@@ -229,14 +334,14 @@ const CertificatePreview = ({ data }) => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(255,255,255,0.78)',
+            background: showTransparentBox ? 'rgba(255,255,255,0.78)' : 'transparent',
             borderRadius: 25,
             zIndex: 2,
           }}
         >
           <div style={{
             background: 'rgba(255,255,255,0.05)',
-            border: '6px solid #2563b6',
+            border: `6px solid ${borderColor}`,
             borderRadius: 20,
             padding: '36px 40px',
             maxWidth: 900,
@@ -259,7 +364,8 @@ const CertificatePreview = ({ data }) => {
 
             <div style={{ width: '100%', textAlign: 'center' }}>
               <div style={{
-                fontSize: '2.5rem',
+                fontSize: `${getFontSize(titleFontSize, 'title')}rem`,
+                fontFamily: `'${titleFontFamily}', serif`,
                 fontWeight: 'bold',
                 letterSpacing: 4,
                 color: '#2d3142',
@@ -269,18 +375,31 @@ const CertificatePreview = ({ data }) => {
               </div>
             </div>
 
-            <div style={{ fontSize: '1.1rem', color: '#444', fontWeight: 400, marginBottom: '0.8rem' }}>
+            <div style={{ 
+              fontSize: '1.1rem', 
+              color: '#444', 
+              fontWeight: 400, 
+              marginBottom: '0.8rem',
+              fontFamily: `'${messageFontFamily}', sans-serif`,
+            }}>
               This certificate is proudly presented to
             </div>
 
-            <div style={{ fontSize: '1.7rem', fontWeight: 'bold', color: '#222', margin: '0.5rem 0 0.3rem' }}>
+            <div style={{ 
+              fontSize: `${getFontSize(nameFontSize, 'name')}rem`, 
+              fontFamily: `'${nameFontFamily}', serif`,
+              fontWeight: 'bold', 
+              color: '#222', 
+              margin: '0.5rem 0 0.3rem' 
+            }}>
               {recipientName}
             </div>
 
             <hr style={{ width: '60%', border: 'none', borderTop: '1px solid #000', margin: '0.3rem auto 0.8rem auto' }} />
 
             <div style={{ 
-              fontSize: '1.08rem', 
+              fontSize: `${getFontSize(messageFontSize, 'message')}rem`, 
+              fontFamily: `'${messageFontFamily}', sans-serif`,
               color: '#444', 
               lineHeight: 1.6, 
               textAlign: 'center', 

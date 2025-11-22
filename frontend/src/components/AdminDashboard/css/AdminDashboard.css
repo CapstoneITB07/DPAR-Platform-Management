@@ -1565,6 +1565,25 @@
   box-shadow: 0 2px 8px rgba(161, 28, 34, 0.2);
 }
 
+/* Calendar toolbar button base styles - Desktop (larger) */
+.calendar-today-btn {
+  padding: 10px 16px;
+  font-size: 0.875rem;
+}
+
+.calendar-add-event-btn {
+  padding: 10px 14px;
+  font-size: 0.875rem;
+}
+
+.calendar-add-event-btn .add-event-icon {
+  font-size: 0.875rem;
+}
+
+.calendar-month-year {
+  font-size: 18px;
+}
+
 .add-event-btn:hover {
   background: #8b1a1f;
   transform: translateY(-1px);
@@ -3479,6 +3498,43 @@
   background: #fff0f0 !important;
 }
 
+/* Event status colors */
+.calendar-section .rbc-event.event-not-started {
+  background: #6c757d !important;
+  opacity: 0.8 !important;
+}
+
+.calendar-section .rbc-event.event-not-started:hover {
+  background: #5a6268 !important;
+  opacity: 1 !important;
+}
+
+.calendar-section .rbc-event.event-in-progress {
+  background: #28a745 !important;
+}
+
+.calendar-section .rbc-event.event-in-progress:hover {
+  background: #218838 !important;
+}
+
+.calendar-section .rbc-date-cell .rbc-event.event-not-started {
+  background: #6c757d !important;
+  opacity: 0.8 !important;
+}
+
+.calendar-section .rbc-date-cell .rbc-event.event-not-started:hover {
+  background: #5a6268 !important;
+  opacity: 1 !important;
+}
+
+.calendar-section .rbc-date-cell .rbc-event.event-in-progress {
+  background: #28a745 !important;
+}
+
+.calendar-section .rbc-date-cell .rbc-event.event-in-progress:hover {
+  background: #218838 !important;
+}
+
 .btn-next, .btn-prev {
   background: none !important;
   color: #A11C22 !important;
@@ -3528,6 +3584,90 @@
   .calendar-today-btn {
     order: -1;
     margin-right: 8px !important;
+  }
+}
+
+/* Mobile styles for calendar toolbar buttons - Smaller to fit */
+@media (max-width: 768px) {
+  .calendar-today-btn {
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+    min-width: 60px !important;
+    min-height: 36px !important;
+  }
+  
+  .calendar-add-event-btn {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    min-height: 36px !important;
+  }
+  
+  .calendar-add-event-btn .add-event-icon {
+    font-size: 0.75rem !important;
+  }
+  
+  .calendar-nav-btn-icon {
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 6px !important;
+  }
+  
+  .calendar-nav-btn-icon svg {
+    font-size: 0.9rem !important;
+  }
+  
+  .calendar-month-year {
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-today-btn {
+    padding: 6px 10px !important;
+    font-size: 0.7rem !important;
+    min-width: 55px !important;
+    min-height: 32px !important;
+  }
+  
+  .calendar-add-event-btn {
+    padding: 6px 8px !important;
+    font-size: 0.7rem !important;
+    min-height: 32px !important;
+  }
+  
+  .calendar-add-event-btn .add-event-icon {
+    font-size: 0.7rem !important;
+  }
+  
+  .calendar-nav-btn-icon {
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 6px !important;
+  }
+  
+  .calendar-nav-btn-icon svg {
+    font-size: 0.85rem !important;
+  }
+  
+  .calendar-month-year {
+    font-size: 12px !important;
+    min-width: 90px !important;
+  }
+  
+  /* Make calendar toolbar more compact on mobile */
+  .calendar-section .rbc-toolbar {
+    font-size: 0.8rem !important;
+  }
+  
+  /* Make toolbar container responsive */
+  .calendar-section > div > div:first-child {
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+    padding: 0 4px !important;
+  }
+  
+  .calendar-section > div > div:first-child > div {
+    gap: 4px !important;
   }
 }
 /* Evaluation Summary Styles */

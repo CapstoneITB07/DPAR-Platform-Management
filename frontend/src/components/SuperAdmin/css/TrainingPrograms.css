@@ -63,28 +63,34 @@
 
 .sa-trainingprograms-filters-section {
   margin-bottom: 24px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .sa-trainingprograms-search-box {
   position: relative;
-  max-width: 500px;
+  max-width: 320px;
+  flex: 0 0 auto;
 }
 
 .sa-trainingprograms-search-box svg {
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #999;
   z-index: 1;
+  font-size: 14px;
 }
 
 .sa-trainingprograms-search-box input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
+  padding: 8px 12px 8px 40px;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   transition: border-color 0.2s;
 }
 
@@ -724,6 +730,15 @@
 
   .sa-trainingprograms-page-header h1 {
     font-size: 24px;
+  }
+
+  .sa-trainingprograms-filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sa-trainingprograms-search-box {
+    max-width: 100%;
   }
 
   .sa-trainingprograms-card {

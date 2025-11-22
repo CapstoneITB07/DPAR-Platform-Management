@@ -24,12 +24,22 @@ class PendingApplicationController extends Controller
         try {
             $applications = PendingApplication::where('status', 'pending')->get();
 
-            // Add full URLs for logos
+            // Add full URLs for logos, interview proof, and SEC file
             foreach ($applications as $application) {
                 if ($application->logo && !str_starts_with($application->logo, '/Assets/')) {
                     $application->logo = Storage::url($application->logo);
                 } elseif (!$application->logo) {
                     $application->logo = '/Assets/disaster_logo.png';
+                }
+
+                // Add full URLs for interview proof
+                if ($application->interview_proof && !str_starts_with($application->interview_proof, 'http')) {
+                    $application->interview_proof = Storage::url($application->interview_proof);
+                }
+
+                // Add full URLs for SEC file
+                if ($application->sec_file && !str_starts_with($application->sec_file, 'http')) {
+                    $application->sec_file = Storage::url($application->sec_file);
                 }
             }
 
@@ -50,6 +60,16 @@ class PendingApplicationController extends Controller
                 $application->logo = Storage::url($application->logo);
             } elseif (!$application->logo) {
                 $application->logo = '/Assets/disaster_logo.png';
+            }
+
+            // Add full URLs for interview proof
+            if ($application->interview_proof && !str_starts_with($application->interview_proof, 'http')) {
+                $application->interview_proof = Storage::url($application->interview_proof);
+            }
+
+            // Add full URLs for SEC file
+            if ($application->sec_file && !str_starts_with($application->sec_file, 'http')) {
+                $application->sec_file = Storage::url($application->sec_file);
             }
 
             return response()->json($application);

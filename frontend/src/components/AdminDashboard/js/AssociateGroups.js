@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import '../css/AssociateGroups.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faBell, faChartBar, faTimes, faTrash, faUser, faCheck, faEnvelope, faPhone, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt, faChevronDown, faChevronUp, faIdCard } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faBell, faChartBar, faTimes, faTrash, faUser, faCheck, faEnvelope, faPhone, faTrophy, faStar, faFileAlt, faSignInAlt, faUserCheck, faCalendarAlt, faChevronDown, faChevronUp, faIdCard, faEye, faImage } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
 import Modal from 'react-modal';
 import { API_BASE } from '../../../utils/url';
@@ -28,6 +28,8 @@ function AssociateGroups() {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedApplicationId, setSelectedApplicationId] = useState(null);
+  const [selectedApplicationDetails, setSelectedApplicationDetails] = useState(null);
+  const [showApplicationDetailsModal, setShowApplicationDetailsModal] = useState(false);
   const [editListMode, setEditListMode] = useState(false);
   const [associates, setAssociates] = useState([]);
   const [form, setForm] = useState({ 
@@ -162,6 +164,35 @@ function AssociateGroups() {
     setShowRejectionModal(false);
     setRejectionReason('');
     setSelectedApplicationId(null);
+  };
+
+  const getFileUrl = (filePath) => {
+    if (!filePath) return null;
+    // If already a full URL, return as is
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    // If starts with /storage/, it's already a storage URL from backend
+    if (filePath.startsWith('/storage/')) {
+      return `${API_BASE}${filePath}`;
+    }
+    // If it's a storage path without leading slash
+    if (filePath.startsWith('storage/')) {
+      return `${API_BASE}/${filePath}`;
+    }
+    // Otherwise, assume it's a storage path and prepend API_BASE
+    return `${API_BASE}/storage/${filePath}`;
+  };
+
+  const viewApplicationDetails = async (applicationId) => {
+    try {
+      const response = await axiosInstance.get(`${API_BASE}/api/pending-applications/${applicationId}`);
+      setSelectedApplicationDetails(response.data);
+      setShowApplicationDetailsModal(true);
+    } catch (error) {
+      console.error('Error fetching application details:', error);
+      alert('Failed to load application details');
+    }
   };
 
   const rejectApplication = async () => {
@@ -980,6 +1011,24 @@ function AssociateGroups() {
                       
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button 
+                          onClick={() => viewApplicationDetails(application.id)}
+                          style={{
+                            padding: '8px 16px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faEye} />
+                          View Details
+                        </button>
+                        <button 
                           onClick={() => openRejectionModal(application.id)}
                           disabled={approvingId === application.id || rejectingId === application.id}
                           style={{
@@ -1123,6 +1172,201 @@ function AssociateGroups() {
           </div>
         </Modal>
       )}
+      {/* Application Details Modal */}
+      {showApplicationDetailsModal && selectedApplicationDetails && (
+        <Modal
+          isOpen={showApplicationDetailsModal}
+          onRequestClose={() => {
+            setShowApplicationDetailsModal(false);
+            setSelectedApplicationDetails(null);
+          }}
+          style={{
+            overlay: {
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000
+            },
+            content: {
+              maxWidth: '800px',
+              maxHeight: '90vh',
+              margin: 'auto',
+              padding: '0',
+              borderRadius: '8px',
+              overflow: 'auto'
+            }
+          }}
+        >
+          <div style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #ddd', paddingBottom: '15px' }}>
+              <h2 style={{ margin: 0, color: '#333' }}>Application Details</h2>
+              <button
+                onClick={() => {
+                  setShowApplicationDetailsModal(false);
+                  setSelectedApplicationDetails(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666'
+                }}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <img 
+                src={getLogoUrl(selectedApplicationDetails.logo)} 
+                alt={selectedApplicationDetails.organization_name}
+                style={{
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #ddd',
+                  marginBottom: '15px'
+                }}
+                onError={(e) => {
+                  e.target.src = '/Assets/disaster_logo.png';
+                }}
+              />
+              <h3 style={{ margin: '10px 0', color: '#333' }}>{selectedApplicationDetails.organization_name}</h3>
+              <p style={{ margin: '5px 0', color: '#666' }}><strong>Type:</strong> {selectedApplicationDetails.organization_type}</p>
+              <p style={{ margin: '5px 0', color: '#666' }}><strong>Director:</strong> {selectedApplicationDetails.director_name}</p>
+              <p style={{ margin: '5px 0', color: '#666' }}><strong>Email:</strong> {selectedApplicationDetails.email}</p>
+              <p style={{ margin: '5px 0', color: '#666' }}><strong>Phone:</strong> {selectedApplicationDetails.phone}</p>
+              {selectedApplicationDetails.description && (
+                <p style={{ margin: '10px 0', color: '#666' }}><strong>Description:</strong> {selectedApplicationDetails.description}</p>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#333', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FontAwesomeIcon icon={faImage} style={{ color: '#c0392b' }} />
+                Interview Proof <span style={{color: '#dc3545'}}>*</span>
+              </h4>
+              {selectedApplicationDetails.interview_proof ? (
+                (() => {
+                  const proofUrl = getFileUrl(selectedApplicationDetails.interview_proof);
+                  return (
+                    <div>
+                      <a 
+                        href={proofUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          color: '#c0392b',
+                          textDecoration: 'none',
+                          fontWeight: '500',
+                          marginBottom: '10px'
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faImage} />
+                        View Interview Proof
+                      </a>
+                      <div style={{ marginTop: '10px' }}>
+                        <img 
+                          src={proofUrl} 
+                          alt="Interview Proof" 
+                          style={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '400px', 
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            padding: '5px',
+                            backgroundColor: '#fff'
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const errorDiv = e.target.nextSibling;
+                            if (errorDiv) errorDiv.style.display = 'block';
+                          }}
+                        />
+                        <div style={{ display: 'none', padding: '10px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #ddd' }}>
+                          <p style={{ margin: 0, color: '#666' }}>Unable to display image. <a href={proofUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#c0392b' }}>Click to open</a></p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <p style={{ color: '#dc3545', fontStyle: 'italic', margin: 0 }}>No interview proof uploaded</p>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#333', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FontAwesomeIcon icon={faIdCard} style={{ color: '#c0392b' }} />
+                SEC Registration (Optional)
+              </h4>
+              {selectedApplicationDetails.sec_number && (
+                <p style={{ margin: '5px 0', color: '#666' }}><strong>SEC Number:</strong> {selectedApplicationDetails.sec_number}</p>
+              )}
+              {selectedApplicationDetails.sec_file ? (
+                (() => {
+                  const secUrl = getFileUrl(selectedApplicationDetails.sec_file);
+                  const isPdf = secUrl.toLowerCase().includes('.pdf');
+                  return (
+                    <div>
+                      <a 
+                        href={secUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '8px',
+                          color: '#c0392b',
+                          textDecoration: 'none',
+                          fontWeight: '500',
+                          marginBottom: '10px'
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faIdCard} />
+                        {isPdf ? 'View SEC Document (PDF)' : 'View SEC Document'}
+                      </a>
+                      {!isPdf && (
+                        <div style={{ marginTop: '10px' }}>
+                          <img 
+                            src={secUrl} 
+                            alt="SEC Document" 
+                            style={{ 
+                              maxWidth: '100%', 
+                              maxHeight: '400px', 
+                              border: '1px solid #ddd',
+                              borderRadius: '8px',
+                              padding: '5px',
+                              backgroundColor: '#fff'
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              const errorDiv = e.target.nextSibling;
+                              if (errorDiv) errorDiv.style.display = 'block';
+                            }}
+                          />
+                          <div style={{ display: 'none', padding: '10px', backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #ddd' }}>
+                            <p style={{ margin: 0, color: '#666' }}>Unable to display image. <a href={secUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#c0392b' }}>Click to open</a></p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
+                <p style={{ color: '#666', fontStyle: 'italic', margin: 0 }}>No SEC document uploaded</p>
+              )}
+              {!selectedApplicationDetails.sec_number && !selectedApplicationDetails.sec_file && (
+                <p style={{ color: '#666', fontStyle: 'italic', margin: 0 }}>No SEC information provided</p>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="modal-overlay" style={{zIndex: 10000}}>

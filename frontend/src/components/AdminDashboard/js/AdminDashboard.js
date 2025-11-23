@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import AdminLayout from './AdminLayout';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCalendarAlt, faChartLine, faUserCheck, faCertificate, faPlus, faChevronLeft, faChevronRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
@@ -51,6 +52,166 @@ const getPerformanceColor = (score) => {
   if (score >= 2.5) return '#17a2b8';
   if (score >= 1.5) return '#ffc107';
   return '#dc3545';
+};
+
+// Custom Event Component with Hover Tooltip
+const CustomEvent = ({ event }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const eventRef = useRef(null);
+  const tooltipRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
+
+  const eventCount = event.resource?.count || event.resource?.events?.length || 1;
+  const events = event.resource?.events || [];
+
+  // Determine background color based on event status
+  const getEventBackgroundColor = () => {
+    const now = new Date();
+    let backgroundColor = '#A11C22'; // Default red color
+    let hasInProgress = false;
+    let allNotStarted = true;
+
+    if (events.length > 0) {
+      events.forEach(eventItem => {
+        const startDate = new Date(eventItem.start_date);
+        const endDate = new Date(eventItem.end_date);
+        
+        // Check if event is in progress (started but not finished)
+        if (startDate <= now && endDate >= now) {
+          hasInProgress = true;
+          allNotStarted = false;
+        }
+        // Check if event has started
+        else if (startDate <= now) {
+          allNotStarted = false;
+        }
+      });
+      
+      // Apply colors based on status
+      if (hasInProgress) {
+        backgroundColor = '#28a745'; // Green for events in progress
+      } else if (allNotStarted) {
+        backgroundColor = '#6c757d'; // Grey for events not started
+      }
+    }
+
+    return backgroundColor;
+  };
+
+  const backgroundColor = getEventBackgroundColor();
+
+  // Handle hover to show tooltip
+  const handleMouseEnter = () => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    // Show tooltip immediately for responsive feel
+    setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    // Small delay before hiding to allow moving to tooltip
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowTooltip(false);
+    }, 150);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+
+  // Update tooltip position when badge is hovered
+  const updateTooltipPosition = (e) => {
+    if (eventRef.current) {
+      const rect = eventRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: window.scrollY + rect.top - 8,
+        left: window.scrollX + rect.left + rect.width / 2
+      });
+    }
+  };
+
+  const handleBadgeMouseEnter = (e) => {
+    e.stopPropagation();
+    updateTooltipPosition(e);
+    handleMouseEnter();
+  };
+
+  return (
+    <>
+      <div
+        ref={eventRef}
+        className="custom-calendar-event"
+        style={{
+          position: 'relative',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
+        <div 
+          className="event-count-badge"
+          style={{ backgroundColor: backgroundColor }}
+          onMouseEnter={handleBadgeMouseEnter}
+          onMouseLeave={(e) => {
+            e.stopPropagation();
+            handleMouseLeave();
+          }}
+          onMouseMove={updateTooltipPosition}
+        >
+          {eventCount}
+        </div>
+      </div>
+      {showTooltip && events.length > 0 && createPortal(
+        <div 
+          ref={tooltipRef}
+          className="event-tooltip event-tooltip-portal"
+          style={{
+            position: 'fixed',
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: 'translate(-50%, calc(-100% - 8px))'
+          }}
+          onMouseEnter={(e) => {
+            e.stopPropagation();
+            handleMouseEnter();
+          }}
+          onMouseLeave={(e) => {
+            e.stopPropagation();
+            handleMouseLeave();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <div className="event-tooltip-header">
+            {eventCount} {eventCount === 1 ? 'Event' : 'Events'}
+          </div>
+          <div className="event-tooltip-list">
+            {events.map((ev, index) => (
+              <div key={ev.id || index} className="event-tooltip-item">
+                <span className="event-tooltip-name">{ev.title || ev.name || 'Untitled Event'}</span>
+              </div>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
 };
 
 // Custom Calendar Toolbar
@@ -752,7 +913,11 @@ function AdminDashboard() {
         const eventsByDate = {};
         response.data.data.forEach(event => {
           const startDate = new Date(event.start_date);
-          const dateKey = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          // Use local date components to avoid timezone issues
+          const year = startDate.getFullYear();
+          const month = String(startDate.getMonth() + 1).padStart(2, '0');
+          const day = String(startDate.getDate()).padStart(2, '0');
+          const dateKey = `${year}-${month}-${day}`; // YYYY-MM-DD format in local timezone
           
           if (!eventsByDate[dateKey]) {
             eventsByDate[dateKey] = [];
@@ -762,7 +927,9 @@ function AdminDashboard() {
         
         // Create calendar events with count as title
         const events = Object.entries(eventsByDate).map(([dateKey, dayEvents]) => {
-          const startDate = new Date(dateKey);
+          // Create date from dateKey in local timezone (midnight)
+          const [year, month, day] = dateKey.split('-').map(Number);
+          const startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
           
           return {
             id: `date-${dateKey}`,
@@ -1090,139 +1257,14 @@ function AdminDashboard() {
     setEditingEvent(null);
   };
 
-  const handleEventCreated = (newEvent) => {
-    // Set flag to preserve calendar events from being overwritten
-    setPreserveCalendarEvents(true);
-    
-    // Process the new event to match the calendar display format
-    const startDate = new Date(newEvent.start_date);
-    const dateKey = startDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-    
-    setCalendarEvents(prev => {
-      // Check if there's already an event for this date
-      const existingDateEvent = prev.find(event => {
-        const eventDate = new Date(event.start);
-        const eventDateKey = eventDate.toISOString().split('T')[0];
-        return eventDateKey === dateKey;
-      });
-      
-      if (existingDateEvent) {
-        // Update existing date event to include the new event
-        return prev.map(event => {
-          const eventDate = new Date(event.start);
-          const eventDateKey = eventDate.toISOString().split('T')[0];
-          
-          if (eventDateKey === dateKey) {
-            // Add the new event to the existing group
-            const updatedEvents = [...event.resource.events, newEvent];
-            return {
-              ...event,
-              title: updatedEvents.length.toString(),
-              resource: {
-                ...event.resource,
-                events: updatedEvents,
-                count: updatedEvents.length
-              }
-            };
-          }
-          return event;
-        });
-      } else {
-        // Create a new date event for this date
-        const newDateEvent = {
-          id: `date-${dateKey}`,
-          title: '1',
-          start: startDate,
-          end: startDate,
-          allDay: true,
-          resource: {
-            date: dateKey,
-            events: [newEvent],
-            count: 1
-          },
-          // Ensure these properties are set for React Big Calendar
-          start_date: startDate,
-          end_date: startDate,
-          display: 'block'
-        };
-        
-        return [...prev, newDateEvent];
-      }
-    });
+  const handleEventCreated = async (newEvent) => {
+    // Refetch calendar events from backend to ensure consistency and avoid duplicates
+    await fetchCalendarEventsOnly();
   };
 
-  const handleEventUpdated = (updatedEvent) => {
-    setCalendarEvents(prev => prev.map(event => {
-      // Check if this calendar event contains the updated event
-      if (event.resource && event.resource.events) {
-        const eventIndex = event.resource.events.findIndex(e => e.id === updatedEvent.id);
-        if (eventIndex !== -1) {
-          // Update the specific event in the group
-          const updatedEvents = [...event.resource.events];
-          updatedEvents[eventIndex] = updatedEvent;
-          
-          return {
-            ...event,
-            title: updatedEvents.length.toString(),
-            resource: {
-              ...event.resource,
-              events: updatedEvents,
-              count: updatedEvents.length
-            }
-          };
-        }
-      }
-      return event;
-    }));
-  };
-
-  // Update handleEventDeleted to call backend API
-  const handleEventDeleted = async (eventId) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) {
-      return;
-    }
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      // Call backend to delete the event
-      const response = await axiosInstance.delete(`${API_BASE}/api/calendar-events/${eventId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.data.success) {
-        setCalendarEvents(prev => {
-          return prev.map(event => {
-            // Check if this calendar event contains the deleted event
-            if (event.resource && event.resource.events) {
-              const eventIndex = event.resource.events.findIndex(e => e.id === eventId);
-              if (eventIndex !== -1) {
-                // Remove the specific event from the group
-                const updatedEvents = event.resource.events.filter(e => e.id !== eventId);
-                // If no events left for this date, remove the entire date event
-                if (updatedEvents.length === 0) {
-                  return null; // This will be filtered out
-                }
-                return {
-                  ...event,
-                  title: updatedEvents.length.toString(),
-                  resource: {
-                    ...event.resource,
-                    events: updatedEvents,
-                    count: updatedEvents.length
-                  }
-                };
-              }
-            }
-            return event;
-          }).filter(event => event !== null); // Remove null events (empty dates)
-        });
-        setShowEventDetailsModal(false); // Close the event details modal after deletion
-      } else {
-        // Optionally show an error message to the user
-        alert('Failed to delete event: ' + (response.data.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error('Error deleting event:', err);
-      alert('Failed to delete event: ' + (err.response?.data?.message || err.message));
-    }
+  const handleEventUpdated = async (updatedEvent) => {
+    // Refetch calendar events from backend to ensure consistency
+    await fetchCalendarEventsOnly();
   };
 
   const handleEventClick = (event) => {
@@ -1589,7 +1631,7 @@ function AdminDashboard() {
               <div className="calendar-header">
                 <h3><FontAwesomeIcon icon={faCalendarAlt} /> Calendar</h3>
               </div>
-              <div style={{ height: 400, background: 'white', borderRadius: 12, padding: 10 }}>
+              <div style={{ height: 400, background: 'white', borderRadius: 12, padding: 10, overflow: 'visible', position: 'relative' }}>
                 <CustomCalendarToolbar 
                   date={calendarDate} 
                   onNavigate={handleCalendarNavigate} 
@@ -1610,6 +1652,9 @@ function AdminDashboard() {
                   onNavigate={date => setCalendarDate(date)}
                   onSelectEvent={handleEventClick}
                   onView={() => console.log('Calendar view changed, events:', calendarEvents)}
+                  components={{
+                    event: CustomEvent
+                  }}
                   eventPropGetter={(event) => {
                     const now = new Date();
                     let backgroundColor = '#A11C22'; // Default red color
@@ -1651,17 +1696,18 @@ function AdminDashboard() {
                     
                     return {
                       style: {
-                        backgroundColor: backgroundColor,
+                        backgroundColor: 'transparent',
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
-                        padding: '2px 6px',
+                        padding: 0,
                         fontSize: '0.75rem',
                         fontWeight: 700,
                         opacity: 1,
-                        visibility: 'visible'
+                        visibility: 'visible',
+                        boxShadow: 'none'
                       },
-                      className: className
+                      className: `custom-event-wrapper ${className}`
                     };
                   }}
                 />
@@ -1777,7 +1823,6 @@ function AdminDashboard() {
             event={editingEvent}
             onEventCreated={handleEventCreated}
             onEventUpdated={handleEventUpdated}
-            onEventDeleted={handleEventDeleted}
           />
         )}
 
@@ -1787,7 +1832,6 @@ function AdminDashboard() {
             onClose={() => setShowEventDetailsModal(false)}
             event={selectedEvent.resource}
             onEdit={handleEditEvent}
-            onDelete={handleEventDeleted}
             events={selectedDayEvents.length > 1 ? selectedDayEvents : null}
             date={selectedDayDate}
           />
@@ -1798,7 +1842,6 @@ function AdminDashboard() {
             show={showEventsListModal}
             onClose={handleCloseEventsListModal}
             onEdit={handleEditEvent}
-            onDelete={handleEventDeleted}
           />
         )}
 

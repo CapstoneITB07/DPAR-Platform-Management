@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faCalendarAlt, faMapMarkerAlt, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faCalendarAlt, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import axiosInstance from '../../../utils/axiosConfig';
 import '../css/EventModal.css';
 import { API_BASE } from '../../../utils/url';
@@ -11,8 +11,7 @@ const EventModal = ({
   onClose, 
   event = null, 
   onEventCreated, 
-  onEventUpdated,
-  onEventDeleted 
+  onEventUpdated
 }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -251,33 +250,6 @@ const EventModal = ({
     }
   };
 
-  const handleDelete = async () => {
-    if (!event || !window.confirm('Are you sure you want to delete this event?')) {
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axiosInstance.delete(
-        `${API_BASE}/api/calendar-events/${event.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      if (response.data.success) {
-        onEventDeleted(event.id);
-        onClose();
-      }
-    } catch (err) {
-      console.error('Error deleting event:', err);
-      setError(err.response?.data?.message || 'Failed to delete event');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatDateTime = (dateTime) => {
     if (!dateTime) return '';
     return new Date(dateTime).toLocaleString();
@@ -396,17 +368,6 @@ const EventModal = ({
           )}
 
           <div className="event-modal-actions">
-            {isEditMode && (
-              <button
-                type="button"
-                className="btn-delete"
-                onClick={handleDelete}
-                disabled={loading}
-              >
-                <FontAwesomeIcon icon={faTrash} /> Delete Event
-              </button>
-            )}
-            
             <div className="btn-group">
               <button
                 type="button"

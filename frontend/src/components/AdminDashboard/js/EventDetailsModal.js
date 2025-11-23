@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import Modal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faCalendarAlt, faMapMarkerAlt, faUser, faClock, faEdit, faTrash, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faCalendarAlt, faMapMarkerAlt, faUser, faClock, faEdit, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { format } from 'date-fns';
 import '../css/EventDetailsModal.css';
 
-const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, date }) => {
+const EventDetailsModal = ({ show, onClose, event, onEdit, events, date }) => {
   const [expandedEvents, setExpandedEvents] = useState(new Set());
 
   const formatDateTime = (dateTime) => {
@@ -66,17 +66,6 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
     }
   };
 
-  const handleDeleteEvent = async (eventId) => {
-    if (onDelete && window.confirm('Are you sure you want to delete this event?')) {
-      try {
-        await onDelete(eventId);
-        onClose();
-      } catch (error) {
-        console.error('Error deleting event:', error);
-      }
-    }
-  };
-
   const handleCloseModal = () => {
     setExpandedEvents(new Set());
     onClose();
@@ -131,18 +120,6 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
                     >
                       <FontAwesomeIcon icon={faEdit} />
                     </button>
-                    {onDelete && (
-                      <button 
-                        className="btn-delete-icon" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteEvent(eventItem.id);
-                        }}
-                        title="Delete Event"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    )}
                   </div>
                 </div>
                 
@@ -241,11 +218,6 @@ const EventDetailsModal = ({ show, onClose, event, onEdit, onDelete, events, dat
           {onEdit && (
             <button className="btn-edit-icon" onClick={() => onEdit(event)} title="Edit Event">
               <FontAwesomeIcon icon={faEdit} />
-            </button>
-          )}
-          {onDelete && (
-            <button className="btn-delete-icon" onClick={() => onDelete(event.id)} title="Delete Event">
-              <FontAwesomeIcon icon={faTrash} />
             </button>
           )}
           <button className="event-details-close" onClick={onClose}>

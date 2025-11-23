@@ -7,6 +7,13 @@ use Dompdf\Options;
 use App\Models\Evaluation;
 use App\Models\AssociateGroup;
 use App\Models\User;
+use App\Models\Report;
+use App\Models\Volunteer;
+use App\Models\Notification;
+use App\Models\NotificationRecipient;
+use App\Models\ActivityLog;
+use App\Models\Announcement;
+use App\Models\TrainingProgram;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -90,6 +97,9 @@ class DashboardAnalysisService
             })
             ->get();
 
+        // Gather post activity report and history (always gather, even if no evaluations)
+        $postActivityData = $this->gatherPostActivityData();
+
         // Handle case where there's no data
         if ($evaluations->isEmpty() && $associateGroups->isEmpty()) {
             return [
@@ -116,7 +126,8 @@ class DashboardAnalysisService
                     'No evaluation data available. Begin conducting evaluations to generate meaningful performance insights.',
                     'Establish evaluation protocols and begin systematic assessment of associate group performance.'
                 ],
-                'individual_performance' => []
+                'individual_performance' => [],
+                'post_activity' => $postActivityData
             ];
         }
 
@@ -150,6 +161,12 @@ class DashboardAnalysisService
         // Calculate performance insights
         $performanceInsights = $this->calculatePerformanceInsights($evaluations, $averageScore, $performanceDistribution);
 
+        // Calculate aggregate performance metrics across all associates
+        $aggregateMetrics = $this->calculateAggregateMetrics($associateUsers, $evaluations);
+
+        // Gather post activity report and history
+        $postActivityData = $this->gatherPostActivityData();
+
         return [
             'overall_stats' => [
                 'total_evaluations' => $totalEvaluations,
@@ -165,7 +182,9 @@ class DashboardAnalysisService
             'bottom_performers' => $bottomPerformers,
             'category_analysis' => $categoryAnalysis,
             'recommendations' => $recommendations,
-            'individual_performance' => $this->getIndividualPerformanceData($userEvaluations)
+            'individual_performance' => $this->getIndividualPerformanceData($userEvaluations),
+            'aggregate_metrics' => $aggregateMetrics,
+            'post_activity' => $postActivityData
         ];
     }
 
@@ -335,6 +354,11 @@ class DashboardAnalysisService
                 }
             }
 
+            // Get performance metrics for this individual (last 3 months)
+            $endDate = Carbon::parse($latestEval->created_at);
+            $startDate = $endDate->copy()->subMonths(3);
+            $metrics = $this->calculatePerformanceMetrics($userId, $startDate->toDateString(), $endDate->toDateString());
+
             $individualData[] = [
                 'user_id' => $userId,
                 'user_name' => $latestEval->user->name ?? 'Unknown',
@@ -345,7 +369,8 @@ class DashboardAnalysisService
                 'performance_level' => $this->getPerformanceLevel($latestEval->total_score),
                 'trend' => $trend,
                 'first_evaluation' => $userEvals->last()->created_at->format('Y-m-d'),
-                'last_evaluation' => $latestEval->created_at->format('Y-m-d')
+                'last_evaluation' => $latestEval->created_at->format('Y-m-d'),
+                'metrics' => $metrics
             ];
         }
 
@@ -411,32 +436,32 @@ class DashboardAnalysisService
         if (strpos($text, '<strong>') !== false || strpos($text, '<') !== false) {
             return $text;
         }
-        
+
         // Match percentages first (e.g., 30%, 15.5%) - must be before other patterns
         $text = preg_replace('/(\d+\.?\d*)%/i', '<strong>$1%</strong>', $text);
-        
+
         // Match scores with / (e.g., 3.5/4.0) - must be before decimal matching
         $text = preg_replace('/(\d+\.?\d*)\/(\d+\.?\d*)/', '<strong>$1/$2</strong>', $text);
-        
+
         // Match numbers followed by "points" (e.g., "3.5 points", "0.2 points", "increase of 0.5 points")
         $text = preg_replace('/(\d+\.?\d*)\s+points?/i', '<strong>$1</strong> points', $text);
-        
+
         // Match numbers followed by metric words (e.g., "30 of evaluations", "15 groups")
         $text = preg_replace('/(\d+\.?\d*)\s+(of|evaluations?|groups?|associates?|members?|range|count|portion)/i', '<strong>$1</strong> $2', $text);
-        
+
         // Match decimal numbers in context (e.g., "score of 3.5", "with 2.75", "average of 3.0")
         $text = preg_replace('/(score of|average of|average score of|with|an average|increase of|decrease of|gain of|change of|improvement of|with a|with an|only|about|approximately|over|under|above|below|at|around)\s+(\d+\.\d+)/i', '$1 <strong>$2</strong>', $text);
-        
+
         // Match standalone decimal numbers (e.g., "3.5", "2.75") not already in strong tags
         $text = preg_replace('/(?<!<strong>)(?<!>)(\d+\.\d+)(?!<\/strong>)(?=\s|$|,|\.|%)/', '<strong>$1</strong>', $text);
-        
+
         // Match whole numbers in metric contexts (2+ digits to avoid single digits in text)
         // Match numbers followed by specific words or at end of phrases
         $text = preg_replace('/(\d{2,})(?=\s+(evaluations?|groups?|associates?|members?|range|count|portion|percent|percentage)|$|,|\.)/', '<strong>$1</strong>', $text);
-        
+
         // Clean up any double bolding
         $text = preg_replace('/<strong><strong>(.*?)<\/strong><\/strong>/', '<strong>$1</strong>', $text);
-        
+
         return $text;
     }
 
@@ -591,6 +616,11 @@ class DashboardAnalysisService
         // Get performance timeline
         $performanceTimeline = $this->getPerformanceTimeline($evaluations);
 
+        // Get performance metrics for latest evaluation period (last 3 months)
+        $latestEvaluation = $evaluations->first();
+        $metricsPeriod = $this->getMetricsPeriod($latestEvaluation);
+        $performanceMetrics = $this->calculatePerformanceMetrics($userId, $metricsPeriod['start_date'], $metricsPeriod['end_date']);
+
         return [
             'user_info' => [
                 'id' => $user->id,
@@ -614,7 +644,9 @@ class DashboardAnalysisService
             'performance_distribution' => $performanceDistribution,
             'category_analysis' => $categoryAnalysis,
             'evaluation_history' => $evaluationHistory,
-            'performance_timeline' => $performanceTimeline
+            'performance_timeline' => $performanceTimeline,
+            'performance_metrics' => $performanceMetrics,
+            'metrics_period' => $metricsPeriod
         ];
     }
 
@@ -740,11 +772,24 @@ class DashboardAnalysisService
     private function getEvaluationHistory($evaluations)
     {
         $history = [];
+        $hasNotes = false;
 
+        // First pass: check if any evaluation has notes
+        foreach ($evaluations as $evaluation) {
+            $notes = $evaluation->notes ?? null;
+            if ($notes && trim($notes) !== '') {
+                $hasNotes = true;
+                break;
+            }
+        }
+
+        // Second pass: build history array
         foreach ($evaluations as $evaluation) {
             $evalData = is_string($evaluation->evaluation_data)
                 ? json_decode($evaluation->evaluation_data, true)
                 : $evaluation->evaluation_data;
+
+            $notes = $evaluation->notes ?? null;
 
             $history[] = [
                 'id' => $evaluation->id,
@@ -752,11 +797,11 @@ class DashboardAnalysisService
                 'total_score' => $evaluation->total_score,
                 'performance_level' => $this->getPerformanceLevel($evaluation->total_score),
                 'evaluation_data' => $evalData,
-                'notes' => $evaluation->notes ?? 'No additional notes'
+                'notes' => $notes
             ];
         }
 
-        return $history;
+        return ['history' => $history, 'has_notes' => $hasNotes];
     }
 
     private function getPerformanceTimeline($evaluations)
@@ -847,8 +892,8 @@ class DashboardAnalysisService
                 .header {
                     text-align: center;
                     border-bottom: 3px solid #A11C22;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
+                    padding-bottom: 15px;
+                    margin-bottom: 15px;
                 }
                 .header h1 {
                     color: #A11C22;
@@ -861,26 +906,41 @@ class DashboardAnalysisService
                     font-size: 14px;
                 }
                 .section {
-                    margin-bottom: 30px;
+                    margin-bottom: 15px;
                     page-break-inside: avoid;
                 }
                 .section h2 {
                     color: #A11C22;
                     border-bottom: 2px solid #A11C22;
-                    padding-bottom: 10px;
-                    margin-bottom: 20px;
+                    padding-bottom: 5px;
+                    margin-bottom: 10px;
+                    margin-top: 15px;
                     font-size: 20px;
                 }
                 .section h3 {
                     color: #333;
-                    margin-bottom: 15px;
+                    margin-bottom: 8px;
+                    margin-top: 10px;
                     font-size: 16px;
+                }
+                .section p {
+                    margin-bottom: 8px;
+                    margin-top: 5px;
+                }
+                .section ul {
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                    padding-left: 20px;
+                }
+                .section li {
+                    margin-bottom: 5px;
                 }
                 .stats-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                     gap: 15px;
                     margin-bottom: 20px;
+                    grid-auto-flow: row;
                 }
                 .stat-card {
                     background: #f8f9fa;
@@ -888,12 +948,14 @@ class DashboardAnalysisService
                     border-radius: 8px;
                     padding: 15px;
                     text-align: center;
+                    min-width: 0;
+                    overflow: hidden;
                 }
                 .stat-value {
                     font-size: 24px;
                     font-weight: bold;
                     color: #A11C22;
-                    margin-bottom: 5px;
+                    margin-bottom: 3px;
                 }
                 .stat-label {
                     font-size: 12px;
@@ -940,21 +1002,22 @@ class DashboardAnalysisService
                     background: #f8f9fa;
                     border: 1px solid #dee2e6;
                     border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
+                    padding: 15px;
+                    margin: 10px 0;
                 }
                 .quarter-data {
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 10px;
-                    padding: 10px;
+                    margin-bottom: 8px;
+                    padding: 8px;
                     background: white;
                     border-radius: 4px;
                 }
                 .category-analysis {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 15px;
+                    gap: 10px;
+                    margin-top: 0;
                 }
                 .category-card {
                     background: #f8f9fa;
@@ -975,14 +1038,14 @@ class DashboardAnalysisService
                 .insights-container {
                     background: #f8f9fa;
                     border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
+                    padding: 15px;
+                    margin: 10px 0;
                     border-left: 4px solid #A11C22;
                 }
                 
                 .insight-section {
-                    margin-bottom: 25px;
-                    padding: 15px;
+                    margin-bottom: 12px;
+                    padding: 10px;
                     background: white;
                     border-radius: 6px;
                     border: 1px solid #e5e7eb;
@@ -993,7 +1056,7 @@ class DashboardAnalysisService
                     color: #A11C22;
                     font-size: 16px;
                     font-weight: 700;
-                    margin: 0 0 10px 0;
+                    margin: 0 0 5px 0;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
@@ -1050,30 +1113,107 @@ class DashboardAnalysisService
                 
                 <p>The coalition has achieved an average performance score of <strong>' . $data['overall_stats']['average_score'] . '/4.0</strong>, which indicates ' . ($data['overall_stats']['average_score'] >= 3.0 ? 'exceptional commitment and effectiveness' : ($data['overall_stats']['average_score'] >= 2.5 ? 'strong performance with consistent engagement' : ($data['overall_stats']['average_score'] >= 2.0 ? 'moderate performance with opportunities for growth' : 'significant potential for improvement and development'))) . ' in disaster preparedness activities. This performance level reflects the collective efforts of all participating groups in building resilient communities and enhancing disaster response capabilities.</p>
                 
-                <p>The evaluation framework assesses five critical performance categories: Volunteer Participation, Community Engagement, Leadership & Initiative, Communication & Collaboration, and Professional Development. Each category is designed to measure different aspects of disaster preparedness effectiveness, ensuring a holistic view of each group\'s contribution to the broader disaster resilience ecosystem.</p>
+                <p>The evaluation framework assesses four critical performance categories: <strong>Volunteer Participation (25%)</strong>, <strong>Task Accommodation and Completion (30%)</strong>, <strong>Communication Effectiveness (15%)</strong>, and <strong>Team Objective Above Self (30%)</strong>. Each category is designed to measure different aspects of disaster preparedness effectiveness, ensuring a holistic view of each group\'s contribution to the broader disaster resilience ecosystem.</p>
+            </div>
+
+            <div class="section">
+                <h2>Evaluation Methodology</h2>
+                <p>The DPAR evaluation system employs a <strong>system-based evaluation approach</strong> that combines automated metric calculation with expert assessment to ensure objective, data-driven performance analysis.</p>
+                
+                <h3>System-Based Auto-Scoring</h3>
+                <p>The evaluation system automatically calculates scores for criteria that can be measured using system data. This ensures consistency, objectivity, and reduces manual evaluation time while maintaining accuracy. The auto-scoring system analyzes:</p>
+                <ul>
+                    <li><strong>Report Metrics:</strong> Total reports submitted, approval rates, rejection rates, and report quality indicators</li>
+                    <li><strong>Volunteer Metrics:</strong> Volunteers recruited, volunteer growth rates, and volunteer engagement levels</li>
+                    <li><strong>Notification Metrics:</strong> Response rates, acceptance rates, average response times, and engagement with coalition communications</li>
+                    <li><strong>System Engagement Metrics:</strong> Login frequency, total system activities, and overall platform engagement scores</li>
+                </ul>
+                
+                <h3>Metric Types</h3>
+                <p>Evaluation criteria are categorized into three types based on how they are scored:</p>
+                <ul>
+                    <li><strong>Direct Metric Match:</strong> Criteria that are directly measured by system data (e.g., "Total reports submitted" directly measures field activity)</li>
+                    <li><strong>Proxy Metric:</strong> Criteria measured using related system data as an approximation (e.g., "Notification response rate" as a proxy for active participation)</li>
+                    <li><strong>Manual Scoring Required:</strong> Qualitative criteria that cannot be measured by system metrics and require expert evaluation (e.g., "Treats others fairly and with respect", "Shares new knowledge and ideas freely")</li>
+                </ul>
+                
+                <h3>Scoring Scale</h3>
+                <p>All evaluations use a standardized 4-point scale:</p>
+                <ul>
+                    <li><strong>4 - Excellent:</strong> Exceptional performance exceeding expectations</li>
+                    <li><strong>3 - Good:</strong> Strong performance meeting expectations</li>
+                    <li><strong>2 - Average:</strong> Adequate performance with room for improvement</li>
+                    <li><strong>1 - Poor:</strong> Performance below expectations requiring support</li>
+                </ul>
+                
+                <h3>Weighted Scoring</h3>
+                <p>Final scores are calculated using weighted averages based on category importance: Volunteer Participation (25%), Task Accommodation and Completion (30%), Communication Effectiveness (15%), and Team Objective Above Self (30%). This ensures that critical performance areas receive appropriate emphasis in the overall assessment.</p>
             </div>
 
             <div class="section">
                 <h2>Overall Performance Metrics</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['total_evaluations'] . '</div>
-                        <div class="stat-label">Total Evaluations</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['total_associates'] . '</div>
-                        <div class="stat-label">Total Associates</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['average_score'] . '</div>
-                        <div class="stat-label">Average Score</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['total_members'] . '</div>
-                        <div class="stat-label">Total Members</div>
-                    </div>
-                </div>
-            </div>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 12px; margin-bottom: 25px;">
+                    <tr>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 15px;">
+                            <div class="stat-value">' . $data['overall_stats']['total_evaluations'] . '</div>
+                            <div class="stat-label">Total Evaluations</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 15px;">
+                            <div class="stat-value">' . $data['overall_stats']['total_associates'] . '</div>
+                            <div class="stat-label">Total Associates</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 15px;">
+                            <div class="stat-value">' . $data['overall_stats']['average_score'] . '</div>
+                            <div class="stat-label">Average Score</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 15px;">
+                            <div class="stat-value">' . $data['overall_stats']['total_members'] . '</div>
+                            <div class="stat-label">Total Members</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>';
+
+        // Add aggregate performance metrics if available
+        if (isset($data['aggregate_metrics']) && $data['aggregate_metrics']) {
+            $metrics = $data['aggregate_metrics'];
+            $html .= '
+            <div class="section">
+                <h2>System Performance Metrics</h2>
+                <p><strong>Evaluation Period:</strong> ' . Carbon::parse($metrics['period']['start_date'])->format('F d, Y') . ' to ' . Carbon::parse($metrics['period']['end_date'])->format('F d, Y') . ' (' . $metrics['period']['period_description'] . ')</p>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 12px; margin-bottom: 25px;">
+                    <tr>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                            <div class="stat-value">' . $metrics['reports']['total_submitted'] . '</div>
+                            <div class="stat-label">Total Reports Submitted</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Avg: ' . $metrics['reports']['average_per_associate'] . ' per associate</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                            <div class="stat-value">' . $metrics['volunteers']['total_recruited'] . '</div>
+                            <div class="stat-label">Volunteers Recruited</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Avg: ' . $metrics['volunteers']['average_per_associate'] . ' per associate</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                            <div class="stat-value">' . $metrics['notifications']['total_received'] . '</div>
+                            <div class="stat-label">Notifications Received</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Avg: ' . $metrics['notifications']['average_per_associate'] . ' per associate</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                            <div class="stat-value">' . $metrics['system_engagement']['total_activities'] . '</div>
+                            <div class="stat-label">System Activities</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">' . $metrics['system_engagement']['total_logins'] . ' logins</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                            <div class="stat-value">' . $metrics['system_engagement']['average_login_frequency_per_week'] . '</div>
+                            <div class="stat-label">Avg Login Frequency</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Logins/week per associate</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>';
+        }
+
+        $html .= '
 
             <div class="section">
                 <h2>Performance Analysis and Insights</h2>
@@ -1269,35 +1409,199 @@ class DashboardAnalysisService
                 <h2>Individual Associate Performance Overview</h2>
                 <p>This comprehensive overview provides detailed performance metrics for each associate group within the DPAR network. Understanding individual performance patterns helps identify trends, track progress over time, and recognize both achievements and areas requiring attention.</p>
                 
-                <p>The performance data includes not only current scores but also historical trends, allowing for a complete picture of each group\'s development trajectory. This information is essential for making informed decisions about resource allocation, training needs, and recognition opportunities.</p>
-                
-                <table class="performance-table">
-                    <thead>
-                        <tr>
-                            <th>Associate</th>
-                            <th>Organization</th>
-                            <th>Latest Score</th>
-                            <th>Average Score</th>
-                            <th>Trend</th>
-                            <th>Evaluations</th>
-                        </tr>
-                    </thead>
-                    <tbody>';
+                <p>The performance data includes not only current scores but also historical trends and system metrics, allowing for a complete picture of each group\'s development trajectory. This information is essential for making informed decisions about resource allocation, training needs, and recognition opportunities.</p>';
 
         foreach ($data['individual_performance'] as $individual) {
             $trendIcon = $individual['trend'] === 'improving' ? '📈' : ($individual['trend'] === 'declining' ? '📉' : '➡️');
-            $html .= '<tr>
-                <td>' . $individual['user_name'] . '</td>
-                <td>' . $individual['organization'] . '</td>
-                <td><strong>' . $individual['latest_score'] . '</strong></td>
-                <td><strong>' . $individual['average_score'] . '</strong></td>
-                <td>' . $trendIcon . ' ' . ucfirst($individual['trend']) . '</td>
-                <td><strong>' . $individual['total_evaluations'] . '</strong></td>
-            </tr>';
+            $html .= '
+            <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #A11C22; page-break-inside: avoid;">
+                <h3 style="margin-top: 0; color: #A11C22; font-size: 16px; border-bottom: 1px solid #dee2e6; padding-bottom: 8px; margin-bottom: 12px;">' . $individual['user_name'] . ' - ' . $individual['organization'] . '</h3>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 12px; margin-bottom: 15px;">
+                    <tr>
+                        <td style="width: 20%; padding: 8px 10px;"><strong>Latest Score:</strong> ' . $individual['latest_score'] . '</td>
+                        <td style="width: 20%; padding: 8px 10px;"><strong>Average Score:</strong> ' . $individual['average_score'] . '</td>
+                        <td style="width: 20%; padding: 8px 10px;"><strong>Performance Level:</strong> <span class="' . strtolower($individual['performance_level']) . '">' . $individual['performance_level'] . '</span></td>
+                        <td style="width: 20%; padding: 8px 10px;"><strong>Trend:</strong> ' . $trendIcon . ' ' . ucfirst($individual['trend']) . '</td>
+                        <td style="width: 20%; padding: 8px 10px;"><strong>Total Evaluations:</strong> ' . $individual['total_evaluations'] . '</td>
+                    </tr>
+                </table>';
+
+            if (isset($individual['metrics']) && $individual['metrics']) {
+                $metrics = $individual['metrics'];
+                $html .= '
+                <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 6px;">
+                    <h4 style="margin-top: 0; font-size: 14px; color: #333;">Performance Metrics Summary (Last 3 Months):</h4>
+                    <table style="width: 100%; border-collapse: separate; border-spacing: 8px; margin-top: 12px;">
+                        <tr>
+                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
+                                <div class="stat-value" style="font-size: 20px;">' . $metrics['reports']['total_submitted'] . '</div>
+                                <div class="stat-label" style="font-size: 11px;">Reports</div>
+                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['reports']['approval_rate'] . '% approved</div>
+                            </td>
+                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
+                                <div class="stat-value" style="font-size: 20px;">+' . $metrics['volunteers']['recruited_in_period'] . '</div>
+                                <div class="stat-label" style="font-size: 11px;">Volunteers</div>
+                                <div style="font-size: 10px; color: #666; margin-top: 3px;">Total: ' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</div>
+                            </td>
+                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
+                                <div class="stat-value" style="font-size: 20px;">' . $metrics['notifications']['total_received'] . '</div>
+                                <div class="stat-label" style="font-size: 11px;">Notifications</div>
+                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['notifications']['response_rate'] . '% responded</div>
+                            </td>
+                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
+                                <div class="stat-value" style="font-size: 20px;">' . $metrics['notifications']['acceptance_rate'] . '%</div>
+                                <div class="stat-label" style="font-size: 11px;">Acceptance Rate</div>
+                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['notifications']['accepted'] . ' accepted, ' . ($metrics['notifications']['declined'] ?? 0) . ' declined</div>
+                            </td>
+                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
+                                <div class="stat-value" style="font-size: 20px;">' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . 'h</div>
+                                <div class="stat-label" style="font-size: 11px;">Response Time</div>
+                                <div style="font-size: 10px; color: #666; margin-top: 3px;">Average</div>
+                            </td>
+                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
+                                <div class="stat-value" style="font-size: 20px;">' . $metrics['system_engagement']['engagement_score'] . '%</div>
+                                <div class="stat-label" style="font-size: 11px;">System Engagement</div>
+                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['system_engagement']['engagement_level'] . ' (' . $metrics['system_engagement']['login_frequency_per_week'] . ' logins/week)</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>';
+            }
+
+            $html .= '</div>';
         }
 
-        $html .= '</tbody>
+        $html .= '
+            </div>
+
+            <div class="section">
+                <h2>Posting Activity Report and History</h2>
+                <p>This section tracks all posting activities across the DPAR platform, including <strong>Notifications</strong> (task assignments/alerts sent by administrators to associates), <strong>Announcements</strong> (public posts visible to all users), <strong>Training Programs</strong> (training sessions and educational programs posted by administrators or associates), and <strong>Reports</strong> (submitted by associates to administrators). The section analyzes posting frequency, recipient engagement, response patterns, and historical trends to assess communication effectiveness and platform activity levels.</p>';
+
+        if (isset($data['post_activity']) && $data['post_activity']) {
+            $postActivity = $data['post_activity'];
+
+            // Overall Statistics - All Post Types
+            $totalPosts = $postActivity['overall_stats']['total_notifications'] + $postActivity['overall_stats']['total_announcements'] + ($postActivity['overall_stats']['total_training_programs'] ?? 0) + $postActivity['overall_stats']['total_reports'];
+            $html .= '
+                <h3>Overall Posting Statistics</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;"><strong>Note on Counting:</strong> "Total Recipients" counts each recipient per notification (if someone receives 3 notifications, they are counted 3 times). "Unique Recipients" counts each person only once across all notifications.</p>
+                
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #333; font-size: 15px;">Post Types Summary</h4>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 10px; margin-bottom: 25px;">
+                    <tr>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_notifications'] . '</div>
+                            <div class="stat-label">Notifications</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Task assignments/alerts sent by administrators</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_announcements'] . '</div>
+                            <div class="stat-label">Announcements</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Public posts visible to all users</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . ($postActivity['overall_stats']['total_training_programs'] ?? 0) . '</div>
+                            <div class="stat-label">Training Programs</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Training sessions posted by administrators or associates</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_reports'] . '</div>
+                            <div class="stat-label">Reports</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Submitted by associates to administrators</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $totalPosts . '</div>
+                            <div class="stat-label">Total Posts</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">All types combined</div>
+                        </td>
+                    </tr>
                 </table>
+                
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #333; font-size: 15px;">Notification Engagement Metrics</h4>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 10px; margin-bottom: 25px;">
+                    <tr>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_notification_recipients'] . '</div>
+                            <div class="stat-label">Total Recipients</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">All notifications combined</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . (isset($postActivity['overall_stats']['unique_notification_recipients']) ? $postActivity['overall_stats']['unique_notification_recipients'] : $postActivity['overall_stats']['total_notification_recipients']) . '</div>
+                            <div class="stat-label">Unique Recipients</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Distinct people</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_responses'] . '</div>
+                            <div class="stat-label">Total Responses</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">To notifications</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['overall_response_rate'] . '%</div>
+                            <div class="stat-label">Response Rate</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Of total recipients</div>
+                        </td>
+                        <td class="stat-card" style="width: 20%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['acceptance_rate'] . '%</div>
+                            <div class="stat-label">Acceptance Rate</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Of responses</div>
+                        </td>
+                    </tr>
+                </table>';
+
+            // Posting Analysis
+            $html .= '
+                <h3>Posting Analysis</h3>
+                <div class="insights-container">
+                    <div class="insight-section">
+                        <h3>Overall Platform Activity</h3>
+                        <p>The platform has a total of <strong>' . $totalPosts . ' posts</strong> across all types: <strong>' . $postActivity['overall_stats']['total_notifications'] . ' notifications</strong> (task assignments/alerts), <strong>' . $postActivity['overall_stats']['total_announcements'] . ' announcements</strong> (public posts), <strong>' . ($postActivity['overall_stats']['total_training_programs'] ?? 0) . ' training programs</strong> (training sessions), and <strong>' . $postActivity['overall_stats']['total_reports'] . ' reports</strong> (submitted by associates). This indicates ' .
+                ($totalPosts > 20 ? 'high' : ($totalPosts > 10 ? 'moderate' : 'low')) . ' overall posting activity across the platform.</p>
+                    </div>
+                    <div class="insight-section">
+                        <h3>Notification Engagement Level</h3>
+                        <p>The overall engagement level for notifications is <strong>' . $postActivity['posting_analysis']['engagement_level'] . '</strong> with a response rate of ' . $postActivity['overall_stats']['overall_response_rate'] . '%. ' .
+                ($postActivity['posting_analysis']['engagement_level'] === 'Excellent'
+                    ? 'This indicates strong communication effectiveness and high associate engagement with posted notifications.'
+                    : ($postActivity['posting_analysis']['engagement_level'] === 'Good'
+                        ? 'This shows good communication effectiveness with room for further improvement in engagement.'
+                        : ($postActivity['posting_analysis']['engagement_level'] === 'Moderate'
+                            ? 'This suggests moderate engagement levels. Consider strategies to improve response rates and associate participation.'
+                            : 'This indicates low engagement levels. Immediate action is needed to improve communication effectiveness and associate participation.'))) . '</p>
+                    </div>
+                    <div class="insight-section">
+                        <h3>Response Patterns</h3>
+                        <p>On average, each notification receives <strong>' . $postActivity['posting_analysis']['average_responses_per_notification'] . '</strong> responses. Out of ' . $postActivity['overall_stats']['total_responses'] . ' total responses, <strong>' . $postActivity['overall_stats']['total_accepted'] . '</strong> were accepted (' . $postActivity['overall_stats']['acceptance_rate'] . '%) and <strong>' . $postActivity['overall_stats']['total_declined'] . '</strong> were declined.</p>
+                    </div>
+                </div>';
+
+
+            // Quarterly Trends
+            if (!empty($postActivity['quarterly_trends'])) {
+                $html .= '
+                <h3>Quarterly Posting Trends</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">This section shows the posting activity trends across all post types (Notifications, Announcements, Training Programs, and Reports) for each quarter. For notification-specific engagement metrics (response rates, acceptance rates), refer to the "Notification Engagement Metrics" section above.</p>
+                <div class="trend-chart">';
+
+                foreach ($postActivity['quarterly_trends'] as $quarter) {
+                    $html .= '
+                    <div class="quarter-data">
+                        <div>
+                            <strong>' . $quarter['quarter'] . ' (' . $quarter['period'] . ')</strong><br>
+                            <span style="font-size: 12px; color: #666;">' . $quarter['total_notifications'] . ' notifications | ' . $quarter['total_announcements'] . ' announcements | ' . ($quarter['total_training_programs'] ?? 0) . ' training programs | ' . $quarter['total_reports'] . ' reports</span>
+                        </div>
+                    </div>';
+                }
+
+                $html .= '
+                </div>';
+            }
+        } else {
+            $html .= '
+                <p>No posting activity data available at this time.</p>';
+        }
+
+        $html .= '
             </div>
 
             <div class="section">
@@ -1345,8 +1649,8 @@ class DashboardAnalysisService
                 .header {
                     text-align: center;
                     border-bottom: 3px solid #A11C22;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
+                    padding-bottom: 15px;
+                    margin-bottom: 15px;
                 }
                 .header h1 {
                     color: #A11C22;
@@ -1365,26 +1669,41 @@ class DashboardAnalysisService
                     font-size: 14px;
                 }
                 .section {
-                    margin-bottom: 30px;
+                    margin-bottom: 15px;
                     page-break-inside: avoid;
                 }
                 .section h2 {
                     color: #A11C22;
                     border-bottom: 2px solid #A11C22;
-                    padding-bottom: 10px;
-                    margin-bottom: 20px;
+                    padding-bottom: 5px;
+                    margin-bottom: 10px;
+                    margin-top: 15px;
                     font-size: 20px;
                 }
                 .section h3 {
                     color: #333;
-                    margin-bottom: 15px;
+                    margin-bottom: 8px;
+                    margin-top: 10px;
                     font-size: 16px;
+                }
+                .section p {
+                    margin-bottom: 8px;
+                    margin-top: 5px;
+                }
+                .section ul {
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                    padding-left: 20px;
+                }
+                .section li {
+                    margin-bottom: 5px;
                 }
                 .stats-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                     gap: 15px;
                     margin-bottom: 20px;
+                    grid-auto-flow: row;
                 }
                 .stat-card {
                     background: #f8f9fa;
@@ -1392,12 +1711,14 @@ class DashboardAnalysisService
                     border-radius: 8px;
                     padding: 15px;
                     text-align: center;
+                    min-width: 0;
+                    overflow: hidden;
                 }
                 .stat-value {
                     font-size: 24px;
                     font-weight: bold;
                     color: #A11C22;
-                    margin-bottom: 5px;
+                    margin-bottom: 3px;
                 }
                 .stat-label {
                     font-size: 12px;
@@ -1430,13 +1751,13 @@ class DashboardAnalysisService
                 .insights-container {
                     background: #f8f9fa;
                     border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
+                    padding: 15px;
+                    margin: 10px 0;
                     border-left: 4px solid #A11C22;
                 }
                 .insight-section {
-                    margin-bottom: 25px;
-                    padding: 15px;
+                    margin-bottom: 10px;
+                    padding: 10px;
                     background: white;
                     border-radius: 6px;
                     border: 1px solid #e5e7eb;
@@ -1446,35 +1767,36 @@ class DashboardAnalysisService
                     color: #A11C22;
                     font-size: 16px;
                     font-weight: 700;
-                    margin: 0 0 10px 0;
+                    margin: 0 0 5px 0;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
                 .insight-section p {
                     color: #374151;
                     font-size: 14px;
-                    line-height: 1.6;
+                    line-height: 1.5;
                     margin: 0;
                 }
                 .trend-chart {
                     background: #f8f9fa;
                     border: 1px solid #dee2e6;
                     border-radius: 8px;
-                    padding: 20px;
-                    margin: 20px 0;
+                    padding: 15px;
+                    margin: 10px 0;
                 }
                 .quarter-data {
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 10px;
-                    padding: 10px;
+                    margin-bottom: 8px;
+                    padding: 8px;
                     background: white;
                     border-radius: 4px;
                 }
                 .category-analysis {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 15px;
+                    gap: 10px;
+                    margin-top: 0;
                 }
                 .category-card {
                     background: #f8f9fa;
@@ -1496,12 +1818,13 @@ class DashboardAnalysisService
                     background: #f8f9fa;
                     border: 1px solid #dee2e6;
                     border-radius: 8px;
-                    padding: 20px;
-                    margin-bottom: 20px;
+                    padding: 15px;
+                    margin-bottom: 10px;
                 }
                 .user-info h3 {
                     color: #A11C22;
                     margin-top: 0;
+                    margin-bottom: 10px;
                 }
                 .user-info-grid {
                     display: grid;
@@ -1577,30 +1900,168 @@ class DashboardAnalysisService
             </div>
 
             <div class="section">
-                <h2>Performance Overview</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['total_evaluations'] . '</div>
-                        <div class="stat-label">Total Evaluations</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['average_score'] . '</div>
-                        <div class="stat-label">Average Score</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['latest_score'] . '</div>
-                        <div class="stat-label">Latest Score</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">' . $data['overall_stats']['performance_level'] . '</div>
-                        <div class="stat-label">Performance Level</div>
-                    </div>
-                </div>
+                <h2>Evaluation Methodology</h2>
+                <p>This performance evaluation employs a <strong>system-based evaluation approach</strong> that combines automated metric calculation with expert assessment to ensure objective, data-driven performance analysis.</p>
+                <h3>System-Based Auto-Scoring</h3>
+                <p>The evaluation system automatically calculates scores for criteria that can be measured using system data. This ensures consistency, objectivity, and reduces manual evaluation time while maintaining accuracy. The auto-scoring system analyzes:</p>
+                <ul>
+                    <li><strong>Report Metrics:</strong> Total reports submitted, approval rates, rejection rates, and report quality indicators</li>
+                    <li><strong>Volunteer Metrics:</strong> Volunteers recruited, volunteer growth rates, and volunteer engagement levels</li>
+                    <li><strong>Notification Metrics:</strong> Response rates, acceptance rates, average response times, and engagement with coalition communications</li>
+                    <li><strong>System Engagement Metrics:</strong> Login frequency, total system activities, and overall platform engagement scores</li>
+                </ul>
+                <h3>Metric Types</h3>
+                <p>Evaluation criteria are categorized into three types based on how they are scored:</p>
+                <ul>
+                    <li><strong>Direct Metric Match:</strong> Criteria that are directly measured by system data (e.g., "Total reports submitted" directly measures field activity)</li>
+                    <li><strong>Proxy Metric:</strong> Criteria measured using related system data as an approximation (e.g., "Notification response rate" as a proxy for active participation)</li>
+                    <li><strong>Manual Scoring Required:</strong> Qualitative criteria that cannot be measured by system metrics and require expert evaluation (e.g., "Treats others fairly and with respect", "Shares new knowledge and ideas freely")</li>
+                </ul>
+                <h3>Scoring Scale</h3>
+                <p>All evaluations use a standardized 4-point scale:</p>
+                <ul>
+                    <li><strong>4 - Excellent:</strong> Exceptional performance exceeding expectations</li>
+                    <li><strong>3 - Good:</strong> Strong performance meeting expectations</li>
+                    <li><strong>2 - Average:</strong> Adequate performance with room for improvement</li>
+                    <li><strong>1 - Poor:</strong> Performance below expectations requiring support</li>
+                </ul>
+                <h3>Weighted Scoring</h3>
+                <p>Final scores are calculated using weighted averages based on category importance: Volunteer Participation (25%), Task Accommodation and Completion (30%), Communication Effectiveness (15%), and Team Objective Above Self (30%). This ensures that critical performance areas receive appropriate emphasis in the overall assessment.</p>
             </div>
 
             <div class="section">
-                <h2>Performance Analysis and Insights</h2>
-                <div class="insights-container">
+                <h2>Performance Overview</h2>
+                <table style="width: 100%; border-collapse: collapse; margin: 0; margin-bottom: 10px;">
+                    <tr>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $data['overall_stats']['total_evaluations'] . '</div>
+                            <div class="stat-label">Total Evaluations</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $data['overall_stats']['average_score'] . '</div>
+                            <div class="stat-label">Average Score</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $data['overall_stats']['latest_score'] . '</div>
+                            <div class="stat-label">Latest Score</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $data['overall_stats']['performance_level'] . '</div>
+                            <div class="stat-label">Performance Level</div>
+                        </td>
+                    </tr>
+                </table>
+        ';
+
+        // Add performance metrics if available
+        if (isset($data['performance_metrics']) && $data['performance_metrics'] && isset($data['metrics_period'])) {
+            $metrics = $data['performance_metrics'];
+            $period = $data['metrics_period'];
+            $html .= '
+                <h2 style="margin-top: 15px; margin-bottom: 8px;">Performance Metrics Summary</h2>
+                <p style="margin-bottom: 10px;"><strong>Evaluation Period:</strong> ' . Carbon::parse($period['start_date'])->format('F d, Y') . ' to ' . Carbon::parse($period['end_date'])->format('F d, Y') . ' (' . $period['period_description'] . ')</p>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                    <tr>
+                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['reports']['total_submitted'] . '</div>
+                            <div class="stat-label">Reports</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['reports']['approval_rate'] . '% approved</div>
+                        </td>
+                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">+' . $metrics['volunteers']['recruited_in_period'] . '</div>
+                            <div class="stat-label">Volunteers</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 3px;">Total: ' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</div>
+                        </td>
+                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['notifications']['total_received'] . '</div>
+                            <div class="stat-label">Notifications</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['notifications']['response_rate'] . '% responded</div>
+                        </td>
+                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['notifications']['acceptance_rate'] . '%</div>
+                            <div class="stat-label">Acceptance Rate</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['notifications']['accepted'] . ' accepted, ' . ($metrics['notifications']['declined'] ?? 0) . ' declined</div>
+                        </td>
+                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . 'h</div>
+                            <div class="stat-label">Response Time</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 3px;">Average</div>
+                        </td>
+                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['system_engagement']['engagement_score'] . '%</div>
+                            <div class="stat-label">System Engagement</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['system_engagement']['engagement_level'] . ' (' . $metrics['system_engagement']['login_frequency_per_week'] . ' logins/week)</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="section">
+                <div style="margin-top: 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                    <h3 style="margin-top: 0; font-size: 14px;">Detailed Metrics Breakdown:</h3>
+                    <table class="performance-table" style="margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th>Metric Category</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Reports</strong></td>
+                                <td>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>Total Submitted: <strong>' . $metrics['reports']['total_submitted'] . '</strong></li>
+                                        <li>Approved: <strong>' . $metrics['reports']['approved'] . '</strong> (' . $metrics['reports']['approval_rate'] . '%)</li>
+                                        ' . (isset($metrics['reports']['rejected']) ? '<li>Rejected: <strong>' . $metrics['reports']['rejected'] . '</strong></li>' : '') . '
+                                        ' . (isset($metrics['reports']['pending']) ? '<li>Pending: <strong>' . $metrics['reports']['pending'] . '</strong></li>' : '') . '
+                                        ' . (isset($metrics['reports']['draft']) ? '<li>Draft: <strong>' . $metrics['reports']['draft'] . '</strong></li>' : '') . '
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Volunteers</strong></td>
+                                <td>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>Total Count: <strong>' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</strong></li>
+                                        <li>Recruited in Period: <strong>' . $metrics['volunteers']['recruited_in_period'] . '</strong></li>
+                                        ' . (isset($metrics['volunteers']['growth_rate']) ? '<li>Growth Rate: <strong>' . $metrics['volunteers']['growth_rate'] . '%</strong></li>' : '') . '
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Notifications</strong></td>
+                                <td>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>Total Received: <strong>' . $metrics['notifications']['total_received'] . '</strong></li>
+                                        <li>Responded: <strong>' . $metrics['notifications']['responded'] . '</strong> (' . $metrics['notifications']['response_rate'] . '% response rate)</li>
+                                        <li>Not Responded: <strong>' . ($metrics['notifications']['not_responded'] ?? ($metrics['notifications']['total_received'] - $metrics['notifications']['responded'])) . '</strong></li>
+                                        <li>Accepted: <strong>' . $metrics['notifications']['accepted'] . '</strong> (' . $metrics['notifications']['acceptance_rate'] . '% acceptance rate)</li>
+                                        <li>Declined: <strong>' . ($metrics['notifications']['declined'] ?? 0) . '</strong></li>
+                                        <li>Average Response Time: <strong>' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . ' hours</strong></li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>System Engagement</strong></td>
+                                <td>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>Total Activities: <strong>' . $metrics['system_engagement']['total_activities'] . '</strong></li>
+                                        <li>Login Count: <strong>' . $metrics['system_engagement']['login_count'] . '</strong></li>
+                                        <li>Login Frequency: <strong>' . $metrics['system_engagement']['login_frequency_per_week'] . '</strong> logins/week</li>
+                                        <li>Engagement Score: <strong>' . $metrics['system_engagement']['engagement_score'] . '%</strong> (' . $metrics['system_engagement']['engagement_level'] . ')</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>';
+        }
+
+        $html .= '
+            <div class="section">
+                <h2 style="margin-top: 8px;">Performance Analysis and Insights</h2>
+                <div class="insights-container" style="margin-top: 0;">
                     <div class="insight-section">
                         <h3>Overall Performance Assessment</h3>
                         <p>' . $this->boldNumericValues($data['performance_insights']['overall_performance']) . '</p>
@@ -1632,10 +2093,9 @@ class DashboardAnalysisService
         if ($data['overall_stats']['total_evaluations'] > 0) {
             $html .= '
             <div class="section">
-                <h2>Performance Distribution Analysis</h2>
-                <p>The performance distribution provides insights into the consistency and quality of this associate\'s performance across all evaluations.</p>
-                
-                <table class="performance-table">
+                <h2 style="margin-top: 8px;">Performance Distribution Analysis</h2>
+                <p style="margin-bottom: 10px;">The performance distribution provides insights into the consistency and quality of this associate\'s performance across all evaluations.</p>
+                <table class="performance-table" style="margin-bottom: 10px;">
                     <thead>
                         <tr>
                             <th>Performance Level</th>
@@ -1674,10 +2134,9 @@ class DashboardAnalysisService
             if (!empty($data['quarterly_trends'])) {
                 $html .= '
                 <div class="section">
-                    <h2>Performance Trends Analysis</h2>
-                    <p>Understanding performance trends over time helps identify patterns of improvement, consistency, and areas that may require additional attention.</p>
-                    
-                    <div class="trend-chart">
+                    <h2 style="margin-top: 8px;">Performance Trends Analysis</h2>
+                    <p style="margin-bottom: 10px;">Understanding performance trends over time helps identify patterns of improvement, consistency, and areas that may require additional attention.</p>
+                    <div class="trend-chart" style="margin-top: 0;">
                         <h3>Quarterly Performance Analysis</h3>
                         <p>The following data shows the progression of performance scores across four quarters, revealing the development trajectory of this associate in disaster preparedness activities.</p>';
 
@@ -1696,10 +2155,9 @@ class DashboardAnalysisService
             if (!empty($data['category_analysis'])) {
                 $html .= '
                 <div class="section">
-                    <h2>Category Performance Analysis</h2>
-                    <p>Understanding performance across different evaluation categories provides insights into specific strengths and areas for improvement within the disaster preparedness framework.</p>
-                    
-                    <div class="category-analysis">';
+                    <h2 style="margin-top: 8px;">Category Performance Analysis</h2>
+                    <p style="margin-bottom: 10px;">Understanding performance across different evaluation categories provides insights into specific strengths and areas for improvement within the disaster preparedness framework.</p>
+                    <div class="category-analysis" style="margin-top: 0;">';
 
                 foreach ($data['category_analysis'] as $category => $analysis) {
                     $html .= '<div class="category-card">
@@ -1715,30 +2173,31 @@ class DashboardAnalysisService
             }
 
             // Add evaluation history if available
-            if (!empty($data['evaluation_history'])) {
+            if (!empty($data['evaluation_history']['history'])) {
+                $hasNotes = $data['evaluation_history']['has_notes'] ?? false;
                 $html .= '
                 <div class="section">
-                    <h2>Evaluation History</h2>
-                    <p>This comprehensive history provides detailed information about each evaluation conducted for this associate, including scores, performance levels, and additional notes.</p>
-                    
-                    <table class="performance-table">
+                    <h2 style="margin-top: 8px;">Evaluation History</h2>
+                    <p style="margin-bottom: 10px;">This comprehensive history provides detailed information about each evaluation conducted for this associate, including scores and performance levels.</p>
+                    <table class="performance-table" style="margin-top: 0; margin-bottom: 10px;">
                         <thead>
                             <tr>
                                 <th>Date</th>
                                 <th>Total Score</th>
-                                <th>Performance Level</th>
-                                <th>Notes</th>
+                                <th>Performance Level</th>' . ($hasNotes ? '<th>Notes</th>' : '') . '
                             </tr>
                         </thead>
                         <tbody>';
 
-                foreach ($data['evaluation_history'] as $evaluation) {
+                foreach ($data['evaluation_history']['history'] as $evaluation) {
                     $html .= '<tr>
                         <td>' . $evaluation['date'] . '</td>
                         <td><strong>' . $evaluation['total_score'] . '</strong></td>
-                        <td class="' . strtolower($evaluation['performance_level']) . '">' . $evaluation['performance_level'] . '</td>
-                        <td>' . $evaluation['notes'] . '</td>
-                    </tr>';
+                        <td class="' . strtolower($evaluation['performance_level']) . '">' . $evaluation['performance_level'] . '</td>';
+                    if ($hasNotes) {
+                        $html .= '<td>' . ($evaluation['notes'] ?? '') . '</td>';
+                    }
+                    $html .= '</tr>';
                 }
 
                 $html .= '</tbody>
@@ -1756,5 +2215,469 @@ class DashboardAnalysisService
         </html>';
 
         return $html;
+    }
+
+    /**
+     * Calculate performance metrics for a specific user and date range
+     */
+    private function calculatePerformanceMetrics($userId, $startDate, $endDate)
+    {
+        try {
+            $associateGroup = AssociateGroup::where('user_id', $userId)->first();
+            if (!$associateGroup) {
+                return null;
+            }
+
+            // Reports metrics
+            $reports = Report::where('user_id', $userId)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->get();
+
+            $totalReports = $reports->count();
+            $approvedReports = $reports->where('status', 'approved')->count();
+            $approvalRate = $totalReports > 0 ? round(($approvedReports / $totalReports) * 100, 2) : 0;
+
+            // Volunteer metrics
+            $volunteersRecruited = Volunteer::where('associate_group_id', $associateGroup->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            // Notification metrics
+            $notifications = Notification::whereHas('recipients', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->get();
+
+            $totalNotifications = $notifications->count();
+            $respondedNotifications = 0;
+            $acceptedNotifications = 0;
+            $totalResponseTime = 0;
+            $responseCount = 0;
+
+            foreach ($notifications as $notification) {
+                $recipient = NotificationRecipient::where('notification_id', $notification->id)
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($recipient && $recipient->response) {
+                    $respondedNotifications++;
+                    if ($recipient->response === 'accept') {
+                        $acceptedNotifications++;
+                    }
+                    if ($recipient->responded_at && $notification->created_at) {
+                        $responseTime = Carbon::parse($recipient->responded_at)
+                            ->diffInHours(Carbon::parse($notification->created_at));
+                        $totalResponseTime += $responseTime;
+                        $responseCount++;
+                    }
+                }
+            }
+
+            $responseRate = $totalNotifications > 0
+                ? round(($respondedNotifications / $totalNotifications) * 100, 2)
+                : 0;
+            $acceptanceRate = $respondedNotifications > 0
+                ? round(($acceptedNotifications / $respondedNotifications) * 100, 2)
+                : 0;
+            $avgResponseTime = $responseCount > 0
+                ? round($totalResponseTime / $responseCount, 2)
+                : 0;
+
+            // System engagement metrics
+            $activityLogs = ActivityLog::where('user_id', $userId)
+                ->whereBetween('activity_at', [$startDate, $endDate])
+                ->get();
+
+            $totalActivities = $activityLogs->count();
+            $loginActivities = $activityLogs->where('activity_type', 'login')->count();
+
+            $daysDiff = Carbon::parse($endDate)->diffInDays(Carbon::parse($startDate));
+            $weeks = max(1, $daysDiff / 7);
+            $loginFrequency = $weeks > 0 ? round($loginActivities / $weeks, 2) : 0;
+
+            $engagementScore = min(
+                100,
+                ($totalReports * 5) +
+                    ($volunteersRecruited * 10) +
+                    ($responseRate * 0.3) +
+                    ($loginFrequency * 2)
+            );
+
+            $engagementLevel = 'Low';
+            if ($engagementScore >= 80) $engagementLevel = 'High';
+            elseif ($engagementScore >= 50) $engagementLevel = 'Medium';
+
+            // Get rejected and pending reports
+            $rejectedReports = $reports->where('status', 'rejected')->count();
+            $pendingReports = $reports->where('status', 'sent')->count();
+            $draftReports = $reports->where('status', 'draft')->count();
+
+            // Get total volunteers count
+            $totalVolunteers = Volunteer::where('associate_group_id', $associateGroup->id)->count();
+
+            // Get declined notifications
+            $declinedNotifications = 0;
+            foreach ($notifications as $notification) {
+                $recipient = NotificationRecipient::where('notification_id', $notification->id)
+                    ->where('user_id', $userId)
+                    ->first();
+                if ($recipient && $recipient->response === 'decline') {
+                    $declinedNotifications++;
+                }
+            }
+
+            return [
+                'reports' => [
+                    'total_submitted' => $totalReports,
+                    'approved' => $approvedReports,
+                    'rejected' => $rejectedReports,
+                    'pending' => $pendingReports,
+                    'draft' => $draftReports,
+                    'approval_rate' => $approvalRate
+                ],
+                'volunteers' => [
+                    'total_count' => $totalVolunteers,
+                    'recruited_in_period' => $volunteersRecruited,
+                    'growth_rate' => $totalVolunteers > 0
+                        ? round(($volunteersRecruited / $totalVolunteers) * 100, 2)
+                        : 0
+                ],
+                'notifications' => [
+                    'total_received' => $totalNotifications,
+                    'responded' => $respondedNotifications,
+                    'not_responded' => $totalNotifications - $respondedNotifications,
+                    'accepted' => $acceptedNotifications,
+                    'declined' => $declinedNotifications,
+                    'response_rate' => $responseRate,
+                    'acceptance_rate' => $acceptanceRate,
+                    'avg_response_time_hours' => $avgResponseTime
+                ],
+                'system_engagement' => [
+                    'total_activities' => $totalActivities,
+                    'login_count' => $loginActivities,
+                    'login_frequency_per_week' => $loginFrequency,
+                    'engagement_score' => round($engagementScore, 2),
+                    'engagement_level' => $engagementLevel
+                ]
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error calculating performance metrics: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get metrics period based on latest evaluation (default to last 3 months)
+     */
+    private function getMetricsPeriod($latestEvaluation)
+    {
+        if ($latestEvaluation) {
+            $endDate = Carbon::parse($latestEvaluation->created_at);
+            $startDate = $endDate->copy()->subMonths(3);
+        } else {
+            $endDate = Carbon::now();
+            $startDate = $endDate->copy()->subMonths(3);
+        }
+
+        $daysDiff = $endDate->diffInDays($startDate);
+
+        return [
+            'start_date' => $startDate->toDateString(),
+            'end_date' => $endDate->toDateString(),
+            'days' => $daysDiff,
+            'period_description' => $this->formatPeriodDescription($startDate, $endDate)
+        ];
+    }
+
+    /**
+     * Format period description
+     */
+    private function formatPeriodDescription($startDate, $endDate)
+    {
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+        $days = $end->diffInDays($start);
+
+        if ($days <= 31) {
+            return $days . ' days';
+        } elseif ($days <= 93) {
+            $months = round($days / 30);
+            return $months . ' month' . ($months > 1 ? 's' : '');
+        } else {
+            $months = round($days / 30);
+            return $months . ' months';
+        }
+    }
+
+    /**
+     * Calculate aggregate metrics across all associates
+     */
+    private function calculateAggregateMetrics($associateUsers, $evaluations)
+    {
+        if ($associateUsers->isEmpty()) {
+            return null;
+        }
+
+        $endDate = Carbon::now();
+        $startDate = $endDate->copy()->subMonths(3);
+
+        $totalReports = 0;
+        $totalVolunteers = 0;
+        $totalNotifications = 0;
+        $totalActivities = 0;
+        $totalLogins = 0;
+
+        foreach ($associateUsers as $user) {
+            $associateGroup = AssociateGroup::where('user_id', $user->id)->first();
+            if (!$associateGroup) continue;
+
+            $reports = Report::where('user_id', $user->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            $totalReports += $reports;
+
+            $volunteers = Volunteer::where('associate_group_id', $associateGroup->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            $totalVolunteers += $volunteers;
+
+            $notifications = Notification::whereHas('recipients', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+            $totalNotifications += $notifications;
+
+            $activities = ActivityLog::where('user_id', $user->id)
+                ->whereBetween('activity_at', [$startDate, $endDate])
+                ->count();
+            $totalActivities += $activities;
+
+            $logins = ActivityLog::where('user_id', $user->id)
+                ->where('activity_type', 'login')
+                ->whereBetween('activity_at', [$startDate, $endDate])
+                ->count();
+            $totalLogins += $logins;
+        }
+
+        $daysDiff = $endDate->diffInDays($startDate);
+        $weeks = max(1, $daysDiff / 7);
+        $avgLoginFrequency = $associateUsers->count() > 0 ? round($totalLogins / ($associateUsers->count() * $weeks), 2) : 0;
+
+        return [
+            'period' => [
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString(),
+                'days' => $daysDiff,
+                'period_description' => $this->formatPeriodDescription($startDate, $endDate)
+            ],
+            'reports' => [
+                'total_submitted' => $totalReports,
+                'average_per_associate' => $associateUsers->count() > 0 ? round($totalReports / $associateUsers->count(), 2) : 0
+            ],
+            'volunteers' => [
+                'total_recruited' => $totalVolunteers,
+                'average_per_associate' => $associateUsers->count() > 0 ? round($totalVolunteers / $associateUsers->count(), 2) : 0
+            ],
+            'notifications' => [
+                'total_received' => $totalNotifications,
+                'average_per_associate' => $associateUsers->count() > 0 ? round($totalNotifications / $associateUsers->count(), 2) : 0
+            ],
+            'system_engagement' => [
+                'total_activities' => $totalActivities,
+                'total_logins' => $totalLogins,
+                'average_login_frequency_per_week' => $avgLoginFrequency
+            ]
+        ];
+    }
+
+    private function gatherPostActivityData()
+    {
+        // Get all notifications (task assignments/alerts) created by admins
+        $allNotifications = Notification::with(['creator:id,name', 'recipients'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get all announcements (public posts) created by anyone
+        $allAnnouncements = Announcement::withTrashed()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get all training programs (training sessions) created by anyone
+        $allTrainingPrograms = TrainingProgram::withTrashed()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get all reports (posts from associates to admins)
+        $allReports = Report::whereNull('deleted_at')
+            ->with(['user:id,name,organization'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+
+        // Calculate notification statistics
+        $totalNotifications = $allNotifications->count();
+        $totalNotificationRecipients = 0;
+        $uniqueNotificationRecipients = collect(); // Track unique recipients across all notifications
+        $totalResponses = 0;
+        $totalAccepted = 0;
+        $totalDeclined = 0;
+
+        // Get admin users who created notifications
+        $adminUsers = User::whereIn('role', ['admin', 'head_admin', 'superadmin'])->get();
+        $notificationsByAdmin = [];
+
+        foreach ($allNotifications as $notification) {
+            $recipientCount = $notification->recipients->count();
+            $totalNotificationRecipients += $recipientCount;
+
+            // Track unique recipients (each user_id only counted once across all notifications)
+            foreach ($notification->recipients as $recipient) {
+                $uniqueNotificationRecipients->push($recipient->user_id);
+            }
+
+            // Count responses
+            $responded = $notification->recipients->whereNotNull('response')->count();
+            $accepted = $notification->recipients->where('response', 'accept')->count();
+            $declined = $notification->recipients->where('response', 'decline')->count();
+
+            $totalResponses += $responded;
+            $totalAccepted += $accepted;
+            $totalDeclined += $declined;
+
+            // Group by admin creator
+            if ($notification->created_by) {
+                $creator = $adminUsers->find($notification->created_by);
+                if ($creator) {
+                    $adminName = $creator->name;
+                    if (!isset($notificationsByAdmin[$adminName])) {
+                        $notificationsByAdmin[$adminName] = [
+                            'name' => $adminName,
+                            'count' => 0,
+                            'total_recipients' => 0,
+                            'total_responses' => 0,
+                            'total_accepted' => 0,
+                            'total_declined' => 0
+                        ];
+                    }
+                    $notificationsByAdmin[$adminName]['count']++;
+                    $notificationsByAdmin[$adminName]['total_recipients'] += $recipientCount;
+                    $notificationsByAdmin[$adminName]['total_responses'] += $responded;
+                    $notificationsByAdmin[$adminName]['total_accepted'] += $accepted;
+                    $notificationsByAdmin[$adminName]['total_declined'] += $declined;
+                }
+            }
+        }
+
+        $uniqueRecipientsCount = $uniqueNotificationRecipients->unique()->count();
+
+        // Calculate quarterly trends for all post types
+        $quarterlyPostingTrends = $this->calculateQuarterlyPostingTrends($allNotifications, $allAnnouncements, $allTrainingPrograms, $allReports);
+
+        // Calculate response rates
+        $overallResponseRate = $totalNotificationRecipients > 0
+            ? round(($totalResponses / $totalNotificationRecipients) * 100, 2)
+            : 0;
+        $acceptanceRate = $totalResponses > 0
+            ? round(($totalAccepted / $totalResponses) * 100, 2)
+            : 0;
+
+        return [
+            'overall_stats' => [
+                'total_notifications' => $totalNotifications,
+                'total_announcements' => $allAnnouncements->count(),
+                'total_training_programs' => $allTrainingPrograms->count(),
+                'total_reports' => $allReports->count(),
+                'total_notification_recipients' => $totalNotificationRecipients, // Total count (can include same person multiple times)
+                'unique_notification_recipients' => $uniqueRecipientsCount, // Unique count (each person counted once)
+                'total_responses' => $totalResponses,
+                'total_accepted' => $totalAccepted,
+                'total_declined' => $totalDeclined,
+                'overall_response_rate' => $overallResponseRate,
+                'acceptance_rate' => $acceptanceRate,
+                'average_recipients_per_notification' => $totalNotifications > 0
+                    ? round($totalNotificationRecipients / $totalNotifications, 2)
+                    : 0
+            ],
+            'quarterly_trends' => $quarterlyPostingTrends,
+            'posting_analysis' => [
+                'average_responses_per_notification' => $totalNotifications > 0
+                    ? round($totalResponses / $totalNotifications, 2)
+                    : 0,
+                'engagement_level' => $overallResponseRate >= 80 ? 'Excellent'
+                    : ($overallResponseRate >= 60 ? 'Good'
+                        : ($overallResponseRate >= 40 ? 'Moderate'
+                            : 'Needs Improvement'))
+            ]
+        ];
+    }
+
+    private function calculateQuarterlyPostingTrends($notifications, $announcements, $trainingPrograms, $reports)
+    {
+        $quarters = [];
+        $currentYear = Carbon::now()->year;
+
+        for ($i = 3; $i >= 0; $i--) {
+            $quarterStart = Carbon::create($currentYear, ($i * 3) + 1, 1);
+            $quarterEnd = $quarterStart->copy()->addMonths(2)->endOfMonth();
+
+            // Filter notifications
+            $quarterNotifications = $notifications->filter(function ($notification) use ($quarterStart, $quarterEnd) {
+                $notifDate = Carbon::parse($notification->created_at);
+                return $notifDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Filter announcements
+            $quarterAnnouncements = $announcements->filter(function ($announcement) use ($quarterStart, $quarterEnd) {
+                $annDate = Carbon::parse($announcement->created_at);
+                return $annDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Filter training programs
+            $quarterTrainingPrograms = $trainingPrograms->filter(function ($trainingProgram) use ($quarterStart, $quarterEnd) {
+                $tpDate = Carbon::parse($trainingProgram->created_at);
+                return $tpDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Filter reports
+            $quarterReports = $reports->filter(function ($report) use ($quarterStart, $quarterEnd) {
+                $reportDate = Carbon::parse($report->created_at);
+                return $reportDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Calculate notification metrics
+            $totalRecipients = 0;
+            $totalResponses = 0;
+            $totalAccepted = 0;
+
+            foreach ($quarterNotifications as $notification) {
+                $totalRecipients += $notification->recipients->count();
+                $totalResponses += $notification->recipients->whereNotNull('response')->count();
+                $totalAccepted += $notification->recipients->where('response', 'accept')->count();
+            }
+
+            $responseRate = $totalRecipients > 0
+                ? round(($totalResponses / $totalRecipients) * 100, 2)
+                : 0;
+            $acceptanceRate = $totalResponses > 0
+                ? round(($totalAccepted / $totalResponses) * 100, 2)
+                : 0;
+
+            $quarters[] = [
+                'quarter' => 'Q' . ($i + 1),
+                'total_notifications' => $quarterNotifications->count(),
+                'total_announcements' => $quarterAnnouncements->count(),
+                'total_training_programs' => $quarterTrainingPrograms->count(),
+                'total_reports' => $quarterReports->count(),
+                'total_recipients' => $totalRecipients,
+                'total_responses' => $totalResponses,
+                'response_rate' => $responseRate,
+                'acceptance_rate' => $acceptanceRate,
+                'period' => $quarterStart->format('M Y') . ' - ' . $quarterEnd->format('M Y')
+            ];
+        }
+
+        return array_reverse($quarters);
     }
 }

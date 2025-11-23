@@ -107,6 +107,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSoftDeletedAssociat
     Route::apiResource('/members', MemberController::class);
     Route::get('/evaluations/statistics', [EvaluationController::class, 'statistics']);
     Route::get('/evaluations/summaries', [EvaluationController::class, 'summaries']);
+    Route::get('/evaluations/performance-metrics/{userId}', [EvaluationController::class, 'getPerformanceMetrics']);
     Route::apiResource('/evaluations', EvaluationController::class);
     Route::get('/dashboard/performance-analysis-pdf', [App\Http\Controllers\DashboardAnalysisController::class, 'generatePerformanceAnalysisPDF']);
     Route::get('/dashboard/individual-performance-analysis-pdf/{userId}', [App\Http\Controllers\DashboardAnalysisController::class, 'generateIndividualPerformanceAnalysisPDF']);

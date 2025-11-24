@@ -67,9 +67,10 @@ const CustomEvent = ({ event }) => {
   // Determine background color based on event status
   const getEventBackgroundColor = () => {
     const now = new Date();
-    let backgroundColor = '#A11C22'; // Default red color
+    let backgroundColor = '#5a6268'; // Default grey color (hover color)
     let hasInProgress = false;
-    let allNotStarted = true;
+    let allFinished = true; // Start with true, will be false if any event is not finished
+    let allNotStarted = true; // Start with true, will be false if any event has started
 
     if (events.length > 0) {
       events.forEach(eventItem => {
@@ -80,18 +81,41 @@ const CustomEvent = ({ event }) => {
         if (startDate <= now && endDate >= now) {
           hasInProgress = true;
           allNotStarted = false;
+          allFinished = false;
         }
-        // Check if event has started
+        // Check if event has finished (endDate < now)
+        else if (endDate < now) {
+          allNotStarted = false;
+          // Keep allFinished as true only if all events are finished
+        }
+        // Check if event hasn't started yet (startDate > now)
+        else if (startDate > now) {
+          allFinished = false;
+          // Keep allNotStarted as true only if all events haven't started
+        }
+        // Edge case: event started but logic above should catch it
         else if (startDate <= now) {
           allNotStarted = false;
+          allFinished = false;
         }
       });
       
-      // Apply colors based on status
+      // Apply colors based on status (using hover colors as normal colors)
+      // Priority: If ANY event is in progress → GREEN
       if (hasInProgress) {
-        backgroundColor = '#28a745'; // Green for events in progress
-      } else if (allNotStarted) {
-        backgroundColor = '#6c757d'; // Grey for events not started
+        backgroundColor = '#218838'; // Green hover color if any event is in progress (started)
+      }
+      // If ALL events are finished → GREY
+      else if (allFinished && events.length > 0) {
+        backgroundColor = '#5a6268'; // Grey hover color if all events are already done
+      }
+      // If ALL events are not started → GREY
+      else if (allNotStarted) {
+        backgroundColor = '#5a6268'; // Grey hover color if all events are not started
+      }
+      // Default to grey
+      else {
+        backgroundColor = '#5a6268'; // Default grey hover color
       }
     }
 
@@ -99,6 +123,53 @@ const CustomEvent = ({ event }) => {
   };
 
   const backgroundColor = getEventBackgroundColor();
+
+  // Determine event status class for CSS targeting
+  const getEventStatusClass = () => {
+    const now = new Date();
+    let hasInProgress = false;
+    let allFinished = true; // Start with true, will be false if any event is not finished
+    let allNotStarted = true; // Start with true, will be false if any event has started
+
+    if (events.length > 0) {
+      events.forEach(eventItem => {
+        const startDate = new Date(eventItem.start_date);
+        const endDate = new Date(eventItem.end_date);
+        
+        // Check if event is in progress (started but not finished)
+        if (startDate <= now && endDate >= now) {
+          hasInProgress = true;
+          allNotStarted = false;
+          allFinished = false;
+        }
+        // Check if event has finished (endDate < now)
+        else if (endDate < now) {
+          allNotStarted = false;
+          // Keep allFinished as true only if all events are finished
+        }
+        // Check if event hasn't started yet (startDate > now)
+        else if (startDate > now) {
+          allFinished = false;
+          // Keep allNotStarted as true only if all events haven't started
+        }
+        // Edge case: event started but logic above should catch it
+        else if (startDate <= now) {
+          allNotStarted = false;
+          allFinished = false;
+        }
+      });
+    }
+
+    // Priority: If ANY event is in progress → event-in-progress
+    if (hasInProgress) return 'event-in-progress';
+    // If ALL events are finished → event-finished
+    if (allFinished && events.length > 0) return 'event-finished';
+    // If ALL events are not started → event-not-started
+    if (allNotStarted) return 'event-not-started';
+    return '';
+  };
+
+  const eventStatusClass = getEventStatusClass();
 
   // Handle hover to show tooltip
   const handleMouseEnter = () => {
@@ -136,8 +207,9 @@ const CustomEvent = ({ event }) => {
   const updateTooltipPosition = (e) => {
     if (eventRef.current) {
       const rect = eventRef.current.getBoundingClientRect();
+      const tooltipOffset = 12; // Distance from badge to tooltip
       setTooltipPosition({
-        top: window.scrollY + rect.top - 8,
+        top: window.scrollY + rect.top - tooltipOffset,
         left: window.scrollX + rect.left + rect.width / 2
       });
     }
@@ -153,7 +225,7 @@ const CustomEvent = ({ event }) => {
     <>
       <div
         ref={eventRef}
-        className="custom-calendar-event"
+        className={`custom-calendar-event ${eventStatusClass}`}
         style={{
           position: 'relative',
           width: '100%',
@@ -183,7 +255,8 @@ const CustomEvent = ({ event }) => {
             position: 'fixed',
             top: `${tooltipPosition.top}px`,
             left: `${tooltipPosition.left}px`,
-            transform: 'translate(-50%, calc(-100% - 8px))'
+            transform: 'translate(-50%, calc(-100% - 4px))',
+            pointerEvents: 'auto'
           }}
           onMouseEnter={(e) => {
             e.stopPropagation();
@@ -315,6 +388,7 @@ function AdminDashboard() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [isGeneratingIndividualPDF, setIsGeneratingIndividualPDF] = useState(false);
   const [showIndividualSuccessMessage, setShowIndividualSuccessMessage] = useState(false);
+  const [showEventSuccessMessage, setShowEventSuccessMessage] = useState(false);
   const [userName, setUserName] = useState('Admin');
 
   // Fetch user profile to get the admin's name
@@ -1260,6 +1334,12 @@ function AdminDashboard() {
   const handleEventCreated = async (newEvent) => {
     // Refetch calendar events from backend to ensure consistency and avoid duplicates
     await fetchCalendarEventsOnly();
+    // Show success notification
+    setShowEventSuccessMessage(true);
+    // Auto-hide success message after 3 seconds
+    setTimeout(() => {
+      setShowEventSuccessMessage(false);
+    }, 3000);
   };
 
   const handleEventUpdated = async (updatedEvent) => {
@@ -1487,6 +1567,14 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+        {showEventSuccessMessage && (
+          <div className="success-message-banner">
+            <div className="success-message-content">
+              <span className="success-icon">✓</span>
+              <span className="success-text">Event created successfully!</span>
+            </div>
+          </div>
+        )}
         {error && <div className="error-message">{error}</div>}
 
         {/* Welcome Banner */}
@@ -1657,14 +1745,15 @@ function AdminDashboard() {
                   }}
                   eventPropGetter={(event) => {
                     const now = new Date();
-                    let backgroundColor = '#A11C22'; // Default red color
+                    let backgroundColor = '#6c757d'; // Default grey color
                     let className = '';
                     
                     // Check if event has resource with events array
                     if (event.resource && event.resource.events && event.resource.events.length > 0) {
                       const events = event.resource.events;
                       let hasInProgress = false;
-                      let allNotStarted = true;
+                      let allFinished = true; // Start with true, will be false if any event is not finished
+                      let allNotStarted = true; // Start with true, will be false if any event has started
                       
                       // Check each event in the group
                       events.forEach(eventItem => {
@@ -1675,22 +1764,45 @@ function AdminDashboard() {
                         if (startDate <= now && endDate >= now) {
                           hasInProgress = true;
                           allNotStarted = false;
+                          allFinished = false;
                         }
-                        // Check if event has started
+                        // Check if event has finished (endDate < now)
+                        else if (endDate < now) {
+                          allNotStarted = false;
+                          // Keep allFinished as true only if all events are finished
+                        }
+                        // Check if event hasn't started yet (startDate > now)
+                        else if (startDate > now) {
+                          allFinished = false;
+                          // Keep allNotStarted as true only if all events haven't started
+                        }
+                        // Edge case: event started but logic above should catch it
                         else if (startDate <= now) {
                           allNotStarted = false;
+                          allFinished = false;
                         }
                       });
                       
                       // Apply colors based on status
+                      // Priority: If ANY event is in progress → GREEN
                       if (hasInProgress) {
-                        // Green for events in progress
                         backgroundColor = '#28a745';
                         className = 'event-in-progress';
-                      } else if (allNotStarted) {
-                        // Grey for events not started
+                      }
+                      // If ALL events are finished → GREY
+                      else if (allFinished && events.length > 0) {
+                        backgroundColor = '#6c757d';
+                        className = 'event-finished';
+                      }
+                      // If ALL events are not started → GREY
+                      else if (allNotStarted) {
                         backgroundColor = '#6c757d';
                         className = 'event-not-started';
+                      }
+                      // Default to grey
+                      else {
+                        backgroundColor = '#6c757d';
+                        className = 'event-finished';
                       }
                     }
                     

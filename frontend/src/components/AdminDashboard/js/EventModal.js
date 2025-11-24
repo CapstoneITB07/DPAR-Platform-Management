@@ -34,6 +34,17 @@ const EventModal = ({
     return local.toISOString().slice(0, 16);
   }
 
+  // Helper to get current local datetime in datetime-local format
+  function getCurrentLocalDateTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
   // Helper to convert local datetime-local input to UTC string for backend
   function localToUTCString(localDateTime) {
     if (!localDateTime) return '';
@@ -93,23 +104,38 @@ const EventModal = ({
 
   // Helper function to validate date/time logic in real-time
   const validateDateTimeLogic = (currentFormData) => {
-    if (currentFormData.start_date && currentFormData.end_date) {
-      const startDateTime = new Date(currentFormData.start_date);
-      const endDateTime = new Date(currentFormData.end_date);
+    const now = new Date();
+    now.setSeconds(0, 0); // Reset seconds and milliseconds for comparison
+    
+    setErrors(prev => {
+      const newErrors = { ...prev };
       
-      setErrors(prev => {
-        const newErrors = { ...prev };
+      // Check if start date is in the past (only for new events, not edits)
+      if (currentFormData.start_date && !isEditMode) {
+        const startDateTime = new Date(currentFormData.start_date);
+        startDateTime.setSeconds(0, 0);
         
-        // Only check if end date/time is after start date/time
+        if (startDateTime < now) {
+          newErrors.start_date = 'Cannot create events in the past';
+        } else if (newErrors.start_date === 'Cannot create events in the past') {
+          delete newErrors.start_date;
+        }
+      }
+      
+      // Check if end date/time is after start date/time
+      if (currentFormData.start_date && currentFormData.end_date) {
+        const startDateTime = new Date(currentFormData.start_date);
+        const endDateTime = new Date(currentFormData.end_date);
+        
         if (endDateTime <= startDateTime) {
           newErrors.end_date = 'End date and time must be after start date and time';
         } else if (newErrors.end_date === 'End date and time must be after start date and time') {
           delete newErrors.end_date;
         }
-        
-        return newErrors;
-      });
-    }
+      }
+      
+      return newErrors;
+    });
   };
 
   // Helper function to scroll to the first field with an error
@@ -160,6 +186,8 @@ const EventModal = ({
 
   const validateForm = () => {
     const newErrors = {};
+    const now = new Date();
+    now.setSeconds(0, 0); // Reset seconds and milliseconds for comparison
     
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
@@ -167,6 +195,16 @@ const EventModal = ({
     
     if (!formData.start_date) {
       newErrors.start_date = 'Start date is required';
+    } else {
+      // Check if start date is in the past (only for new events, not edits)
+      if (!isEditMode) {
+        const startDateTime = new Date(formData.start_date);
+        startDateTime.setSeconds(0, 0);
+        
+        if (startDateTime < now) {
+          newErrors.start_date = 'Cannot create events in the past';
+        }
+      }
     }
     
     if (!formData.end_date) {
@@ -292,7 +330,7 @@ const EventModal = ({
             {errors.title && <span className="error-text">{errors.title}</span>}
           </div>
 
-          <div className="form-row">
+            <div className="form-row">
             <div className="form-group">
               <label htmlFor="start_date">Start Date & Time *</label>
               <input
@@ -303,6 +341,7 @@ const EventModal = ({
                 onChange={handleInputChange}
                 className={errors.start_date ? 'error' : ''}
                 required
+                min={!isEditMode ? getCurrentLocalDateTime() : undefined}
               />
               {errors.start_date && <span className="error-text">{errors.start_date}</span>}
             </div>

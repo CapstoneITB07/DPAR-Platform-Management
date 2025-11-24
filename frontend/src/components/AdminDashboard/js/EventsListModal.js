@@ -297,7 +297,16 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
       <div className="events-list-modal-header">
         <h3>
           <FontAwesomeIcon icon={faCalendarAlt} />
-          All Events ({events.reduce((total, group) => total + group.events.length, 0)} total)
+          All Events ({(() => {
+            const currentYear = new Date().getFullYear();
+            return events.reduce((total, group) => {
+              const yearEvents = group.events.filter(event => {
+                const eventYear = new Date(event.start_date).getFullYear();
+                return eventYear === currentYear;
+              });
+              return total + yearEvents.length;
+            }, 0);
+          })()} total)
         </h3>
         <button className="events-list-modal-close" onClick={handleCloseModal}>
           <FontAwesomeIcon icon={faTimes} />

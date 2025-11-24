@@ -7,8 +7,14 @@ use Illuminate\Http\Request;
 use App\Models\Evaluation;
 use App\Models\ActivityLog;
 use App\Models\AssociateGroup;
+use App\Models\User;
+use App\Models\Report;
+use App\Models\Volunteer;
+use App\Models\Notification;
+use App\Models\NotificationRecipient;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class EvaluationController extends Controller
 {
@@ -64,8 +70,16 @@ class EvaluationController extends Controller
             ];
 
             $missingScores = [];
-            $totalScore = 0;
-            $count = 0;
+            
+            // KPI Weights matching frontend
+            $kpiWeights = [
+                'Volunteer Participation' => 0.25,
+                'Task Accommodation and Completion' => 0.30,
+                'Communication Effectiveness' => 0.15,
+                'Team Objective Above Self' => 0.30
+            ];
+
+            $totalWeightedScore = 0;
 
             foreach ($expectedCategories as $category) {
                 if (!isset($request->evaluation_data[$category]) || !isset($request->evaluation_data[$category]['scores'])) {
@@ -93,8 +107,11 @@ class EvaluationController extends Controller
                 });
 
                 if (count($validScores) > 0) {
-                    $totalScore += array_sum($validScores);
-                    $count += count($validScores);
+                    // Calculate category average
+                    $categoryAverage = array_sum($validScores) / count($validScores);
+                    // Apply weight
+                    $weight = $kpiWeights[$category] ?? 0;
+                    $totalWeightedScore += $categoryAverage * $weight;
                 }
             }
 
@@ -106,12 +123,15 @@ class EvaluationController extends Controller
                 ], 422);
             }
 
-            $averageScore = $count > 0 ? $totalScore / $count : 0;
+            // Use the weighted score from frontend if provided, otherwise calculate it
+            $finalScore = $request->has('total_score') && is_numeric($request->total_score) 
+                ? (float) $request->total_score 
+                : round($totalWeightedScore, 2);
 
             $evaluation = Evaluation::create([
                 'user_id' => $request->user_id,
                 'evaluation_data' => json_encode($request->evaluation_data),
-                'total_score' => round($averageScore, 2)
+                'total_score' => $finalScore
             ]);
 
             // Load the user relationship and return formatted data
@@ -132,7 +152,7 @@ class EvaluationController extends Controller
                         'evaluated_user_name' => $evaluation->user->name,
                         'associate_group_id' => $associateGroup ? $associateGroup->id : null,
                         'associate_group_name' => $associateGroup ? $associateGroup->name : null,
-                        'total_score' => round($averageScore, 2),
+                        'total_score' => $finalScore,
                         'action_by' => Auth::user()->role
                     ],
                     null
@@ -574,5 +594,165 @@ class EvaluationController extends Controller
         elseif ($score >= 1.5) $level = 'fair';
 
         return $descriptions[$category][$level] ?? "No specific description available for this category.";
+    }
+
+    /**
+     * Get performance metrics for an associate group
+     */
+    public function getPerformanceMetrics(Request $request, $userId)
+    {
+        try {
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date', Carbon::now()->toDateString());
+
+            // If no start date provided, default to last 3 months
+            if (!$startDate) {
+                $startDate = Carbon::now()->subMonths(3)->toDateString();
+            }
+
+            $user = User::findOrFail($userId);
+            $associateGroup = AssociateGroup::where('user_id', $userId)->first();
+
+            if (!$associateGroup) {
+                return response()->json(['error' => 'Associate group not found'], 404);
+            }
+
+            // Reports metrics
+            $reports = Report::where('user_id', $userId)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->get();
+
+            $totalReports = $reports->count();
+            $approvedReports = $reports->where('status', 'approved')->count();
+            $rejectedReports = $reports->where('status', 'rejected')->count();
+            $pendingReports = $reports->where('status', 'sent')->count();
+            $draftReports = $reports->where('status', 'draft')->count();
+            $approvalRate = $totalReports > 0 ? round(($approvedReports / $totalReports) * 100, 2) : 0;
+
+            // Volunteer metrics
+            $volunteers = Volunteer::where('associate_group_id', $associateGroup->id)->get();
+            $totalVolunteers = $volunteers->count();
+            
+            // Volunteers recruited in period
+            $volunteersRecruited = Volunteer::where('associate_group_id', $associateGroup->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            // Notification response metrics
+            $notifications = Notification::whereHas('recipients', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
+
+            $totalNotifications = $notifications->count();
+            $respondedNotifications = 0;
+            $acceptedNotifications = 0;
+            $declinedNotifications = 0;
+            $totalResponseTime = 0;
+            $responseCount = 0;
+
+            foreach ($notifications as $notification) {
+                $recipient = NotificationRecipient::where('notification_id', $notification->id)
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if ($recipient && $recipient->response) {
+                    $respondedNotifications++;
+                    if ($recipient->response === 'accept') {
+                        $acceptedNotifications++;
+                    } elseif ($recipient->response === 'decline') {
+                        $declinedNotifications++;
+                    }
+
+                    // Calculate response time
+                    if ($recipient->responded_at && $notification->created_at) {
+                        $responseTime = Carbon::parse($recipient->responded_at)
+                            ->diffInHours(Carbon::parse($notification->created_at));
+                        $totalResponseTime += $responseTime;
+                        $responseCount++;
+                    }
+                }
+            }
+
+            $responseRate = $totalNotifications > 0 
+                ? round(($respondedNotifications / $totalNotifications) * 100, 2) 
+                : 0;
+            $acceptanceRate = $respondedNotifications > 0 
+                ? round(($acceptedNotifications / $respondedNotifications) * 100, 2) 
+                : 0;
+            $avgResponseTime = $responseCount > 0 
+                ? round($totalResponseTime / $responseCount, 2) 
+                : 0;
+
+            // System engagement metrics
+            $activityLogs = ActivityLog::where('user_id', $userId)
+                ->whereBetween('activity_at', [$startDate, $endDate])
+                ->get();
+
+            $totalActivities = $activityLogs->count();
+            $loginActivities = $activityLogs->where('activity_type', 'login')->count();
+            
+            // Calculate login frequency (logins per week)
+            $daysDiff = Carbon::parse($endDate)->diffInDays(Carbon::parse($startDate));
+            $weeks = max(1, $daysDiff / 7);
+            $loginFrequency = $weeks > 0 ? round($loginActivities / $weeks, 2) : 0;
+
+            // Calculate system engagement score (0-100)
+            $engagementScore = min(100, 
+                ($totalReports * 5) + 
+                ($volunteersRecruited * 10) + 
+                ($responseRate * 0.3) + 
+                ($loginFrequency * 2)
+            );
+
+            // Determine engagement level
+            $engagementLevel = 'Low';
+            if ($engagementScore >= 80) $engagementLevel = 'High';
+            elseif ($engagementScore >= 50) $engagementLevel = 'Medium';
+
+            return response()->json([
+                'period' => [
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'days' => $daysDiff
+                ],
+                'reports' => [
+                    'total_submitted' => $totalReports,
+                    'approved' => $approvedReports,
+                    'rejected' => $rejectedReports,
+                    'pending' => $pendingReports,
+                    'draft' => $draftReports,
+                    'approval_rate' => $approvalRate
+                ],
+                'volunteers' => [
+                    'total_count' => $totalVolunteers,
+                    'recruited_in_period' => $volunteersRecruited,
+                    'growth_rate' => $totalVolunteers > 0 
+                        ? round(($volunteersRecruited / $totalVolunteers) * 100, 2) 
+                        : 0
+                ],
+                'notifications' => [
+                    'total_received' => $totalNotifications,
+                    'responded' => $respondedNotifications,
+                    'not_responded' => $totalNotifications - $respondedNotifications,
+                    'accepted' => $acceptedNotifications,
+                    'declined' => $declinedNotifications,
+                    'response_rate' => $responseRate,
+                    'acceptance_rate' => $acceptanceRate,
+                    'avg_response_time_hours' => $avgResponseTime
+                ],
+                'system_engagement' => [
+                    'total_activities' => $totalActivities,
+                    'login_count' => $loginActivities,
+                    'login_frequency_per_week' => $loginFrequency,
+                    'engagement_score' => round($engagementScore, 2),
+                    'engagement_level' => $engagementLevel
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in EvaluationController@getPerformanceMetrics: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch performance metrics: ' . $e->getMessage()], 500);
+        }
     }
 }

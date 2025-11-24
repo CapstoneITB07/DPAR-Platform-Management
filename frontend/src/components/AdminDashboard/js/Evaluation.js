@@ -300,15 +300,57 @@ function Evaluation() {
   const [submitting, setSubmitting] = useState(false);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
-  const [evaluationPeriod, setEvaluationPeriod] = useState('quarter'); // quarter, 6months, year, custom
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [evaluationPeriod, setEvaluationPeriod] = useState(null); // Will be set to current quarter
+  const [currentQuarter, setCurrentQuarter] = useState(null);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [autoScores, setAutoScores] = useState({});
   const [showAutoScores, setShowAutoScores] = useState(true);
 
+  // Get current quarter (1-4)
+  const getCurrentQuarter = () => {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11
+    return Math.floor(month / 3) + 1; // Q1: 0-2, Q2: 3-5, Q3: 6-8, Q4: 9-11
+  };
+
+  // Initialize with current quarter
   useEffect(() => {
+    const quarter = getCurrentQuarter();
+    const year = new Date().getFullYear();
+    setCurrentQuarter(quarter);
+    setCurrentYear(year);
+    setEvaluationPeriod(`Q${quarter}`);
     fetchAssociates();
   }, []);
+
+  // Check for quarter change and refresh
+  useEffect(() => {
+    const checkQuarterChange = () => {
+      const now = new Date();
+      const newQuarter = getCurrentQuarter();
+      const newYear = now.getFullYear();
+      
+      if (newQuarter !== currentQuarter || newYear !== currentYear) {
+        setCurrentQuarter(newQuarter);
+        setCurrentYear(newYear);
+        setEvaluationPeriod(`Q${newQuarter}`);
+        // Refresh metrics if modal is open and associate is selected
+        if (showEvaluationModal && selectedAssociate && selectedAssociate.user_id) {
+          fetchPerformanceMetrics(selectedAssociate.user_id);
+        }
+      }
+    };
+
+    // Check every hour for quarter change (especially around quarter boundaries)
+    const interval = setInterval(checkQuarterChange, 3600000); // 1 hour
+    
+    // Also check when modal opens
+    if (showEvaluationModal) {
+      checkQuarterChange();
+    }
+
+    return () => clearInterval(interval);
+  }, [showEvaluationModal, selectedAssociate, currentQuarter, currentYear]);
 
   const fetchAssociates = async () => {
     try {
@@ -325,36 +367,15 @@ function Evaluation() {
     }
   };
 
-  const getPeriodDates = () => {
-    const endDate = new Date();
-    let startDate;
+  const getPeriodDates = (quarter = null, year = null) => {
+    // Use provided quarter/year or current
+    const selectedQuarter = quarter || currentQuarter || getCurrentQuarter();
+    const selectedYear = year || currentYear || new Date().getFullYear();
     
-    switch (evaluationPeriod) {
-      case 'quarter':
-        startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 3);
-        break;
-      case '6months':
-        startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6);
-        break;
-      case 'year':
-        startDate = new Date();
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      case 'custom':
-        if (customStartDate && customEndDate) {
-          startDate = new Date(customStartDate);
-          endDate = new Date(customEndDate);
-        } else {
-          startDate = new Date();
-          startDate.setMonth(startDate.getMonth() - 3);
-        }
-        break;
-      default:
-        startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 3);
-    }
+    // Calculate quarter start and end dates
+    const quarterStartMonth = (selectedQuarter - 1) * 3; // Q1: 0, Q2: 3, Q3: 6, Q4: 9
+    const startDate = new Date(selectedYear, quarterStartMonth, 1);
+    const endDate = new Date(selectedYear, quarterStartMonth + 3, 0, 23, 59, 59); // Last day of quarter
     
     return {
       start: startDate.toISOString().split('T')[0],
@@ -362,11 +383,20 @@ function Evaluation() {
     };
   };
 
-  const fetchPerformanceMetrics = async (userId) => {
+  const fetchPerformanceMetrics = async (userId, quarterOverride = null, yearOverride = null) => {
     try {
       setLoadingMetrics(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const { start, end } = getPeriodDates();
+      
+      // Use provided quarter/year or fall back to state/current values
+      const selectedQuarter = quarterOverride 
+        ? quarterOverride 
+        : (evaluationPeriod 
+          ? parseInt(evaluationPeriod.replace('Q', ''))
+          : (currentQuarter || getCurrentQuarter()));
+      const selectedYear = yearOverride || currentYear || new Date().getFullYear();
+      
+      const { start, end } = getPeriodDates(selectedQuarter, selectedYear);
       
       const response = await axiosInstance.get(
         `${API_BASE}/api/evaluations/performance-metrics/${userId}?start_date=${start}&end_date=${end}`,
@@ -438,6 +468,15 @@ function Evaluation() {
       });
       setSelectedAssociate(response.data);
       
+      // Ensure current quarter is set
+      const quarter = getCurrentQuarter();
+      const year = new Date().getFullYear();
+      if (!currentQuarter || currentQuarter !== quarter || currentYear !== year) {
+        setCurrentQuarter(quarter);
+        setCurrentYear(year);
+        setEvaluationPeriod(`Q${quarter}`);
+      }
+      
       // Initialize evaluation data structure first
       const initialData = {};
       Object.keys(KPI_CRITERIA).forEach(category => {
@@ -464,6 +503,12 @@ function Evaluation() {
     } catch (err) {
       console.error('Error fetching latest associate data:', err);
       setSelectedAssociate(associate);
+      // Ensure current quarter is set even on error
+      const quarter = getCurrentQuarter();
+      const year = new Date().getFullYear();
+      setCurrentQuarter(quarter);
+      setCurrentYear(year);
+      setEvaluationPeriod(`Q${quarter}`);
       setShowEvaluationModal(true);
     }
   };
@@ -482,9 +527,15 @@ function Evaluation() {
   };
 
   const handlePeriodChange = async (period) => {
+    // Extract quarter number from period (e.g., "Q1" -> 1)
+    const quarterNum = parseInt(period.replace('Q', ''));
+    
+    // Update state
     setEvaluationPeriod(period);
+    
+    // Fetch metrics immediately with the new quarter (don't wait for state update)
     if (selectedAssociate && selectedAssociate.user_id) {
-      await fetchPerformanceMetrics(selectedAssociate.user_id);
+      await fetchPerformanceMetrics(selectedAssociate.user_id, quarterNum, currentYear);
     }
   };
 
@@ -717,57 +768,44 @@ function Evaluation() {
               <div className="modal-body">
                 {/* Evaluation Period Selector */}
                 <div className="evaluation-period-selector">
-                  <label>Evaluation Period:</label>
+                  <label>Evaluation Period ({currentYear}):</label>
                   <div className="period-options">
                     <button
-                      className={evaluationPeriod === 'quarter' ? 'active' : ''}
-                      onClick={() => handlePeriodChange('quarter')}
+                      className={evaluationPeriod === 'Q1' ? 'active' : ''}
+                      onClick={() => handlePeriodChange('Q1')}
                     >
-                      Last Quarter
+                      Q1 (Jan - Mar)
                     </button>
                     <button
-                      className={evaluationPeriod === '6months' ? 'active' : ''}
-                      onClick={() => handlePeriodChange('6months')}
+                      className={evaluationPeriod === 'Q2' ? 'active' : ''}
+                      onClick={() => handlePeriodChange('Q2')}
                     >
-                      Last 6 Months
+                      Q2 (Apr - Jun)
                     </button>
                     <button
-                      className={evaluationPeriod === 'year' ? 'active' : ''}
-                      onClick={() => handlePeriodChange('year')}
+                      className={evaluationPeriod === 'Q3' ? 'active' : ''}
+                      onClick={() => handlePeriodChange('Q3')}
                     >
-                      Last Year
+                      Q3 (Jul - Sep)
                     </button>
                     <button
-                      className={evaluationPeriod === 'custom' ? 'active' : ''}
-                      onClick={() => handlePeriodChange('custom')}
+                      className={evaluationPeriod === 'Q4' ? 'active' : ''}
+                      onClick={() => handlePeriodChange('Q4')}
                     >
-                      Custom Range
+                      Q4 (Oct - Dec)
                     </button>
                   </div>
-                  {evaluationPeriod === 'custom' && (
-                    <div className="custom-date-inputs">
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => {
-                          setCustomStartDate(e.target.value);
-                          if (customEndDate && e.target.value) {
-                            handlePeriodChange('custom');
-                          }
-                        }}
-                        placeholder="Start Date"
-                      />
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => {
-                          setCustomEndDate(e.target.value);
-                          if (customStartDate && e.target.value) {
-                            handlePeriodChange('custom');
-                          }
-                        }}
-                        placeholder="End Date"
-                      />
+                  {evaluationPeriod && (
+                    <div style={{ marginTop: '12px', fontSize: '12px', color: '#666' }}>
+                      {(() => {
+                        const { start, end } = getPeriodDates(
+                          parseInt(evaluationPeriod.replace('Q', '')),
+                          currentYear
+                        );
+                        const startDate = new Date(start);
+                        const endDate = new Date(end);
+                        return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                      })()}
                     </div>
                   )}
                 </div>

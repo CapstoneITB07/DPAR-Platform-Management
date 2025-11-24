@@ -112,7 +112,7 @@
         <p>We appreciate your understanding and encourage you to reapply in the future if your circumstances change.</p>
 
         <div class="reapply-container">
-            <a href="{{ env('FRONTEND_URL', config('app.url')) }}" class="reapply-button">
+            <a href="{{ env('FRONTEND_URL', 'https://dparvc.com') }}" class="reapply-button">
                 🔄 Reapply Now
             </a>
             <p style="margin-top: 10px; color: #666; font-size: 14px;">Click the button above to submit a new application with updated information.</p>

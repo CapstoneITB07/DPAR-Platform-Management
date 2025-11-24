@@ -1451,18 +1451,39 @@ function AdminDashboard() {
       return;
     }
 
+    // Ensure associatesPerformance is loaded
+    if (!associatesPerformance || associatesPerformance.length === 0) {
+      alert('Associate data is still loading. Please wait a moment and try again.');
+      return;
+    }
+
     try {
       setIsGeneratingIndividualPDF(true);
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
       // Get the user_id from the selected associate data
-      const selectedAssociateData = associatesPerformance.find(a => a.id === selectedAssociate);
-      if (!selectedAssociateData || !selectedAssociateData.user_id) {
-        alert('Unable to find user information for the selected associate.');
+      // First, try to use the selectedAssociateData state if it matches the selected associate
+      let associateData = null;
+      if (selectedAssociateData && String(selectedAssociateData.id) === String(selectedAssociate)) {
+        associateData = selectedAssociateData;
+      } else {
+        // Fall back to finding from associatesPerformance array with proper type conversion
+        associateData = associatesPerformance.find(a => String(a.id) === String(selectedAssociate));
+      }
+      
+      if (!associateData || !associateData.user_id) {
+        console.error('Associate data not found:', { 
+          selectedAssociate, 
+          selectedAssociateData, 
+          associatesPerformance,
+          associateData 
+        });
+        alert('Unable to find user information for the selected associate. Please try selecting the associate again.');
+        setIsGeneratingIndividualPDF(false);
         return;
       }
       
-      const response = await axiosInstance.get(`${API_BASE}/api/dashboard/individual-performance-analysis-pdf/${selectedAssociateData.user_id}`, {
+      const response = await axiosInstance.get(`${API_BASE}/api/dashboard/individual-performance-analysis-pdf/${associateData.user_id}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -1474,7 +1495,7 @@ function AdminDashboard() {
       link.href = url;
       
       // Use the already retrieved associate data for filename
-      const associateName = selectedAssociateData.name.replace(/\s+/g, '_');
+      const associateName = associateData.name.replace(/\s+/g, '_');
       
       link.download = `DPAR_Individual_Performance_${associateName}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);

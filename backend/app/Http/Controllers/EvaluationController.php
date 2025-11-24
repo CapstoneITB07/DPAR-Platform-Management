@@ -70,7 +70,7 @@ class EvaluationController extends Controller
             ];
 
             $missingScores = [];
-            
+
             // KPI Weights matching frontend
             $kpiWeights = [
                 'Volunteer Participation' => 0.25,
@@ -124,8 +124,8 @@ class EvaluationController extends Controller
             }
 
             // Use the weighted score from frontend if provided, otherwise calculate it
-            $finalScore = $request->has('total_score') && is_numeric($request->total_score) 
-                ? (float) $request->total_score 
+            $finalScore = $request->has('total_score') && is_numeric($request->total_score)
+                ? (float) $request->total_score
                 : round($totalWeightedScore, 2);
 
             $evaluation = Evaluation::create([
@@ -136,10 +136,10 @@ class EvaluationController extends Controller
 
             // Load the user relationship and return formatted data
             $evaluation->load('user:id,name,organization');
-            
+
             // Get associate group information for logging
             $associateGroup = AssociateGroup::where('user_id', $request->user_id)->first();
-            
+
             // Log activity for evaluation creation
             try {
                 ActivityLog::logActivity(
@@ -222,11 +222,11 @@ class EvaluationController extends Controller
                 'evaluation_data' => json_encode($request->evaluation_data),
                 'total_score' => round($averageScore, 2)
             ]);
-            
+
             // Load user and associate group for logging
             $evaluation->load('user:id,name,organization');
             $associateGroup = AssociateGroup::where('user_id', $evaluation->user_id)->first();
-            
+
             // Log activity for evaluation update
             try {
                 ActivityLog::logActivity(
@@ -610,6 +610,10 @@ class EvaluationController extends Controller
                 $startDate = Carbon::now()->subMonths(3)->toDateString();
             }
 
+            // Convert to Carbon instances and set proper time boundaries
+            $startDateCarbon = Carbon::parse($startDate)->startOfDay();
+            $endDateCarbon = Carbon::parse($endDate)->endOfDay();
+
             $user = User::findOrFail($userId);
             $associateGroup = AssociateGroup::where('user_id', $userId)->first();
 
@@ -617,9 +621,9 @@ class EvaluationController extends Controller
                 return response()->json(['error' => 'Associate group not found'], 404);
             }
 
-            // Reports metrics
+            // Reports metrics - exclude soft deleted records
             $reports = Report::where('user_id', $userId)
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
                 ->get();
 
             $totalReports = $reports->count();
@@ -632,18 +636,18 @@ class EvaluationController extends Controller
             // Volunteer metrics
             $volunteers = Volunteer::where('associate_group_id', $associateGroup->id)->get();
             $totalVolunteers = $volunteers->count();
-            
+
             // Volunteers recruited in period
             $volunteersRecruited = Volunteer::where('associate_group_id', $associateGroup->id)
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
                 ->count();
 
             // Notification response metrics
             $notifications = Notification::whereHas('recipients', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get();
+                ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
+                ->get();
 
             $totalNotifications = $notifications->count();
             $respondedNotifications = 0;
@@ -675,35 +679,36 @@ class EvaluationController extends Controller
                 }
             }
 
-            $responseRate = $totalNotifications > 0 
-                ? round(($respondedNotifications / $totalNotifications) * 100, 2) 
+            $responseRate = $totalNotifications > 0
+                ? round(($respondedNotifications / $totalNotifications) * 100, 2)
                 : 0;
-            $acceptanceRate = $respondedNotifications > 0 
-                ? round(($acceptedNotifications / $respondedNotifications) * 100, 2) 
+            $acceptanceRate = $respondedNotifications > 0
+                ? round(($acceptedNotifications / $respondedNotifications) * 100, 2)
                 : 0;
-            $avgResponseTime = $responseCount > 0 
-                ? round($totalResponseTime / $responseCount, 2) 
+            $avgResponseTime = $responseCount > 0
+                ? round($totalResponseTime / $responseCount, 2)
                 : 0;
 
             // System engagement metrics
             $activityLogs = ActivityLog::where('user_id', $userId)
-                ->whereBetween('activity_at', [$startDate, $endDate])
+                ->whereBetween('activity_at', [$startDateCarbon, $endDateCarbon])
                 ->get();
 
             $totalActivities = $activityLogs->count();
             $loginActivities = $activityLogs->where('activity_type', 'login')->count();
-            
+
             // Calculate login frequency (logins per week)
-            $daysDiff = Carbon::parse($endDate)->diffInDays(Carbon::parse($startDate));
+            $daysDiff = $endDateCarbon->diffInDays($startDateCarbon);
             $weeks = max(1, $daysDiff / 7);
             $loginFrequency = $weeks > 0 ? round($loginActivities / $weeks, 2) : 0;
 
             // Calculate system engagement score (0-100)
-            $engagementScore = min(100, 
-                ($totalReports * 5) + 
-                ($volunteersRecruited * 10) + 
-                ($responseRate * 0.3) + 
-                ($loginFrequency * 2)
+            $engagementScore = min(
+                100,
+                ($totalReports * 5) +
+                    ($volunteersRecruited * 10) +
+                    ($responseRate * 0.3) +
+                    ($loginFrequency * 2)
             );
 
             // Determine engagement level
@@ -713,8 +718,8 @@ class EvaluationController extends Controller
 
             return response()->json([
                 'period' => [
-                    'start_date' => $startDate,
-                    'end_date' => $endDate,
+                    'start_date' => $startDateCarbon->toDateString(),
+                    'end_date' => $endDateCarbon->toDateString(),
                     'days' => $daysDiff
                 ],
                 'reports' => [
@@ -728,8 +733,8 @@ class EvaluationController extends Controller
                 'volunteers' => [
                     'total_count' => $totalVolunteers,
                     'recruited_in_period' => $volunteersRecruited,
-                    'growth_rate' => $totalVolunteers > 0 
-                        ? round(($volunteersRecruited / $totalVolunteers) * 100, 2) 
+                    'growth_rate' => $totalVolunteers > 0
+                        ? round(($volunteersRecruited / $totalVolunteers) * 100, 2)
                         : 0
                 ],
                 'notifications' => [

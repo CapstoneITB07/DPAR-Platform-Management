@@ -2163,6 +2163,18 @@ function Reports() {
                             {formData.preparedBySignature ? '✓' : 'Upload'}
                             📝
                           </button>
+                          <p style={{
+                            marginTop: '8px',
+                            fontSize: '12px',
+                            color: '#10b981',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            lineHeight: '1.4'
+                          }}>
+                            <span style={{ fontSize: '14px' }}>🔒</span>
+                            <span>Your e-signature is secure and protected. This platform complies with the <strong>Data Privacy Act of 2012 (RA 10173)</strong> and our <strong>Data Privacy Policy</strong> and <strong>Terms and Conditions</strong> ensure the safety and confidentiality of your information.</span>
+                          </p>
                         </div>
                       </div>
                       <div className="report-form-row">

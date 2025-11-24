@@ -14,6 +14,8 @@ use App\Models\NotificationRecipient;
 use App\Models\ActivityLog;
 use App\Models\Announcement;
 use App\Models\TrainingProgram;
+use App\Models\CalendarEvent;
+use App\Models\PendingApplication;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -354,10 +356,28 @@ class DashboardAnalysisService
                 }
             }
 
-            // Get performance metrics for this individual (last 3 months)
-            $endDate = Carbon::parse($latestEval->created_at);
-            $startDate = $endDate->copy()->subMonths(3);
-            $metrics = $this->calculatePerformanceMetrics($userId, $startDate->toDateString(), $endDate->toDateString());
+            // Get performance metrics for all quarters of current year
+            $currentYear = Carbon::now()->year;
+            $quarterlyMetrics = [];
+
+            // Calculate metrics for each quarter (Q1, Q2, Q3, Q4)
+            for ($quarter = 1; $quarter <= 4; $quarter++) {
+                $quarterStartMonth = ($quarter - 1) * 3 + 1; // Q1: 1, Q2: 4, Q3: 7, Q4: 10
+                $quarterEndMonth = $quarterStartMonth + 2; // Q1: 3, Q2: 6, Q3: 9, Q4: 12
+
+                $quarterStart = Carbon::create($currentYear, $quarterStartMonth, 1)->startOfDay();
+                $quarterEnd = Carbon::create($currentYear, $quarterEndMonth, 1)->endOfMonth()->endOfDay();
+
+                $quarterMetrics = $this->calculatePerformanceMetrics(
+                    $userId,
+                    $quarterStart->toDateString(),
+                    $quarterEnd->toDateString()
+                );
+
+                if ($quarterMetrics) {
+                    $quarterlyMetrics["Q{$quarter}"] = $quarterMetrics;
+                }
+            }
 
             $individualData[] = [
                 'user_id' => $userId,
@@ -370,7 +390,8 @@ class DashboardAnalysisService
                 'trend' => $trend,
                 'first_evaluation' => $userEvals->last()->created_at->format('Y-m-d'),
                 'last_evaluation' => $latestEval->created_at->format('Y-m-d'),
-                'metrics' => $metrics
+                'quarterly_metrics' => $quarterlyMetrics,
+                'metrics_year' => $currentYear
             ];
         }
 
@@ -556,6 +577,17 @@ class DashboardAnalysisService
         // Get associate group information
         $associateGroup = AssociateGroup::where('user_id', $userId)->first();
 
+        // Get SEC number from pending applications (if available)
+        $userEmail = $associateGroup ? $associateGroup->email : $user->email;
+        $userUsername = $user->username;
+        $pendingApplication = PendingApplication::where(function ($query) use ($userEmail, $userUsername) {
+            $query->where('email', $userEmail)
+                ->orWhere('username', $userUsername);
+        })->first();
+
+        $secNumber = $pendingApplication && !empty($pendingApplication->sec_number)
+            ? $pendingApplication->sec_number
+            : null;
 
         // Handle case where there's no evaluation data
         if ($evaluations->isEmpty()) {
@@ -568,7 +600,8 @@ class DashboardAnalysisService
                     'phone' => $associateGroup ? ($associateGroup->phone ?? 'Not provided') : ($user->phone ?? 'Not provided'),
                     'date_joined' => $associateGroup ? $associateGroup->created_at->format('Y-m-d') : 'Unknown',
                     'group_type' => $associateGroup ? $associateGroup->type : 'Not specified',
-                    'group_description' => $associateGroup ? (html_entity_decode($associateGroup->description ?: 'No description provided', ENT_QUOTES, 'UTF-8')) : 'No description available'
+                    'group_description' => $associateGroup ? (html_entity_decode($associateGroup->description ?: 'No description provided', ENT_QUOTES, 'UTF-8')) : 'No description available',
+                    'sec_number' => $secNumber
                 ],
                 'overall_stats' => [
                     'total_evaluations' => 0,
@@ -616,10 +649,28 @@ class DashboardAnalysisService
         // Get performance timeline
         $performanceTimeline = $this->getPerformanceTimeline($evaluations);
 
-        // Get performance metrics for latest evaluation period (last 3 months)
-        $latestEvaluation = $evaluations->first();
-        $metricsPeriod = $this->getMetricsPeriod($latestEvaluation);
-        $performanceMetrics = $this->calculatePerformanceMetrics($userId, $metricsPeriod['start_date'], $metricsPeriod['end_date']);
+        // Get performance metrics for all quarters of current year
+        $currentYear = Carbon::now()->year;
+        $quarterlyMetrics = [];
+
+        // Calculate metrics for each quarter (Q1, Q2, Q3, Q4)
+        for ($quarter = 1; $quarter <= 4; $quarter++) {
+            $quarterStartMonth = ($quarter - 1) * 3 + 1; // Q1: 1, Q2: 4, Q3: 7, Q4: 10
+            $quarterEndMonth = $quarterStartMonth + 2; // Q1: 3, Q2: 6, Q3: 9, Q4: 12
+
+            $quarterStart = Carbon::create($currentYear, $quarterStartMonth, 1)->startOfDay();
+            $quarterEnd = Carbon::create($currentYear, $quarterEndMonth, 1)->endOfMonth()->endOfDay();
+
+            $quarterMetrics = $this->calculatePerformanceMetrics(
+                $userId,
+                $quarterStart->toDateString(),
+                $quarterEnd->toDateString()
+            );
+
+            if ($quarterMetrics) {
+                $quarterlyMetrics["Q{$quarter}"] = $quarterMetrics;
+            }
+        }
 
         return [
             'user_info' => [
@@ -630,7 +681,8 @@ class DashboardAnalysisService
                 'phone' => $associateGroup ? ($associateGroup->phone ?? 'Not provided') : ($user->phone ?? 'Not provided'),
                 'date_joined' => $associateGroup ? $associateGroup->created_at->format('Y-m-d') : 'Unknown',
                 'group_type' => $associateGroup ? $associateGroup->type : 'Not specified',
-                'group_description' => $associateGroup ? (html_entity_decode($associateGroup->description ?: 'No description provided', ENT_QUOTES, 'UTF-8')) : 'No description available'
+                'group_description' => $associateGroup ? (html_entity_decode($associateGroup->description ?: 'No description provided', ENT_QUOTES, 'UTF-8')) : 'No description available',
+                'sec_number' => $secNumber
             ],
             'overall_stats' => [
                 'total_evaluations' => $totalEvaluations,
@@ -645,8 +697,8 @@ class DashboardAnalysisService
             'category_analysis' => $categoryAnalysis,
             'evaluation_history' => $evaluationHistory,
             'performance_timeline' => $performanceTimeline,
-            'performance_metrics' => $performanceMetrics,
-            'metrics_period' => $metricsPeriod
+            'quarterly_metrics' => $quarterlyMetrics,
+            'metrics_year' => $currentYear
         ];
     }
 
@@ -1174,7 +1226,7 @@ class DashboardAnalysisService
                 </table>
             </div>';
 
-        // Add aggregate performance metrics if available
+        // Add aggregate performance metrics if available (moved below Overall Performance Metrics)
         if (isset($data['aggregate_metrics']) && $data['aggregate_metrics']) {
             $metrics = $data['aggregate_metrics'];
             $html .= '
@@ -1209,7 +1261,96 @@ class DashboardAnalysisService
                             <div style="font-size: 11px; color: #666; margin-top: 5px;">Logins/week per associate</div>
                         </td>
                     </tr>
-                </table>
+                </table>';
+
+            // Add calendar events metrics for current year
+            if (isset($metrics['calendar_events']) && $metrics['calendar_events']) {
+                $calendarMetrics = $metrics['calendar_events'];
+                $html .= '
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #dee2e6;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; color: #333; font-size: 16px;">Calendar Events Metrics (' . $calendarMetrics['year'] . ')</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 15px;"><strong>Period:</strong> ' . Carbon::parse($calendarMetrics['year_start'])->format('F d, Y') . ' to ' . Carbon::parse($calendarMetrics['year_end'])->format('F d, Y') . '</p>
+                    <table style="width: 100%; border-collapse: separate; border-spacing: 12px; margin-bottom: 15px;">
+                        <tr>
+                            <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                                <div class="stat-value">' . $calendarMetrics['total_events'] . '</div>
+                                <div class="stat-label">Total Events</div>
+                                <div style="font-size: 11px; color: #666; margin-top: 5px;">Year ' . $calendarMetrics['year'] . '</div>
+                            </td>
+                            <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                                <div class="stat-value">' . $calendarMetrics['average_per_month'] . '</div>
+                                <div class="stat-label">Avg Events/Month</div>
+                                <div style="font-size: 11px; color: #666; margin-top: 5px;">Across all months</div>
+                            </td>
+                            <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                                <div class="stat-value">' . $calendarMetrics['months_with_events'] . '</div>
+                                <div class="stat-label">Active Months</div>
+                                <div style="font-size: 11px; color: #666; margin-top: 5px;">Months with events</div>
+                            </td>
+                            <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 18px 12px;">
+                                <div class="stat-value">' . ($calendarMetrics['months_with_events'] > 0 ? round(($calendarMetrics['total_events'] / $calendarMetrics['months_with_events']), 2) : 0) . '</div>
+                                <div class="stat-label">Avg/Active Month</div>
+                                <div style="font-size: 11px; color: #666; margin-top: 5px;">Per active month</div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                        <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #333;">Events Distribution by Month:</h4>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <tr>';
+
+                $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                foreach ($calendarMetrics['events_by_month'] as $month => $count) {
+                    $html .= '<td style="text-align: center; padding: 10px; background: white; border: 1px solid #dee2e6; border-right: ' . ($month < 12 ? '1px' : '1px') . ' solid #dee2e6;">
+                        <div style="font-size: 11px; color: #666; margin-bottom: 4px;">' . $monthNames[$month - 1] . '</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #A11C22;">' . $count . '</div>
+                    </td>';
+                }
+
+                $html .= '
+                            </tr>
+                        </table>
+                    </div>';
+
+                // Add list of all events with names and descriptions
+                if (isset($calendarMetrics['events_list']) && !empty($calendarMetrics['events_list'])) {
+                    $html .= '
+                    <div style="margin-top: 20px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                        <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 13px; color: #333;">All Calendar Events (' . $calendarMetrics['year'] . '):</h4>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <thead>
+                                <tr style="background: #A11C22; color: white;">
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6; font-size: 12px;">Event Name</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6; font-size: 12px;">Description</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid #dee2e6; font-size: 12px;">Location</th>
+                                    <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-size: 12px;">Start Date</th>
+                                    <th style="padding: 10px; text-align: center; border: 1px solid #dee2e6; font-size: 12px;">End Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>';
+
+                    foreach ($calendarMetrics['events_list'] as $index => $event) {
+                        $bgColor = $index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                        $html .= '<tr style="background: ' . $bgColor . ';">
+                            <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 11px; font-weight: bold;">' . htmlspecialchars($event['title'] ?? 'N/A') . '</td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 11px;">' . htmlspecialchars($event['description'] ?? 'No description') . '</td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 11px;">' . htmlspecialchars($event['location'] ?? 'Not specified') . '</td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 11px; text-align: center;">' . Carbon::parse($event['start_date'])->format('M d, Y') . '</td>
+                            <td style="padding: 10px; border: 1px solid #dee2e6; font-size: 11px; text-align: center;">' . Carbon::parse($event['end_date'])->format('M d, Y') . '</td>
+                        </tr>';
+                    }
+
+                    $html .= '
+                            </tbody>
+                        </table>
+                    </div>';
+                }
+
+                $html .= '
+                </div>';
+            }
+
+            $html .= '
             </div>';
         }
 
@@ -1426,45 +1567,66 @@ class DashboardAnalysisService
                     </tr>
                 </table>';
 
-            if (isset($individual['metrics']) && $individual['metrics']) {
-                $metrics = $individual['metrics'];
+            if (isset($individual['quarterly_metrics']) && !empty($individual['quarterly_metrics'])) {
+                $quarterlyMetrics = $individual['quarterly_metrics'];
+                $metricsYear = $individual['metrics_year'] ?? Carbon::now()->year;
                 $html .= '
-                <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 6px;">
-                    <h4 style="margin-top: 0; font-size: 14px; color: #333;">Performance Metrics Summary (Last 3 Months):</h4>
-                    <table style="width: 100%; border-collapse: separate; border-spacing: 8px; margin-top: 12px;">
-                        <tr>
-                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
-                                <div class="stat-value" style="font-size: 20px;">' . $metrics['reports']['total_submitted'] . '</div>
-                                <div class="stat-label" style="font-size: 11px;">Reports</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['reports']['approval_rate'] . '% approved</div>
-                            </td>
-                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
-                                <div class="stat-value" style="font-size: 20px;">+' . $metrics['volunteers']['recruited_in_period'] . '</div>
-                                <div class="stat-label" style="font-size: 11px;">Volunteers</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">Total: ' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</div>
-                            </td>
-                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
-                                <div class="stat-value" style="font-size: 20px;">' . $metrics['notifications']['total_received'] . '</div>
-                                <div class="stat-label" style="font-size: 11px;">Notifications</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['notifications']['response_rate'] . '% responded</div>
-                            </td>
-                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
-                                <div class="stat-value" style="font-size: 20px;">' . $metrics['notifications']['acceptance_rate'] . '%</div>
-                                <div class="stat-label" style="font-size: 11px;">Acceptance Rate</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['notifications']['accepted'] . ' accepted, ' . ($metrics['notifications']['declined'] ?? 0) . ' declined</div>
-                            </td>
-                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
-                                <div class="stat-value" style="font-size: 20px;">' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . 'h</div>
-                                <div class="stat-label" style="font-size: 11px;">Response Time</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">Average</div>
-                            </td>
-                            <td class="stat-card" style="width: 16.66%; padding: 15px 10px; text-align: center; vertical-align: top;">
-                                <div class="stat-value" style="font-size: 20px;">' . $metrics['system_engagement']['engagement_score'] . '%</div>
-                                <div class="stat-label" style="font-size: 11px;">System Engagement</div>
-                                <div style="font-size: 10px; color: #666; margin-top: 3px;">' . $metrics['system_engagement']['engagement_level'] . ' (' . $metrics['system_engagement']['login_frequency_per_week'] . ' logins/week)</div>
-                            </td>
-                        </tr>
-                    </table>
+                <div style="margin-top: 15px; padding: 15px; background: white; border-radius: 6px;">
+                    <h4 style="margin-top: 0; font-size: 14px; color: #333; margin-bottom: 15px;">Performance Metrics Summary by Quarter (' . $metricsYear . '):</h4>';
+
+                // Display metrics for each quarter
+                $quarterLabels = [
+                    'Q1' => 'Q1 (Jan - Mar)',
+                    'Q2' => 'Q2 (Apr - Jun)',
+                    'Q3' => 'Q3 (Jul - Sep)',
+                    'Q4' => 'Q4 (Oct - Dec)'
+                ];
+
+                foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
+                    if (isset($quarterlyMetrics[$quarter])) {
+                        $metrics = $quarterlyMetrics[$quarter];
+                        $html .= '
+                    <div style="margin-bottom: 20px; padding: 12px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #A11C22;">
+                        <h5 style="margin-top: 0; margin-bottom: 10px; font-size: 13px; color: #A11C22; font-weight: 600;">' . $quarterLabels[$quarter] . '</h5>
+                        <table style="width: 100%; border-collapse: separate; border-spacing: 8px; margin-top: 8px;">
+                            <tr>
+                                <td class="stat-card" style="width: 16.66%; padding: 12px 8px; text-align: center; vertical-align: top; background: white; border-radius: 4px;">
+                                    <div class="stat-value" style="font-size: 18px;">' . $metrics['reports']['total_submitted'] . '</div>
+                                    <div class="stat-label" style="font-size: 10px;">Reports</div>
+                                    <div style="font-size: 9px; color: #666; margin-top: 2px;">' . $metrics['reports']['approval_rate'] . '% approved</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; padding: 12px 8px; text-align: center; vertical-align: top; background: white; border-radius: 4px;">
+                                    <div class="stat-value" style="font-size: 18px;">+' . $metrics['volunteers']['recruited_in_period'] . '</div>
+                                    <div class="stat-label" style="font-size: 10px;">Volunteers</div>
+                                    <div style="font-size: 9px; color: #666; margin-top: 2px;">Total: ' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; padding: 12px 8px; text-align: center; vertical-align: top; background: white; border-radius: 4px;">
+                                    <div class="stat-value" style="font-size: 18px;">' . $metrics['notifications']['total_received'] . '</div>
+                                    <div class="stat-label" style="font-size: 10px;">Notifications</div>
+                                    <div style="font-size: 9px; color: #666; margin-top: 2px;">' . $metrics['notifications']['response_rate'] . '% responded</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; padding: 12px 8px; text-align: center; vertical-align: top; background: white; border-radius: 4px;">
+                                    <div class="stat-value" style="font-size: 18px;">' . $metrics['notifications']['acceptance_rate'] . '%</div>
+                                    <div class="stat-label" style="font-size: 10px;">Acceptance Rate</div>
+                                    <div style="font-size: 9px; color: #666; margin-top: 2px;">' . $metrics['notifications']['accepted'] . ' accepted, ' . ($metrics['notifications']['declined'] ?? 0) . ' declined</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; padding: 12px 8px; text-align: center; vertical-align: top; background: white; border-radius: 4px;">
+                                    <div class="stat-value" style="font-size: 18px;">' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . 'h</div>
+                                    <div class="stat-label" style="font-size: 10px;">Response Time</div>
+                                    <div style="font-size: 9px; color: #666; margin-top: 2px;">Average</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; padding: 12px 8px; text-align: center; vertical-align: top; background: white; border-radius: 4px;">
+                                    <div class="stat-value" style="font-size: 18px;">' . $metrics['system_engagement']['engagement_score'] . '%</div>
+                                    <div class="stat-label" style="font-size: 10px;">System Engagement</div>
+                                    <div style="font-size: 9px; color: #666; margin-top: 2px;">' . $metrics['system_engagement']['engagement_level'] . ' (' . $metrics['system_engagement']['login_frequency_per_week'] . ' logins/week)</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>';
+                    }
+                }
+
+                $html .= '
                 </div>';
             }
 
@@ -1890,7 +2052,12 @@ class DashboardAnalysisService
                         <div class="user-info-item">
                             <div class="user-info-label">Group Type</div>
                             <div class="user-info-value">' . $data['user_info']['group_type'] . '</div>
-                        </div>
+                        </div>' .
+            (!empty($data['user_info']['sec_number']) ? '
+                        <div class="user-info-item">
+                            <div class="user-info-label">SEC Number</div>
+                            <div class="user-info-value">' . htmlspecialchars($data['user_info']['sec_number'], ENT_QUOTES, 'UTF-8') . '</div>
+                        </div>' : '') . '
                     </div>
                     <div style="margin-top: 15px;">
                         <div class="user-info-label">Group Description</div>
@@ -1953,107 +2120,69 @@ class DashboardAnalysisService
                 </table>
         ';
 
-        // Add performance metrics if available
-        if (isset($data['performance_metrics']) && $data['performance_metrics'] && isset($data['metrics_period'])) {
-            $metrics = $data['performance_metrics'];
-            $period = $data['metrics_period'];
+        // Add performance metrics if available (quarterly format)
+        if (isset($data['quarterly_metrics']) && !empty($data['quarterly_metrics'])) {
+            $quarterlyMetrics = $data['quarterly_metrics'];
+            $metricsYear = $data['metrics_year'] ?? Carbon::now()->year;
             $html .= '
-                <h2 style="margin-top: 15px; margin-bottom: 8px;">Performance Metrics Summary</h2>
-                <p style="margin-bottom: 10px;"><strong>Evaluation Period:</strong> ' . Carbon::parse($period['start_date'])->format('F d, Y') . ' to ' . Carbon::parse($period['end_date'])->format('F d, Y') . ' (' . $period['period_description'] . ')</p>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-                    <tr>
-                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6;">
-                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['reports']['total_submitted'] . '</div>
-                            <div class="stat-label">Reports</div>
-                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['reports']['approval_rate'] . '% approved</div>
-                        </td>
-                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
-                            <div class="stat-value" style="margin-bottom: 3px;">+' . $metrics['volunteers']['recruited_in_period'] . '</div>
-                            <div class="stat-label">Volunteers</div>
-                            <div style="font-size: 11px; color: #666; margin-top: 3px;">Total: ' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</div>
-                        </td>
-                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
-                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['notifications']['total_received'] . '</div>
-                            <div class="stat-label">Notifications</div>
-                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['notifications']['response_rate'] . '% responded</div>
-                        </td>
-                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
-                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['notifications']['acceptance_rate'] . '%</div>
-                            <div class="stat-label">Acceptance Rate</div>
-                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['notifications']['accepted'] . ' accepted, ' . ($metrics['notifications']['declined'] ?? 0) . ' declined</div>
-                        </td>
-                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
-                            <div class="stat-value" style="margin-bottom: 3px;">' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . 'h</div>
-                            <div class="stat-label">Response Time</div>
-                            <div style="font-size: 11px; color: #666; margin-top: 3px;">Average</div>
-                        </td>
-                        <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
-                            <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['system_engagement']['engagement_score'] . '%</div>
-                            <div class="stat-label">System Engagement</div>
-                            <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['system_engagement']['engagement_level'] . ' (' . $metrics['system_engagement']['login_frequency_per_week'] . ' logins/week)</div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
             <div class="section">
-                <div style="margin-top: 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                    <h3 style="margin-top: 0; font-size: 14px;">Detailed Metrics Breakdown:</h3>
-                    <table class="performance-table" style="margin-top: 10px;">
-                        <thead>
+                <h2 style="margin-top: 15px; margin-bottom: 8px;">Performance Metrics Summary</h2>
+                <p style="margin-bottom: 15px;"><strong>Metrics by Quarter (' . $metricsYear . '):</strong> The following metrics are calculated for each quarter of the current year, providing a comprehensive view of performance across different time periods.</p>
+                <div style="margin-top: 15px;">';
+
+            // Display metrics for each quarter
+            $quarterLabels = [
+                'Q1' => 'Q1 (Jan - Mar)',
+                'Q2' => 'Q2 (Apr - Jun)',
+                'Q3' => 'Q3 (Jul - Sep)',
+                'Q4' => 'Q4 (Oct - Dec)'
+            ];
+
+            foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
+                if (isset($quarterlyMetrics[$quarter])) {
+                    $metrics = $quarterlyMetrics[$quarter];
+                    $html .= '
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #A11C22;">
+                        <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 15px; color: #A11C22; font-weight: 600;">' . $quarterLabels[$quarter] . '</h3>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
                             <tr>
-                                <th>Metric Category</th>
-                                <th>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Reports</strong></td>
-                                <td>
-                                    <ul style="margin: 0; padding-left: 20px;">
-                                        <li>Total Submitted: <strong>' . $metrics['reports']['total_submitted'] . '</strong></li>
-                                        <li>Approved: <strong>' . $metrics['reports']['approved'] . '</strong> (' . $metrics['reports']['approval_rate'] . '%)</li>
-                                        ' . (isset($metrics['reports']['rejected']) ? '<li>Rejected: <strong>' . $metrics['reports']['rejected'] . '</strong></li>' : '') . '
-                                        ' . (isset($metrics['reports']['pending']) ? '<li>Pending: <strong>' . $metrics['reports']['pending'] . '</strong></li>' : '') . '
-                                        ' . (isset($metrics['reports']['draft']) ? '<li>Draft: <strong>' . $metrics['reports']['draft'] . '</strong></li>' : '') . '
-                                    </ul>
+                                <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6;">
+                                    <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['reports']['total_submitted'] . '</div>
+                                    <div class="stat-label">Reports</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['reports']['approval_rate'] . '% approved</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                                    <div class="stat-value" style="margin-bottom: 3px;">+' . $metrics['volunteers']['recruited_in_period'] . '</div>
+                                    <div class="stat-label">Volunteers</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">Total: ' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                                    <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['notifications']['total_received'] . '</div>
+                                    <div class="stat-label">Notifications</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['notifications']['response_rate'] . '% responded</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                                    <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['notifications']['acceptance_rate'] . '%</div>
+                                    <div class="stat-label">Acceptance Rate</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['notifications']['accepted'] . ' accepted, ' . ($metrics['notifications']['declined'] ?? 0) . ' declined</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                                    <div class="stat-value" style="margin-bottom: 3px;">' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . 'h</div>
+                                    <div class="stat-label">Response Time</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">Average</div>
+                                </td>
+                                <td class="stat-card" style="width: 16.66%; text-align: center; vertical-align: middle; padding: 12px 5px; border: 1px solid #dee2e6; border-left: none;">
+                                    <div class="stat-value" style="margin-bottom: 3px;">' . $metrics['system_engagement']['engagement_score'] . '%</div>
+                                    <div class="stat-label">System Engagement</div>
+                                    <div style="font-size: 11px; color: #666; margin-top: 3px;">' . $metrics['system_engagement']['engagement_level'] . ' (' . $metrics['system_engagement']['login_frequency_per_week'] . ' logins/week)</div>
                                 </td>
                             </tr>
-                            <tr>
-                                <td><strong>Volunteers</strong></td>
-                                <td>
-                                    <ul style="margin: 0; padding-left: 20px;">
-                                        <li>Total Count: <strong>' . ($metrics['volunteers']['total_count'] ?? $metrics['volunteers']['recruited_in_period']) . '</strong></li>
-                                        <li>Recruited in Period: <strong>' . $metrics['volunteers']['recruited_in_period'] . '</strong></li>
-                                        ' . (isset($metrics['volunteers']['growth_rate']) ? '<li>Growth Rate: <strong>' . $metrics['volunteers']['growth_rate'] . '%</strong></li>' : '') . '
-                                    </ul>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Notifications</strong></td>
-                                <td>
-                                    <ul style="margin: 0; padding-left: 20px;">
-                                        <li>Total Received: <strong>' . $metrics['notifications']['total_received'] . '</strong></li>
-                                        <li>Responded: <strong>' . $metrics['notifications']['responded'] . '</strong> (' . $metrics['notifications']['response_rate'] . '% response rate)</li>
-                                        <li>Not Responded: <strong>' . ($metrics['notifications']['not_responded'] ?? ($metrics['notifications']['total_received'] - $metrics['notifications']['responded'])) . '</strong></li>
-                                        <li>Accepted: <strong>' . $metrics['notifications']['accepted'] . '</strong> (' . $metrics['notifications']['acceptance_rate'] . '% acceptance rate)</li>
-                                        <li>Declined: <strong>' . ($metrics['notifications']['declined'] ?? 0) . '</strong></li>
-                                        <li>Average Response Time: <strong>' . number_format($metrics['notifications']['avg_response_time_hours'], 1) . ' hours</strong></li>
-                                    </ul>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>System Engagement</strong></td>
-                                <td>
-                                    <ul style="margin: 0; padding-left: 20px;">
-                                        <li>Total Activities: <strong>' . $metrics['system_engagement']['total_activities'] . '</strong></li>
-                                        <li>Login Count: <strong>' . $metrics['system_engagement']['login_count'] . '</strong></li>
-                                        <li>Login Frequency: <strong>' . $metrics['system_engagement']['login_frequency_per_week'] . '</strong> logins/week</li>
-                                        <li>Engagement Score: <strong>' . $metrics['system_engagement']['engagement_score'] . '%</strong> (' . $metrics['system_engagement']['engagement_level'] . ')</li>
-                                    </ul>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        </table>
+                    </div>';
+                }
+            }
+
+            $html .= '
                 </div>
             </div>';
         }
@@ -2228,9 +2357,15 @@ class DashboardAnalysisService
                 return null;
             }
 
-            // Reports metrics
+            // Convert to Carbon instances and set proper time boundaries
+            // Start date: beginning of day (00:00:00)
+            // End date: end of day (23:59:59) to include all records from that day
+            $startDateCarbon = Carbon::parse($startDate)->startOfDay();
+            $endDateCarbon = Carbon::parse($endDate)->endOfDay();
+
+            // Reports metrics - exclude soft deleted records
             $reports = Report::where('user_id', $userId)
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
                 ->get();
 
             $totalReports = $reports->count();
@@ -2239,14 +2374,14 @@ class DashboardAnalysisService
 
             // Volunteer metrics
             $volunteersRecruited = Volunteer::where('associate_group_id', $associateGroup->id)
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
                 ->count();
 
             // Notification metrics
             $notifications = Notification::whereHas('recipients', function ($query) use ($userId) {
                 $query->where('user_id', $userId);
             })
-                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
                 ->get();
 
             $totalNotifications = $notifications->count();
@@ -2286,13 +2421,13 @@ class DashboardAnalysisService
 
             // System engagement metrics
             $activityLogs = ActivityLog::where('user_id', $userId)
-                ->whereBetween('activity_at', [$startDate, $endDate])
+                ->whereBetween('activity_at', [$startDateCarbon, $endDateCarbon])
                 ->get();
 
             $totalActivities = $activityLogs->count();
             $loginActivities = $activityLogs->where('activity_type', 'login')->count();
 
-            $daysDiff = Carbon::parse($endDate)->diffInDays(Carbon::parse($startDate));
+            $daysDiff = $endDateCarbon->diffInDays($startDateCarbon);
             $weeks = max(1, $daysDiff / 7);
             $loginFrequency = $weeks > 0 ? round($loginActivities / $weeks, 2) : 0;
 
@@ -2373,11 +2508,11 @@ class DashboardAnalysisService
     private function getMetricsPeriod($latestEvaluation)
     {
         if ($latestEvaluation) {
-            $endDate = Carbon::parse($latestEvaluation->created_at);
-            $startDate = $endDate->copy()->subMonths(3);
+            $endDate = Carbon::parse($latestEvaluation->created_at)->endOfDay();
+            $startDate = $endDate->copy()->subMonths(3)->startOfDay();
         } else {
-            $endDate = Carbon::now();
-            $startDate = $endDate->copy()->subMonths(3);
+            $endDate = Carbon::now()->endOfDay();
+            $startDate = $endDate->copy()->subMonths(3)->startOfDay();
         }
 
         $daysDiff = $endDate->diffInDays($startDate);
@@ -2419,8 +2554,10 @@ class DashboardAnalysisService
             return null;
         }
 
-        $endDate = Carbon::now();
-        $startDate = $endDate->copy()->subMonths(3);
+        // Set proper time boundaries for full current year
+        $currentYear = Carbon::now()->year;
+        $startDate = Carbon::create($currentYear, 1, 1)->startOfDay();
+        $endDate = Carbon::create($currentYear, 12, 31)->endOfDay();
 
         $totalReports = 0;
         $totalVolunteers = 0;
@@ -2461,7 +2598,44 @@ class DashboardAnalysisService
             $totalLogins += $logins;
         }
 
-        $daysDiff = $endDate->diffInDays($startDate);
+        // Calculate calendar events for current year
+        $currentYear = Carbon::now()->year;
+        $yearStart = Carbon::create($currentYear, 1, 1)->startOfDay();
+        $yearEnd = Carbon::create($currentYear, 12, 31)->endOfDay();
+
+        $calendarEvents = CalendarEvent::whereBetween('start_date', [$yearStart, $yearEnd])
+            ->orderBy('start_date', 'asc')
+            ->get();
+
+        $totalCalendarEvents = $calendarEvents->count();
+
+        // Get events list with details
+        $eventsList = $calendarEvents->map(function ($event) {
+            return [
+                'title' => $event->title,
+                'description' => $event->description ?? 'No description',
+                'location' => $event->location ?? 'Not specified',
+                'start_date' => $event->start_date,
+                'end_date' => $event->end_date
+            ];
+        })->toArray();
+
+        // Calculate events by month for current year
+        $eventsByMonth = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $monthStart = Carbon::create($currentYear, $month, 1)->startOfDay();
+            $monthEnd = Carbon::create($currentYear, $month, 1)->endOfMonth()->endOfDay();
+            $eventsByMonth[$month] = CalendarEvent::whereBetween('start_date', [$monthStart, $monthEnd])
+                ->count();
+        }
+
+        $avgEventsPerMonth = round(array_sum($eventsByMonth) / 12, 2);
+        $monthsWithEvents = count(array_filter($eventsByMonth, function ($count) {
+            return $count > 0;
+        }));
+
+        // Calculate days for the full year period
+        $daysDiff = $endDate->diffInDays($startDate) + 1; // +1 to include both start and end dates
         $weeks = max(1, $daysDiff / 7);
         $avgLoginFrequency = $associateUsers->count() > 0 ? round($totalLogins / ($associateUsers->count() * $weeks), 2) : 0;
 
@@ -2488,6 +2662,16 @@ class DashboardAnalysisService
                 'total_activities' => $totalActivities,
                 'total_logins' => $totalLogins,
                 'average_login_frequency_per_week' => $avgLoginFrequency
+            ],
+            'calendar_events' => [
+                'total_events' => $totalCalendarEvents,
+                'year' => $currentYear,
+                'year_start' => $yearStart->toDateString(),
+                'year_end' => $yearEnd->toDateString(),
+                'average_per_month' => $avgEventsPerMonth,
+                'months_with_events' => $monthsWithEvents,
+                'events_by_month' => $eventsByMonth,
+                'events_list' => $eventsList
             ]
         ];
     }

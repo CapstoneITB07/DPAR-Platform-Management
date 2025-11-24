@@ -16,6 +16,7 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [allEvents, setAllEvents] = useState([]); // Store all events for filtering
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   // Fetch all events when modal opens
   useEffect(() => {
@@ -23,6 +24,30 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
       fetchAllEvents();
     }
   }, [show]);
+
+  // Check for year change and refresh events
+  useEffect(() => {
+    const checkYearChange = () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      if (year !== currentYear) {
+        setCurrentYear(year);
+        if (show) {
+          fetchAllEvents();
+        }
+      }
+    };
+
+    // Check every minute for year change (especially around New Year)
+    const interval = setInterval(checkYearChange, 60000);
+    
+    // Also check when modal opens
+    if (show) {
+      checkYearChange();
+    }
+
+    return () => clearInterval(interval);
+  }, [show, currentYear]);
 
   const fetchAllEvents = async () => {
     setLoading(true);
@@ -35,7 +60,14 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
       
       if (response.data.success) {
         const allEvents = response.data.data;
-        // Group events by date (local date, not UTC)
+        const currentYearValue = new Date().getFullYear();
+        setCurrentYear(currentYearValue);
+        
+        // Filter events by current year by default (unless custom date filter is set)
+        const yearStart = new Date(currentYearValue, 0, 1); // January 1st of current year
+        const yearEnd = new Date(currentYearValue, 11, 31, 23, 59, 59, 999); // December 31st of current year
+        
+        // Group events by date (local date, not UTC) and filter by current year
         const eventsByDate = {};
         allEvents.forEach(event => {
           const startDate = new Date(event.start_date);
@@ -44,6 +76,15 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
           const month = String(startDate.getMonth() + 1).padStart(2, '0');
           const day = String(startDate.getDate()).padStart(2, '0');
           const dateKey = `${year}-${month}-${day}`;
+          
+          // Filter by current year if no custom date filter is set
+          const hasCustomFilter = filterDateFrom || filterDateTo;
+          if (!hasCustomFilter) {
+            // Only include events from current year
+            if (year !== currentYearValue) {
+              return; // Skip events not in current year
+            }
+          }
           
           if (!eventsByDate[dateKey]) {
             eventsByDate[dateKey] = [];
@@ -54,7 +95,7 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
         // Store all events for filtering
         setAllEvents(response.data.data);
         
-        // Apply date filter if set
+        // Apply custom date filter if set (overrides year filter)
         let filteredEventsByDate = eventsByDate;
         if (filterDateFrom || filterDateTo) {
           filteredEventsByDate = {};
@@ -184,6 +225,7 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
   const handleFilterChange = () => {
     // Re-filter events when filter changes
     if (allEvents.length > 0) {
+      const currentYearValue = new Date().getFullYear();
       const eventsByDate = {};
       allEvents.forEach(event => {
         const startDate = new Date(event.start_date);
@@ -192,13 +234,22 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
         const day = String(startDate.getDate()).padStart(2, '0');
         const dateKey = `${year}-${month}-${day}`;
         
+        // Filter by current year if no custom date filter is set
+        const hasCustomFilter = filterDateFrom || filterDateTo;
+        if (!hasCustomFilter) {
+          // Only include events from current year
+          if (year !== currentYearValue) {
+            return; // Skip events not in current year
+          }
+        }
+        
         if (!eventsByDate[dateKey]) {
           eventsByDate[dateKey] = [];
         }
         eventsByDate[dateKey].push(event);
       });
       
-      // Apply date filter
+      // Apply custom date filter if set (overrides year filter)
       let filteredEventsByDate = eventsByDate;
       if (filterDateFrom || filterDateTo) {
         filteredEventsByDate = {};
@@ -247,9 +298,10 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
   const clearFilter = () => {
     setFilterDateFrom('');
     setFilterDateTo('');
-    // Trigger re-filter
+    // Trigger re-filter with current year filter applied
     setTimeout(() => {
       if (allEvents.length > 0) {
+        const currentYearValue = new Date().getFullYear();
         const eventsByDate = {};
         allEvents.forEach(event => {
           const startDate = new Date(event.start_date);
@@ -257,6 +309,11 @@ const EventsListModal = ({ show, onClose, onEdit }) => {
           const month = String(startDate.getMonth() + 1).padStart(2, '0');
           const day = String(startDate.getDate()).padStart(2, '0');
           const dateKey = `${year}-${month}-${day}`;
+          
+          // Only include events from current year (since custom filter is cleared)
+          if (year !== currentYearValue) {
+            return; // Skip events not in current year
+          }
           
           if (!eventsByDate[dateKey]) {
             eventsByDate[dateKey] = [];

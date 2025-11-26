@@ -236,7 +236,10 @@ const CustomEvent = ({ event }) => {
       >
         <div 
           className="event-count-badge"
-          style={{ backgroundColor: backgroundColor }}
+          style={{ 
+            backgroundColor: backgroundColor || '#6c757d',
+            background: backgroundColor || '#6c757d'
+          }}
           onMouseEnter={handleBadgeMouseEnter}
           onMouseLeave={(e) => {
             e.stopPropagation();
@@ -475,6 +478,7 @@ function AdminDashboard() {
         user_id: member.user_id,
         name: member.name,
         organization: member.organization,
+        director: member.director || (member.user && member.user.name) || '',
         logo: member.logo,
         evaluations: [],
         averageScores: {
@@ -1676,7 +1680,7 @@ function AdminDashboard() {
               >
                 {associatesPerformance.map(associate => (
                   <option key={associate.id} value={associate.id}>
-                    {associate.name} - {associate.organization}
+                    {associate.director || associate.name} - {associate.name}
                   </option>
                 ))}
               </select>

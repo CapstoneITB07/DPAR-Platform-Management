@@ -3587,6 +3587,7 @@
   z-index: 11;
   position: relative;
   pointer-events: auto !important;
+  opacity: 1 !important;
 }
 
 .calendar-section .event-count-badge:hover {
@@ -3598,40 +3599,40 @@
 /* Hover effect for in-progress events (green) */
 .calendar-section .custom-calendar-event.event-in-progress .event-count-badge,
 .calendar-section .custom-event-wrapper.event-in-progress .event-count-badge {
-  background: #218838;
+  background: #218838 !important;
 }
 
 .calendar-section .custom-calendar-event.event-in-progress .event-count-badge:hover,
 .calendar-section .custom-event-wrapper.event-in-progress .event-count-badge:hover {
-  background: #218838;
+  background: #218838 !important;
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
 /* Hover effect for finished events (grey) */
 .calendar-section .custom-calendar-event.event-finished .event-count-badge,
 .calendar-section .custom-event-wrapper.event-finished .event-count-badge {
-  background: #5a6268;
-  opacity: 1;
+  background: #5a6268 !important;
+  opacity: 1 !important;
 }
 
 .calendar-section .custom-calendar-event.event-finished .event-count-badge:hover,
 .calendar-section .custom-event-wrapper.event-finished .event-count-badge:hover {
-  background: #5a6268;
-  opacity: 1;
+  background: #5a6268 !important;
+  opacity: 1 !important;
   box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
 }
 
 /* Hover effect for not-started events (grey) */
 .calendar-section .custom-calendar-event.event-not-started .event-count-badge,
 .calendar-section .custom-event-wrapper.event-not-started .event-count-badge {
-  background: #5a6268;
-  opacity: 1;
+  background: #5a6268 !important;
+  opacity: 1 !important;
 }
 
 .calendar-section .custom-calendar-event.event-not-started .event-count-badge:hover,
 .calendar-section .custom-event-wrapper.event-not-started .event-count-badge:hover {
-  background: #5a6268;
-  opacity: 1;
+  background: #5a6268 !important;
+  opacity: 1 !important;
   box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
 }
 

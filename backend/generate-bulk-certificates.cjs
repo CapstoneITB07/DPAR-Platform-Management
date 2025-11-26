@@ -136,10 +136,10 @@ function processTemplate(template, data) {
   Object.keys(data).forEach(key => {
     if (typeof data[key] === 'string' || typeof data[key] === 'number' || typeof data[key] === 'boolean') {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      let value = data[key] || '';
+      let value = String(data[key] || '');
       
       // Special handling for message to preserve line breaks
-      if (key === 'message' && typeof value === 'string') {
+      if (key === 'message' && typeof data[key] === 'string') {
         // Convert newlines to HTML line breaks and preserve formatting
         // Each line will be centered individually
         value = value
@@ -147,6 +147,15 @@ function processTemplate(template, data) {
           .map(line => line.trim())
           .filter(line => line.length > 0)
           .join('<br>');
+      }
+      
+      // Special handling for font family values - ensure they're properly quoted in CSS
+      if (key.includes('FontFamily') && typeof value === 'string' && value.trim()) {
+        // All font family values need quotes in CSS (remove existing quotes first)
+        value = value.replace(/^['"]|['"]$/g, '').trim();
+        if (value) {
+          value = `'${value}'`;
+        }
       }
       
       result = result.replace(regex, value);
@@ -194,53 +203,114 @@ async function generateBulkCertificates(data) {
   data.messageFontSize = data.messageFontSize || 'medium';
   data.signatoryFontFamily = data.signatoryFontFamily || 'Montserrat';
   data.signatoryFontSize = data.signatoryFontSize || 'medium';
+  
+  // Convert font sizes to actual CSS values (matching single generation)
+  const fontSizeMap = {
+    small: { title: 2.0, name: 1.8, message: 0.95, signatory: 1.0 },
+    medium: { title: 2.5, name: 2.2, message: 1.08, signatory: 1.1 },
+    large: { title: 2.8, name: 2.4, message: 1.15, signatory: 1.2 },
+  };
+  
+  data.titleFontSizeValue = fontSizeMap[data.titleFontSize]?.title || fontSizeMap.medium.title;
+  data.nameFontSizeValue = fontSizeMap[data.nameFontSize]?.name || fontSizeMap.medium.name;
+  data.messageFontSizeValue = fontSizeMap[data.messageFontSize]?.message || fontSizeMap.medium.message;
+  data.signatoryFontSizeValue = fontSizeMap[data.signatoryFontSize]?.signatory || fontSizeMap.medium.signatory;
+  
+  // Ensure font families are clean strings (no extra whitespace)
+  data.titleFontFamily = String(data.titleFontFamily || 'Playfair Display').trim();
+  data.nameFontFamily = String(data.nameFontFamily || 'Playfair Display').trim();
+  data.messageFontFamily = String(data.messageFontFamily || 'Montserrat').trim();
+  data.signatoryFontFamily = String(data.signatoryFontFamily || 'Montserrat').trim();
 
-  // Convert background.jpg to base64 only if no custom background image is provided
-  if (!data.backgroundImageUrl) {
-    const backgroundPath = path.join(__dirname, 'public', 'Assets', 'background.jpg');
-    if (fs.existsSync(backgroundPath)) {
-      data.backgroundBase64 = imageToBase64(backgroundPath);
-    }
-  }
 
-  // Convert custom images to base64 if URLs are provided
+  // Process background image - convert to base64 (like single generation does)
   if (data.backgroundImageUrl) {
-    console.log('Processing background image from:', data.backgroundImageUrl);
+    console.error('Processing background image from:', data.backgroundImageUrl);
     try {
       // Try to read from local storage first (if URL contains /storage/)
       let urlPath;
       try {
-        const urlObj = new URL(data.backgroundImageUrl);
+        let urlToParse = data.backgroundImageUrl;
+        if (urlToParse.includes('localhost')) {
+          urlToParse = urlToParse.replace('localhost', '127.0.0.1');
+        }
+        const urlObj = new URL(urlToParse);
         urlPath = urlObj.pathname;
       } catch (e) {
-        // If URL parsing fails, try to extract path manually
         urlPath = data.backgroundImageUrl.replace(/^https?:\/\/[^\/]+/, '');
       }
       
       if (urlPath && urlPath.includes('/storage/')) {
-        const relativePath = urlPath.replace('/storage/', '');
-        const storagePath = path.join(__dirname, '..', 'storage', 'app', 'public', relativePath);
-        if (fs.existsSync(storagePath)) {
-          console.log('Reading background image from local storage:', storagePath);
-          data.backgroundBase64 = imageToBase64(storagePath);
-          console.log('Background image converted to base64 from local file');
+        const relativePath = urlPath.replace(/^\/storage\//, '');
+        const possiblePaths = [
+          path.join(__dirname, '..', 'storage', 'app', 'public', relativePath),
+          path.join(__dirname, '..', 'public', 'storage', relativePath),
+          path.join(__dirname, 'storage', 'app', 'public', relativePath),
+        ];
+        
+        let storagePath = null;
+        for (const possiblePath of possiblePaths) {
+          if (fs.existsSync(possiblePath)) {
+            storagePath = possiblePath;
+            break;
+          }
+        }
+        
+        if (storagePath) {
+          console.error('Converting background image to base64 from:', storagePath);
+          data.backgroundImageUrl = imageToBase64(storagePath);
         } else {
-          throw new Error('Local file not found, trying HTTP download');
+          // Download via HTTP and convert to base64 (with timeout)
+          console.error('Local file not found, downloading via HTTP');
+          const https = require('https');
+          const http = require('http');
+          const url = require('url');
+          
+          const imageUrl = data.backgroundImageUrl.replace('localhost', '127.0.0.1');
+          const parsedUrl = url.parse(imageUrl);
+          const client = parsedUrl.protocol === 'https:' ? https : http;
+          
+          data.backgroundImageUrl = await new Promise((resolve, reject) => {
+            const timeout = 5000; // 5 seconds
+            const request = client.get(imageUrl, (response) => {
+              if (response.statusCode !== 200) {
+                reject(new Error(`Failed to download: ${response.statusCode}`));
+                return;
+              }
+              const chunks = [];
+              response.on('data', (chunk) => chunks.push(chunk));
+              response.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                const base64 = buffer.toString('base64');
+                const ext = path.extname(parsedUrl.pathname).slice(1) || 'jpg';
+                const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+                resolve(`data:${mime};base64,${base64}`);
+              });
+              response.on('error', reject);
+            });
+            
+            request.on('error', reject);
+            request.setTimeout(timeout, () => {
+              request.destroy();
+              reject(new Error('Image download timeout'));
+            });
+          });
         }
       } else {
-        // Fall back to HTTP download
+        // Direct HTTP download
         const https = require('https');
         const http = require('http');
         const url = require('url');
         
-        const imageUrl = data.backgroundImageUrl;
+        const imageUrl = data.backgroundImageUrl.replace('localhost', '127.0.0.1');
         const parsedUrl = url.parse(imageUrl);
         const client = parsedUrl.protocol === 'https:' ? https : http;
         
-        data.backgroundBase64 = await new Promise((resolve, reject) => {
-          client.get(imageUrl, (response) => {
+        data.backgroundImageUrl = await new Promise((resolve, reject) => {
+          const timeout = 5000;
+          const request = client.get(imageUrl, (response) => {
             if (response.statusCode !== 200) {
-              reject(new Error(`Failed to download image: ${response.statusCode}`));
+              reject(new Error(`Failed to download: ${response.statusCode}`));
               return;
             }
             const chunks = [];
@@ -250,57 +320,121 @@ async function generateBulkCertificates(data) {
               const base64 = buffer.toString('base64');
               const ext = path.extname(parsedUrl.pathname).slice(1) || 'jpg';
               const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
-              console.log('Background image converted to base64 via HTTP, size:', base64.length);
               resolve(`data:${mime};base64,${base64}`);
             });
             response.on('error', reject);
-          }).on('error', reject);
+          });
+          
+          request.on('error', reject);
+          request.setTimeout(timeout, () => {
+            request.destroy();
+            reject(new Error('Image download timeout'));
+          });
         });
       }
     } catch (error) {
       console.error('Error processing background image:', error);
-      data.backgroundImageUrl = null; // Fall back to default
+      data.backgroundImageUrl = null;
+    }
+  } else {
+    // No custom background - convert default to base64 if exists
+    const backgroundPath = path.join(__dirname, 'public', 'Assets', 'background.jpg');
+    if (fs.existsSync(backgroundPath)) {
+      console.error('Using default background.jpg');
+      data.backgroundImageUrl = imageToBase64(backgroundPath);
+    } else {
+      console.error('No default background.jpg found');
+      data.backgroundImageUrl = null;
     }
   }
 
-  // Convert design overlay image to base64 if URL is provided
+  // Process design overlay image - convert to base64 (like single generation does)
   if (data.designImageUrl) {
-    console.log('Processing design image from:', data.designImageUrl);
+    console.error('Processing design image from:', data.designImageUrl);
     try {
-      // Try to read from local storage first (if URL contains /storage/)
       let urlPath;
       try {
-        const urlObj = new URL(data.designImageUrl);
+        let urlToParse = data.designImageUrl;
+        if (urlToParse.includes('localhost')) {
+          urlToParse = urlToParse.replace('localhost', '127.0.0.1');
+        }
+        const urlObj = new URL(urlToParse);
         urlPath = urlObj.pathname;
       } catch (e) {
-        // If URL parsing fails, try to extract path manually
         urlPath = data.designImageUrl.replace(/^https?:\/\/[^\/]+/, '');
       }
       
       if (urlPath && urlPath.includes('/storage/')) {
-        const relativePath = urlPath.replace('/storage/', '');
-        const storagePath = path.join(__dirname, '..', 'storage', 'app', 'public', relativePath);
-        if (fs.existsSync(storagePath)) {
-          console.log('Reading design image from local storage:', storagePath);
-          data.designImageBase64 = imageToBase64(storagePath);
-          console.log('Design image converted to base64 from local file');
+        const relativePath = urlPath.replace(/^\/storage\//, '');
+        const possiblePaths = [
+          path.join(__dirname, '..', 'storage', 'app', 'public', relativePath),
+          path.join(__dirname, '..', 'public', 'storage', relativePath),
+          path.join(__dirname, 'storage', 'app', 'public', relativePath),
+        ];
+        
+        let storagePath = null;
+        for (const possiblePath of possiblePaths) {
+          if (fs.existsSync(possiblePath)) {
+            storagePath = possiblePath;
+            break;
+          }
+        }
+        
+        if (storagePath) {
+          console.error('Converting design image to base64 from:', storagePath);
+          data.designImageUrl = imageToBase64(storagePath);
         } else {
-          throw new Error('Local file not found, trying HTTP download');
+          // Download via HTTP and convert to base64
+          console.error('Local file not found, downloading via HTTP');
+          const https = require('https');
+          const http = require('http');
+          const url = require('url');
+          
+          const imageUrl = data.designImageUrl.replace('localhost', '127.0.0.1');
+          const parsedUrl = url.parse(imageUrl);
+          const client = parsedUrl.protocol === 'https:' ? https : http;
+          
+          data.designImageUrl = await new Promise((resolve, reject) => {
+            const timeout = 5000;
+            const request = client.get(imageUrl, (response) => {
+              if (response.statusCode !== 200) {
+                reject(new Error(`Failed to download: ${response.statusCode}`));
+                return;
+              }
+              const chunks = [];
+              response.on('data', (chunk) => chunks.push(chunk));
+              response.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                const base64 = buffer.toString('base64');
+                const ext = path.extname(parsedUrl.pathname).slice(1) || 'png';
+                const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
+                resolve(`data:${mime};base64,${base64}`);
+              });
+              response.on('error', reject);
+            });
+            
+            request.on('error', reject);
+            request.setTimeout(timeout, () => {
+              request.destroy();
+              reject(new Error('Image download timeout'));
+            });
+          });
         }
       } else {
-        // Fall back to HTTP download
+        // Direct HTTP download
         const https = require('https');
         const http = require('http');
         const url = require('url');
         
-        const imageUrl = data.designImageUrl;
+        const imageUrl = data.designImageUrl.replace('localhost', '127.0.0.1');
         const parsedUrl = url.parse(imageUrl);
         const client = parsedUrl.protocol === 'https:' ? https : http;
         
-        data.designImageBase64 = await new Promise((resolve, reject) => {
-          client.get(imageUrl, (response) => {
+        data.designImageUrl = await new Promise((resolve, reject) => {
+          const timeout = 5000;
+          const request = client.get(imageUrl, (response) => {
             if (response.statusCode !== 200) {
-              reject(new Error(`Failed to download image: ${response.statusCode}`));
+              reject(new Error(`Failed to download: ${response.statusCode}`));
               return;
             }
             const chunks = [];
@@ -310,20 +444,24 @@ async function generateBulkCertificates(data) {
               const base64 = buffer.toString('base64');
               const ext = path.extname(parsedUrl.pathname).slice(1) || 'png';
               const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext}`;
-              console.log('Design image converted to base64 via HTTP, size:', base64.length);
               resolve(`data:${mime};base64,${base64}`);
             });
             response.on('error', reject);
-          }).on('error', reject);
+          });
+          
+          request.on('error', reject);
+          request.setTimeout(timeout, () => {
+            request.destroy();
+            reject(new Error('Image download timeout'));
+          });
         });
       }
     } catch (error) {
       console.error('Error processing design image:', error);
-      data.designImageUrl = null; // Fall back to default pattern
-      data.designImageBase64 = null;
+      data.designImageUrl = null;
     }
   } else {
-    console.log('No design image URL provided, using default geometric pattern');
+    console.error('No design image URL provided, using default geometric pattern');
   }
 
   // Convert disaster_logo.png to base64 if it exists
@@ -359,10 +497,8 @@ async function generateBulkCertificates(data) {
         message: data.message,
         logoUrl: data.logoUrl,
         baseUrl: data.baseUrl,
-        backgroundBase64: data.backgroundBase64,
-        backgroundImageUrl: data.backgroundImageUrl,
-        designImageUrl: data.designImageUrl,
-        designImageBase64: data.designImageBase64,
+        backgroundImageUrl: data.backgroundImageUrl, // Now contains base64 string
+        designImageUrl: data.designImageUrl, // Now contains base64 string
         // Customization options - CRITICAL: These must be included
         backgroundColor: data.backgroundColor,
         accentColor: data.accentColor,
@@ -372,12 +508,16 @@ async function generateBulkCertificates(data) {
         // Per-part font settings
         titleFontFamily: data.titleFontFamily,
         titleFontSize: data.titleFontSize,
+        titleFontSizeValue: data.titleFontSizeValue,
         nameFontFamily: data.nameFontFamily,
         nameFontSize: data.nameFontSize,
+        nameFontSizeValue: data.nameFontSizeValue,
         messageFontFamily: data.messageFontFamily,
         messageFontSize: data.messageFontSize,
+        messageFontSizeValue: data.messageFontSizeValue,
         signatoryFontFamily: data.signatoryFontFamily,
         signatoryFontSize: data.signatoryFontSize,
+        signatoryFontSizeValue: data.signatoryFontSizeValue,
       };
 
       // Process the template for this recipient
@@ -388,337 +528,33 @@ async function generateBulkCertificates(data) {
         html = html.replace(/src="[^"]*disaster_logo\.png[^"]*"/g, `src="${logoDataUrl}"`);
       }
 
-      // Extract only the body content to avoid duplicate head sections and conflicting JavaScript
+      // Extract head and body sections
+      const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
       const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-      if (bodyMatch) {
-        html = bodyMatch[1]; // Get content between <body> tags
-      }
-
-      // Add page break between certificates (except for the last one)
-      if (i < data.recipients.length - 1) {
-        html += '<div style="page-break-after: always;"></div>';
+      
+      // Store head section from first certificate (all certificates use same customization)
+      if (i === 0 && headMatch) {
+        allCertificatesHTML = `<head>${headMatch[1]}</head>`;
       }
       
-      allCertificatesHTML += html;
+      // Extract body content
+      if (bodyMatch) {
+        let bodyContent = bodyMatch[1];
+        
+        // Add page break between certificates (except for the last one)
+        if (i < data.recipients.length - 1) {
+          bodyContent += '<div style="page-break-after: always;"></div>';
+        }
+        
+        allCertificatesHTML += bodyContent;
+      }
     }
 
-    // Create complete HTML document
-    const completeHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Bulk Certificates</title>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-        <style>
-          @page {
-            size: A4 landscape;
-            margin: 0;
-          }
-          body {
-            font-family: 'Montserrat', Arial, sans-serif;
-            background: #fff;
-            margin: 0;
-            padding: 0;
-          }
-          .certificate-container {
-            width: 1123px;   /* A4 landscape */
-            height: 794px;   /* A4 landscape */
-            margin: 0 auto;
-            box-sizing: border-box;
-            position: relative;
-            background-image:
-            url('data:image/svg+xml;utf8,<svg width="1123" height="794" xmlns="http://www.w3.org/2000/svg"><g transform="translate(823,494)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(0,494)"><g transform="rotate(90,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></g><g transform="rotate(180,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g><g transform="translate(823,0) rotate(270,150,150)"><polygon points="0,300 300,0 300,300" fill="%23014A9B" /><polygon points="75,300 300,75 300,135 135,300" fill="%234AC2E0" /><polygon points="0,300 120,300 300,120 300,75" fill="%23F7B737" /></g></svg>'),
-            url('${data.backgroundBase64 || ''}');
-            background-size: cover, cover;
-            background-position: center, center;
-            background-repeat: no-repeat, no-repeat;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .certificate-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 18px;
-            left: 18px;
-            right: 18px;
-            bottom: 18px;
-            width: auto;
-            height: auto;
-            background: rgba(255,255,255,0.78);
-            border-radius: 25px;
-            box-shadow: 0 4px 32px rgba(0,0,0,0.10);
-            z-index: 2;
-            padding: 0;
-            max-width: 1000px;
-            min-height: 540px;
-            margin: auto;
-          }
-          .main-logo {
-            position: static;
-            display: block;
-            margin: 0 auto 8px auto;
-            width: 120px;
-            height: auto;
-            z-index: 5;
-          }
-          .main-content {
-            width: 100%;
-            max-width: none;
-            text-align: center;
-            margin: 0;
-            z-index: 3;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            padding: 0;
-            justify-content: flex-start;
-            gap: 0;
-          }
-          .cert-title {
-            text-align: center;
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
-            font-weight: bold;
-            letter-spacing: 4px;
-            color: #2d3142;
-            margin-bottom: 0.2rem;
-            padding-top: 0px;
-            margin-top: 0.3rem;
-          }
-          .cert-presentation {
-            text-align: center;
-            font-size: 1.1rem;
-            color: #444;
-            font-weight: 400;
-            margin-bottom: 0.8rem;
-            margin-top: 0.2rem;
-          }
-          .cert-name {
-            text-align: center;
-            font-size: 2.2rem;
-            font-weight: bold;
-            margin-bottom: 0.3rem;
-            color: #222;
-            font-family: 'Playfair Display', serif;
-            margin-top: 0.5rem;
-            transition: font-size 0.3s ease;
-            word-wrap: break-word;
-            max-width: 90%;
-            line-height: 1.2;
-          }
-          .cert-divider {
-            border: none;
-            border-top: 1px solid #000;
-            margin: 0.3rem auto 0.8rem auto;
-            width: 60%;
-          }
-          .cert-body {
-            text-align: center;
-            font-size: 1.08rem;
-            color: #444;
-            margin: 0 auto 1.5rem auto;
-            max-width: 80%;
-            line-height: 1.6;
-            margin-top: 0.8rem;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            hyphens: auto;
-            white-space: pre-line;
-            text-align-last: center;
-            text-justify: none;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          .cert-body br {
-            display: block;
-            content: "";
-            margin-top: 0.5rem;
-          }
-          .cert-footer {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            margin-top: 1rem;
-            padding: 0 20px;
-            width: 100%;
-            box-sizing: border-box;
-          }
-          .signatures-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: flex-end;
-            width: 100%;
-            gap: 2rem;
-          }
-          .signature-item {
-            text-align: center;
-            font-size: 1.1rem;
-            color: #222;
-            font-weight: 500;
-            flex: 1 1 180px;
-            max-width: 200px;
-          }
-          .signature-item .name {
-            font-weight: bold;
-          }
-          .signature-item hr {
-            margin-bottom: 0.3rem;
-            width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-          }
-          .cert-title-small {
-            text-align: center;
-            font-size: 1rem;
-            color: #222;
-            font-weight: 400;
-            margin-top: 0.5rem;
-          }
-          .signatures-1 { justify-content: center; }
-          .signatures-2 { justify-content: space-between; }
-          .signatures-3 { justify-content: space-between; }
-          .signatures-4 { 
-            position: relative;
-            justify-content: space-between;
-            align-items: flex-end;
-          }
-          .signatures-5 { 
-            position: relative;
-            justify-content: space-between;
-            align-items: flex-end;
-          }
-          .content-box {
-            background: rgba(255,255,255,0.05);
-            border: 6px solid ${(data.borderColor && String(data.borderColor).trim()) || '#2563b6'};
-            border-radius: 20px;
-            padding: 36px 40px;
-            margin: 0;
-            max-width: 900px;
-            width: 80%;
-            min-height: 540px;
-            position: relative;
-            z-index: 4;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 30px;
-          }
-        </style>
-        <script>
-          // Function to adjust font size for all certificates in bulk generation
-          function adjustFontSizeForAll() {
-            // Adjust all name elements
-            const nameElements = document.querySelectorAll('.cert-name');
-            nameElements.forEach(nameElement => {
-              const text = nameElement.textContent || nameElement.innerText;
-              const charCount = text.length;
-              
-              // Reset to base size first
-              nameElement.style.fontSize = '2.2rem';
-              
-              // If text exceeds 15 characters, reduce font size
-              if (charCount > 15) {
-                let fontSize = 2.2; // Base font size in rem
-                
-                // Calculate reduction based on character count
-                if (charCount > 25) {
-                  fontSize = 1.4; // Very long names
-                } else if (charCount > 20) {
-                  fontSize = 1.6; // Long names
-                } else if (charCount > 15) {
-                  fontSize = 1.8; // Medium long names
-                }
-                
-                nameElement.style.fontSize = fontSize + 'rem';
-              }
-            });
-
-            // Adjust all message body elements
-            const messageElements = document.querySelectorAll('.cert-body');
-            messageElements.forEach(messageElement => {
-              // Reset to base size first
-              messageElement.style.fontSize = '1.08rem';
-              messageElement.style.lineHeight = '1.6';
-              
-              // Force a layout update
-              messageElement.offsetHeight;
-              
-              // Calculate approximate line count based on text length and container width
-              const text = messageElement.textContent || messageElement.innerText;
-              const textLength = text.length;
-              
-              // Estimate characters per line (approximately 70-80 chars per line at base font size for centered text)
-              const baseCharsPerLine = 75;
-              const estimatedLines = Math.ceil(textLength / baseCharsPerLine);
-              
-              // If estimated lines exceed 4, reduce font size
-              if (estimatedLines > 4) {
-                let fontSize = 1.08; // Base font size in rem
-                let lineHeight = 1.6; // Base line height
-                
-                if (estimatedLines > 8) {
-                  fontSize = 0.85; // Very long messages
-                  lineHeight = 1.4;
-                } else if (estimatedLines > 6) {
-                  fontSize = 0.9; // Long messages
-                  lineHeight = 1.5;
-                } else if (estimatedLines > 5) {
-                  fontSize = 0.95; // Medium long messages
-                  lineHeight = 1.55;
-                } else if (estimatedLines > 4) {
-                  fontSize = 1.0; // Slightly long messages
-                  lineHeight = 1.6;
-                }
-                
-                messageElement.style.fontSize = fontSize + 'rem';
-                messageElement.style.lineHeight = lineHeight;
-              }
-              
-              // Secondary check: Measure actual height and adjust if needed
-              setTimeout(() => {
-                const containerHeight = messageElement.offsetHeight;
-                const lineHeightPx = parseFloat(getComputedStyle(messageElement).lineHeight);
-                const actualLines = Math.round(containerHeight / lineHeightPx);
-                
-                if (actualLines > 4) {
-                  const currentFontSize = parseFloat(getComputedStyle(messageElement).fontSize);
-                  const reductionFactor = 4 / actualLines;
-                  const newFontSize = Math.max(0.8, currentFontSize * reductionFactor);
-                  
-                  messageElement.style.fontSize = newFontSize + 'px';
-                  messageElement.style.lineHeight = Math.max(1.3, 1.6 * reductionFactor);
-                }
-              }, 50);
-            });
-          }
-          
-          // Run on page load
-          window.addEventListener('load', adjustFontSizeForAll);
-          
-          // Also run when DOM is ready
-          document.addEventListener('DOMContentLoaded', adjustFontSizeForAll);
-          
-          // Run again after a short delay to ensure proper rendering
-          setTimeout(adjustFontSizeForAll, 100);
-        </script>
-      </head>
-      <body>
-        ${allCertificatesHTML}
-      </body>
-      </html>
-    `;
+    // Create complete HTML document with proper structure
+    const completeHTML = `<!DOCTYPE html>
+<html lang="en">
+${allCertificatesHTML}
+</html>`;
 
     // Save the HTML for debugging
     fs.writeFileSync('debug-bulk-certificates.html', completeHTML);

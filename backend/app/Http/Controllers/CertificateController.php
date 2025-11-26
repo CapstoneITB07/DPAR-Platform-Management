@@ -270,16 +270,15 @@ class CertificateController extends Controller
                     'max:5120', // 5MB max
                 ],
                 'designImage' => [
-                    'required',
+                    'nullable',
                     'image',
                     'mimes:jpeg,png,jpg,gif,webp',
-                    'max:5120', // 5MB max, required
+                    'max:5120', // 5MB max, optional
                 ],
             ], [
                 'backgroundImage.image' => 'The background image must be an image file.',
                 'backgroundImage.mimes' => 'The background image must be a file of type: jpeg, png, jpg, gif, or webp.',
                 'backgroundImage.max' => 'The background image may not be greater than 5MB.',
-                'designImage.required' => 'The design overlay image is required for bulk generation.',
                 'designImage.image' => 'The design overlay image must be an image file.',
                 'designImage.mimes' => 'The design overlay image must be a file of type: jpeg, png, jpg, gif, or webp.',
                 'designImage.max' => 'The design overlay image may not be greater than 5MB.',

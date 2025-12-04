@@ -621,7 +621,8 @@ class DashboardAnalysisService
                 'performance_distribution' => ['excellent' => 0, 'good' => 0, 'fair' => 0, 'poor' => 0],
                 'category_analysis' => [],
                 'evaluation_history' => [],
-                'performance_timeline' => []
+                'performance_timeline' => [],
+                'post_activity' => $this->gatherIndividualPostActivityData($userId)
             ];
         }
 
@@ -672,6 +673,9 @@ class DashboardAnalysisService
             }
         }
 
+        // Gather individual post activity report and history
+        $postActivityData = $this->gatherIndividualPostActivityData($userId);
+
         return [
             'user_info' => [
                 'id' => $user->id,
@@ -698,7 +702,8 @@ class DashboardAnalysisService
             'evaluation_history' => $evaluationHistory,
             'performance_timeline' => $performanceTimeline,
             'quarterly_metrics' => $quarterlyMetrics,
-            'metrics_year' => $currentYear
+            'metrics_year' => $currentYear,
+            'post_activity' => $postActivityData
         ];
     }
 
@@ -2335,7 +2340,123 @@ class DashboardAnalysisService
             }
         }
 
+        // Add Post Activity Report and History section
         $html .= '
+            <div class="section">
+                <h2>Posting Activity Report and History</h2>
+                <p>This section tracks posting activities relevant to this associate, including <strong>Notifications</strong> (task assignments/alerts received from administrators), <strong>Announcements</strong> (public posts visible to all users), and <strong>Reports</strong> (submitted by this associate to administrators). The section analyzes individual posting frequency, engagement with notifications, response patterns, and historical trends to assess this associate\'s communication effectiveness and platform activity levels.</p>';
+
+        if (isset($data['post_activity']) && $data['post_activity']) {
+            $postActivity = $data['post_activity'];
+
+            // Individual Statistics - All Post Types
+            $totalPosts = $postActivity['overall_stats']['total_notifications'] + $postActivity['overall_stats']['total_announcements'] + $postActivity['overall_stats']['total_reports'];
+            $html .= '
+                <h3>Individual Posting Statistics</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">This section shows activity specific to this associate: notifications received, reports submitted, and available announcements on the platform.</p>
+                
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #333; font-size: 15px;">Post Types Summary</h4>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 10px; margin-bottom: 25px;">
+                    <tr>
+                        <td class="stat-card" style="width: 33.33%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_notifications'] . '</div>
+                            <div class="stat-label">Notifications Received</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Task assignments/alerts sent to this associate</div>
+                        </td>
+                        <td class="stat-card" style="width: 33.33%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_announcements'] . '</div>
+                            <div class="stat-label">Announcements Available</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Public posts visible on the platform</div>
+                        </td>
+                        <td class="stat-card" style="width: 33.33%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_reports'] . '</div>
+                            <div class="stat-label">Reports Submitted</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Submitted by this associate</div>
+                        </td>
+                    </tr>
+                </table>
+                
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #333; font-size: 15px;">Notification Engagement Metrics</h4>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 10px; margin-bottom: 25px;">
+                    <tr>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_responses'] . '</div>
+                            <div class="stat-label">Total Responses</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Notifications responded to</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['overall_response_rate'] . '%</div>
+                            <div class="stat-label">Response Rate</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Of notifications received</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['total_accepted'] . '</div>
+                            <div class="stat-label">Accepted</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Notifications accepted</div>
+                        </td>
+                        <td class="stat-card" style="width: 25%; text-align: center; vertical-align: top; padding: 20px 12px;">
+                            <div class="stat-value">' . $postActivity['overall_stats']['acceptance_rate'] . '%</div>
+                            <div class="stat-label">Acceptance Rate</div>
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">Of responses</div>
+                        </td>
+                    </tr>
+                </table>';
+
+            // Posting Analysis
+            $html .= '
+                <h3>Posting Analysis</h3>
+                <div class="insights-container">
+                    <div class="insight-section">
+                        <h3>Individual Activity Summary</h3>
+                        <p>This associate has received <strong>' . $postActivity['overall_stats']['total_notifications'] . ' notifications</strong> (task assignments/alerts), has access to <strong>' . $postActivity['overall_stats']['total_announcements'] . ' announcements</strong> (public posts) on the platform, and has submitted <strong>' . $postActivity['overall_stats']['total_reports'] . ' reports</strong> to administrators. This indicates ' .
+            ($totalPosts > 20 ? 'high' : ($totalPosts > 10 ? 'moderate' : 'low')) . ' overall activity engagement for this associate.</p>
+                    </div>
+                    <div class="insight-section">
+                        <h3>Notification Engagement Level</h3>
+                        <p>This associate\'s engagement level for notifications is <strong>' . $postActivity['posting_analysis']['engagement_level'] . '</strong> with a response rate of ' . $postActivity['overall_stats']['overall_response_rate'] . '%. ' .
+            ($postActivity['posting_analysis']['engagement_level'] === 'Excellent'
+                ? 'This indicates strong communication effectiveness and high engagement with posted notifications.'
+                : ($postActivity['posting_analysis']['engagement_level'] === 'Good'
+                    ? 'This shows good communication effectiveness with room for further improvement in engagement.'
+                    : ($postActivity['posting_analysis']['engagement_level'] === 'Moderate'
+                        ? 'This suggests moderate engagement levels. Consider strategies to improve response rates and participation.'
+                        : 'This indicates low engagement levels. Immediate action is needed to improve communication effectiveness and participation.'))) . '</p>
+                    </div>
+                    <div class="insight-section">
+                        <h3>Response Patterns</h3>
+                        <p>This associate has responded to <strong>' . $postActivity['overall_stats']['total_responses'] . ' notifications</strong> out of ' . $postActivity['overall_stats']['total_notifications'] . ' received. Out of ' . $postActivity['overall_stats']['total_responses'] . ' total responses, <strong>' . $postActivity['overall_stats']['total_accepted'] . '</strong> were accepted (' . $postActivity['overall_stats']['acceptance_rate'] . '%) and <strong>' . $postActivity['overall_stats']['total_declined'] . '</strong> were declined.</p>
+                    </div>
+                </div>';
+
+
+            // Quarterly Trends
+            if (!empty($postActivity['quarterly_trends'])) {
+                $html .= '
+                <h3>Quarterly Posting Trends</h3>
+                <p style="font-size: 13px; color: #666; margin-bottom: 15px;">This section shows the posting activity trends for this associate across all post types (Notifications Received, Announcements Available, and Reports Submitted) for each quarter. For notification-specific engagement metrics (response rates, acceptance rates), refer to the "Notification Engagement Metrics" section above.</p>
+                <div class="trend-chart">';
+
+                foreach ($postActivity['quarterly_trends'] as $quarter) {
+                    $html .= '
+                    <div class="quarter-data">
+                        <div>
+                            <strong>' . $quarter['quarter'] . ' (' . $quarter['period'] . ')</strong><br>
+                            <span style="font-size: 12px; color: #666;">' . $quarter['total_notifications'] . ' notifications received | ' . $quarter['total_announcements'] . ' announcements available | ' . $quarter['total_reports'] . ' reports submitted</span>
+                        </div>
+                    </div>';
+                }
+
+                $html .= '
+                </div>';
+            }
+        } else {
+            $html .= '
+                <p>No posting activity data available at this time.</p>';
+        }
+
+        $html .= '
+            </div>
+
             <div class="footer">
                 <p>This individual performance report was automatically generated by the DPAR Platform Management System</p>
                 <p>For questions or additional analysis, please contact the system administrator</p>
@@ -2855,6 +2976,146 @@ class DashboardAnalysisService
                 'total_training_programs' => $quarterTrainingPrograms->count(),
                 'total_reports' => $quarterReports->count(),
                 'total_recipients' => $totalRecipients,
+                'total_responses' => $totalResponses,
+                'response_rate' => $responseRate,
+                'acceptance_rate' => $acceptanceRate,
+                'period' => $quarterStart->format('M Y') . ' - ' . $quarterEnd->format('M Y')
+            ];
+        }
+
+        return array_reverse($quarters);
+    }
+
+    private function gatherIndividualPostActivityData($userId)
+    {
+        // Get notifications where this user is a recipient
+        $userNotifications = Notification::with(['creator:id,name', 'recipients'])
+            ->whereHas('recipients', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get all announcements (public posts visible to all users)
+        $allAnnouncements = Announcement::withTrashed()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get reports submitted by this user
+        $userReports = Report::where('user_id', $userId)
+            ->whereNull('deleted_at')
+            ->with(['user:id,name,organization'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate notification statistics for this user
+        $totalNotifications = $userNotifications->count();
+        $totalResponses = 0;
+        $totalAccepted = 0;
+        $totalDeclined = 0;
+
+        foreach ($userNotifications as $notification) {
+            // Get this user's recipient record for this notification
+            $recipient = $notification->recipients->where('user_id', $userId)->first();
+            
+            if ($recipient && $recipient->response) {
+                $totalResponses++;
+                if ($recipient->response === 'accept') {
+                    $totalAccepted++;
+                } elseif ($recipient->response === 'decline') {
+                    $totalDeclined++;
+                }
+            }
+        }
+
+        // Calculate response rates for this user
+        $overallResponseRate = $totalNotifications > 0
+            ? round(($totalResponses / $totalNotifications) * 100, 2)
+            : 0;
+        $acceptanceRate = $totalResponses > 0
+            ? round(($totalAccepted / $totalResponses) * 100, 2)
+            : 0;
+
+        // Calculate quarterly trends for individual post activity
+        $quarterlyPostingTrends = $this->calculateIndividualQuarterlyPostingTrends($userNotifications, $allAnnouncements, $userReports, $userId);
+
+        return [
+            'overall_stats' => [
+                'total_notifications' => $totalNotifications,
+                'total_announcements' => $allAnnouncements->count(),
+                'total_reports' => $userReports->count(),
+                'total_responses' => $totalResponses,
+                'total_accepted' => $totalAccepted,
+                'total_declined' => $totalDeclined,
+                'overall_response_rate' => $overallResponseRate,
+                'acceptance_rate' => $acceptanceRate
+            ],
+            'quarterly_trends' => $quarterlyPostingTrends,
+            'posting_analysis' => [
+                'average_responses_per_notification' => $totalNotifications > 0
+                    ? round($totalResponses / $totalNotifications, 2)
+                    : 0,
+                'engagement_level' => $overallResponseRate >= 80 ? 'Excellent'
+                    : ($overallResponseRate >= 60 ? 'Good'
+                        : ($overallResponseRate >= 40 ? 'Moderate'
+                            : 'Needs Improvement'))
+            ]
+        ];
+    }
+
+    private function calculateIndividualQuarterlyPostingTrends($notifications, $announcements, $reports, $userId)
+    {
+        $quarters = [];
+        $currentYear = Carbon::now()->year;
+
+        for ($i = 3; $i >= 0; $i--) {
+            $quarterStart = Carbon::create($currentYear, ($i * 3) + 1, 1);
+            $quarterEnd = $quarterStart->copy()->addMonths(2)->endOfMonth();
+
+            // Filter notifications received by this user
+            $quarterNotifications = $notifications->filter(function ($notification) use ($quarterStart, $quarterEnd) {
+                $notifDate = Carbon::parse($notification->created_at);
+                return $notifDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Filter announcements (all public announcements)
+            $quarterAnnouncements = $announcements->filter(function ($announcement) use ($quarterStart, $quarterEnd) {
+                $annDate = Carbon::parse($announcement->created_at);
+                return $annDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Filter reports submitted by this user
+            $quarterReports = $reports->filter(function ($report) use ($quarterStart, $quarterEnd) {
+                $reportDate = Carbon::parse($report->created_at);
+                return $reportDate->between($quarterStart, $quarterEnd);
+            });
+
+            // Calculate notification metrics for this user
+            $totalResponses = 0;
+            $totalAccepted = 0;
+
+            foreach ($quarterNotifications as $notification) {
+                $recipient = $notification->recipients->where('user_id', $userId)->first();
+                if ($recipient && $recipient->response) {
+                    $totalResponses++;
+                    if ($recipient->response === 'accept') {
+                        $totalAccepted++;
+                    }
+                }
+            }
+
+            $responseRate = $quarterNotifications->count() > 0
+                ? round(($totalResponses / $quarterNotifications->count()) * 100, 2)
+                : 0;
+            $acceptanceRate = $totalResponses > 0
+                ? round(($totalAccepted / $totalResponses) * 100, 2)
+                : 0;
+
+            $quarters[] = [
+                'quarter' => 'Q' . ($i + 1),
+                'total_notifications' => $quarterNotifications->count(),
+                'total_announcements' => $quarterAnnouncements->count(),
+                'total_reports' => $quarterReports->count(),
                 'total_responses' => $totalResponses,
                 'response_rate' => $responseRate,
                 'acceptance_rate' => $acceptanceRate,

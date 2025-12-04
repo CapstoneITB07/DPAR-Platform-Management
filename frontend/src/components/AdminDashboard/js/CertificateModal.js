@@ -34,6 +34,7 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
   const [backgroundImagePreview, setBackgroundImagePreview] = useState(null);
   const [designImage, setDesignImage] = useState(null);
   const [designImagePreview, setDesignImagePreview] = useState(null);
+  const [showCustomization, setShowCustomization] = useState(false);
 
   // Helper function to calculate word count
   const getWordCount = (text) => {
@@ -740,7 +741,20 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                   </div>
                 </div>
 
+                <div className="certificate-form-group" style={{ marginTop: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showCustomization}
+                      onChange={(e) => setShowCustomization(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontWeight: 500 }}>Enable Certificate Customization</span>
+                  </label>
+                </div>
+
                 {/* Certificate Customization Section */}
+                {showCustomization && (
                 <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '2px solid #e0e0e0' }}>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px', color: '#333' }}>
                     Certificate Customization
@@ -1176,11 +1190,12 @@ const CertificateModal = ({ show, onClose, associates, certificateData, onCertif
                     </div>
                   </div>
                 </div>
+                )}
               </form>
             </div>
 
             <div className="enhanced-preview-col">
-              <h3 className="preview-certificate-header" style={{ textAlign: 'left', fontWeight: 700, fontSize: '1.15rem', margin: '0 0 12px 4px', letterSpacing: '0.5px' }}>
+              <h3 className="preview-certificate-header" style={{ textAlign: 'left', fontWeight: 700, fontSize: '1.15rem', margin: '0 0 12px 4px', paddingTop: '16px', letterSpacing: '0.5px' }}>
                 Certificate Preview
               </h3>
               <div className="certificate-preview-section enhanced-preview-section" style={{ marginBottom: 8 }}>
